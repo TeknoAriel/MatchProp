@@ -6,23 +6,19 @@ Guía para publicar MatchProp con acceso público y testers beta.
 
 ## Requisitos previos
 
-- Cuenta en **Vercel** (Web)
-- Cuenta en **Railway** o **Fly.io** (API + DB)
-- Repo en GitHub/GitLab
+- Cuenta en **Vercel** (Web + API)
+- Cuenta en **Neon** (PostgreSQL, free tier)
+- Repo en GitHub
 
 ---
 
 ## 1. Base de datos (PostgreSQL)
 
-### Railway
+### Neon (recomendado)
 
-1. Railway Dashboard → New Project → Add PostgreSQL
-2. Copiar `DATABASE_URL` del servicio
-3. Variables: conexión lista
-
-### Fly.io / Supabase / Neon
-
-Cualquier PostgreSQL gestionado. Obtener `DATABASE_URL` y usarla en la API.
+1. Neon Console → New Project
+2. Copiar `DATABASE_URL`
+3. Usar esa URL en la API (Vercel)
 
 **Producción:** añadir a la URL:
 ```
@@ -31,15 +27,13 @@ Cualquier PostgreSQL gestionado. Obtener `DATABASE_URL` y usarla en la API.
 
 ---
 
-## 2. API (Fastify)
+## 2. API (Fastify) — en Vercel
 
-### Railway
+La API se deploya como **Vercel Serverless Functions** desde `apps/api` (ver `apps/api/vercel.json`).
 
-1. New Service → Deploy from GitHub
-2. Root Directory: `/` (monorepo)
-3. Build Command: `pnpm build:shared && pnpm --filter api exec prisma generate && pnpm --filter api build`
-4. Start Command: `node apps/api/dist/index.js`
-5. **Variables de entorno:**
+1. Vercel → **Add New → Project** → Importar repo `TeknoAriel/MatchProp`
+2. **Root Directory**: `apps/api`
+3. **Environment Variables** (mismas que en `.env.example`, versión prod):
 
 | Variable | Valor |
 |----------|-------|
@@ -55,29 +49,16 @@ Cualquier PostgreSQL gestionado. Obtener `DATABASE_URL` y usarla en la API.
 | `DEMO_MODE` | 0 |
 | `INTEGRATIONS_MASTER_KEY` | (generar) |
 
-6. **Migraciones:** ejecutar antes del primer deploy:
-   ```bash
-   DATABASE_URL="..." pnpm --filter api exec prisma migrate deploy
-   ```
-   O añadir en Railway: Deploy → Settings → One-Off Command
-
-### Fly.io
-
-1. `fly launch` en la raíz
-2. Crear `fly.toml` apuntando al Dockerfile de API
-3. `fly secrets set DATABASE_URL=...` (y resto)
-4. Migraciones: `fly ssh console` y ejecutar prisma migrate
-
-### Docker
+**Migraciones (Neon):** correr una vez desde tu máquina:
 
 ```bash
-docker build -f apps/api/Dockerfile -t matchprop-api .
-docker run -p 3001:3001 --env-file apps/api/.env matchprop-api
+cd /Users/arielcarnevali/MatchProp
+DATABASE_URL="TU_DATABASE_URL_DE_NEON" pnpm --filter api exec prisma migrate deploy
 ```
 
 ---
 
-## 3. Web (Next.js)
+## 3. Web (Next.js) — en Vercel
 
 ### Vercel
 
@@ -95,6 +76,8 @@ docker run -p 3001:3001 --env-file apps/api/.env matchprop-api
 
 7. Deploy
 
+**Nota:** si también deployaste la API en Vercel, la URL será algo como `https://matchprop-api-xxx.vercel.app` y se usa esa en `API_SERVER_URL` / `NEXT_PUBLIC_API_URL`.
+
 **Nota:** `vercel.json` en `apps/web` ya incluye los comandos de build para monorepo.
 
 ---
@@ -102,7 +85,7 @@ docker run -p 3001:3001 --env-file apps/api/.env matchprop-api
 ## 4. Dominios
 
 - **Web:** `matchprop.com` o `app.matchprop.com` (CNAME a Vercel)
-- **API:** `api.matchprop.com` (CNAME a Railway/Fly)
+- **API:** `api.matchprop.com` (CNAME a Vercel)
 
 Actualizar en ambos servicios:
 - `APP_URL` = URL de la web
@@ -159,5 +142,4 @@ open https://tu-app.vercel.app/login
 ## 8. Rollback
 
 - **Vercel:** Deployments → Promote to Production (anterior)
-- **Railway:** Deployments → Rollback
 - **DB:** Restaurar backup pre-migración si aplica

@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "api/[...path].ts": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/$1" }
+  ],
+  "buildCommand": "cd ../.. && pnpm install && pnpm build:shared && pnpm --filter api exec prisma generate && pnpm --filter api build"
+}
+

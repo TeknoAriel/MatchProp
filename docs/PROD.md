@@ -63,7 +63,7 @@ docker run -p 3001:3001 --env-file apps/api/.env matchprop-api
 - **200** si DB responde OK: `{ status: "ok", timestamp, db: "ok" }`
 - **503** si DB falla: `{ status: "degraded", timestamp, db: "error" }`
 
-Usar para healthcheck de Kubernetes, Railway, Fly.io, etc.
+Usar para healthcheck (Vercel, Kubernetes, etc.).
 
 ---
 

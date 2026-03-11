@@ -13,7 +13,7 @@ Ruta de crecimiento por etapas, documentada y reproducible.
 - [x] Monorepo estable (web, api, shared, admin, mobile)
 - [x] Arranque robusto (`pnpm dev:up`)
 - [x] Escalabilidad documentada (100k usuarios, 200k propiedades)
-- [x] Config deploy: Vercel (web), Railway (API), Docker
+- [x] Config deploy: Vercel (web + API) + Neon (DB)
 - [x] Docs: ARCHITECTURE, DEPLOY, SCALABILITY, PROD
 - [x] pre-deploy:verify pasando
 
@@ -24,9 +24,10 @@ Ruta de crecimiento por etapas, documentada y reproducible.
 
 ### Pendiente para deploy efectivo
 
-1. **Conectar Vercel (Web):** https://vercel.com/new → Importar `TeknoAriel/MatchProp` → Root = `apps/web` → env `API_SERVER_URL` = (URL de la API cuando esté)
-2. **Conectar Railway (API + DB):** https://railway.app → New Project → PostgreSQL + servicio desde GitHub (repo MatchProp, Dockerfile en `apps/api`)
-3. **Variables:** ver `docs/DEPLOY.md` y `docs/SIGUIENTE_PASO.md`
+1. **Crear DB en Neon (gratis):** https://neon.tech → copiar `DATABASE_URL` → correr migraciones (ver `docs/SIGUIENTE_PASO.md`)
+2. **Conectar Vercel (API):** https://vercel.com/new → Importar `TeknoAriel/MatchProp` → Root = `apps/api`
+3. **Conectar Vercel (Web):** https://vercel.com/new → Importar `TeknoAriel/MatchProp` → Root = `apps/web` → env `API_SERVER_URL` = URL de la API en Vercel
+4. **Variables:** ver `docs/DEPLOY.md` y `docs/SIGUIENTE_PASO.md`
 
 ---
 

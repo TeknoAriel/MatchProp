@@ -85,7 +85,7 @@ apps/api/src/
 `next.config.ts` reescribe `/api/*` → `API_SERVER_URL/*` (server-side).
 
 - **Dev:** `http://127.0.0.1:3001`
-- **Prod:** URL pública de la API (Railway, Fly.io, etc.)
+- **Prod:** URL pública de la API (Vercel API)
 
 ---
 
@@ -113,7 +113,7 @@ apps/api/src/
 ## Deploy
 
 - **Web:** Vercel (Next.js)
-- **API:** Railway, Fly.io o Docker
-- **DB:** PostgreSQL (Railway, Supabase, Neon, etc.)
+- **API:** Vercel (Serverless)
+- **DB:** PostgreSQL (Neon recomendado)
 
 Ver `docs/DEPLOY.md`.
