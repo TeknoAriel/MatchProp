@@ -17,21 +17,16 @@ Ruta de crecimiento por etapas, documentada y reproducible.
 - [x] Docs: ARCHITECTURE, DEPLOY, SCALABILITY, PROD
 - [x] pre-deploy:verify pasando
 
+### Completado (deploy git)
+
+- [x] Remote configurado: `git@github.com:TeknoAriel/MatchProp.git`
+- [x] Código en GitHub: https://github.com/TeknoAriel/MatchProp
+
 ### Pendiente para deploy efectivo
 
-1. **Configurar remote git** (si no existe):
-   ```bash
-   git remote add origin https://github.com/TU-ORG/MatchProp.git
-   ```
-
-2. **Push y deploy:**
-   ```bash
-   bash scripts/deploy-git.sh
-   ```
-
-3. **Conectar servicios:**
-   - Vercel: importar repo, Root = `apps/web`, env `API_SERVER_URL`
-   - Railway: PostgreSQL + API, variables de `docs/DEPLOY.md`
+1. **Conectar Vercel (Web):** https://vercel.com/new → Importar `TeknoAriel/MatchProp` → Root = `apps/web` → env `API_SERVER_URL` = (URL de la API cuando esté)
+2. **Conectar Railway (API + DB):** https://railway.app → New Project → PostgreSQL + servicio desde GitHub (repo MatchProp, Dockerfile en `apps/api`)
+3. **Variables:** ver `docs/DEPLOY.md` y `docs/SIGUIENTE_PASO.md`
 
 ---
 
