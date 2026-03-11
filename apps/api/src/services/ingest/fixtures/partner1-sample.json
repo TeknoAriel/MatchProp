@@ -1,0 +1,34 @@
+[
+  {
+    "external_id": "p1-001",
+    "title": "Ph 4 ambientes Recoleta",
+    "operation_type": "rent",
+    "property_type": "apartment",
+    "price_usd": 2500,
+    "bedrooms": 4,
+    "bathrooms": 2,
+    "area_m2": 140,
+    "latitude": -34.588,
+    "longitude": -58.395,
+    "address_text": "Recoleta, CABA",
+    "agent_id": "partner1-agent-1",
+    "images": [
+      { "url": "https://example.com/p1/1.jpg", "order": 0 },
+      { "url": "https://example.com/p1/2.jpg", "order": 1 }
+    ],
+    "last_modified": "2025-02-21T08:00:00Z"
+  },
+  {
+    "external_id": "p1-002",
+    "title": "Terreno 500m2 Ezeiza",
+    "operation_type": "sale",
+    "property_type": "land",
+    "price_usd": 85000,
+    "latitude": -34.85,
+    "longitude": -58.52,
+    "address_text": "Ezeiza",
+    "agent_id": "partner1-agent-2",
+    "images": [],
+    "last_modified": "2025-02-20T12:00:00Z"
+  }
+]

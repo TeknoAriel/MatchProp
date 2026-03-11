@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "MatchProp",
+    "slug": "matchprop",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "matchprop"
+  }
+}

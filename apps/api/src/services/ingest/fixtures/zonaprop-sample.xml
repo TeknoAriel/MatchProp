@@ -1,0 +1,54 @@
+<listings>
+  <listing id="zp-001">
+    <title>Depto 2 ambientes Palermo</title>
+    <description>Luminoso dos ambientes con balcon</description>
+    <operation_type>sale</operation_type>
+    <property_type>apartment</property_type>
+    <price>145000</price>
+    <currency>USD</currency>
+    <bedrooms>2</bedrooms>
+    <bathrooms>1</bathrooms>
+    <area_total>55</area_total>
+    <latitude>-34.588</latitude>
+    <longitude>-58.425</longitude>
+    <address>Thames 1200</address>
+    <location_text>Palermo, CABA</location_text>
+    <publisher_ref>zp-agency-1</publisher_ref>
+    <status>active</status>
+    <updated_at>2025-02-20T10:00:00Z</updated_at>
+    <images>
+      <image url="https://static.kiteprop.com/difusions/zonaprop/zp-001-1.jpg" order="0"/>
+      <image url="https://static.kiteprop.com/difusions/zonaprop/zp-001-2.jpg" order="1"/>
+    </images>
+  </listing>
+  <listing id="zp-002">
+    <title>Casa 3 dorm Ezeiza</title>
+    <operation_type>sale</operation_type>
+    <property_type>house</property_type>
+    <price>89000</price>
+    <currency>USD</currency>
+    <bedrooms>3</bedrooms>
+    <bathrooms>2</bathrooms>
+    <area_total>120</area_total>
+    <latitude>-34.85</latitude>
+    <longitude>-58.52</longitude>
+    <location_text>Ezeiza, Buenos Aires</location_text>
+    <publisher_ref>zp-agency-2</publisher_ref>
+    <status>active</status>
+    <updated_at>2025-02-19T14:30:00Z</updated_at>
+    <images>
+      <image url="https://static.kiteprop.com/difusions/zonaprop/zp-002-1.jpg" order="0"/>
+    </images>
+  </listing>
+  <listing id="zp-003">
+    <title>Local comercial Microcentro</title>
+    <operation_type>rent</operation_type>
+    <property_type>office</property_type>
+    <price>850</price>
+    <currency>USD</currency>
+    <area_total>80</area_total>
+    <location_text>Microcentro, CABA</location_text>
+    <status>inactive</status>
+    <updated_at>2025-02-18T09:00:00Z</updated_at>
+  </listing>
+</listings>

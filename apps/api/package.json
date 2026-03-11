@@ -1,0 +1,63 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "predev": "pnpm --filter @matchprop/shared build",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run src/lib",
+    "test:all": "vitest run",
+    "test:watch": "vitest",
+    "load:feed": "k6 run loadtest/feed_read.js",
+    "load:mixed": "k6 run loadtest/mixed.js",
+    "load:bigdata": "k6 run loadtest/bigdata.js",
+    "ingest:run": "tsx src/scripts/ingest-run.ts",
+    "ingest:fixture:refresh": "tsx src/scripts/ingest-fixture-refresh.ts",
+    "alerts:run": "tsx src/scripts/alerts-run.ts",
+    "demo:data": "tsx src/scripts/demo-data.ts",
+    "demo:reset-and-seed": "tsx src/scripts/demo-reset-and-seed.ts",
+    "demo:validate": "tsx src/scripts/demo-validate.ts",
+    "crm:push:run": "tsx src/scripts/crm-push-run.ts",
+    "ingest:bundle": "tsx src/scripts/ingest-bundle.ts",
+    "kiteprop:discover": "tsx src/scripts/kiteprop-discover-openapi.ts"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^7.0.0",
+    "@fastify/cors": "^9.0.0",
+    "@fastify/jwt": "^8.0.0",
+    "@fastify/rate-limit": "^9.0.0",
+    "@fastify/under-pressure": "7.0.0",
+    "@fastify/sensible": "^4.1.0",
+    "@fastify/swagger": "^8.14.0",
+    "@fastify/swagger-ui": "^3.0.0",
+    "@matchprop/shared": "workspace:*",
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.0",
+    "fastify": "^4.25.0",
+    "fastify-plugin": "^4.5.0",
+    "prisma": "^5.22.0",
+    "zod": "^3.23.0",
+    "@simplewebauthn/server": "^10.0.0",
+    "@simplewebauthn/types": "^10.0.0",
+    "stripe": "^14.0.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20.10.0",
+    "vitest": "^2.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0",
+    "playwright": "^1.49.0"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}

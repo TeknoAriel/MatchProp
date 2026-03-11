@@ -1,0 +1,198 @@
+import { describe, it, expect } from 'vitest';
+import { parseSearchText } from '../search-parser.js';
+
+describe('parseSearchText', () => {
+  it('detecta venta', () => {
+    const r = parseSearchText('quiero comprar un departamento');
+    expect(r.filters.operationType).toBe('SALE');
+  });
+
+  it('detecta alquiler', () => {
+    const r = parseSearchText('busco alquiler en Palermo');
+    expect(r.filters.operationType).toBe('RENT');
+  });
+
+  it('detecta rent en inglés', () => {
+    const r = parseSearchText('apartment for rent');
+    expect(r.filters.operationType).toBe('RENT');
+  });
+
+  it('detecta USD', () => {
+    const r = parseSearchText('hasta 100k USD');
+    expect(r.filters.currency).toBe('USD');
+    expect(r.filters.priceMax).toBe(100000);
+  });
+
+  it('detecta hasta 100.000', () => {
+    const r = parseSearchText('hasta 100.000');
+    expect(r.filters.priceMax).toBe(100000);
+  });
+
+  it('detecta 2 dormitorios', () => {
+    const r = parseSearchText('2 dormitorios en Palermo');
+    expect(r.filters.bedroomsMin).toBe(2);
+  });
+
+  it('detecta 3 ambientes', () => {
+    const r = parseSearchText('3 ambientes');
+    expect(r.filters.bedroomsMin).toBe(3);
+  });
+
+  it('detecta ubicación "en Palermo"', () => {
+    const r = parseSearchText('departamento en Palermo');
+    expect(r.filters.locationText).toContain('Palermo');
+  });
+
+  it('detecta departamento y casa', () => {
+    const r = parseSearchText('departamento o casa');
+    expect(r.filters.propertyType).toContain('APARTMENT');
+    expect(r.filters.propertyType).toContain('HOUSE');
+  });
+
+  it('texto vacío devuelve filtros vacíos', () => {
+    const r = parseSearchText('   ');
+    expect(Object.keys(r.filters)).toHaveLength(0);
+    expect(r.explanation).toContain('No se detectó');
+  });
+
+  it('combinación completa', () => {
+    const r = parseSearchText('departamento en Palermo, 2 dormitorios, hasta 150k USD, alquiler');
+    expect(r.filters.operationType).toBe('RENT');
+    expect(r.filters.propertyType).toContain('APARTMENT');
+    expect(r.filters.locationText).toContain('Palermo');
+    expect(r.filters.bedroomsMin).toBe(2);
+    expect(r.filters.priceMax).toBe(150000);
+    expect(r.filters.currency).toBe('USD');
+  });
+
+  it('100 mil pesos', () => {
+    const r = parseSearchText('hasta 100 mil pesos');
+    expect(r.filters.priceMax).toBe(100000);
+  });
+
+  it('presupuesto 60 mil', () => {
+    const r = parseSearchText('Terreno en Funes, 400m2, presupuesto 60 mil');
+    expect(r.filters.priceMax).toBe(60000);
+    expect(r.filters.locationText).toBe('Funes');
+    expect(r.filters.propertyType).toContain('LAND');
+    expect(r.explanation).not.toMatch(/,\s*\./); // sin "hasta 60,000 ."
+  });
+
+  it('zona norte mantiene frase completa', () => {
+    const r = parseSearchText('Alquiler casa 3 dorm zona norte');
+    expect(r.filters.locationText).toBe('zona norte');
+  });
+
+  it('texto 1: depto 2 dorm Rosario 120k usd', () => {
+    const r = parseSearchText('Quiero comprar depto 2 dorm en Rosario hasta 120k usd');
+    expect(r.filters.operationType).toBe('SALE');
+    expect(r.filters.currency).toBe('USD');
+    expect(r.filters.priceMax).toBe(120000);
+    expect(r.filters.bedroomsMin).toBe(2);
+    expect(r.filters.locationText).toBe('Rosario');
+    expect(r.filters.propertyType).toContain('APARTMENT');
+    expect(r.explanation).toContain('dormitorios');
+  });
+
+  it('texto 2: alquiler casa 3 dormitorios zona norte 900k ars', () => {
+    const r = parseSearchText('Alquiler casa 3 dormitorios zona norte, max 900k ars');
+    expect(r.filters.operationType).toBe('RENT');
+    expect(r.filters.currency).toBe('ARS');
+    expect(r.filters.priceMax).toBe(900000);
+    expect(r.filters.bedroomsMin).toBe(3);
+    expect(r.filters.locationText).toBe('zona norte');
+    expect(r.filters.propertyType).toContain('HOUSE');
+    expect(r.explanation).toContain('dormitorios');
+  });
+
+  it('texto 3: terreno Funes 400m2 presupuesto 60 mil', () => {
+    const r = parseSearchText('Terreno en Funes, 400m2, presupuesto 60 mil');
+    expect(r.filters.propertyType).toContain('LAND');
+    expect(r.filters.locationText).toBe('Funes');
+    expect(r.filters.areaMin).toBe(400);
+    expect(r.filters.priceMax).toBe(60000);
+    expect(r.filters.currency).toBeUndefined();
+    expect(r.explanation).toContain('moneda no especificada');
+  });
+
+  describe('regresión: filters NO vacío para textos de prueba', () => {
+    it('texto 1: Quiero comprar depto 2 dorm en Rosario hasta 120k usd', () => {
+      const r = parseSearchText('Quiero comprar depto 2 dorm en Rosario hasta 120k usd');
+      expect(Object.keys(r.filters).length).toBeGreaterThan(0);
+      expect(r.filters.operationType).toBe('SALE');
+      expect(r.filters.priceMax).toBe(120000);
+      expect(r.filters.currency).toBe('USD');
+      expect(r.filters.bedroomsMin).toBe(2);
+      expect(r.filters.locationText).toContain('Rosario');
+      expect(r.filters.propertyType).toContain('APARTMENT');
+      expect(r.warnings).toEqual([]);
+    });
+
+    it('texto 2: Alquiler casa 3 dormitorios zona norte, max 900k ars', () => {
+      const r = parseSearchText('Alquiler casa 3 dormitorios zona norte, max 900k ars');
+      expect(Object.keys(r.filters).length).toBeGreaterThan(0);
+      expect(r.filters.operationType).toBe('RENT');
+      expect(r.filters.priceMax).toBe(900000);
+      expect(r.filters.currency).toBe('ARS');
+      expect(r.filters.bedroomsMin).toBe(3);
+      expect(r.filters.locationText).toContain('zona norte');
+      expect(r.filters.propertyType).toContain('HOUSE');
+      expect(r.warnings).toEqual([]);
+    });
+
+    it('texto 3: Terreno en Funes, 400m2, presupuesto 60 mil', () => {
+      const r = parseSearchText('Terreno en Funes, 400m2, presupuesto 60 mil');
+      expect(Object.keys(r.filters).length).toBeGreaterThan(0);
+      expect(r.filters.priceMax).toBe(60000);
+      expect(r.filters.areaMin).toBe(400);
+      expect(r.filters.locationText).toContain('Funes');
+      expect(r.filters.propertyType).toContain('LAND');
+      expect(r.warnings).toEqual([]);
+    });
+  });
+
+  describe('regresión: precio NO por número de dormitorios', () => {
+    it('alquiler 2 dormitorios rosario: priceMax NO debe ser 2', () => {
+      const r = parseSearchText('alquiler 2 dormitorios rosario');
+      expect(r.filters.operationType).toBe('RENT');
+      expect(r.filters.bedroomsMin).toBe(2);
+      expect(r.filters.locationText?.toLowerCase()).toContain('rosario');
+      expect(r.filters.priceMax).toBeUndefined();
+      expect(r.filters.priceMax).not.toBe(2);
+    });
+
+    it('depto en venta 3 dormis 100k usd', () => {
+      const r = parseSearchText('depto en venta 3 dormis 100k usd');
+      expect(r.filters.bedroomsMin).toBe(3);
+      expect(r.filters.priceMax).toBe(100000);
+      expect(r.filters.currency).toBe('USD');
+    });
+
+    it('Terreno en Funes 400m2 presupuesto 60 mil', () => {
+      const r = parseSearchText('Terreno en Funes 400m2 presupuesto 60 mil');
+      expect(r.filters.areaMin).toBe(400);
+      expect(r.filters.priceMax).toBe(60000);
+      expect(r.filters.currency).toBeUndefined();
+    });
+  });
+
+  describe('warnings', () => {
+    it('textos con filtros: warnings vacío', () => {
+      const t1 = parseSearchText('departamento en Palermo');
+      const t2 = parseSearchText('alquiler casa 2 dorm hasta 100k');
+      const t3 = parseSearchText('Terreno en Funes, 400m2, presupuesto 60 mil');
+      expect(t1.warnings).toEqual([]);
+      expect(t2.warnings).toEqual([]);
+      expect(t3.warnings).toEqual([]);
+    });
+
+    it('texto sin criterios: warnings tiene 1 item', () => {
+      const r1 = parseSearchText('hola');
+      const r2 = parseSearchText('quiero ver algo');
+      expect(r1.warnings).toHaveLength(1);
+      expect(r2.warnings).toHaveLength(1);
+      expect(r1.warnings[0]).toContain('No entendí criterios');
+      expect(r2.warnings[0]).toContain('No entendí criterios');
+    });
+  });
+});

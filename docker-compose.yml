@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: matchprop
+      POSTGRES_PASSWORD: matchprop
+      POSTGRES_DB: matchprop
+    ports:
+      - "5432:5432"
+    volumes:
+      - matchprop_db:/var/lib/postgresql/data
+
+volumes:
+  matchprop_db:

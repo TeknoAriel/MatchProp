@@ -1,0 +1,16 @@
+=== MatchProp dev-up ===
+1. Matando procesos en 3000/3001...
+2. Docker reset limpio...
+3. Esperando DB...
+Esperando Postgres en localhost:5432...
+Puerto 5432 abierto.
+4. Prisma generate + migrate + seed...
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+
+✔ Generated Prisma Client (v5.22.0) to ./../../node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client in 403ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Want to react to database changes in your app as they happen? Discover how with Pulse: https://pris.ly/tip-1-pulse
+

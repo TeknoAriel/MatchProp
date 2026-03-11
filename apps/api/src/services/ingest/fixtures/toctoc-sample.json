@@ -1,0 +1,41 @@
+[
+  {
+    "id": "toctoc-001",
+    "titulo": "Departamento 2 dormitorios Providencia",
+    "descripcion": "Excelente ubicacion",
+    "tipo_operacion": "venta",
+    "tipo_propiedad": "departamento",
+    "precio": 125000,
+    "moneda": "USD",
+    "dormitorios": 2,
+    "banos": 1,
+    "superficie_total": 65,
+    "lat": -33.43,
+    "lng": -70.61,
+    "direccion": "Av. Providencia 2000",
+    "comuna": "Providencia, Santiago",
+    "publicador_id": "tt-agency-1",
+    "estado": "activo",
+    "actualizado": "2025-02-20T12:00:00Z",
+    "fotos": [
+      { "url": "https://static.kiteprop.com/difusions/toctoc/tt-001-1.jpg", "orden": 0 },
+      { "url": "https://static.kiteprop.com/difusions/toctoc/tt-001-2.jpg", "orden": 1 }
+    ]
+  },
+  {
+    "id": "toctoc-002",
+    "titulo": "Casa 4 dormitorios Las Condes",
+    "tipo_operacion": "arriendo",
+    "tipo_propiedad": "casa",
+    "precio": 1200,
+    "moneda": "USD",
+    "dormitorios": 4,
+    "banos": 3,
+    "superficie_total": 180,
+    "comuna": "Las Condes, Santiago",
+    "publicador_id": "tt-agency-2",
+    "estado": "activo",
+    "actualizado": "2025-02-19T08:00:00Z",
+    "fotos": []
+  }
+]

@@ -1,0 +1,902 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  BUYER    // Usuario: 1 USD/mes, like y favorito
+  AGENT    // Agente: 3 USD/mes, listas personalizadas
+  REALTOR  // Corredor: 5 USD/mes
+  INMOBILIARIA  // Inmobiliaria: 10 USD/mes, puede crear agentes/corredores (20% dto)
+}
+
+enum IdentityProvider {
+  magic_link
+  google
+  apple
+  facebook
+  passkey
+}
+
+enum OrgRole {
+  owner
+  org_admin
+  agent
+}
+
+enum AuthAuditEvent {
+  magic_requested
+  magic_verified
+  oauth_login
+  passkey_registered
+  passkey_login
+  logout
+  refresh_rotated
+  identity_linked
+  identity_unlinked
+  session_revoked
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String?
+  role            UserRole  @default(BUYER)
+  premiumUntil    DateTime?
+  activeSearchId  String?
+  organizationId  String?   // Para agentes/corredores bajo inmobiliaria
+  createdAt       DateTime  @default(now())
+
+  organization       Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  profile            UserProfile?
+  preferences         Preference[]
+  swipes              Swipe[]
+  properties          Property[]
+  identities          UserIdentity[]
+  sessions            Session[]
+  passkeyCredentials  PasskeyCredential[]
+  orgMembers          OrgMember[]
+  orgInvitationsCreated OrgInvitation[]
+  swipeDecisions      SwipeDecision[]
+  savedItems          SavedItem[]
+  savedLists          SavedList[]
+  savedSearches       SavedSearch[]
+  activeSearch        SavedSearch?  @relation("UserActiveSearch", fields: [activeSearchId], references: [id], onDelete: SetNull)
+  alertSubscriptions  AlertSubscription[]
+  leads               Lead[]
+}
+
+model UserIdentity {
+  id            String           @id @default(cuid())
+  userId        String
+  provider      IdentityProvider
+  providerUserId String
+  email         String?
+  emailVerified Boolean          @default(false)
+  profileJson   Json?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId, provider])
+}
+
+model Session {
+  id                   String    @id @default(cuid())
+  userId               String
+  refreshTokenHash     String
+  userAgent            String?
+  ip                   String?
+  createdAt            DateTime  @default(now())
+  expiresAt            DateTime
+  revokedAt            DateTime?
+  rotatedFromSessionId String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([refreshTokenHash])
+}
+
+model MagicLinkToken {
+  id        String    @id @default(cuid())
+  email     String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  requestIp String?
+  userAgent String?
+
+  @@index([email, expiresAt])
+}
+
+model PasskeyCredential {
+  id           String    @id @default(cuid())
+  userId       String
+  credentialId String    @unique
+  publicKey    String
+  counter      Int
+  transports   Json?
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+  aaguid       String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Organization {
+  id             String   @id @default(cuid())
+  name           String   // Nombre de la inmobiliaria
+  commercialName String?  // Nombre comercial
+  slug           String   @unique
+  address        String?
+  phone          String?
+  whatsapp       String?
+  telegram       String?
+  twitter        String?
+  instagram      String?
+  facebook       String?
+  website        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  members       OrgMember[]
+  wallet        Wallet?
+  users         User[]
+  invitations   OrgInvitation[]
+}
+
+model UserProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  firstName String?
+  lastName  String?
+  dni       String?
+  matricula String?
+  phone     String?
+  whatsapp  String?
+  telegram  String?
+  twitter   String?
+  instagram String?
+  facebook  String?
+  website   String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Wallet {
+  id           String   @id @default(cuid())
+  orgId        String   @unique
+  balanceCents Int      @default(0)
+  currency     String   @default("ARS")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  org          Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
+
+  @@index([orgId])
+}
+
+model WalletTransaction {
+  id          String   @id @default(cuid())
+  walletId    String
+  amountCents Int
+  type        String   // TOP_UP | DEBIT | REFUND
+  referenceId String?  // Stripe payment id, lead id, etc.
+  createdAt   DateTime @default(now())
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId, createdAt])
+}
+
+model OrgMember {
+  id        String   @id @default(cuid())
+  orgId     String
+  userId    String
+  role      OrgRole
+  createdAt DateTime @default(now())
+
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, userId])
+}
+
+enum OrgInvitationRole {
+  AGENT
+  REALTOR
+}
+
+model OrgInvitation {
+  id         String           @id @default(cuid())
+  orgId      String
+  email      String
+  role       OrgInvitationRole
+  token      String           @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdById String
+  createdAt  DateTime         @default(now())
+
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  createdBy   User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([token])
+  @@index([email, orgId])
+}
+
+model OAuthAttempt {
+  id          String    @id @default(cuid())
+  state       String    @unique
+  provider    String
+  codeVerifier String?
+  redirectUri  String?
+  createdAt   DateTime  @default(now())
+  usedAt      DateTime?
+  ip          String?
+  userAgent   String?
+
+  @@index([state])
+  @@index([createdAt])
+}
+
+model WebAuthnChallenge {
+  id        String   @id @default(cuid())
+  challenge String   @unique
+  email     String?
+  userId    String?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([challenge])
+  @@index([expiresAt])
+}
+
+model AuthAuditLog {
+  id        String          @id @default(cuid())
+  event     AuthAuditEvent
+  userId    String?
+  email     String?
+  provider  String?
+  ip        String?
+  userAgent String?
+  createdAt DateTime        @default(now())
+
+  @@index([userId, createdAt])
+  @@index([event, createdAt])
+}
+
+enum Currency {
+  USD
+  ARS
+}
+
+enum Operation {
+  SALE
+  RENT
+}
+
+enum PropertyType {
+  HOUSE
+  APARTMENT
+  LAND
+  OFFICE
+  OTHER
+}
+
+model Property {
+  id           String       @id @default(cuid())
+  title        String
+  description  String?
+  price        Int
+  currency     Currency     @default(USD)
+  locationText String?
+  lat          Float?
+  lng          Float?
+  bedrooms     Int?
+  bathrooms    Int?
+  areaM2       Int?
+  operation    Operation    @default(SALE)
+  propertyType PropertyType @default(APARTMENT)
+  photos       Json?        // string[]
+  createdAt    DateTime     @default(now())
+  createdById  String?
+
+  createdBy User?  @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  swipes   Swipe[]
+
+  @@index([createdAt])
+  @@index([createdAt, id])
+  @@index([price])
+  @@index([operation, propertyType])
+}
+
+model Preference {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  minPrice       Int?
+  maxPrice       Int?
+  currency       String?
+  operation      String?
+  propertyTypes  Json?    // string[]
+  bedroomsMin    Int?
+  bathroomsMin   Int?
+  areaMin        Int?
+  locationText   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum SwipeDirection {
+  LIKE
+  DISLIKE
+}
+
+model Swipe {
+  id         String        @id @default(cuid())
+  userId     String
+  propertyId String
+  direction  SwipeDirection
+  createdAt  DateTime      @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
+  @@index([userId, createdAt])
+  @@index([propertyId, userId])
+}
+
+// --- Sprint 1: Canonical Listings + Engagement + Leads ---
+
+enum ListingSource {
+  KITEPROP_API
+  KITEPROP_EXTERNALSITE
+  API_PARTNER_1
+  KITEPROP_DIFUSION_ZONAPROP
+  KITEPROP_DIFUSION_TOCTOC
+  KITEPROP_DIFUSION_ICASAS
+  CRM_WEBHOOK
+}
+
+enum ListingStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Listing {
+  id             String         @id @default(cuid())
+  source         ListingSource
+  externalId     String
+  publisherRef   String?
+  publisherId    String?
+  status         ListingStatus  @default(ACTIVE)
+  title          String?
+  description    String?
+  operationType  String?
+  propertyType   String?
+  currency       String?
+  price          Float?
+  bedrooms       Int?
+  bathrooms      Int?
+  areaTotal      Float?
+  areaCovered    Float?
+  lat            Float?
+  lng            Float?
+  addressText    String?
+  locationText   String?        @db.VarChar(200)
+  heroImageUrl   String?
+  photosCount    Int            @default(0)
+  updatedAtSource DateTime?
+  lastSyncedAt  DateTime        @default(now())
+  lastSeenAt    DateTime        @default(now())
+  rawJson       Json?
+  details       Json?           // Sprint 14: amenities, services, aptoCredito, etc
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  publisher       Publisher?     @relation(fields: [publisherId], references: [id], onDelete: SetNull)
+  media           ListingMedia[]
+  swipeDecisions  SwipeDecision[]
+  savedItems      SavedItem[]
+  savedListItems  SavedListItem[]
+  leads           Lead[]
+  alertDeliveries AlertDelivery[]
+  events          ListingEvent[]
+
+  @@unique([source, externalId])
+  @@index([status, lastSeenAt])
+  @@index([source, status, lastSeenAt])
+  @@index([publisherRef])
+  @@index([publisherId])
+}
+
+model ListingMedia {
+  id        String   @id @default(cuid())
+  listingId String
+  url       String
+  type      String   @default("PHOTO")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, sortOrder])
+}
+
+enum SwipeDecisionType {
+  LIKE
+  NOPE
+}
+
+model SwipeDecision {
+  id        String           @id @default(cuid())
+  userId    String
+  listingId String
+  decision  SwipeDecisionType
+  createdAt DateTime         @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId, createdAt])
+  @@index([listingId, userId])
+}
+
+enum SavedListType {
+  FAVORITE
+  LATER
+}
+
+model SavedItem {
+  id        String        @id @default(cuid())
+  userId    String
+  listingId String
+  listType  SavedListType
+  createdAt DateTime      @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId, listType])
+  @@index([userId, listType])
+}
+
+model SavedList {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items SavedListItem[]
+
+  @@index([userId])
+}
+
+model SavedListItem {
+  id         String   @id @default(cuid())
+  savedListId String
+  listingId  String
+  createdAt  DateTime @default(now())
+
+  savedList SavedList @relation(fields: [savedListId], references: [id], onDelete: Cascade)
+  listing   Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([savedListId, listingId])
+  @@index([savedListId])
+}
+
+// --- Sprint 5: Publisher / Lead delivery ---
+
+enum PublisherType {
+  ORG
+  AGENT
+  OWNER
+}
+
+enum PublisherEndpointKind {
+  WEBHOOK
+  KITEPROP
+}
+
+model Publisher {
+  id            String         @id @default(cuid())
+  type          PublisherType
+  orgId         String?
+  userId        String?
+  displayName   String
+  contactEmail  String?
+  contactPhone  String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  endpoints PublisherEndpoint[]
+  listings  Listing[]
+  leads    Lead[]
+
+  @@index([type])
+  @@index([orgId])
+  @@index([userId])
+}
+
+model PublisherEndpoint {
+  id               String              @id @default(cuid())
+  publisherId      String
+  kind             PublisherEndpointKind
+  webhookUrl       String?
+  webhookSecretHash String?
+  isEnabled        Boolean             @default(true)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  publisher Publisher @relation(fields: [publisherId], references: [id], onDelete: Cascade)
+
+  @@unique([publisherId, kind])
+}
+
+enum LeadChannel {
+  WHATSAPP
+  FORM
+  TOUR_REQUEST
+}
+
+enum LeadSource {
+  FEED
+  LIST
+  ASSISTANT
+  DETAIL
+  DEMO
+}
+
+enum LeadStatus {
+  PENDING
+  ACTIVE
+  CLOSED
+}
+
+enum ActivationReason {
+  PAID_BY_AGENCY
+  PREMIUM_USER
+  MANUAL_ADMIN
+}
+
+model Lead {
+  id                 String            @id @default(cuid())
+  userId             String?
+  listingId          String
+  publisherId        String?
+  channel            LeadChannel       @default(FORM)
+  source             LeadSource?
+  message            String?
+  status             LeadStatus        @default(PENDING)
+  activationReason   ActivationReason?
+  activatedAt        DateTime?
+  targetPublisherRef String?
+  externalLeadId     String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  listing   Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  publisher Publisher? @relation(fields: [publisherId], references: [id], onDelete: SetNull)
+  deliveryAttempts LeadDeliveryAttempt[]
+  leadEvents LeadEvent[]
+  messages Message[]
+  visits Visit[]
+
+  @@index([listingId])
+  @@index([status])
+  @@index([userId])
+  @@index([publisherId])
+}
+
+model LeadEvent {
+  id          String   @id @default(cuid())
+  leadId      String
+  type        String
+  payloadJson Json
+  createdAt   DateTime @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, createdAt])
+}
+
+enum MessageSenderType {
+  BUYER
+  PUBLISHER
+  SYSTEM
+}
+
+model Message {
+  id           String          @id @default(cuid())
+  leadId       String
+  senderType   MessageSenderType
+  body         String          @db.Text
+  blockedReason String?
+  createdAt    DateTime        @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, createdAt])
+}
+
+model Visit {
+  id          String   @id @default(cuid())
+  leadId      String
+  scheduledAt DateTime
+  status      String   @default("SCHEDULED")
+  createdAt   DateTime @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, scheduledAt])
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  eventName  String
+  userId     String?
+  payloadJson Json    @default("{}")
+  createdAt  DateTime @default(now())
+
+  @@index([eventName, createdAt])
+  @@index([userId, createdAt])
+}
+
+enum LeadDeliveryAttemptKind {
+  WEBHOOK
+  KITEPROP
+  CONSOLE
+}
+
+enum LeadDeliveryAttemptStatus {
+  OK
+  FAIL
+}
+
+model LeadDeliveryAttempt {
+  id                  String                    @id @default(cuid())
+  leadId              String
+  kind                LeadDeliveryAttemptKind
+  status              LeadDeliveryAttemptStatus
+  payloadStage        String?                   // PENDING | ACTIVE
+  httpStatus          Int?
+  responseBodySnippet String?                   @db.VarChar(500)
+  retries             Int                       @default(0)
+  createdAt           DateTime                  @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, createdAt])
+}
+
+model SyncWatermark {
+  source    String   @id
+  cursor    String?
+  updatedAt DateTime @updatedAt
+}
+
+model OutboxEvent {
+  id          String    @id @default(cuid())
+  type        String
+  payload     Json
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+  retries     Int       @default(0)
+  lastError   String?
+
+  @@index([processedAt])
+  @@index([type])
+}
+
+// --- Sprint 2: SavedSearch ---
+
+model SavedSearch {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String   @default("Búsqueda")
+  queryText   String?
+  filtersJson Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usersWithActive    User[]              @relation("UserActiveSearch")
+  alertSubscriptions AlertSubscription[]
+
+  @@index([userId, updatedAt])
+}
+
+// --- Sprint 4: ListingEvent + Alertas extendidas ---
+
+enum ListingEventType {
+  PRICE_CHANGED
+  STATUS_CHANGED
+  MEDIA_CHANGED
+  REFRESHED
+}
+
+model ListingEvent {
+  id        String          @id @default(cuid())
+  listingId String
+  type      ListingEventType
+  payload   Json
+  createdAt DateTime        @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, createdAt])
+  @@index([type, createdAt])
+}
+
+// --- Sprint 3: Alertas nuevas publicaciones ---
+
+enum AlertType {
+  NEW_LISTING
+  PRICE_DROP
+  BACK_ON_MARKET
+}
+
+model AlertSubscription {
+  id             String     @id @default(cuid())
+  userId         String
+  savedSearchId  String?
+  filtersJson    Json?      // snapshot si savedSearch se borra
+  type           AlertType  @default(NEW_LISTING)
+  isEnabled      Boolean    @default(true)
+  lastRunAt      DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  savedSearch   SavedSearch?   @relation(fields: [savedSearchId], references: [id], onDelete: SetNull)
+  deliveries    AlertDelivery[]
+
+  @@index([userId, isEnabled])
+}
+
+model AlertDelivery {
+  id             String     @id @default(cuid())
+  subscriptionId String
+  listingId      String
+  type           AlertType  @default(NEW_LISTING)
+  createdAt      DateTime   @default(now())
+
+  subscription AlertSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  listing     Listing           @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, listingId, type])
+  @@index([subscriptionId])
+}
+
+// --- Sprint 5: Notifications in-app ---
+
+enum NotificationType {
+  LEAD_SENT
+  ALERT_NEW_LISTING
+  ALERT_PRICE_DROP
+  ALERT_BACK_ON_MARKET
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  payload   Json?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+}
+
+// --- Sprint 6: Kiteprop integration ---
+
+model KitepropIntegration {
+  id                   String    @id @default(cuid())
+  userId               String
+  orgId                String?
+  baseUrl              String
+  leadCreatePath       String    @default("/leads")
+  authHeaderName       String    @default("X-API-Key")
+  authFormat           String    @default("ApiKey")
+  apiKeyEncrypted      String?
+  payloadTemplate      String?   @db.Text
+  payloadTemplatePending String? @db.Text
+  payloadTemplateActive  String? @db.Text
+  isEnabled            Boolean   @default(true)
+  lastTestOk          Boolean?
+  lastTestHttpStatus  Int?
+  lastTestAt          DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@unique([userId])
+  @@index([userId])
+  @@index([orgId])
+}
+
+model KitepropOpenApiSpec {
+  id         String   @id @default(cuid())
+  userId     String
+  orgId      String?
+  format     String   // JSON | YAML
+  contentText String @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId])
+  @@index([userId])
+  @@index([orgId])
+}
+
+// --- Sprint 10: Push a CRM (webhook + retries) ---
+
+enum CrmPushStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model CrmPushOutbox {
+  id            String       @id @default(cuid())
+  listingId     String
+  matchesCount  Int          @default(0)
+  topSearchIds  Json?        // string[]
+  status        CrmPushStatus @default(PENDING)
+  attempts      Int          @default(0)
+  nextAttemptAt DateTime?
+  lastError     String?      @db.VarChar(1000)
+  createdAt     DateTime     @default(now())
+
+  @@index([status, nextAttemptAt])
+  @@index([listingId])
+}
+
+// --- Sprint 11: MatchEvent (inbox simple matches found) ---
+
+model MatchEvent {
+  id            String   @id @default(cuid())
+  listingId     String
+  matchesCount  Int      @default(0)
+  source        String   @default("DEMO") // DEMO | CRM_WEBHOOK
+  createdAt     DateTime @default(now())
+
+  @@index([listingId])
+  @@index([createdAt])
+}
+
+// --- Reverse-matching: ListingMatchCandidate (persistencia candidatos) ---
+
+model ListingMatchCandidate {
+  id             String   @id @default(cuid())
+  listingId      String
+  savedSearchId  String
+  score          Float?   @default(1)
+  createdAt      DateTime @default(now())
+
+  @@unique([listingId, savedSearchId])
+  @@index([listingId])
+  @@index([savedSearchId, createdAt])
+}

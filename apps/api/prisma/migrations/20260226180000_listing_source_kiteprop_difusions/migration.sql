@@ -1,0 +1,4 @@
+-- AlterEnum: add Kiteprop difusion sources to ListingSource
+ALTER TYPE "ListingSource" ADD VALUE 'KITEPROP_DIFUSION_ZONAPROP';
+ALTER TYPE "ListingSource" ADD VALUE 'KITEPROP_DIFUSION_TOCTOC';
+ALTER TYPE "ListingSource" ADD VALUE 'KITEPROP_DIFUSION_ICASAS';

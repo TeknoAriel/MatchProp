@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* MatchProp Design System - Dual Theme (KiteProp hierarchy) */
+:root {
+  /* Light mode */
+  --mp-bg: #F8FAFC;
+  --mp-card: #FFFFFF;
+  --mp-foreground: #0F172A;
+  --mp-muted: #64748B;
+  --mp-accent: #2563EB;
+  --mp-accent-hover: #1D4ED8;
+  --mp-premium: #F59E0B;
+  --mp-premium-hover: #D97706;
+  --mp-border: #E2E8F0;
+  --mp-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+  --mp-shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+  --mp-radius-card: 20px;
+  --mp-radius-chip: 12px;
+}
+
+[data-theme='dark'] {
+  --mp-bg: #0B0E14;
+  --mp-card: #161B22;
+  --mp-foreground: #F1F5F9;
+  --mp-muted: #94A3B8;
+  --mp-accent: #3B82F6;
+  --mp-accent-hover: #60A5FA;
+  --mp-premium: #FBBF24;
+  --mp-premium-hover: #F59E0B;
+  --mp-border: #1F2937;
+  --mp-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+  --mp-shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.2);
+}
+
+body {
+  background: var(--mp-bg);
+  color: var(--mp-foreground);
+  font-feature-settings: 'rlig' 1, 'calt' 1;
+}
+
+/* Legacy compatibility */
+:root {
+  --foreground: var(--mp-foreground);
+  --background: var(--mp-bg);
+  --card-bg: var(--mp-card);
+  --chip-active-venta: #7c3aed;
+  --chip-active-alquiler: #f43f5e;
+  --chip-active-type: #0284c7;
+}
+
+@layer components {
+  .card-base {
+    background: var(--mp-card);
+    border-radius: var(--mp-radius-card);
+    box-shadow: var(--mp-shadow);
+    border: 1px solid var(--mp-border);
+  }
+  .card-hover {
+    transition: all 0.2s ease;
+  }
+  .card-hover:hover {
+    box-shadow: var(--mp-shadow-md);
+  }
+  .btn-accent {
+    background: var(--mp-accent);
+    color: white;
+  }
+  .btn-accent:hover {
+    background: var(--mp-accent-hover);
+  }
+  .btn-premium {
+    background: var(--mp-premium);
+    color: #1F2937;
+  }
+  .btn-premium:hover {
+    background: var(--mp-premium-hover);
+  }
+  .mp-card-gradient {
+    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
+  }
+}

@@ -1,0 +1,52 @@
+[
+  {
+    "id": "kp-001",
+    "title": "Depto 2 ambientes Palermo",
+    "description": "Luminoso, balcón",
+    "operation": "SALE",
+    "propertyType": "APARTMENT",
+    "price": 185000,
+    "currency": "USD",
+    "bedrooms": 2,
+    "bathrooms": 1,
+    "areaTotal": 65,
+    "lat": -34.581,
+    "lng": -58.422,
+    "address": "Palermo, CABA",
+    "publisherRef": "ag-001",
+    "photos": ["https://example.com/kp/1a.jpg", "https://example.com/kp/1b.jpg"],
+    "updatedAt": "2025-02-20T10:00:00Z"
+  },
+  {
+    "id": "kp-002",
+    "title": "Casa con jardín Nordelta",
+    "description": "Amplia, 3 dormitorios",
+    "operation": "RENT",
+    "propertyType": "HOUSE",
+    "price": 1200,
+    "currency": "USD",
+    "bedrooms": 3,
+    "bathrooms": 2,
+    "areaTotal": 120,
+    "lat": -34.42,
+    "lng": -58.68,
+    "address": "Nordelta, Tigre",
+    "publisherRef": "ag-002",
+    "photos": ["https://example.com/kp/2a.jpg"],
+    "updatedAt": "2025-02-19T14:30:00Z"
+  },
+  {
+    "id": "kp-003",
+    "title": "Local comercial Microcentro",
+    "operation": "SALE",
+    "propertyType": "OFFICE",
+    "price": 450000,
+    "currency": "USD",
+    "areaTotal": 80,
+    "address": "Microcentro, CABA",
+    "publisherRef": "ag-001",
+    "photos": [],
+    "status": "INACTIVE",
+    "updatedAt": "2025-02-18T09:00:00Z"
+  }
+]

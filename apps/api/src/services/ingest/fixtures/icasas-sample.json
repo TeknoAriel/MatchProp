@@ -1,0 +1,51 @@
+[
+  {
+    "codigo": "ic-001",
+    "titulo": "Casa 3 dormitorios Punta del Este",
+    "descripcion": "A dos cuadras de la playa",
+    "operacion": "venta",
+    "tipo": "casa",
+    "precio_usd": 320000,
+    "habitaciones": 3,
+    "banos": 2,
+    "metros_cuadrados": 150,
+    "latitud": -34.92,
+    "longitud": -54.95,
+    "direccion": "Calle de la Playa 100",
+    "localidad": "Punta del Este, Maldonado",
+    "agente_id": "ic-agency-1",
+    "activo": true,
+    "fecha_actualizacion": "2025-02-20T16:00:00Z",
+    "imagenes": [
+      "https://static.kiteprop.com/difusions/icasas/ic-001-1.jpg",
+      "https://static.kiteprop.com/difusions/icasas/ic-001-2.jpg"
+    ]
+  },
+  {
+    "codigo": "ic-002",
+    "titulo": "Apartamento 1 dorm Montevideo",
+    "operacion": "alquiler",
+    "tipo": "apartamento",
+    "precio_usd": 650,
+    "habitaciones": 1,
+    "banos": 1,
+    "metros_cuadrados": 45,
+    "localidad": "Pocitos, Montevideo",
+    "agente_id": "ic-agency-2",
+    "activo": true,
+    "fecha_actualizacion": "2025-02-19T11:00:00Z",
+    "imagenes": []
+  },
+  {
+    "codigo": "ic-003",
+    "titulo": "Oficina 200 m2 Zona Franca",
+    "operacion": "venta",
+    "tipo": "oficina",
+    "precio_usd": 280000,
+    "metros_cuadrados": 200,
+    "localidad": "Zona Franca, Montevideo",
+    "activo": false,
+    "fecha_actualizacion": "2025-02-18T09:00:00Z",
+    "imagenes": ["https://static.kiteprop.com/difusions/icasas/ic-003-1.jpg"]
+  }
+]
