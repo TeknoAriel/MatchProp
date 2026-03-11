@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@matchprop/shared'],
   reactStrictMode: true,
   devIndicators: false,
+  // Next 15.5: `next lint` está deprecado y falla por opciones removidas.
+  // Usamos ESLint vía `pnpm lint` (ESLint CLI) en CI.
+  eslint: { ignoreDuringBuilds: true },
   // Polling evita EMFILE (too many open files) en macOS
   webpack: (config, { dev }) => {
     if (dev) {
