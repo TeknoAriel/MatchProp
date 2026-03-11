@@ -362,6 +362,55 @@ test.describe('smoke:ux', () => {
     ).toBeVisible({ timeout: 5000 });
   });
 
+  test('smoke: chat y visits con lead ACTIVE — verifica título y placeholders', async ({
+    page,
+  }) => {
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(TEST_EMAIL);
+    await page.getByRole('button', { name: 'Enviar link a mi email' }).click();
+    await expect(page.getByText('Revisá tu correo')).toBeVisible({ timeout: 10000 });
+    const devLink = page.getByRole('link', { name: 'Abrir link de acceso (dev)' });
+    const href = await devLink.getAttribute('href');
+    await page.goto(href!, { waitUntil: 'domcontentloaded' });
+    await page.waitForURL(/\/(dashboard|feed)/, { timeout: 25000 });
+    await page.goto('/demo');
+    if (!(await page.getByRole('button', { name: 'Crear escenario demo' }).isVisible())) {
+      test.skip(true, 'Demo no habilitada');
+      return;
+    }
+    await page.getByRole('button', { name: 'Crear escenario demo' }).click();
+    await expect(
+      page.getByText('Listo').or(page.getByRole('link', { name: /Búsqueda guardada/ })).first()
+    ).toBeVisible({ timeout: 15000 });
+    await page.goto('/leads');
+    await expect(page.getByRole('heading', { name: /Mis consultas|Consultas/ })).toBeVisible({
+      timeout: 5000,
+    });
+    const chatLink = page.locator('a[href*="/chat"]').first();
+    const visitsLink = page.locator('a[href*="/visits"]').first();
+    if (await chatLink.isVisible()) {
+      await chatLink.click();
+      await page.waitForURL(/\/leads\/.*\/chat/, { timeout: 5000 }).catch(() => {});
+      await expect(
+        page
+          .getByRole('heading', { name: /Chat|Consultas/ })
+          .or(page.getByText(/mensaje|Escribí/))
+          .or(page.locator('input[placeholder*="mensaje"], textarea[placeholder*="mensaje"]'))
+      ).toBeVisible({ timeout: 5000 });
+    }
+    await page.goto('/leads');
+    if (await visitsLink.isVisible()) {
+      await visitsLink.click();
+      await page.waitForURL(/\/leads\/.*\/visits/, { timeout: 5000 }).catch(() => {});
+      await expect(
+        page
+          .getByRole('heading', { name: /Agenda|Visitas/ })
+          .or(page.getByText(/Agendar|Fecha/))
+          .or(page.locator('input[type="datetime-local"]'))
+      ).toBeVisible({ timeout: 5000 });
+    }
+  });
+
   test('no aparece WhatsApp ni wsp en la UI (anti-cierre)', async ({ page }) => {
     await page.goto('/feed/list');
     await page.waitForTimeout(1500);

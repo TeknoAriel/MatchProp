@@ -424,6 +424,7 @@ model Listing {
 
   @@unique([source, externalId])
   @@index([status, lastSeenAt])
+  @@index([status, lastSeenAt, id])
   @@index([source, status, lastSeenAt])
   @@index([publisherRef])
   @@index([publisherId])

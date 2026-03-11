@@ -357,7 +357,7 @@ function FeedPageContent() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center p-4">
+      <main className="min-h-screen flex flex-col items-center justify-center">
         <div className="max-w-md w-full">
           <div className="aspect-[4/3] bg-gray-200 rounded-xl animate-pulse" />
           <div className="mt-4 space-y-2">
@@ -376,77 +376,49 @@ function FeedPageContent() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col p-4 bg-[var(--mp-bg)]">
-      <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Link href="/assistant" className="px-3 py-2 rounded-xl text-sm font-medium btn-accent">
-            Buscar con asistente
-          </Link>
-          <Link
-            href="/search"
-            className="px-3 py-2 rounded-xl text-sm font-medium bg-[var(--mp-card)] text-[var(--mp-foreground)] border border-[var(--mp-border)] hover:opacity-90"
-          >
-            Buscar por filtros
-          </Link>
-        </div>
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
-          <h1 className="text-xl font-bold text-[var(--mp-foreground)]">{PRODUCT_NAME}</h1>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href="/feed/list"
-              className="px-3 py-2 text-sm rounded-xl bg-[var(--mp-card)] text-[var(--mp-foreground)] border border-[var(--mp-border)] hover:opacity-90 min-h-[48px] flex items-center"
-            >
-              Modo Lista
-            </Link>
-            <Link
-              href="/me/saved"
-              className="px-3 py-2 text-sm rounded-xl btn-premium min-h-[48px] flex items-center"
-            >
-              Listas favoritas
-            </Link>
-            <Link
-              href="/leads"
-              className="px-3 py-2 text-sm rounded-xl bg-[var(--mp-card)] text-[var(--mp-foreground)] border border-[var(--mp-border)] hover:opacity-90 min-h-[48px] flex items-center"
-            >
-              Mis consultas
-            </Link>
-          </div>
+    <main className="min-h-screen flex flex-col bg-[var(--mp-bg)]">
+      <div className="w-full flex-1 flex flex-col">
+        {/* Header: título + nav compacta */}
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-lg font-bold text-[var(--mp-foreground)]">{PRODUCT_NAME}</h1>
+          <nav className="flex items-center gap-3 text-xs text-[var(--mp-muted)]">
+            <Link href="/feed/list" className="hover:text-[var(--mp-foreground)] transition-colors">Lista</Link>
+            <Link href="/me/saved" className="hover:text-[var(--mp-foreground)] transition-colors">Favoritos</Link>
+            <Link href="/leads" className="hover:text-[var(--mp-foreground)] transition-colors">Consultas</Link>
+          </nav>
         </div>
 
+        {/* Barra de búsqueda (link al asistente) */}
+        <Link
+          href="/assistant"
+          className="flex items-center gap-3 mb-3 px-4 py-3 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] hover:border-[var(--mp-accent)]/40 transition-colors"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--mp-muted)] shrink-0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <span className="text-sm text-[var(--mp-muted)]">Buscar propiedades…</span>
+          <span className="ml-auto text-xs text-[var(--mp-accent)] font-medium">Asistente</span>
+        </Link>
+
         {toast && (
-          <div className="mb-4 p-3 rounded-xl bg-[var(--mp-premium)]/20 text-slate-800 border border-[var(--mp-premium)]/40 text-sm">
+          <div className="mb-3 p-3 rounded-xl bg-[var(--mp-premium)]/20 text-slate-800 border border-[var(--mp-premium)]/40 text-sm">
             {toast}
           </div>
         )}
 
         {hasActiveSearch === false && (
-          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-            <p className="text-amber-800 text-sm mb-2">Creá y guardá una búsqueda para filtrar.</p>
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href="/assistant"
-                className="px-3 py-2 bg-amber-200 text-amber-900 rounded-lg hover:bg-amber-300 text-sm font-medium"
-              >
-                Con asistente
-              </Link>
-              <Link
-                href="/feed"
-                className="px-3 py-2 bg-white border border-amber-300 text-amber-800 rounded-lg hover:bg-amber-100 text-sm"
-              >
-                Ver todo
-              </Link>
-            </div>
+          <div className="mb-3 p-3 rounded-xl bg-amber-50/60 border border-amber-200/60 text-sm text-amber-800">
+            Definí qué buscás para ver solo lo que te interesa.
+            <Link href="/search" className="ml-1 underline font-medium">Filtros</Link>
           </div>
         )}
 
         {fallbackUsed && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+          <div className="mb-3 p-3 rounded-xl bg-blue-50 border border-blue-200/60 text-sm text-blue-800">
             No hubo matches exactos, mostrando similares.
           </div>
         )}
 
         {!loading && (
-          <div className="mb-4 p-4 card-base">
+          <div className="mb-3">
             <FilterChips
               operationFilter={operationFilter}
               propertyTypeFilter={propertyTypeFilter}
@@ -665,56 +637,29 @@ function FeedPageContent() {
             )}
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center gap-4">
-            <p className="text-gray-500 text-lg">No hay más resultados con estos filtros.</p>
-            <p className="text-gray-400 text-sm">
+          <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 py-12">
+            <p className="text-[var(--mp-foreground)] font-medium">No hay más resultados</p>
+            <p className="text-sm text-[var(--mp-muted)] max-w-xs">
               {!usedFeedAll
-                ? 'Probá ver similares o el catálogo completo.'
-                : 'Ejecutá ingest:run para cargar más propiedades.'}
+                ? 'Probá ampliar filtros o ver el catálogo completo.'
+                : 'No quedan propiedades. Agregá más datos o cambiá la búsqueda.'}
             </p>
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3 mt-4 justify-center">
+            <div className="flex flex-wrap gap-2 mt-4 justify-center">
               {!usedFeedAll && (
                 <button
                   onClick={handleVerSimilares}
                   disabled={loading}
-                  className="px-4 py-2 bg-amber-600 text-white hover:bg-amber-700 rounded-lg font-medium disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl text-sm font-medium bg-[var(--mp-accent)] text-white disabled:opacity-50"
                 >
                   Ver similares
                 </button>
               )}
-              {!usedFeedAll && (
-                <button
-                  onClick={handleVerSimilares}
-                  disabled={loading}
-                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-medium disabled:opacity-50"
-                >
-                  Ver catálogo completo
-                </button>
-              )}
               <button
                 onClick={handleRestartFeed}
-                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium"
+                className="px-4 py-2 rounded-xl text-sm font-medium bg-[var(--mp-card)] border border-[var(--mp-border)] text-[var(--mp-foreground)]"
               >
-                Reiniciar feed
+                Reiniciar
               </button>
-              <Link
-                href="/me/saved"
-                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium text-center"
-              >
-                Ver favoritos
-              </Link>
-              <Link
-                href="/assistant"
-                className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-medium text-center"
-              >
-                Buscar con asistente
-              </Link>
-              <Link
-                href="/search"
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg font-medium text-center"
-              >
-                Buscar por filtros
-              </Link>
             </div>
           </div>
         )}
@@ -727,8 +672,8 @@ export default function FeedPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen p-4">
-          <div className="h-32 bg-slate-200 rounded-xl animate-pulse max-w-lg mx-auto" />
+        <main className="min-h-screen flex items-center justify-center">
+          <div className="h-32 w-full max-w-2xl bg-slate-200 rounded-xl animate-pulse" />
         </main>
       }
     >

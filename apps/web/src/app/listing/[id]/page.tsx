@@ -7,8 +7,10 @@ import { getListingImageUrl } from '../../../lib/demo-image';
 import ShareModal from '../../../components/ShareModal';
 import ReverseMatchingMiniDashboard from '../../../components/ReverseMatchingMiniDashboard';
 import InquiryModal from '../../../components/InquiryModal';
+import PremiumGraceBanner from '../../../components/PremiumGraceBanner';
 
 const API_BASE = '/api';
+const GRACE_PERIOD = process.env.NEXT_PUBLIC_PREMIUM_GRACE_PERIOD === '1';
 
 interface ListingDetailsExtra {
   amenities?: string[];
@@ -75,6 +77,7 @@ export default function ListingDetailPage() {
   const [inquiryOpen, setInquiryOpen] = useState(false);
   const [isPremium, setIsPremium] = useState<boolean | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [showGraceToast, setShowGraceToast] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -286,6 +289,9 @@ export default function ListingDetailPage() {
             {toast}
           </div>
         )}
+        {showGraceToast && (
+          <PremiumGraceBanner variant="toast" onDismiss={() => setShowGraceToast(false)} />
+        )}
         <Link href="/feed" className="text-sm text-blue-600 hover:underline mb-4 block">
           ← Volver al feed
         </Link>
@@ -378,7 +384,7 @@ export default function ListingDetailPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (isPremium === false) {
+                    if (isPremium === false && !GRACE_PERIOD) {
                       setToast('Necesitás ser premium para compartir propiedades.');
                       setTimeout(() => setToast(null), 4000);
                       return;
@@ -389,6 +395,10 @@ export default function ListingDetailPage() {
                         : '';
                     setShareUrl(url);
                     setShareOpen(true);
+                    if (GRACE_PERIOD && isPremium === false) {
+                      setShowGraceToast(true);
+                      setTimeout(() => setShowGraceToast(false), 8000);
+                    }
                   }}
                   className="px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200"
                 >

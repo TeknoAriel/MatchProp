@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 
 const API_BASE = '/api';
+const GRACE_PERIOD = process.env.NEXT_PUBLIC_PREMIUM_GRACE_PERIOD === '1';
 
 type Message = {
   id: string;
@@ -158,6 +159,11 @@ export default function LeadChatPage() {
       </header>
 
       <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full p-4">
+        {GRACE_PERIOD && (
+          <p className="text-xs text-slate-700 bg-[var(--mp-premium)]/15 border border-[var(--mp-premium)]/40 rounded-xl px-3 py-2 mb-3">
+            Modo prueba: chat premium habilitado. <Link href="/me/premium" className="underline font-medium">Ver planes</Link>
+          </p>
+        )}
         <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-3">
           No compartas email, teléfono ni URLs (serán bloqueados).
         </p>

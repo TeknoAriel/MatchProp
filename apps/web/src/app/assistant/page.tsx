@@ -27,61 +27,10 @@ function mapFiltersToPreferenceBody(f: SearchFilters): Record<string, unknown> {
   return body;
 }
 
+/** Solo 1–2 ejemplos para invitar a tipear; el buscador es conversacional. */
 const EXAMPLES = [
-  'Comprar depto 2 dorm Rosario hasta 120k USD',
-  'Casa Palermo con pileta hasta 250k USD',
-  'Alquiler monoambiente CABA max 500k ARS',
   'Venta departamento 3 ambientes Belgrano',
-  'Alquiler casa Recoleta',
-  'Comprar terreno Córdoba hasta 80k USD',
-  'Venta casa 4 ambientes San Isidro',
-  'Alquiler depto 2 dorm Villa Crespo max 300 USD',
-  'Comprar oficina Microcentro hasta 150k USD',
-  'Alquiler monoambiente Caballito',
-  'Venta departamento 3 dorm con balcón Nuñez',
-  'Comprar casa con quincho Tigre hasta 200k',
-  'Alquiler 2 ambientes Palermo Soho',
-  'Venta terreno Urbano Mendoza',
-  'Alquiler casa 3 dorm La Lucila',
-  'Comprar depto 1 ambiente para invertir',
-  'Venta casa con pileta Pilar',
-  'Alquiler loft Puerto Madero',
-  'Comprar departamento 2 amb CABA zona norte',
-  'Alquiler depto con cochera Belgrano',
-  'Venta casa chorizo restaurada San Telmo',
-  'Comprar terreno en country Escobar',
-  'Alquiler 3 ambientes Palermo Hollywood',
-  'Venta depto 4 ambientes Recoleta',
-  'Comprar casa hasta 100k USD zona sur',
-  'Alquiler monoambiente Recoleta max 400 USD',
-  'Venta terreno rural Buenos Aires',
-  'Comprar departamento 2 dorm Núñez',
-  'Alquiler casa con jardín Martínez',
-  'Venta oficina en torre corporativa',
-  'Comprar depto 1 dorm para estudiantes',
-  'Alquiler 2 ambientes Caballito con expensas bajas',
-  'Venta casa 5 ambientes Barrio Norte',
-  'Comprar terreno con servicios La Plata',
-  'Alquiler depto amoblado Palermo',
-  'Venta departamento con amenities CABA',
-  'Comprar casa de campo Escobar',
-  'Alquiler monoambiente Palermo bajo',
-  'Venta depto 3 ambientes con terraza',
-  'Comprar terreno en loteo Nordelta',
-  'Alquiler casa 4 dorm San Isidro',
-  'Venta casa quinta Pilar',
-  'Comprar depto 2 dorm hasta 90k USD',
-  'Alquiler loft en barrio cerrado',
-  'Venta departamento piso alto Palermo',
-  'Comprar casa con piscina hasta 180k',
-  'Alquiler 3 ambientes Belgrano C',
-  'Venta terreno comercial Avellaneda',
-  'Comprar depto nuevo en pozo CABA',
-  'Alquiler casa 2 dorm Vicente López',
-  'Venta departamento 1 ambiente Retiro',
-  'Comprar oficina 50 m2 Microcentro',
-  'Alquiler depto 3 ambientes Colegiales',
-  'Venta casa estilo chalet San Fernando',
+  'Alquiler casa Palermo hasta 500k',
 ];
 
 const showDebug =
@@ -267,35 +216,32 @@ export default function AssistantPage() {
       const filters = data.filters ?? {};
       try {
         if (Object.keys(filters).length > 0) {
-          const { items, nextCursor, finalMode } = await fetchPreview(filters, null, 'STRICT');
-          setPreviewItems(items);
-          setPreviewNextCursor(nextCursor);
-          setFallbackMode(finalMode);
-          setPreviewLoaded(true);
-          // Si STRICT devolvió 0, intentar RELAX/FEED en background para mostrar algo
-          if (items.length === 0) {
-            const {
-              items: fallbackItems,
-              nextCursor: fallbackNext,
-              finalMode: fallbackMode,
-            } = await fetchPreview(filters, null, 'RELAX');
-            if (fallbackItems.length > 0) {
-              setPreviewItems(fallbackItems);
-              setPreviewNextCursor(fallbackNext);
-              setFallbackMode(fallbackMode);
+          // Buscar en paralelo: exactos (STRICT) y catálogo (FEED) para mostrar siempre algo
+          const [strictResult, feedResult] = await Promise.all([
+            fetchPreview(filters, null, 'STRICT'),
+            fetchPreview(filters, null, 'FEED'),
+          ]);
+          if (strictResult.items.length > 0) {
+            setPreviewItems(strictResult.items);
+            setPreviewNextCursor(strictResult.nextCursor);
+            setFallbackMode(strictResult.finalMode);
+          } else if (feedResult.items.length > 0) {
+            const relaxResult = await fetchPreview(filters, null, 'RELAX');
+            if (relaxResult.items.length > 0) {
+              setPreviewItems(relaxResult.items);
+              setPreviewNextCursor(relaxResult.nextCursor);
+              setFallbackMode(relaxResult.finalMode);
             } else {
-              const { items: feedItems, nextCursor: feedNext } = await fetchPreview(
-                filters,
-                null,
-                'FEED'
-              );
-              if (feedItems.length > 0) {
-                setPreviewItems(feedItems);
-                setPreviewNextCursor(feedNext);
-                setFallbackMode('FEED');
-              }
+              setPreviewItems(feedResult.items);
+              setPreviewNextCursor(feedResult.nextCursor);
+              setFallbackMode('FEED');
             }
+          } else {
+            setPreviewItems(feedResult.items);
+            setPreviewNextCursor(feedResult.nextCursor);
+            setFallbackMode('FEED');
           }
+          setPreviewLoaded(true);
           const pref = mapFiltersToPreferenceBody(filters);
           if (Object.keys(pref).length > 0) {
             fetch(`${API_BASE}/preferences`, {
@@ -306,7 +252,6 @@ export default function AssistantPage() {
             }).catch(() => {});
           }
         } else {
-          // Filtros vacíos: cargar catálogo completo para mostrar algo
           const { items, nextCursor: nc } = await fetchPreview({}, null, 'FEED');
           setPreviewItems(items);
           setPreviewNextCursor(nc);
@@ -314,8 +259,32 @@ export default function AssistantPage() {
           setPreviewLoaded(true);
         }
       } finally {
-        // Siempre mostrar la sección de resultados tras una búsqueda exitosa
         setPreviewLoaded(true);
+      }
+      // Activar búsqueda automáticamente para que Match y Lista funcionen sin tener que guardar
+      try {
+        const saveRes = await fetch(`${API_BASE}/searches`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            name: q.slice(0, 50) || 'Búsqueda actual',
+            text: q || undefined,
+            filters: data.filters ?? {},
+          }),
+        });
+        if (saveRes.ok) {
+          const { id } = (await saveRes.json()) as { id: string };
+          await fetch(`${API_BASE}/me/active-search`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ searchId: id }),
+          });
+          setSavedId(id);
+        }
+      } catch {
+        // No bloquear si falla el guardado automático
       }
     } catch {
       setError('Error de conexión');
@@ -560,53 +529,24 @@ export default function AssistantPage() {
         {showDebug && (
           <p className="text-xs text-gray-400 mb-2">Assistant UI build: {ASSISTANT_BUILD}</p>
         )}
-        <div className="flex flex-wrap gap-2 mb-6">
-          <span className="px-3 py-1.5 rounded-xl text-sm font-semibold btn-accent shadow-sm">
-            Por texto
-          </span>
-          <Link
-            href="/search"
-            className="px-3 py-1.5 rounded-xl text-sm font-medium bg-[var(--mp-bg)] text-[var(--mp-foreground)] hover:bg-slate-200/80 transition-colors"
-          >
+        <div className="flex items-center gap-2 text-sm text-[var(--mp-muted)] mb-1">
+          <Link href="/search" className="hover:text-[var(--mp-foreground)]">
             Por filtros
           </Link>
-          <Link
-            href="/search/map"
-            className="px-3 py-1.5 rounded-xl text-sm font-medium bg-[var(--mp-bg)] text-[var(--mp-foreground)] hover:bg-slate-200/80 transition-colors"
-          >
-            Por mapa
+          <span>·</span>
+          <Link href="/search/map" className="hover:text-[var(--mp-foreground)]">
+            Mapa
           </Link>
-          <Link
-            href="/searches"
-            className="px-3 py-1.5 rounded-xl text-sm font-medium text-[var(--mp-muted)] hover:text-[var(--mp-foreground)] transition-colors"
-          >
+          <span>·</span>
+          <Link href="/searches" className="hover:text-[var(--mp-foreground)]">
             Mis búsquedas
           </Link>
         </div>
 
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Buscar propiedades</h1>
-        <p className="text-slate-600 mb-6">
-          Escribí qué buscás y hacé clic en Buscar. Te mostramos resultados al instante.
+        <h1 className="text-2xl font-bold text-[var(--mp-foreground)] mb-1">Buscar</h1>
+        <p className="text-[var(--mp-muted)] text-sm mb-6">
+          Escribí qué buscás (zona, tipo, precio). Resultados al instante.
         </p>
-
-        <div className="mb-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
-            Ejemplos — hacé clic para buscar
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {EXAMPLES.map((ex) => (
-              <button
-                key={ex}
-                type="button"
-                onClick={() => handleExampleClick(ex)}
-                disabled={loading}
-                className="px-3 py-1.5 text-sm bg-white rounded-full hover:bg-slate-100 border border-slate-200 transition-colors disabled:opacity-50 shadow-sm"
-              >
-                {ex}
-              </button>
-            ))}
-          </div>
-        </div>
 
         <div className="mb-4">
           <AssistantChatInput
@@ -624,6 +564,24 @@ export default function AssistantPage() {
             maxLength={500}
           />
         </div>
+        {EXAMPLES.length > 0 && (
+          <p className="text-xs text-slate-500 mb-4">
+            Ejemplos:{' '}
+            {EXAMPLES.map((ex, i) => (
+              <span key={ex}>
+                {i > 0 && ' · '}
+                <button
+                  type="button"
+                  onClick={() => handleExampleClick(ex)}
+                  disabled={loading}
+                  className="text-[var(--mp-accent)] hover:underline disabled:opacity-50"
+                >
+                  {ex}
+                </button>
+              </span>
+            ))}
+          </p>
+        )}
         {voiceError && (
           <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200">
             <p className="text-amber-800 text-sm">{voiceError}</p>
@@ -656,31 +614,28 @@ export default function AssistantPage() {
         )}
 
         {result && (
-          <div className="mt-8 p-5 rounded-2xl bg-white shadow-md border border-slate-100 space-y-4">
+          <div className="mt-6 p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] shadow-sm space-y-3">
             {filtersEmptyButExplained ? (
-              <p className="text-sm text-red-600">
-                No se detectaron filtros. La explicación indica criterios pero los filtros llegaron
-                vacíos.
-              </p>
+              <p className="text-sm text-red-600">No se detectaron filtros.</p>
             ) : (
-              <p className="text-sm text-slate-700">{result.explanation}</p>
+              <p className="text-sm text-[var(--mp-foreground)]">{result.explanation}</p>
             )}
             {showWarning &&
               result.warnings?.map((w, i) => (
-                <p key={i} className="text-amber-600 text-sm">
+                <p key={i} className="text-amber-600 text-xs">
                   {w}
                 </p>
               ))}
 
             {hasFilters && (
               <>
-                <div className="mb-2 flex justify-between items-center">
-                  <span className="text-sm font-medium">Resumen</span>
-                  <div className="flex gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm text-[var(--mp-muted)]">{humanSummary}</p>
+                  <div className="flex gap-1 shrink-0">
                     <button
                       type="button"
                       onClick={copyFilters}
-                      className="text-xs px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                      className="text-xs px-2 py-1 rounded-lg bg-[var(--mp-bg)] text-[var(--mp-muted)] hover:text-[var(--mp-foreground)]"
                     >
                       Copiar
                     </button>
@@ -688,53 +643,48 @@ export default function AssistantPage() {
                       <button
                         type="button"
                         onClick={() => setShowJson(!showJson)}
-                        className="text-xs px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                        className="text-xs px-2 py-1 rounded-lg bg-[var(--mp-bg)] text-[var(--mp-muted)]"
                       >
-                        {showJson ? 'Ocultar detalles' : 'Ver detalles técnicos'}
+                        {showJson ? 'JSON' : 'JSON'}
                       </button>
                     )}
                   </div>
                 </div>
-                {showJson ? (
-                  <pre className="text-xs bg-white p-3 rounded overflow-auto">
+                {showJson && (
+                  <pre className="text-xs bg-[var(--mp-bg)] p-3 rounded-lg overflow-auto">
                     {JSON.stringify(result.filters, null, 2)}
                   </pre>
-                ) : (
-                  <p className="text-sm text-gray-600 bg-white p-3 rounded">{humanSummary}</p>
                 )}
 
-                <div className="flex flex-wrap gap-3 items-center mt-4">
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-[var(--mp-border)]">
+                  {/* Lista y Match siempre visibles después de buscar; Guardar y Alertas opcionales */}
+                  <Link
+                    href="/feed/list"
+                    className="px-4 py-2 rounded-xl text-sm font-medium bg-[var(--mp-accent)] text-white hover:opacity-90"
+                  >
+                    Ver listado
+                  </Link>
+                  <Link
+                    href="/feed"
+                    className="px-4 py-2 rounded-xl text-sm font-medium bg-[var(--mp-bg)] text-[var(--mp-foreground)] border border-[var(--mp-border)]"
+                  >
+                    Match
+                  </Link>
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-medium shadow-sm hover:shadow disabled:opacity-50 transition-all"
+                    className="px-4 py-2 rounded-xl text-sm font-medium bg-[var(--mp-bg)] text-[var(--mp-foreground)] border border-[var(--mp-border)] disabled:opacity-50"
                   >
-                    {saving ? 'Guardando...' : 'Guardar búsqueda'}
+                    {saving ? '...' : 'Guardar'}
                   </button>
                   <button
                     onClick={handleActivateAlerts}
                     disabled={!savedId}
-                    title={!savedId ? 'Guardá la búsqueda primero para activar alertas' : undefined}
-                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 disabled:opacity-50 transition-colors"
+                    title={!savedId ? 'Guardá primero para activar alertas' : undefined}
+                    className="px-4 py-2 rounded-xl text-sm font-medium bg-[var(--mp-bg)] text-[var(--mp-foreground)] border border-[var(--mp-border)] disabled:opacity-50"
                   >
-                    Activar alertas
+                    Alertas
                   </button>
-                  {savedId && (
-                    <div className="flex gap-1 p-0.5 bg-slate-100 rounded-xl">
-                      <Link
-                        href="/feed"
-                        className="px-3 py-1.5 text-sm font-medium rounded-lg bg-white shadow text-slate-800"
-                      >
-                        Ver como Match
-                      </Link>
-                      <Link
-                        href="/feed/list"
-                        className="px-3 py-1.5 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition-colors"
-                      >
-                        Ver como lista
-                      </Link>
-                    </div>
-                  )}
                 </div>
               </>
             )}
@@ -754,7 +704,7 @@ export default function AssistantPage() {
               </p>
             )}
 
-            <div className="mb-4 p-4 bg-white rounded-xl shadow-sm border border-slate-100/80">
+            <div className="mb-4 p-3 rounded-xl bg-[var(--mp-card)] border border-[var(--mp-border)]">
               <FilterChips
                 operationFilter={operationFilter}
                 propertyTypeFilter={propertyTypeFilter}
@@ -777,23 +727,7 @@ export default function AssistantPage() {
               />
             </div>
 
-            <h2 className="text-lg font-bold text-slate-900 mb-4">Resultados</h2>
-            {savedId && previewItems.length > 0 && (
-              <div className="flex gap-1 p-0.5 bg-slate-100 rounded-xl w-fit mb-4">
-                <Link
-                  href="/feed"
-                  className="px-3 py-1.5 text-sm font-medium rounded-lg bg-white shadow text-slate-800"
-                >
-                  Ver como Match
-                </Link>
-                <Link
-                  href="/feed/list"
-                  className="px-3 py-1.5 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition-colors"
-                >
-                  Ver como lista
-                </Link>
-              </div>
-            )}
+            <h2 className="text-lg font-semibold text-[var(--mp-foreground)] mb-4">Resultados</h2>
             {previewItems.length === 0 ? (
               <div className="py-6 space-y-4">
                 <p className="text-slate-600 text-sm">
@@ -804,6 +738,7 @@ export default function AssistantPage() {
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <button
+                    type="button"
                     onClick={() => handlePreview(null, 'RELAX')}
                     disabled={loadingPreview}
                     className="px-4 py-2 bg-amber-600 text-white rounded-xl font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors flex items-center gap-2"
@@ -811,13 +746,14 @@ export default function AssistantPage() {
                     {loadingPreview ? (
                       <>
                         <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Buscando similares...
+                        Buscando...
                       </>
                     ) : (
                       'Ver similares'
                     )}
                   </button>
                   <button
+                    type="button"
                     onClick={() => handlePreview(null, 'FEED')}
                     disabled={loadingPreview}
                     className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 disabled:opacity-50 transition-colors"
@@ -825,8 +761,14 @@ export default function AssistantPage() {
                     Ver catálogo completo
                   </button>
                   <Link
-                    href="/feed/list?feed=all"
-                    className="px-4 py-2 bg-blue-100 text-blue-800 rounded-xl font-medium hover:bg-blue-200 transition-colors inline-block"
+                    href="/feed/list"
+                    className="px-4 py-2 rounded-xl font-medium bg-[var(--mp-accent)] text-white hover:opacity-90 inline-block"
+                  >
+                    Ver listado
+                  </Link>
+                  <Link
+                    href="/feed"
+                    className="px-4 py-2 bg-[var(--mp-bg)] text-[var(--mp-foreground)] border border-[var(--mp-border)] rounded-xl font-medium hover:bg-slate-200 inline-block"
                   >
                     Ir a Match
                   </Link>

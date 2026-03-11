@@ -2,42 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
-/* MatchProp Design System - Dual Theme (KiteProp hierarchy) */
+/* MatchProp Design System — Minimalista, amigable (usuarios 25–70 años) */
 :root {
-  /* Light mode */
-  --mp-bg: #F8FAFC;
+  /* Light mode: colores suaves, alta legibilidad */
+  --mp-bg: #F5F7FA;
   --mp-card: #FFFFFF;
-  --mp-foreground: #0F172A;
+  --mp-foreground: #1E293B;
   --mp-muted: #64748B;
-  --mp-accent: #2563EB;
-  --mp-accent-hover: #1D4ED8;
+  --mp-accent: #0EA5E9;
+  --mp-accent-hover: #0284C7;
   --mp-premium: #F59E0B;
   --mp-premium-hover: #D97706;
   --mp-border: #E2E8F0;
-  --mp-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
-  --mp-shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.06);
-  --mp-radius-card: 20px;
-  --mp-radius-chip: 12px;
+  --mp-shadow: 0 2px 8px -2px rgb(0 0 0 / 0.06), 0 4px 12px -4px rgb(0 0 0 / 0.04);
+  --mp-shadow-md: 0 8px 24px -4px rgb(0 0 0 / 0.08), 0 4px 12px -2px rgb(0 0 0 / 0.04);
+  --mp-radius-card: 16px;
+  --mp-radius-chip: 10px;
 }
 
 [data-theme='dark'] {
-  --mp-bg: #0B0E14;
-  --mp-card: #161B22;
-  --mp-foreground: #F1F5F9;
+  --mp-bg: #0F172A;
+  --mp-card: #1E293B;
+  --mp-foreground: #F8FAFC;
   --mp-muted: #94A3B8;
-  --mp-accent: #3B82F6;
-  --mp-accent-hover: #60A5FA;
+  --mp-accent: #38BDF8;
+  --mp-accent-hover: #7DD3FC;
   --mp-premium: #FBBF24;
   --mp-premium-hover: #F59E0B;
-  --mp-border: #1F2937;
-  --mp-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2);
-  --mp-shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.2);
+  --mp-border: #334155;
+  --mp-shadow: 0 2px 8px -2px rgb(0 0 0 / 0.3), 0 4px 12px -4px rgb(0 0 0 / 0.2);
+  --mp-shadow-md: 0 8px 24px -4px rgb(0 0 0 / 0.4), 0 4px 12px -2px rgb(0 0 0 / 0.2);
+}
+
+html {
+  font-size: 16px;
 }
 
 body {
   background: var(--mp-bg);
   color: var(--mp-foreground);
   font-feature-settings: 'rlig' 1, 'calt' 1;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Legacy compatibility */

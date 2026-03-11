@@ -15,8 +15,8 @@ const config: Config = {
           card: 'var(--mp-card)',
           foreground: 'var(--mp-foreground)',
           muted: 'var(--mp-muted)',
-          accent: '#2563EB',
-          premium: '#F59E0B',
+          accent: 'var(--mp-accent)',
+          premium: 'var(--mp-premium)',
           border: 'var(--mp-border)',
         },
         kiteprop: {

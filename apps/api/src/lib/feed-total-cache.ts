@@ -4,7 +4,8 @@
  */
 
 const TTL_MS = 30_000;
-const DEFAULT_MAX_ENTRIES = 10_000;
+// Escalabilidad: 100k+ usuarios. Configurable via FEED_CACHE_MAX_ENTRIES.
+const DEFAULT_MAX_ENTRIES = Number(process.env.FEED_CACHE_MAX_ENTRIES) || 100_000;
 
 type CacheEntry = { total: number; expiresAt: number; lastAccess: number };
 

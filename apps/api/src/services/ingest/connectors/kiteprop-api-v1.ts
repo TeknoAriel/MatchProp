@@ -25,7 +25,7 @@ export function createKitepropApiV1Connector(): SourceConnector | null {
   return {
     source: 'KITEPROP_API' as ListingSource,
     fetchBatch: async () => {
-      // TODO: Implementar cuando doc API v1 esté disponible
+      // Pendiente: doc Kiteprop API v1 no disponible. Usar KITEPROP_EXTERNALSITE.
       throw new Error(
         'Kiteprop API v1 not configured: doc unavailable. Use KITEPROP_EXTERNALSITE.'
       );

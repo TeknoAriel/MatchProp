@@ -1,15 +1,13 @@
-# MatchProp Monorepo
+# MatchProp
 
-Monorepo con pnpm + TypeScript.
+Buscá propiedades deslizando. Match tipo Tinder, listas, alertas y consultas directas con inmobiliarias.
 
-## Probar la app (rápido)
+## Inicio rápido
 
-1. Abrí **Docker Desktop**.
-2. Doble clic en **`iniciar.command`** (o en Terminal: `pnpm iniciar`).
-3. Esperá 2–3 minutos. Se abre el navegador.
-4. Login: **smoke-ux@matchprop.com** → "Abrir link de acceso (dev)".
-
-Ver **[INSTRUCCIONES.md](INSTRUCCIONES.md)** para más detalles.
+1. **Docker Desktop** en ejecución.
+2. `pnpm dev:up` (o `pnpm start` / `iniciar.command`).
+3. Esperá 2–3 min. Se abre http://localhost:3000/login.
+4. Usuario demo: **smoke-ux@matchprop.com** → "Abrir link de acceso (dev)".
 
 ---
 
@@ -17,12 +15,15 @@ Ver **[INSTRUCCIONES.md](INSTRUCCIONES.md)** para más detalles.
 
 ```
 apps/
-  api/        → Node + Fastify + Prisma (puerto 3001)
-  mobile/     → React Native Expo
+  web/        → Next.js 15 (puerto 3000) — App principal
+  api/        → Fastify + Prisma (puerto 3001)
   admin/      → Next.js (puerto 3002)
+  mobile/     → React Native Expo
 packages/
   shared/     → Tipos y utilidades compartidas
 ```
+
+Documentación: [ARCHITECTURE.md](docs/ARCHITECTURE.md) | [DEPLOY.md](docs/DEPLOY.md) | [SCALABILITY.md](docs/SCALABILITY.md)
 
 ## Requisitos
 
@@ -78,7 +79,7 @@ pnpm run pre-deploy:verify  # Build + typecheck + test:all
 pnpm smoke:ux               # E2E (con servicios levantados)
 ```
 
-Ver **[docs/PROD.md](docs/PROD.md)** para checklist pre-deploy y **[docs/SPRINT_SIGUIENTE_100_OPERATIVO.md](docs/SPRINT_SIGUIENTE_100_OPERATIVO.md)** para el plan por etapas hasta deploy 100% operativo.
+Ver **[docs/PROD.md](docs/PROD.md)** para checklist pre-deploy y **[docs/DEPLOY.md](docs/DEPLOY.md)** para producción y beta.
 
 ### Lint y formato
 

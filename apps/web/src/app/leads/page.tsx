@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import HacersePremiumButton from '../../components/HacersePremiumButton';
 import VisitScheduleModal from '../../components/VisitScheduleModal';
+import PremiumGraceBanner from '../../components/PremiumGraceBanner';
 
 const API_BASE = '/api';
+const GRACE_PERIOD = process.env.NEXT_PUBLIC_PREMIUM_GRACE_PERIOD === '1';
 
 type LastDelivery = {
   kind: string;
@@ -46,9 +48,11 @@ export default function LeadsPage() {
   const [premiumUntil, setPremiumUntil] = useState<string | null>(null);
   const [activatingId, setActivatingId] = useState<string | null>(null);
   const [visitModalLeadId, setVisitModalLeadId] = useState<string | null>(null);
+  const [showGraceToast, setShowGraceToast] = useState(false);
   const router = useRouter();
 
   const isPremium = premiumUntil && new Date(premiumUntil) > new Date();
+  const canActivate = isPremium || GRACE_PERIOD;
 
   useEffect(() => {
     Promise.all([
@@ -88,6 +92,10 @@ export default function LeadsPage() {
       setLeads((prev) =>
         prev.map((l) => (l.id === leadId ? { ...l, status: data.status ?? 'ACTIVE' } : l))
       );
+      if (GRACE_PERIOD && !isPremium) {
+        setShowGraceToast(true);
+        setTimeout(() => setShowGraceToast(false), 8000);
+      }
     } catch {
       setLeads((prev) => prev);
     } finally {
@@ -107,8 +115,18 @@ export default function LeadsPage() {
   }
 
   return (
-    <main className="min-h-screen p-4">
-      <div className="max-w-lg mx-auto">
+    <main className="min-h-screen">
+      <div className="w-full">
+        {GRACE_PERIOD && (
+          <div className="mb-4 p-3 rounded-xl bg-[var(--mp-premium)]/15 border border-[var(--mp-premium)]/40 text-sm text-slate-800">
+            <p>
+              <strong>Modo prueba:</strong> funciones premium habilitadas por 3–6 meses sin límites.{' '}
+              <Link href="/me/premium" className="underline font-medium">
+                Ver planes
+              </Link>
+            </p>
+          </div>
+        )}
         <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
           <h1 className="text-xl font-bold text-slate-900">Mis consultas</h1>
           <div className="flex gap-2 flex-wrap">
@@ -262,18 +280,28 @@ export default function LeadsPage() {
                   </Link>
                 </div>
                 {lead.status === 'PENDING' && (
-                  <div className="p-3 border-t bg-amber-50/50">
-                    {isPremium ? (
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleActivate(lead.id);
-                        }}
-                        disabled={!!activatingId}
-                        className="px-3 py-1.5 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 disabled:opacity-50"
-                      >
-                        {activatingId === lead.id ? 'Activando...' : 'Activar ahora'}
-                      </button>
+                  <div className="p-3 border-t bg-amber-50/50 space-y-2">
+                    {canActivate ? (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleActivate(lead.id);
+                          }}
+                          disabled={!!activatingId}
+                          className="px-3 py-1.5 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 disabled:opacity-50"
+                        >
+                          {activatingId === lead.id ? 'Activando...' : 'Activar ahora'}
+                        </button>
+                        {GRACE_PERIOD && !isPremium && (
+                          <p className="text-xs text-amber-800">
+                            Función premium. Por ahora: período de prueba sin límites (3–6 meses).{' '}
+                            <Link href="/me/premium" className="underline font-medium">
+                              Ver planes
+                            </Link>
+                          </p>
+                        )}
+                      </>
                     ) : (
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm text-amber-800">
@@ -312,6 +340,9 @@ export default function LeadsPage() {
           </div>
         )}
 
+        {showGraceToast && (
+          <PremiumGraceBanner variant="toast" onDismiss={() => setShowGraceToast(false)} />
+        )}
         {visitModalLeadId && (
           <VisitScheduleModal
             open={!!visitModalLeadId}

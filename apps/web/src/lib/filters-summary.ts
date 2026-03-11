@@ -13,7 +13,7 @@ export function filtersToHumanSummary(f: SearchFilters | null | undefined): stri
   const parts: string[] = [];
 
   if (f.operationType) {
-    parts.push(f.operationType === 'SALE' ? 'Compra' : 'Alquiler');
+    parts.push(f.operationType === 'SALE' ? 'Venta' : 'Alquiler');
   }
 
   if (f.propertyType?.length) {

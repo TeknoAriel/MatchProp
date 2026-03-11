@@ -1,99 +1,99 @@
 #!/usr/bin/env bash
+# Arranque completo desde cero: deps, Docker, DB, build, API + Web.
+# Un solo comando para dejar todo funcionando.
 set -e
 cd "$(dirname "$0")/.."
 
-# macOS: evitar EMFILE (too many open files) que rompe Next.js
 [ "$(uname)" = "Darwin" ] && ulimit -n 10240 2>/dev/null || true
 
 echo "=== MatchProp dev-up ==="
-
 mkdir -p .logs
 
-echo "1. Matando procesos en 3000/3001..."
+# 0. Dependencias (obligatorio para que next/build existan)
+echo "0. Dependencias..."
+pnpm install
+
+# 1. Liberar puertos
+echo "1. Liberando 3000/3001..."
+pkill -f "next" 2>/dev/null || true
 for port in 3000 3001; do
-  pid=$(lsof -ti:$port 2>/dev/null || true)
-  if [ -n "$pid" ]; then
+  for _ in 1 2 3; do
+    pid=$(lsof -ti:$port 2>/dev/null || true)
+    [ -z "$pid" ] && break
     kill -9 $pid 2>/dev/null || true
-    sleep 1
-  fi
+    sleep 2
+  done
 done
+sleep 2
 
-echo "2. Docker reset limpio..."
+# 2. Docker + DB
+echo "2. Docker (Postgres)..."
+docker info >/dev/null 2>&1 || { echo "ERROR: Docker no está corriendo."; exit 1; }
 docker compose down -v 2>/dev/null || true
-docker compose up -d 2>/dev/null || true
-sleep 3
+docker compose up -d
+sleep 5
 
-echo "3. Esperando DB..."
+echo "3. DB..."
 ./scripts/wait-db.sh
-
-echo "4. Prisma generate + migrate + seed..."
 pnpm --filter api exec prisma generate
 pnpm --filter api exec prisma migrate deploy
 SEED_PROPERTIES=0 pnpm --filter api exec prisma db seed 2>/dev/null || true
 
-echo "5. Reset + seed dataset demo (500+ listings garantizados)..."
-DEMO_MODE=1 pnpm --filter api demo:reset-and-seed || { echo "ERROR: demo:reset-and-seed falló"; exit 1; }
-pnpm --filter api demo:validate || { echo "ERROR: demo:validate falló"; exit 1; }
+# 4. Demo
+echo "4. Demo (listings + búsquedas)..."
+DEMO_MODE=1 pnpm --filter api demo:reset-and-seed || { echo "ERROR: demo:reset-and-seed"; exit 1; }
+pnpm --filter api demo:validate || { echo "ERROR: demo:validate"; exit 1; }
 
-echo "5b. INTEGRATIONS_MASTER_KEY (solo dev)..."
+# 5. Env
+echo "5. Config..."
 API_ENV="apps/api/.env"
-if [ ! -f "$API_ENV" ] || ! grep -q INTEGRATIONS_MASTER_KEY "$API_ENV" 2>/dev/null; then
-  KEY=$(openssl rand -base64 32 2>/dev/null || head -c 32 /dev/urandom | base64 2>/dev/null)
-  echo "INTEGRATIONS_MASTER_KEY=$KEY" >> "$API_ENV" 2>/dev/null || true
-fi
+[ -f "$API_ENV" ] || touch "$API_ENV"
+grep -q INTEGRATIONS_MASTER_KEY "$API_ENV" 2>/dev/null || echo "INTEGRATIONS_MASTER_KEY=$(openssl rand -base64 32 2>/dev/null || echo 'dev-key')" >> "$API_ENV"
 
-echo "5c. Web .env.local (proxy /api -> 3001, sin CORS)..."
 WEB_ENV="apps/web/.env.local"
-mkdir -p apps/web
-touch "$WEB_ENV"
-grep -q "NEXT_PUBLIC_API_URL" "$WEB_ENV" 2>/dev/null || echo "NEXT_PUBLIC_API_URL=" >> "$WEB_ENV"
-grep -q "API_SERVER_URL" "$WEB_ENV" 2>/dev/null || echo "API_SERVER_URL=http://127.0.0.1:3001" >> "$WEB_ENV"
-grep -q "NEXT_PUBLIC_BUILD_ID" "$WEB_ENV" 2>/dev/null || echo "NEXT_PUBLIC_BUILD_ID=dev" >> "$WEB_ENV"
+cat > "$WEB_ENV" << 'ENVEOF'
+NEXT_PUBLIC_API_URL=
+API_SERVER_URL=http://127.0.0.1:3001
+NEXT_PUBLIC_PREMIUM_GRACE_PERIOD=1
+ENVEOF
 
-echo "6. Liberando puertos 3000/3001..."
+# 6. Build (crítico: next start requiere .next/)
+echo "6. Build..."
+pnpm build:shared
+pnpm --filter web build || { echo "ERROR: build web"; exit 1; }
+[ -f apps/web/.next/BUILD_ID ] || { echo "ERROR: .next/BUILD_ID no existe"; exit 1; }
+
+# 7. Liberar puertos de nuevo (por si algo quedó)
 for port in 3000 3001; do
-  pid=$(lsof -ti:$port 2>/dev/null || true)
-  if [ -n "$pid" ]; then
-    kill -9 $pid 2>/dev/null || true
-    sleep 1
-  fi
+  lsof -ti:$port 2>/dev/null | xargs kill -9 2>/dev/null || true
 done
+sleep 2
 
-echo "7. Levantando API (3001) y WEB (3000) con DEMO_MODE=1..."
-pnpm build:shared 2>/dev/null || true
-# macOS: pre-build Web evita EMFILE (next dev falla con "too many open files")
-if [ "$(uname)" = "Darwin" ]; then
-  echo "   Web: pre-build (1-2 min)..."
-  pnpm --filter web build 2>/dev/null || true
-fi
+# 8. Levantar
+echo "7. Iniciando API (3001) y Web (3000)..."
 DEMO_MODE=1 pnpm --filter api dev > .logs/api.log 2>&1 &
 API_PID=$!
-if [ "$(uname)" = "Darwin" ]; then
-  (cd apps/web && pnpm exec next start -p 3000 -H 0.0.0.0) > .logs/web.log 2>&1 &
-else
-  pnpm dev:web > .logs/web.log 2>&1 &
-fi
+(cd apps/web && pnpm exec next start -p 3000 -H 0.0.0.0) > .logs/web.log 2>&1 &
 WEB_PID=$!
 
-echo "8. Esperando servidores..."
+# 9. Esperar
+echo "8. Esperando..."
 for i in $(seq 1 90); do
-  API_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/health 2>/dev/null || echo "000")
-  WEB_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null || echo "000")
-  if [ "$API_OK" = "200" ] && [ "$WEB_OK" != "000" ]; then
+  API=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/health 2>/dev/null || echo "000")
+  WEB=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/login 2>/dev/null || echo "000")
+  if [ "$API" = "200" ] && [ "$WEB" = "200" ]; then
     echo ""
-    echo "=== READY ==="
-    echo "  http://localhost:3000/login"
-    echo "  http://localhost:3000/feed"
-    echo "  http://localhost:3000/assistant"
-    echo ""
+    echo "=========================================="
+    echo "  OK - http://localhost:3000/login"
+    echo "  Usuario: smoke-ux@matchprop.com"
+    echo "=========================================="
     [ "$(uname)" = "Darwin" ] && open "http://localhost:3000/login" 2>/dev/null || true
-    echo "Usuario demo: smoke-ux@matchprop.com (click 'Abrir link de acceso dev')"
-    echo ""
     exit 0
   fi
+  [ $((i % 15)) -eq 0 ] && echo "  ${i}s API=$API Web=$WEB"
   sleep 1
 done
 
-echo "Timeout. Revisá .logs/api.log y .logs/web.log"
+echo "Timeout. Logs: .logs/api.log .logs/web.log"
 kill $API_PID $WEB_PID 2>/dev/null || true
 exit 1

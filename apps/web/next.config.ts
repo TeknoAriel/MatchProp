@@ -7,8 +7,14 @@ const apiServerUrl =
 const nextConfig: NextConfig = {
   transpilePackages: ['@matchprop/shared'],
   reactStrictMode: true,
-  // Ocultar indicador "1 Issue" en dev (overlay de build/errores)
   devIndicators: false,
+  // Polling evita EMFILE (too many open files) en macOS
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.watchOptions = { poll: 2000, ignored: /node_modules/ };
+    }
+    return config;
+  },
   async rewrites() {
     return [{ source: '/api/:path*', destination: `${apiServerUrl.replace(/\/$/, '')}/:path*` }];
   },

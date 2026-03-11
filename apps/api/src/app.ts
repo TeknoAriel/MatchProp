@@ -37,14 +37,16 @@ import { prisma } from './lib/prisma.js';
 export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInstance> {
   const fastify = Fastify({ logger: opts?.logger ?? true });
 
-  // under-pressure dispara 503 cuando event loop/heap superan umbrales.
-  // En tests (vitest) los queries Prisma y paralelismo pueden dispararlo; desactivar.
+  // under-pressure: 503 cuando event loop/heap superan umbrales.
+  // En dev/demo usar umbrales más altos; en tests desactivar.
   const isTest = process.env.VITEST === 'true' || process.env.NODE_ENV === 'test';
+  const isDev = process.env.DEMO_MODE === '1' || process.env.NODE_ENV !== 'production';
   if (!isTest) {
+    const heap = isDev ? 1024 * 1024 * 1024 : 512 * 1024 * 1024; // 1GB dev, 512MB prod
     await fastify.register(underPressure, {
-      maxEventLoopDelay: 1000,
-      maxHeapUsedBytes: 512 * 1024 * 1024,
-      maxRssBytes: 512 * 1024 * 1024,
+      maxEventLoopDelay: 2000,
+      maxHeapUsedBytes: heap,
+      maxRssBytes: heap,
       message: 'Under pressure',
     });
   }

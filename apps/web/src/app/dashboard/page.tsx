@@ -30,17 +30,26 @@ export default function DashboardPage() {
           router.replace('/login');
           return;
         }
-        const [activeData, searchesData] = await Promise.all([
-          activeRes.ok ? activeRes.json() : { search: null },
-          searchesRes.ok ? searchesRes.json() : [],
-        ]);
+        let activeData: { search?: unknown } | null = null;
+        let searchesData: SavedSearchDTO[] = [];
+        try {
+          activeData = activeRes.ok ? await activeRes.json() : null;
+        } catch {
+          activeData = null;
+        }
+        try {
+          const raw = searchesRes.ok ? await searchesRes.json() : null;
+          searchesData = Array.isArray(raw) ? raw : (raw?.searches && Array.isArray(raw.searches) ? raw.searches : []);
+        } catch {
+          searchesData = [];
+        }
         if (activeData?.search) {
           router.replace('/feed');
           return;
         }
-        setSearches(Array.isArray(searchesData) ? searchesData : []);
+        setSearches(searchesData);
       })
-      .catch(() => {})
+      .catch(() => setSearches([]))
       .finally(() => setLoading(false));
   }, [router]);
 
@@ -75,22 +84,21 @@ export default function DashboardPage() {
 
   if (searches.length === 0) {
     return (
-      <main className="min-h-screen p-4">
-        <div className="max-w-lg mx-auto text-center py-12">
-          <h1 className="text-2xl font-bold text-slate-900 mb-4">{PRODUCT_NAME}</h1>
-          <p className="text-slate-600 mb-6">
-            No tenés búsquedas guardadas. Creá una para ver el Match con propiedades filtradas.
+      <main className="min-h-screen flex flex-col items-center justify-center">
+        <div className="max-w-md text-center">
+          <h1 className="text-2xl font-bold text-[var(--mp-foreground)] mb-2">{PRODUCT_NAME}</h1>
+          <p className="text-[var(--mp-muted)] mb-8">
+            Definí qué buscás y verás el Match filtrado. Sin búsquedas guardadas aún.
           </p>
           <Link
             href="/assistant"
-            className="inline-block px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700"
+            className="inline-block px-6 py-3 rounded-xl font-semibold bg-[var(--mp-accent)] text-white hover:opacity-90"
           >
-            Con asistente
+            Buscar
           </Link>
-          <p className="mt-6 text-sm text-slate-500">
-            O{' '}
-            <Link href="/feed" className="text-blue-600 hover:underline">
-              ver todo el feed
+          <p className="mt-6 text-sm text-[var(--mp-muted)]">
+            <Link href="/feed" className="text-[var(--mp-accent)] hover:underline">
+              Ver todo el catálogo
             </Link>
           </p>
         </div>
@@ -99,23 +107,23 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen p-4">
-      <div className="max-w-lg mx-auto">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">{PRODUCT_NAME}</h1>
-        <p className="text-slate-600 mb-6">
-          Cargá una búsqueda para ver el Match. Luego podés ver en lista.
+    <main className="min-h-screen">
+      <div className="w-full max-w-lg mx-auto">
+        <h1 className="text-2xl font-bold text-[var(--mp-foreground)] mb-1">{PRODUCT_NAME}</h1>
+        <p className="text-sm text-[var(--mp-muted)] mb-6">
+          Elegí una búsqueda para ver Match o lista.
         </p>
 
-        <div className="space-y-3 mb-8">
+        <ul className="space-y-3 mb-8">
           {searches.map((s) => (
-            <div
+            <li
               key={s.id}
-              className="p-4 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow"
+              className="p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] hover:border-[var(--mp-accent)]/30 transition-colors"
             >
-              <h2 className="font-medium text-slate-900">{s.name || 'Búsqueda sin nombre'}</h2>
+              <h2 className="font-medium text-[var(--mp-foreground)]">{s.name || 'Sin nombre'}</h2>
               {s.filters && Object.keys(s.filters).length > 0 && (
                 <p
-                  className="text-sm text-slate-600 mt-1 truncate"
+                  className="text-sm text-[var(--mp-muted)] mt-0.5 truncate"
                   title={filtersToHumanSummary(s.filters)}
                 >
                   {filtersToHumanSummary(s.filters)}
@@ -126,29 +134,29 @@ export default function DashboardPage() {
                   type="button"
                   onClick={() => handleCargar(s.id, 'match')}
                   disabled={!!loadingSearch}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium"
+                  className="px-4 py-2 rounded-xl text-sm font-medium bg-[var(--mp-accent)] text-white hover:opacity-90 disabled:opacity-50"
                 >
-                  {loadingSearch === s.id ? 'Cargando...' : 'Cargar y ver Match'}
+                  {loadingSearch === s.id ? '...' : 'Match'}
                 </button>
                 <button
                   type="button"
                   onClick={() => handleCargar(s.id, 'list')}
                   disabled={!!loadingSearch}
-                  className="px-4 py-2 bg-slate-100 text-slate-700 text-sm rounded-lg hover:bg-slate-200 font-medium disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl text-sm font-medium bg-[var(--mp-bg)] text-[var(--mp-foreground)] border border-[var(--mp-border)] disabled:opacity-50"
                 >
-                  Ver en lista
+                  Lista
                 </button>
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
 
-        <div className="flex gap-3 text-sm">
-          <Link href="/assistant" className="text-blue-600 hover:underline">
-            Crear nueva búsqueda
+        <div className="flex gap-4 text-sm">
+          <Link href="/assistant" className="text-[var(--mp-accent)] font-medium hover:underline">
+            Buscar
           </Link>
-          <Link href="/feed" className="text-slate-600 hover:underline">
-            Ver todo (sin filtros)
+          <Link href="/feed" className="text-[var(--mp-muted)] hover:underline">
+            Ver todo
           </Link>
         </div>
       </div>

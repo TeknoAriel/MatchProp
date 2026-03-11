@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 
 const API_BASE = '/api';
+const GRACE_PERIOD = process.env.NEXT_PUBLIC_PREMIUM_GRACE_PERIOD === '1';
 
 type Visit = {
   id: string;
@@ -205,6 +206,11 @@ export default function LeadVisitsPage() {
           <span className="mx-1">›</span>
           <span className="text-[var(--mp-foreground)] font-medium">Agenda</span>
         </nav>
+        {GRACE_PERIOD && (
+          <p className="text-xs text-slate-700 bg-[var(--mp-premium)]/15 border border-[var(--mp-premium)]/40 rounded-xl px-3 py-2 mb-4">
+            Modo prueba: agenda premium habilitada. <Link href="/me/premium" className="underline font-medium">Ver planes</Link>
+          </p>
+        )}
         <div className="flex flex-wrap justify-between items-center gap-2 mb-6">
           <h1 className="text-2xl font-bold text-[var(--mp-foreground)]">Agenda de visitas</h1>
           <div className="flex gap-2">

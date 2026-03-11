@@ -784,6 +784,13 @@ export async function feedRoutes(fastify: FastifyInstance) {
           title: true,
           price: true,
           locationText: true,
+          heroImageUrl: true,
+          bedrooms: true,
+          bathrooms: true,
+          currency: true,
+          operationType: true,
+          source: true,
+          publisherRef: true,
         },
       });
 
@@ -796,6 +803,13 @@ export async function feedRoutes(fastify: FastifyInstance) {
           title: l.title,
           price: l.price ? Math.round(l.price) : null,
           locationText: l.locationText,
+          heroImageUrl: l.heroImageUrl ?? null,
+          bedrooms: l.bedrooms ?? null,
+          bathrooms: l.bathrooms ?? null,
+          currency: l.currency ?? null,
+          operationType: l.operationType ?? null,
+          source: l.source ?? 'API_PARTNER_1',
+          publisherRef: l.publisherRef ?? null,
         }));
 
       return reply.send({ items });

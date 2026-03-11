@@ -51,7 +51,10 @@ export async function listsRoutes(fastify: FastifyInstance) {
         select: { role: true, premiumUntil: true },
       });
       if (!dbUser) throw fastify.httpErrors.unauthorized();
-      const premiumFree = process.env.DEMO_MODE === '1' || process.env.PREMIUM_FREE === '1';
+      const premiumFree =
+        process.env.DEMO_MODE === '1' ||
+        process.env.PREMIUM_FREE === '1' ||
+        process.env.PREMIUM_GRACE_PERIOD === '1';
       const simPremium =
         (process.env.NODE_ENV === 'development' || process.env.DEMO_MODE === '1') &&
         ((request.cookies as Record<string, string> | undefined)?.['matchprop_premium_sim'] ===

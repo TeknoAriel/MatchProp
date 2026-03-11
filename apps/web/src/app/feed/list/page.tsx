@@ -516,8 +516,8 @@ function FeedListPageContent() {
 
   if (loading) {
     return (
-      <main className="min-h-screen p-4">
-        <div className="max-w-lg mx-auto space-y-4">
+      <main className="min-h-screen">
+        <div className="w-full space-y-4">
           <div className="h-8 bg-slate-200 rounded animate-pulse w-1/3" />
           <SkeletonList count={4} />
         </div>
@@ -526,79 +526,15 @@ function FeedListPageContent() {
   }
 
   return (
-    <main className="min-h-screen p-4">
-      <div className="max-w-lg mx-auto">
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Link
-            href="/assistant"
-            className="px-3 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700"
-          >
-            Buscar con asistente
-          </Link>
-          <Link
-            href="/search"
-            className="px-3 py-2 bg-slate-100 text-slate-800 rounded-xl text-sm font-medium hover:bg-slate-200"
-          >
-            Buscar por filtros
-          </Link>
-        </div>
-        {!loading && (
-          <div className="mb-4 p-4 bg-white rounded-xl shadow-sm border border-slate-100/80">
-            <FilterChips
-              operationFilter={operationFilter}
-              propertyTypeFilter={propertyTypeFilter}
-              onOperationChange={setOperationFilter}
-              onPropertyTypeChange={setPropertyTypeFilter}
-              disabled={loading}
-            />
-          </div>
-        )}
-        {hasActiveSearch === false && (
-          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-            <p className="text-amber-800 text-sm mb-2">Creá y guardá una búsqueda para filtrar.</p>
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href="/assistant"
-                className="px-3 py-2 bg-amber-200 text-amber-900 rounded-lg hover:bg-amber-300 text-sm font-medium"
-              >
-                Con asistente
-              </Link>
-              <Link
-                href="/feed/list"
-                className="px-3 py-2 bg-white border border-amber-300 text-amber-800 rounded-lg hover:bg-amber-100 text-sm"
-              >
-                Ver todo
-              </Link>
-            </div>
-          </div>
-        )}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
-          <h1 className="text-xl font-bold">{PRODUCT_NAME} - Lista</h1>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href="/feed"
-              className="px-3 py-1 text-sm bg-gray-200 rounded-lg hover:bg-gray-300"
-            >
-              Modo Match
-            </Link>
-            <Link
-              href="/me/saved"
-              className="px-3 py-1 text-sm bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200"
-            >
-              Listas favoritas
-            </Link>
-            <Link
-              href="/assistant"
-              className="px-3 py-1 text-sm bg-gray-200 rounded-lg hover:bg-gray-300"
-            >
-              Búsqueda
-            </Link>
-            <Link
-              href="/leads"
-              className="px-3 py-1 text-sm bg-gray-200 rounded-lg hover:bg-gray-300"
-            >
-              Mis consultas
-            </Link>
+    <main className="min-h-screen bg-[var(--mp-bg)]">
+      <div className="w-full">
+        {/* Header: título + nav compacta */}
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-lg font-bold text-[var(--mp-foreground)]">{PRODUCT_NAME} <span className="text-sm font-normal text-[var(--mp-muted)]">Lista</span></h1>
+          <nav className="flex items-center gap-3 text-xs text-[var(--mp-muted)]">
+            <Link href="/feed" className="hover:text-[var(--mp-foreground)] transition-colors">Match</Link>
+            <Link href="/me/saved" className="hover:text-[var(--mp-foreground)] transition-colors">Favoritos</Link>
+            <Link href="/leads" className="hover:text-[var(--mp-foreground)] transition-colors">Consultas</Link>
             {items.length > 0 && (
               <button
                 type="button"
@@ -610,13 +546,42 @@ function FeedListPageContent() {
                   }
                   setShareListOpen(true);
                 }}
-                className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200"
+                className="hover:text-[var(--mp-foreground)] transition-colors"
               >
-                📤 Compartir listas
+                Compartir
               </button>
             )}
-          </div>
+          </nav>
         </div>
+
+        {/* Barra de búsqueda (link al asistente) */}
+        <Link
+          href="/assistant"
+          className="flex items-center gap-3 mb-3 px-4 py-3 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] hover:border-[var(--mp-accent)]/40 transition-colors"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--mp-muted)] shrink-0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <span className="text-sm text-[var(--mp-muted)]">Buscar propiedades…</span>
+          <span className="ml-auto text-xs text-[var(--mp-accent)] font-medium">Asistente</span>
+        </Link>
+
+        {hasActiveSearch === false && (
+          <div className="mb-3 p-3 rounded-xl bg-amber-50/60 border border-amber-200/60 text-sm text-amber-800">
+            Definí qué buscás para ver solo lo que te interesa.
+            <Link href="/search" className="ml-1 underline font-medium">Filtros</Link>
+          </div>
+        )}
+
+        {!loading && (
+          <div className="mb-3">
+            <FilterChips
+              operationFilter={operationFilter}
+              propertyTypeFilter={propertyTypeFilter}
+              onOperationChange={setOperationFilter}
+              onPropertyTypeChange={setPropertyTypeFilter}
+              disabled={loading}
+            />
+          </div>
+        )}
 
         {shareListOpen && items.length > 0 && (
           <ShareModal
@@ -690,9 +655,9 @@ function FeedListPageContent() {
                 </p>
                 <Link
                   href="/assistant"
-                  className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="inline-block mt-4 px-4 py-2 rounded-xl text-sm font-medium bg-[var(--mp-accent)] text-white"
                 >
-                  Ir a búsqueda
+                  Buscar
                 </Link>
               </>
             )}
@@ -1309,8 +1274,8 @@ export default function FeedListPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen p-4">
-          <div className="h-32 bg-slate-200 rounded-xl animate-pulse max-w-lg mx-auto" />
+        <main className="min-h-screen flex items-center justify-center">
+          <div className="h-32 w-full max-w-2xl bg-slate-200 rounded-xl animate-pulse" />
         </main>
       }
     >

@@ -45,13 +45,15 @@ function LoginPageContent() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-8">
-      <div className="w-full max-w-sm space-y-6">
-        <h1 className="text-2xl font-bold text-center">Iniciar sesión</h1>
+    <main className="min-h-screen flex flex-col items-center justify-center p-6 sm:p-8 bg-[var(--mp-bg)]">
+      <div className="w-full max-w-sm space-y-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-center text-[var(--mp-foreground)]">
+          Iniciar sesión
+        </h1>
 
-        <form onSubmit={handleMagicLink} className="space-y-4">
+        <form onSubmit={handleMagicLink} className="space-y-5">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
+            <label htmlFor="email" className="block text-[15px] font-medium mb-2 text-[var(--mp-foreground)]">
               Email
             </label>
             <input
@@ -60,14 +62,14 @@ function LoginPageContent() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 border rounded"
+              className="w-full px-4 py-3 text-base border border-[var(--mp-border)] rounded-xl focus:ring-2 focus:ring-[var(--mp-accent)] focus:border-[var(--mp-accent)] outline-none transition-colors bg-[var(--mp-card)]"
               placeholder="tu@email.com"
             />
           </div>
           <button
             type="submit"
             disabled={status === 'loading'}
-            className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            className="w-full py-3 text-base font-medium rounded-xl bg-[var(--mp-accent)] text-white hover:bg-[var(--mp-accent-hover)] disabled:opacity-50 transition-colors min-h-[48px]"
           >
             {status === 'loading' ? 'Enviando...' : 'Enviar link a mi email'}
           </button>
@@ -101,7 +103,7 @@ function LoginPageContent() {
             <div className="w-full border-t" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white">o continuar con</span>
+            <span className="px-2 bg-[var(--mp-bg)]">o continuar con</span>
           </div>
         </div>
 
