@@ -15,6 +15,13 @@ cd /Users/arielcarnevali/MatchProp
 DATABASE_URL="TU_DATABASE_URL_DE_NEON" pnpm --filter api exec prisma migrate deploy
 ```
 
+Alternativa (script):
+
+```bash
+cd /Users/arielcarnevali/MatchProp
+DATABASE_URL="TU_DATABASE_URL_DE_NEON" bash scripts/prod-migrate.sh
+```
+
 ## 2. Vercel (API)
 
 1. Vercel → **Add New → Project** → Importar `TeknoAriel/MatchProp`
@@ -35,7 +42,13 @@ DATABASE_URL="TU_DATABASE_URL_DE_NEON" pnpm --filter api exec prisma migrate dep
 | `DEMO_MODE` | 0 (o 1 solo para probar con datos demo) |
 | `INTEGRATIONS_MASTER_KEY` | `openssl rand -base64 32` |
 
-La API queda en una URL tipo: `https://matchprop-api-xxx.vercel.app`.\n+\n+---\n+\n+## 3. Vercel (Web)
+La API queda en una URL tipo: `https://matchprop-api-xxx.vercel.app`.
+
+Checklist de envs: `docs/VERCEL_ENV.md`.
+
+---
+
+## 3. Vercel (Web)
 
 1. Entrá a **https://vercel.com** e iniciá sesión (con GitHub).
 2. **Add New** → **Project** → **Import** → **TeknoAriel/MatchProp**.
