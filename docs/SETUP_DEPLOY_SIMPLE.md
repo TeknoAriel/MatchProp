@@ -98,4 +98,11 @@ cd apps/web && vercel env pull .env.local --yes
 - [x] Migraciones ejecutadas (`prisma migrate deploy`)
 - [x] Variables API configuradas en Vercel
 - [x] Variables Web configuradas (`API_SERVER_URL`, `NEXT_PUBLIC_API_URL`)
-- [ ] Redeploy: en cada proyecto, Deployments → ... → Redeploy (o push a `main` para deploy automático)
+- [x] Redeploy: push a `main` dispara deploy automático de API y Web
+
+---
+
+## Validación rápida
+
+- **Web:** https://match-prop-web.vercel.app (debe cargar la home)
+- **API health:** https://match-prop-api-1jte.vercel.app/health (debe devolver `{"status":"ok"}` o `"degraded"`; si `db: "error"` puede ser cold start de Neon)
