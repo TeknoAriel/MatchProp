@@ -38,13 +38,16 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   const fastify = Fastify({ logger: opts?.logger ?? true });
 
   // under-pressure: 503 cuando event loop/heap superan umbrales.
-  // En dev/demo usar umbrales más altos; en tests desactivar.
+  // En serverless (Vercel 1024MB) dejar margen para cold start; en dev/demo más holgado; en tests desactivar.
   const isTest = process.env.VITEST === 'true' || process.env.NODE_ENV === 'test';
   const isDev = process.env.DEMO_MODE === '1' || process.env.NODE_ENV !== 'production';
   if (!isTest) {
-    const heap = isDev ? 1024 * 1024 * 1024 : 512 * 1024 * 1024; // 1GB dev, 512MB prod
+    const heap =
+      isDev ? 1024 * 1024 * 1024
+      : process.env.VERCEL ? 900 * 1024 * 1024  // 900MB en Vercel (función 1024MB)
+      : 512 * 1024 * 1024;                       // 512MB prod no serverless
     await fastify.register(underPressure, {
-      maxEventLoopDelay: 2000,
+      maxEventLoopDelay: process.env.VERCEL ? 3000 : 2000,
       maxHeapUsedBytes: heap,
       maxRssBytes: heap,
       message: 'Under pressure',
@@ -130,9 +133,9 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
     } catch {
       request.log.warn('Health: DB check failed');
     }
-    const healthy = dbOk;
-    return reply.status(healthy ? 200 : 503).send({
-      status: healthy ? 'ok' : 'degraded',
+    // Siempre 200; body indica ok vs degraded para que probes no bajen la instancia por DB temporal
+    return reply.status(200).send({
+      status: dbOk ? 'ok' : 'degraded',
       timestamp: formatDate(new Date()),
       db: dbOk ? 'ok' : 'error',
     });
