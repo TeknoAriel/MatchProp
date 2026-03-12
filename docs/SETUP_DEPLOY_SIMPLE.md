@@ -112,3 +112,5 @@ cd apps/web && vercel env pull .env.local --yes
 **Verificación rápida en local:** `pnpm smoke:prod` (curl a Web + API/health en producción).
 
 **Magic link (login):** Con `DEMO_MODE=1` la API no envía email real (solo consola). Tras "Enviar link a mi email" debe aparecer el botón **"Abrir link de acceso (dev)"**; usá ese botón para entrar. Si ves "Error. Intentá de nuevo.", el deploy puede estar en cold start — esperá unos segundos y volvé a intentar.
+
+**Para ingresar en producción:** En la API en Vercel tené configurado `DATABASE_URL` (Neon) y `DEMO_MODE=1`. Entrá a https://match-prop-web.vercel.app/login y hacé clic en **"Entrar con link demo"**.

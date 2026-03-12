@@ -42,27 +42,41 @@ function LoginPageContent() {
     }
   }
 
-  async function requestDemoLink(): Promise<string | null> {
-    const res = await fetch(`${API_BASE}/auth/magic/request`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email: 'demo@matchprop.com' }),
-    });
-    const data = res.ok ? await res.json() : null;
-    return data?.devLink ?? null;
-  }
-
   async function handleDemoLink() {
     setDemoLinkError(false);
     setDemoLinkLoading(true);
     try {
-      let link = await requestDemoLink();
+      const res = await fetch(`${API_BASE}/auth/demo`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        window.location.href = '/feed';
+        return;
+      }
+      const linkRes = await fetch(`${API_BASE}/auth/magic/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: 'demo@matchprop.com' }),
+      });
+      const data = linkRes.ok ? await linkRes.json() : null;
+      const link = data?.devLink ?? null;
       if (!link) {
         await new Promise((r) => setTimeout(r, 2000));
-        link = await requestDemoLink();
-      }
-      if (link) {
+        const retryRes = await fetch(`${API_BASE}/auth/magic/request`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email: 'demo@matchprop.com' }),
+        });
+        const retryData = retryRes.ok ? await retryRes.json() : null;
+        const retryLink = retryData?.devLink ?? null;
+        if (retryLink) {
+          window.location.href = retryLink;
+          return;
+        }
+      } else {
         window.location.href = link;
         return;
       }

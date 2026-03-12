@@ -376,6 +376,44 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
   );
 
+  const isDevAuth =
+    process.env.NODE_ENV !== 'production' ||
+    process.env.DEMO_MODE === '1' ||
+    process.env.VERCEL === '1';
+  fastify.post(
+    '/auth/demo',
+    {
+      config: {
+        rateLimit: { max: config.authRateLimitMax, timeWindow: config.authRateLimitWindowMs },
+      },
+      schema: {
+        tags: ['Auth'],
+        response: { 200: { type: 'object', properties: { ok: { type: 'boolean' } } } },
+      },
+    },
+    async (request, reply) => {
+      if (!isDevAuth) throw fastify.httpErrors.forbidden('Solo en modo demo');
+      const meta = getClientMeta(request);
+      const DEMO_EMAIL = 'demo@matchprop.com';
+      const user = await upsertUserAndIdentityForMagicLink(DEMO_EMAIL);
+      await logAuthAudit({
+        event: 'magic_verified',
+        userId: user.userId,
+        email: user.email,
+        provider: 'magic_link',
+        ...meta,
+      });
+      const { refreshToken } = await createSession({ userId: user.userId, ...meta });
+      const accessToken = signAccessToken(fastify, {
+        userId: user.userId,
+        email: user.email,
+        role: user.role,
+      });
+      setAuthCookies(reply, accessToken, refreshToken);
+      return { ok: true };
+    }
+  );
+
   fastify.get(
     '/auth/oauth/:provider',
     {
