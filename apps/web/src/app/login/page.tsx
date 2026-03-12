@@ -76,17 +76,21 @@ function LoginPageContent() {
         </form>
 
         {status === 'sent' && (
-          <div className="text-sm text-green-600 text-center space-y-2">
-            <p>Revisá tu correo. Si existe, recibirás un link para iniciar sesión.</p>
-            {devLink && (
-              <a
-                href={devLink}
-                className="block w-full py-2 mt-2 bg-green-100 text-green-800 rounded font-medium hover:bg-green-200"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Abrir link de acceso (dev)
-              </a>
+          <div className="text-sm text-center space-y-2">
+            {devLink ? (
+              <>
+                <p className="text-green-600">En modo demo: usá el link de abajo para entrar.</p>
+                <a
+                  href={devLink}
+                  className="block w-full py-3 mt-2 bg-green-100 text-green-800 rounded font-medium hover:bg-green-200"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Abrir link de acceso (dev)
+                </a>
+              </>
+            ) : (
+              <p className="text-green-600">Revisá tu correo. Si existe, recibirás un link para iniciar sesión.</p>
             )}
           </div>
         )}
