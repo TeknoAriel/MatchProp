@@ -108,3 +108,4 @@ Tokens y URLs usados en el proyecto, sin valores reales.
 | `PREMIUM_GRACE_PERIOD` | `0` \| `1` | Premium gratuito temporal |
 | `NEXT_PUBLIC_PREMIUM_GRACE_PERIOD` | `0` \| `1` | Idem, para cliente |
 | `COOKIE_SECURE` | `true` \| `false` | Cookies solo HTTPS |
+| `COOKIE_DOMAIN` | ej. `match-prop-web.vercel.app` | Dominio de las cookies (por defecto se deduce de APP_URL para que el login persista cuando la Web hace proxy a la API) |

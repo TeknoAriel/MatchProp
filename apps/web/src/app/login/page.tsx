@@ -9,6 +9,8 @@ function LoginPageContent() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle');
   const [devLink, setDevLink] = useState<string | null>(null);
+  const [demoLinkLoading, setDemoLinkLoading] = useState(false);
+  const [demoLinkError, setDemoLinkError] = useState(false);
   const [oauthError, setOauthError] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -37,6 +39,38 @@ function LoginPageContent() {
       }
     } catch {
       setStatus('error');
+    }
+  }
+
+  async function requestDemoLink(): Promise<string | null> {
+    const res = await fetch(`${API_BASE}/auth/magic/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email: 'demo@matchprop.com' }),
+    });
+    const data = res.ok ? await res.json() : null;
+    return data?.devLink ?? null;
+  }
+
+  async function handleDemoLink() {
+    setDemoLinkError(false);
+    setDemoLinkLoading(true);
+    try {
+      let link = await requestDemoLink();
+      if (!link) {
+        await new Promise((r) => setTimeout(r, 2000));
+        link = await requestDemoLink();
+      }
+      if (link) {
+        window.location.href = link;
+        return;
+      }
+      setDemoLinkError(true);
+    } catch {
+      setDemoLinkError(true);
+    } finally {
+      setDemoLinkLoading(false);
     }
   }
 
@@ -97,6 +131,25 @@ function LoginPageContent() {
         {status === 'error' && (
           <p className="text-sm text-red-600 text-center">Error. Intentá de nuevo.</p>
         )}
+
+        <div className="space-y-1">
+          <button
+            type="button"
+            onClick={handleDemoLink}
+            disabled={demoLinkLoading}
+            className="w-full py-2 text-sm font-medium rounded-lg border border-green-600 text-green-700 hover:bg-green-50 disabled:opacity-50 transition-colors"
+          >
+            {demoLinkLoading ? 'Obteniendo link...' : 'Entrar con link demo'}
+          </button>
+          {demoLinkError && (
+            <p className="text-xs text-red-600 text-center">
+              No se pudo obtener el link (la API puede estar en cold start).{' '}
+              <button type="button" onClick={handleDemoLink} className="underline hover:no-underline">
+                Reintentar
+              </button>
+            </p>
+          )}
+        </div>
 
         <p className="text-sm text-amber-600 text-center">
           Google/Apple/Facebook requieren configuración. Usá Magic Link o Passkey.

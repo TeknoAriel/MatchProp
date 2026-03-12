@@ -5,12 +5,13 @@ import { getAccessExpirySeconds } from './session.js';
 const ACCESS_COOKIE = 'access_token';
 const REFRESH_COOKIE = 'refresh_token';
 
-const COOKIE_OPTS = {
+const COOKIE_OPTS: { httpOnly: boolean; secure: boolean; sameSite: 'lax'; path: string; domain?: string } = {
   httpOnly: true,
   secure: config.cookieSecure,
-  sameSite: 'lax' as const,
+  sameSite: 'lax',
   path: '/',
 };
+if (config.cookieDomain) COOKIE_OPTS.domain = config.cookieDomain;
 
 export function setAuthCookies(
   reply: FastifyReply,
@@ -28,8 +29,9 @@ export function setAuthCookies(
 }
 
 export function clearAuthCookies(reply: FastifyReply): void {
-  reply.clearCookie(ACCESS_COOKIE, { path: '/' });
-  reply.clearCookie(REFRESH_COOKIE, { path: '/' });
+  const clearOpts = { path: '/' as const, ...(config.cookieDomain && { domain: config.cookieDomain }) };
+  reply.clearCookie(ACCESS_COOKIE, clearOpts);
+  reply.clearCookie(REFRESH_COOKIE, clearOpts);
 }
 
 export function getRefreshTokenFromRequest(request: {

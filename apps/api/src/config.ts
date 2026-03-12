@@ -30,6 +30,16 @@ export const config = {
     process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:19006,exp://localhost:19000'
   ),
   cookieSecure: process.env.COOKIE_SECURE === 'true',
+  /** Dominio de las cookies: cuando la Web hace proxy a la API, las cookies deben ser del dominio de la Web para que el ingreso persista. */
+  cookieDomain: process.env.COOKIE_DOMAIN || (() => {
+    const app = process.env.APP_URL || '';
+    try {
+      const host = new URL(app).hostname;
+      return host && !host.startsWith('localhost') ? host : undefined;
+    } catch {
+      return undefined;
+    }
+  })(),
   appUrl: process.env.APP_URL || 'http://localhost:3000',
   apiPublicUrl: process.env.API_PUBLIC_URL || process.env.APP_URL || 'http://localhost:3001',
   authRateLimitMax: Number(process.env.AUTH_RATE_LIMIT_MAX) || 10,
