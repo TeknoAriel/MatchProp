@@ -82,6 +82,7 @@ function FeedListPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const feedAllFromUrl = searchParams?.get('feed') === 'all';
+  const isDemoMode = false;
 
   useEffect(() => {
     fetch(`${API_BASE}/me/active-search`, { credentials: 'include' })
@@ -262,7 +263,7 @@ function FeedListPageContent() {
         body: JSON.stringify({ listingId, listType }),
       });
       if (res.status === 401) {
-        router.replace('/login');
+        if (!isDemoMode) router.replace('/login');
         return;
       }
       if (res.ok) {
@@ -309,7 +310,7 @@ function FeedListPageContent() {
         body: JSON.stringify({ listingId: addToListCard.id }),
       });
       if (res.status === 401) {
-        router.replace('/login');
+        if (!isDemoMode) router.replace('/login');
         return;
       }
       if (res.ok) {
@@ -451,7 +452,7 @@ function FeedListPageContent() {
         body: JSON.stringify({ name }),
       });
       if (createRes.status === 401) {
-        router.replace('/login');
+        if (!isDemoMode) router.replace('/login');
         return;
       }
       if (!createRes.ok) {
@@ -554,20 +555,17 @@ function FeedListPageContent() {
           </nav>
         </div>
 
-        {/* Barra de búsqueda (link al asistente) */}
         <Link
           href="/assistant"
-          className="flex items-center gap-3 mb-3 px-4 py-3 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] hover:border-[var(--mp-accent)]/40 transition-colors"
+          className="mb-3 text-sm text-[var(--mp-accent)] hover:text-[var(--mp-accent-hover)] font-medium"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--mp-muted)] shrink-0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <span className="text-sm text-[var(--mp-muted)]">Buscar propiedades…</span>
-          <span className="ml-auto text-xs text-[var(--mp-accent)] font-medium">Asistente</span>
+          🔍 Buscar
         </Link>
 
         {hasActiveSearch === false && (
-          <div className="mb-3 p-3 rounded-xl bg-amber-50/60 border border-amber-200/60 text-sm text-amber-800">
-            Definí qué buscás para ver solo lo que te interesa.
-            <Link href="/search" className="ml-1 underline font-medium">Filtros</Link>
+          <div className="mb-3 p-3 rounded-xl border border-[var(--mp-border)] bg-[var(--mp-card)] text-sm text-[var(--mp-muted)]">
+            Definí qué buscás para ver solo lo que te interesa.{' '}
+            <Link href="/assistant" className="text-[var(--mp-accent)] font-medium hover:underline">Buscar</Link>
           </div>
         )}
 

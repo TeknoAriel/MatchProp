@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import ActiveSearchBar from './ActiveSearchBar';
 import { useTheme } from './ThemeProvider';
 
 const NAV_ITEMS = [
@@ -126,9 +125,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <ActiveSearchBar />
-        {/* Contenedor único: mismo ancho y padding que la barra para alinear todo */}
-        <main className="flex-1 w-full min-h-[calc(100vh-140px)] md:min-h-[calc(100vh-80px)] pb-20 md:pb-0 flex flex-col">
+        {/* Contenedor principal - sin barra de búsqueda superior (se accede por nav Buscar) */}
+        <main className="flex-1 w-full min-h-[calc(100vh-120px)] md:min-h-[calc(100vh-80px)] pb-20 md:pb-0 flex flex-col">
           <div className="flex-1 w-full max-w-2xl mx-auto px-4 md:px-6 py-4">
             {children}
           </div>
