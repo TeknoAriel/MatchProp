@@ -216,32 +216,39 @@ export async function authRoutes(fastify: FastifyInstance) {
       const email = normalizeEmail(rawEmail);
       const meta = getClientMeta(request);
       const appUrl = config.appUrl.replace(/\/$/, '');
-      const isDev = process.env.NODE_ENV !== 'production' || process.env.DEMO_MODE === '1';
+      // Mostrar devLink en dev, con DEMO_MODE=1 o en Vercel (no hay mail real)
+      const isDev =
+        process.env.NODE_ENV !== 'production' ||
+        process.env.DEMO_MODE === '1' ||
+        process.env.VERCEL === '1';
 
+      let token: string;
       try {
-        let token: string;
+        token = await createMagicLinkToken(email, meta.ip, meta.userAgent);
+      } catch (err) {
+        request.log.warn({ err }, 'Magic link token create failed, retrying once');
+        await new Promise((r) => setTimeout(r, 500));
         try {
           token = await createMagicLinkToken(email, meta.ip, meta.userAgent);
-        } catch (err) {
-          request.log.warn({ err }, 'Magic link token create failed, retrying once');
-          await new Promise((r) => setTimeout(r, 500));
-          token = await createMagicLinkToken(email, meta.ip, meta.userAgent);
+        } catch (err2) {
+          request.log.error({ err: err2, email }, 'Magic link request failed');
+          return reply.status(200).send({
+            message: 'Si el email existe, recibirás un link para iniciar sesión.',
+          });
         }
-        const link = `${appUrl}/auth/magic/callback?token=${encodeURIComponent(token)}`;
-        const mailer = getMailer();
-        await mailer.sendMagicLink(email, link);
-        await logAuthAudit({ event: 'magic_requested', email, ...meta });
-        return {
-          message: 'Si el email existe, recibirás un link para iniciar sesión.',
-          ...(isDev && { devLink: link }),
-        };
-      } catch (err) {
-        request.log.error({ err, email }, 'Magic link request failed');
-        // Anti-enumeración: siempre 200 para no revelar fallo
-        return reply.status(200).send({
-          message: 'Si el email existe, recibirás un link para iniciar sesión.',
-        });
       }
+
+      const link = `${appUrl}/auth/magic/callback?token=${encodeURIComponent(token)}`;
+      const mailer = getMailer();
+      mailer.sendMagicLink(email, link).catch((err) => request.log.warn({ err }, 'Mailer send failed'));
+      logAuthAudit({ event: 'magic_requested', email, ...meta }).catch((err) =>
+        request.log.warn({ err }, 'Auth audit failed')
+      );
+
+      return {
+        message: 'Si el email existe, recibirás un link para iniciar sesión.',
+        ...(isDev && { devLink: link }),
+      };
     }
   );
 
