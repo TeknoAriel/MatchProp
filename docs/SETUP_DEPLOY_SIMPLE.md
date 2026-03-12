@@ -110,3 +110,5 @@ cd apps/web && vercel env pull .env.local --yes
 **Deploy preview:** al hacer push a una rama distinta de `main`, Vercel crea un deploy de preview. Para que la API en preview tenga DB y auth, duplicar en Vercel las variables de Production en el entorno Preview (Settings → Environment Variables → cada variable → editar → marcar Preview).
 
 **Verificación rápida en local:** `pnpm smoke:prod` (curl a Web + API/health en producción).
+
+**Magic link (login):** Con `DEMO_MODE=1` la API no envía email real (solo consola). Tras "Enviar link a mi email" debe aparecer el botón **"Abrir link de acceso (dev)"**; usá ese botón para entrar. Si ves "Error. Intentá de nuevo.", el deploy puede estar en cold start — esperá unos segundos y volvé a intentar.

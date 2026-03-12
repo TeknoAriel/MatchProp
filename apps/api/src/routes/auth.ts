@@ -207,7 +207,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, _reply) => {
+    async (request, reply) => {
       const body = request.body as { email?: string };
       const rawEmail = body?.email;
       if (!rawEmail || typeof rawEmail !== 'string') {
@@ -215,21 +215,33 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
       const email = normalizeEmail(rawEmail);
       const meta = getClientMeta(request);
-
-      const token = await createMagicLinkToken(email, meta.ip, meta.userAgent);
       const appUrl = config.appUrl.replace(/\/$/, '');
-      const link = `${appUrl}/auth/magic/callback?token=${encodeURIComponent(token)}`;
-      const mailer = getMailer();
-      await mailer.sendMagicLink(email, link);
-
-      await logAuthAudit({ event: 'magic_requested', email, ...meta });
-
-      // Mostrar devLink en dev o cuando DEMO_MODE=1 (pnpm demo:up, pnpm iniciar)
       const isDev = process.env.NODE_ENV !== 'production' || process.env.DEMO_MODE === '1';
-      return {
-        message: 'Si el email existe, recibirás un link para iniciar sesión.',
-        ...(isDev && { devLink: link }),
-      };
+
+      try {
+        let token: string;
+        try {
+          token = await createMagicLinkToken(email, meta.ip, meta.userAgent);
+        } catch (err) {
+          request.log.warn({ err }, 'Magic link token create failed, retrying once');
+          await new Promise((r) => setTimeout(r, 500));
+          token = await createMagicLinkToken(email, meta.ip, meta.userAgent);
+        }
+        const link = `${appUrl}/auth/magic/callback?token=${encodeURIComponent(token)}`;
+        const mailer = getMailer();
+        await mailer.sendMagicLink(email, link);
+        await logAuthAudit({ event: 'magic_requested', email, ...meta });
+        return {
+          message: 'Si el email existe, recibirás un link para iniciar sesión.',
+          ...(isDev && { devLink: link }),
+        };
+      } catch (err) {
+        request.log.error({ err, email }, 'Magic link request failed');
+        // Anti-enumeración: siempre 200 para no revelar fallo
+        return reply.status(200).send({
+          message: 'Si el email existe, recibirás un link para iniciar sesión.',
+        });
+      }
     }
   );
 
