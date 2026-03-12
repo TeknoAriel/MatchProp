@@ -42,7 +42,7 @@ Proyecto con Root `apps/api`. Ir a **Settings → Environment Variables**.
 | `DEMO_MODE` | `0` | o `1` para demo/premium gratuito |
 | `INTEGRATIONS_MASTER_KEY` | *(generar)* | `openssl rand -base64 32` |
 
-**Opcional (WebAuthn):** `WEBAUTHN_RP_ID`, `WEBAUTHN_RP_NAME`, `WEBAUTHN_ORIGIN` (ver `.env.example`).
+**WebAuthn (producción):** `WEBAUTHN_RP_ID=match-prop-web.vercel.app`, `WEBAUTHN_RP_NAME=MatchProp`, `WEBAUTHN_ORIGIN=https://match-prop-web.vercel.app` (ya configurados vía CLI).
 
 ---
 
@@ -106,3 +106,5 @@ cd apps/web && vercel env pull .env.local --yes
 
 - **Web:** https://match-prop-web.vercel.app (debe cargar la home)
 - **API health:** https://match-prop-api-1jte.vercel.app/health (debe devolver `{"status":"ok"}` o `"degraded"`; si `db: "error"` puede ser cold start de Neon)
+
+**Deploy preview:** al hacer push a una rama distinta de `main`, Vercel crea un deploy de preview. Para que la API en preview tenga DB y auth, duplicar en Vercel las variables de Production en el entorno Preview (Settings → Environment Variables → cada variable → editar → marcar Preview).
