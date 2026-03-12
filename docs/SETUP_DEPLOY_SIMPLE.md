@@ -69,14 +69,33 @@ Después de añadir o cambiar variables:
 ## URLs de referencia
 
 - **Web:** https://match-prop-web.vercel.app
-- **API:** Obtenerla del dashboard de Vercel en el proyecto API (p. ej. `https://match-prop-api-xxx.vercel.app`)
+- **API:** https://match-prop-api-1jte.vercel.app
+
+---
+
+## Variables desde CLI (opcional)
+
+Con Vercel CLI instalado y `vercel login`:
+
+```bash
+# Linkear (una vez por app)
+cd apps/api && vercel link --yes --scope teknoariels-projects --project match-prop-api-1jte
+cd apps/web && vercel link --yes --scope teknoariels-projects --project match-prop-web
+
+# Agregar variable (ejemplo)
+echo "valor" | vercel env add NOMBRE_VAR production
+
+# Traer variables a .env.local
+cd apps/api && vercel env pull .env.local
+cd apps/web && vercel env pull .env.local --yes
+```
 
 ---
 
 ## Checklist rápido
 
-- [ ] Neon: proyecto creado, `DATABASE_URL` copiada
-- [ ] Migraciones ejecutadas (`prisma migrate deploy`)
-- [ ] Variables API configuradas en Vercel
-- [ ] Variables Web configuradas (`API_SERVER_URL`, `NEXT_PUBLIC_API_URL`)
-- [ ] Redeploy de ambos proyectos
+- [x] Neon: proyecto creado, `DATABASE_URL` configurada
+- [x] Migraciones ejecutadas (`prisma migrate deploy`)
+- [x] Variables API configuradas en Vercel
+- [x] Variables Web configuradas (`API_SERVER_URL`, `NEXT_PUBLIC_API_URL`)
+- [ ] Redeploy: en cada proyecto, Deployments → ... → Redeploy (o push a `main` para deploy automático)
