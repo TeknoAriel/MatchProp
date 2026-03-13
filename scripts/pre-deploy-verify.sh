@@ -11,6 +11,8 @@ pnpm build:shared
 
 echo "2. Typecheck..."
 pnpm -r run typecheck
+echo "2b. Typecheck Vercel handlers (API)..."
+pnpm --filter api run typecheck:vercel
 
 echo "3. Build api + web + admin..."
 pnpm --filter api build

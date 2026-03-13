@@ -12,6 +12,7 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
+    "typecheck:vercel": "tsc -p tsconfig.vercel.json --noEmit",
     "test": "vitest run src/lib",
     "test:all": "vitest run",
     "test:watch": "vitest",
