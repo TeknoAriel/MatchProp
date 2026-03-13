@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 const API_BASE = '/api';
@@ -9,14 +9,22 @@ function LoginPageContent() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle');
   const [devLink, setDevLink] = useState<string | null>(null);
-  const [demoLinkLoading, setDemoLinkLoading] = useState(false);
-  const [demoLinkError, setDemoLinkError] = useState(false);
   const [oauthError, setOauthError] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [demoError, setDemoError] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
     if (searchParams.get('error') === 'oauth') setOauthError(true);
+  }, [searchParams]);
+
+  const useDemoTriggered = useRef(false);
+  useEffect(() => {
+    if (searchParams?.get('useDemo') === '1' && !useDemoTriggered.current) {
+      useDemoTriggered.current = true;
+      handleDemoLink();
+    }
   }, [searchParams]);
 
   async function handleMagicLink(e: React.FormEvent) {
@@ -43,8 +51,8 @@ function LoginPageContent() {
   }
 
   async function handleDemoLink() {
-    setDemoLinkError(false);
-    setDemoLinkLoading(true);
+    setDemoError(false);
+    setDemoLoading(true);
     try {
       const res = await fetch(`${API_BASE}/auth/demo`, {
         method: 'POST',
@@ -54,37 +62,11 @@ function LoginPageContent() {
         window.location.href = '/feed';
         return;
       }
-      const linkRes = await fetch(`${API_BASE}/auth/magic/request`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email: 'demo@matchprop.com' }),
-      });
-      const data = linkRes.ok ? await linkRes.json() : null;
-      const link = data?.devLink ?? null;
-      if (!link) {
-        await new Promise((r) => setTimeout(r, 2000));
-        const retryRes = await fetch(`${API_BASE}/auth/magic/request`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ email: 'demo@matchprop.com' }),
-        });
-        const retryData = retryRes.ok ? await retryRes.json() : null;
-        const retryLink = retryData?.devLink ?? null;
-        if (retryLink) {
-          window.location.href = retryLink;
-          return;
-        }
-      } else {
-        window.location.href = link;
-        return;
-      }
-      setDemoLinkError(true);
+      setDemoError(true);
     } catch {
-      setDemoLinkError(true);
+      setDemoError(true);
     } finally {
-      setDemoLinkLoading(false);
+      setDemoLoading(false);
     }
   }
 
@@ -143,24 +125,24 @@ function LoginPageContent() {
           </div>
         )}
         {status === 'error' && (
-          <p className="text-sm text-red-600 text-center">Error. Intentá de nuevo.</p>
+          <div className="text-sm text-red-600 text-center space-y-1">
+            <p>Error. Intentá de nuevo.</p>
+            <p className="text-[var(--mp-muted)] text-xs">Para ingresar rápido, usá <strong>Entrar con link demo</strong>.</p>
+          </div>
         )}
 
         <div className="space-y-1">
           <button
             type="button"
             onClick={handleDemoLink}
-            disabled={demoLinkLoading}
+            disabled={demoLoading}
             className="w-full py-2 text-sm font-medium rounded-lg border border-green-600 text-green-700 hover:bg-green-50 disabled:opacity-50 transition-colors"
           >
-            {demoLinkLoading ? 'Obteniendo link...' : 'Entrar con link demo'}
+            {demoLoading ? 'Entrando...' : 'Entrar con link demo'}
           </button>
-          {demoLinkError && (
+          {demoError && (
             <p className="text-xs text-red-600 text-center">
-              No se pudo obtener el link (la API puede estar en cold start).{' '}
-              <button type="button" onClick={handleDemoLink} className="underline hover:no-underline">
-                Reintentar
-              </button>
+              No se pudo conectar con la API. Dejá la terminal abierta con <code className="bg-black/10 px-1 rounded">pnpm run dev-local</code>.
             </p>
           )}
         </div>

@@ -208,47 +208,56 @@ export async function authRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const body = request.body as { email?: string };
-      const rawEmail = body?.email;
-      if (!rawEmail || typeof rawEmail !== 'string') {
-        throw fastify.httpErrors.badRequest('Email requerido');
-      }
-      const email = normalizeEmail(rawEmail);
-      const meta = getClientMeta(request);
-      const appUrl = config.appUrl.replace(/\/$/, '');
-      // Mostrar devLink en dev, con DEMO_MODE=1 o en Vercel (no hay mail real)
+      const appUrl = (config.appUrl || 'http://localhost:3000').replace(/\/$/, '');
       const isDev =
         process.env.NODE_ENV !== 'production' ||
         process.env.DEMO_MODE === '1' ||
         process.env.VERCEL === '1';
 
-      let token: string;
       try {
-        token = await createMagicLinkToken(email, meta.ip, meta.userAgent);
-      } catch (err) {
-        request.log.warn({ err }, 'Magic link token create failed, retrying once');
-        await new Promise((r) => setTimeout(r, 500));
+        const body = request.body as { email?: string };
+        const rawEmail = body?.email;
+        if (!rawEmail || typeof rawEmail !== 'string') {
+          throw fastify.httpErrors.badRequest('Email requerido');
+        }
+        const email = normalizeEmail(rawEmail);
+        const meta = getClientMeta(request);
+
+        let token: string;
         try {
           token = await createMagicLinkToken(email, meta.ip, meta.userAgent);
-        } catch (err2) {
-          request.log.error({ err: err2, email }, 'Magic link request failed');
-          return reply.status(200).send({
-            message: 'Si el email existe, recibirás un link para iniciar sesión.',
-          });
+        } catch (err) {
+          request.log.warn({ err }, 'Magic link token create failed, retrying once');
+          await new Promise((r) => setTimeout(r, 500));
+          try {
+            token = await createMagicLinkToken(email, meta.ip, meta.userAgent);
+          } catch (err2) {
+            request.log.error({ err: err2, email }, 'Magic link request failed');
+            return reply.status(200).send({
+              message: 'La base de datos no está disponible. Usá «Entrar con link demo» para acceder.',
+              ...(isDev && { devLink: `${appUrl}/login?useDemo=1` }),
+            });
+          }
         }
+
+        const link = `${appUrl}/auth/magic/callback?token=${encodeURIComponent(token)}`;
+        const mailer = getMailer();
+        mailer.sendMagicLink(email, link).catch((err) => request.log.warn({ err }, 'Mailer send failed'));
+        logAuthAudit({ event: 'magic_requested', email, ...meta }).catch((err) =>
+          request.log.warn({ err }, 'Auth audit failed')
+        );
+
+        return {
+          message: 'Si el email existe, recibirás un link para iniciar sesión.',
+          ...(isDev && { devLink: link }),
+        };
+      } catch (err) {
+        request.log.error({ err }, 'Magic link request error');
+        return reply.status(200).send({
+          message: 'No se pudo enviar el link. Usá «Entrar con link demo» para acceder.',
+          ...(isDev && { devLink: `${appUrl}/login?useDemo=1` }),
+        });
       }
-
-      const link = `${appUrl}/auth/magic/callback?token=${encodeURIComponent(token)}`;
-      const mailer = getMailer();
-      mailer.sendMagicLink(email, link).catch((err) => request.log.warn({ err }, 'Mailer send failed'));
-      logAuthAudit({ event: 'magic_requested', email, ...meta }).catch((err) =>
-        request.log.warn({ err }, 'Auth audit failed')
-      );
-
-      return {
-        message: 'Si el email existe, recibirás un link para iniciar sesión.',
-        ...(isDev && { devLink: link }),
-      };
     }
   );
 
@@ -380,6 +389,9 @@ export async function authRoutes(fastify: FastifyInstance) {
     process.env.NODE_ENV !== 'production' ||
     process.env.DEMO_MODE === '1' ||
     process.env.VERCEL === '1';
+
+  const isStatelessDemo =
+    process.env.DEMO_MODE === '1' && !process.env.DATABASE_URL;
   fastify.post(
     '/auth/demo',
     {
@@ -395,21 +407,50 @@ export async function authRoutes(fastify: FastifyInstance) {
       if (!isDevAuth) throw fastify.httpErrors.forbidden('Solo en modo demo');
       const meta = getClientMeta(request);
       const DEMO_EMAIL = 'demo@matchprop.com';
-      const user = await upsertUserAndIdentityForMagicLink(DEMO_EMAIL);
-      await logAuthAudit({
-        event: 'magic_verified',
-        userId: user.userId,
-        email: user.email,
-        provider: 'magic_link',
-        ...meta,
-      });
-      const { refreshToken } = await createSession({ userId: user.userId, ...meta });
-      const accessToken = signAccessToken(fastify, {
-        userId: user.userId,
-        email: user.email,
-        role: user.role,
-      });
-      setAuthCookies(reply, accessToken, refreshToken);
+      try {
+        if (isStatelessDemo) {
+          // Demo sin base de datos: generar un usuario y sesión efímera solo con JWT.
+          const fakeUserId = 'demo-user';
+          const accessToken = signAccessToken(fastify, {
+            userId: fakeUserId,
+            email: DEMO_EMAIL,
+            // Rol por defecto para navegar el producto; no se persiste en DB.
+            role: 'AGENT',
+          });
+          // Usamos un refresh token sintético que no se guarda en DB; los endpoints de refresh
+          // simplemente devolverán 401, lo cual es aceptable en este modo demo sin expiraciones largas.
+          const demoRefresh = 'demo-refresh-token';
+          setAuthCookies(reply, accessToken, demoRefresh);
+        } else {
+          const user = await upsertUserAndIdentityForMagicLink(DEMO_EMAIL);
+          await logAuthAudit({
+            event: 'magic_verified',
+            userId: user.userId,
+            email: user.email,
+            provider: 'magic_link',
+            ...meta,
+          });
+          const { refreshToken } = await createSession({ userId: user.userId, ...meta });
+          const accessToken = signAccessToken(fastify, {
+            userId: user.userId,
+            email: user.email,
+            role: user.role,
+          });
+          setAuthCookies(reply, accessToken, refreshToken);
+        }
+      } catch (err) {
+        // Si la base de datos no está disponible u ocurre un error de Prisma,
+        // degradar a modo demo sin DB en lugar de devolver 500.
+        request.log.warn({ err }, 'auth/demo falling back to stateless demo');
+        const fakeUserId = 'demo-user';
+        const accessToken = signAccessToken(fastify, {
+          userId: fakeUserId,
+          email: DEMO_EMAIL,
+          role: 'AGENT',
+        });
+        const demoRefresh = 'demo-refresh-token';
+        setAuthCookies(reply, accessToken, demoRefresh);
+      }
       return { ok: true };
     }
   );
