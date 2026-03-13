@@ -86,7 +86,8 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
       done(null, body);
     } else {
       try {
-        done(null, JSON.parse(body.toString()));
+        const str = body.toString();
+        done(null, str && str.trim() ? JSON.parse(str) : {});
       } catch (e) {
         done(e as Error, undefined);
       }
