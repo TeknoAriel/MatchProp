@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
+import { envFlag } from '../config.js';
 import {
   ActivationReason,
   LeadChannel,
@@ -238,11 +239,9 @@ export async function leadRoutes(fastify: FastifyInstance) {
         select: { premiumUntil: true, role: true },
       });
       const premiumFree =
-        process.env.DEMO_MODE === '1' ||
-        process.env.PREMIUM_FREE === '1' ||
-        process.env.PREMIUM_GRACE_PERIOD === '1';
+        envFlag('DEMO_MODE') || envFlag('PREMIUM_FREE') || envFlag('PREMIUM_GRACE_PERIOD');
       const simPremium =
-        (process.env.NODE_ENV === 'development' || process.env.DEMO_MODE === '1') &&
+        (process.env.NODE_ENV === 'development' || envFlag('DEMO_MODE')) &&
         ((request.cookies as Record<string, string> | undefined)?.['matchprop_premium_sim'] ===
           '1' ||
           (request.headers['x-premium-sim'] as string) === '1');

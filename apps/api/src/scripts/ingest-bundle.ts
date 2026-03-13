@@ -6,6 +6,7 @@
  */
 import 'dotenv/config';
 import { runIngest } from '../services/ingest/index.js';
+import { envFlag } from '../config.js';
 
 const SOURCES = [
   'KITEPROP_DIFUSION_ZONAPROP',
@@ -54,7 +55,7 @@ async function runOne(
 }
 
 async function main() {
-  const forceFixture = process.env.DEMO_MODE === '1' || process.argv.includes('--fixture');
+  const forceFixture = envFlag('DEMO_MODE') || process.argv.includes('--fixture');
   console.log(`Ingest bundle (${forceFixture ? 'fixture' : 'live con fallback a fixture'})...`);
 
   let total = 0;

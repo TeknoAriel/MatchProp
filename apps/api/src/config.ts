@@ -2,15 +2,20 @@ import 'dotenv/config';
 import { config as loadEnv } from 'dotenv';
 loadEnv({ path: '.env.local', override: true }); // en local: .env.local (ej. vercel env pull) sobreescribe para usar Neon
 
+export function envFlag(name: string): boolean {
+  const val = process.env[name];
+  return (val ?? '').trim() === '1';
+}
+
 /** Feature flags centralizados (Sprint 9). En prod: demoMode=false, demo sources OFF. */
 export const featureFlags = {
   /** 1 = dev/test. En prod forzar 0. */
-  demoMode: process.env.DEMO_MODE === '1',
+  demoMode: envFlag('DEMO_MODE'),
   /** KITEPROP_EXTERNALSITE_MODE=fixture habilitado solo en demoMode. */
   kitepropExternalsite:
-    process.env.KITEPROP_EXTERNALSITE_MODE === 'fixture' && process.env.DEMO_MODE === '1',
+    process.env.KITEPROP_EXTERNALSITE_MODE === 'fixture' && envFlag('DEMO_MODE'),
   /** API_PARTNER_1 habilitado solo en demoMode. */
-  apiPartner1: process.env.DEMO_MODE === '1',
+  apiPartner1: envFlag('DEMO_MODE'),
   /** Stripe Premium B2C. Requiere STRIPE_SECRET_KEY. */
   stripePremium: !!(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.length > 0),
 };
@@ -24,7 +29,7 @@ function parseCorsOrigins(val: string): string[] {
 
 export const config = {
   /** 1 = dev/test (demo sources, demo data). En prod forzar 0. */
-  demoMode: process.env.DEMO_MODE === '1',
+  demoMode: envFlag('DEMO_MODE'),
   port: Number(process.env.PORT) || 3001,
   jwtSecret: process.env.JWT_SECRET || process.env.AUTH_JWT_SECRET || 'dev-secret',
   refreshSecret: process.env.AUTH_REFRESH_SECRET || process.env.JWT_SECRET || 'dev-refresh-secret',

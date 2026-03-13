@@ -9,7 +9,7 @@ import jwt from '@fastify/jwt';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { formatDate } from '@matchprop/shared';
-import { config } from './config.js';
+import { config, envFlag } from './config.js';
 import authPlugin from './plugins/auth.js';
 import { authRoutes } from './routes/auth.js';
 import { webauthnRoutes } from './routes/webauthn.js';
@@ -40,7 +40,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   // under-pressure: 503 cuando event loop/heap superan umbrales.
   // En serverless (Vercel 1024MB) dejar margen para cold start; en dev/demo más holgado; en tests desactivar.
   const isTest = process.env.VITEST === 'true' || process.env.NODE_ENV === 'test';
-  const isDev = process.env.DEMO_MODE === '1' || process.env.NODE_ENV !== 'production';
+  const isDev = envFlag('DEMO_MODE') || process.env.NODE_ENV !== 'production';
   const isVercel = process.env.VERCEL === '1';
   if (!isTest && !isVercel) {
     const heap = isDev ? 1024 * 1024 * 1024 : 512 * 1024 * 1024;

@@ -18,7 +18,7 @@ import {
   normalizeEmail,
 } from '../services/magic-link.js';
 import { getMailer } from '../services/mailer/index.js';
-import { config } from '../config.js';
+import { config, envFlag } from '../config.js';
 import { getOAuthAdapter, type OAuthProvider } from '../services/oauth/index.js';
 import {
   createOAuthAttempt,
@@ -210,9 +210,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const appUrl = (config.appUrl || 'http://localhost:3000').replace(/\/$/, '');
       const isDev =
-        process.env.NODE_ENV !== 'production' ||
-        process.env.DEMO_MODE === '1' ||
-        process.env.VERCEL === '1';
+        process.env.NODE_ENV !== 'production' || envFlag('DEMO_MODE') || process.env.VERCEL === '1';
 
       try {
         const body = request.body as { email?: string };
@@ -386,12 +384,9 @@ export async function authRoutes(fastify: FastifyInstance) {
   );
 
   const isDevAuth =
-    process.env.NODE_ENV !== 'production' ||
-    process.env.DEMO_MODE === '1' ||
-    process.env.VERCEL === '1';
+    process.env.NODE_ENV !== 'production' || envFlag('DEMO_MODE') || process.env.VERCEL === '1';
 
-  const isStatelessDemo =
-    process.env.DEMO_MODE === '1' && !process.env.DATABASE_URL;
+  const isStatelessDemo = envFlag('DEMO_MODE') && !process.env.DATABASE_URL;
   fastify.post(
     '/auth/demo',
     {
