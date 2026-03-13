@@ -71,8 +71,10 @@ DATABASE_URL="TU_DATABASE_URL_DE_NEON" pnpm --filter api exec prisma migrate dep
 
 | Variable | Valor |
 |----------|-------|
-| `API_SERVER_URL` | https://tu-api.railway.app |
-| `NEXT_PUBLIC_API_URL` | https://tu-api.railway.app |
+| `API_SERVER_URL` | https://tu-api.vercel.app (o railway.app) |
+| `NEXT_PUBLIC_API_URL` | https://tu-api.vercel.app (opcional) |
+
+**Fallback automático:** Si no definís `API_SERVER_URL` y el proyecto corre en Vercel, el proxy `/api/*` usa por defecto la API de producción conocida (`next.config.ts`). Conviene definirla igual para mayor control.
 
 7. Deploy
 
