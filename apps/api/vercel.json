@@ -7,6 +7,9 @@
     "api/auth/demo.ts": { "memory": 1024, "maxDuration": 30 },
     "api/auth/magic/request.ts": { "memory": 1024, "maxDuration": 30 },
     "api/auth/magic/verify.ts": { "memory": 1024, "maxDuration": 30 },
+    "api/auth/me.ts": { "memory": 1024, "maxDuration": 30 },
+    "api/me/saved.ts": { "memory": 1024, "maxDuration": 30 },
+    "api/me/lists.ts": { "memory": 1024, "maxDuration": 30 },
     "api/status/listings-count.ts": { "memory": 1024, "maxDuration": 30 }
   },
   "rewrites": [
