@@ -41,13 +41,11 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   // En serverless (Vercel 1024MB) dejar margen para cold start; en dev/demo más holgado; en tests desactivar.
   const isTest = process.env.VITEST === 'true' || process.env.NODE_ENV === 'test';
   const isDev = process.env.DEMO_MODE === '1' || process.env.NODE_ENV !== 'production';
-  if (!isTest) {
-    const heap =
-      isDev ? 1024 * 1024 * 1024
-      : process.env.VERCEL ? 900 * 1024 * 1024  // 900MB en Vercel (función 1024MB)
-      : 512 * 1024 * 1024;                       // 512MB prod no serverless
+  const isVercel = process.env.VERCEL === '1';
+  if (!isTest && !isVercel) {
+    const heap = isDev ? 1024 * 1024 * 1024 : 512 * 1024 * 1024;
     await fastify.register(underPressure, {
-      maxEventLoopDelay: process.env.VERCEL ? 3000 : 2000,
+      maxEventLoopDelay: 2000,
       maxHeapUsedBytes: heap,
       maxRssBytes: heap,
       message: 'Under pressure',
