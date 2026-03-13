@@ -610,10 +610,20 @@ function FeedListPageContent() {
           <div className="text-center py-12">
             {totalListings === 0 ? (
               <>
-                <p className="text-gray-500 text-lg">No hay inventario cargado.</p>
+                <p className="text-gray-500 text-lg">No hay propiedades cargadas aún.</p>
                 <p className="text-gray-400 text-sm mt-2">
-                  Ejecutá start (dev-up) para cargar datos.
+                  {typeof window !== 'undefined' &&
+                  (window.location.hostname.includes('vercel.app') ||
+                    window.location.hostname !== 'localhost')
+                    ? 'Pronto habrá listados disponibles. Usá Buscar para definir tu búsqueda.'
+                    : 'En local: ejecutá start (dev-up) para cargar datos.'}
                 </p>
+                <Link
+                  href="/assistant"
+                  className="inline-block mt-4 px-4 py-2 rounded-xl text-sm font-medium bg-[var(--mp-accent)] text-white"
+                >
+                  Ir a Buscar
+                </Link>
               </>
             ) : !usedFeedAll ? (
               <>
@@ -649,7 +659,11 @@ function FeedListPageContent() {
               <>
                 <p className="text-gray-500 text-lg">No hay propiedades cargadas.</p>
                 <p className="text-gray-400 text-sm mt-2">
-                  Ejecutá demo:data o ingest:run para cargar datos.
+                  {typeof window !== 'undefined' &&
+                  (window.location.hostname.includes('vercel.app') ||
+                    window.location.hostname !== 'localhost')
+                    ? 'Definí tu búsqueda para ver resultados.'
+                    : 'En local: ejecutá demo:data o ingest:run para cargar datos.'}
                 </p>
                 <Link
                   href="/assistant"
