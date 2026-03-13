@@ -22,5 +22,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!path.startsWith('/')) path = '/' + path;
   req.url = path + (qs ? '?' + qs : '');
 
-  app.server.emit('request', req, res);
+  await new Promise<void>((resolve, reject) => {
+    res.on('finish', () => resolve());
+    res.on('error', reject);
+    app.server.emit('request', req, res);
+  });
 }
