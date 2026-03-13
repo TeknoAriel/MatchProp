@@ -52,8 +52,8 @@ export async function listsRoutes(fastify: FastifyInstance) {
         select: { role: true, premiumUntil: true },
       });
       if (!dbUser) throw fastify.httpErrors.unauthorized();
-      const premiumFree =
-        envFlag('DEMO_MODE') || envFlag('PREMIUM_FREE') || envFlag('PREMIUM_GRACE_PERIOD');
+      const isDemo = envFlag('DEMO_MODE');
+      const premiumFree = isDemo || envFlag('PREMIUM_FREE') || envFlag('PREMIUM_GRACE_PERIOD');
       const simPremium =
         (process.env.NODE_ENV === 'development' || envFlag('DEMO_MODE')) &&
         ((request.cookies as Record<string, string> | undefined)?.['matchprop_premium_sim'] ===
@@ -61,9 +61,11 @@ export async function listsRoutes(fastify: FastifyInstance) {
           (request.headers['x-premium-sim'] as string) === '1');
       const isPremium =
         premiumFree || !!(dbUser.premiumUntil && dbUser.premiumUntil > new Date()) || !!simPremium;
+      // En modo demo dejamos crear listas siempre, sin exigir rol ni premium real.
       const canCreateLists =
-        isPremium &&
-        (premiumFree ? true : ['AGENT', 'REALTOR', 'INMOBILIARIA', 'ADMIN'].includes(dbUser.role));
+        isDemo ||
+        (isPremium &&
+          (premiumFree ? true : ['AGENT', 'REALTOR', 'INMOBILIARIA', 'ADMIN'].includes(dbUser.role)));
       if (!canCreateLists) {
         throw fastify.httpErrors.forbidden(
           'Necesitás plan Agente o superior para crear listas personalizadas. Usuario (1 USD) solo puede usar Like y Favoritos.'
