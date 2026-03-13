@@ -3,7 +3,10 @@
     "api/[[...path]].ts": {
       "memory": 1024,
       "maxDuration": 30
-    }
+    },
+    "api/auth/demo.ts": { "memory": 1024, "maxDuration": 30 },
+    "api/auth/magic/request.ts": { "memory": 1024, "maxDuration": 30 },
+    "api/auth/magic/verify.ts": { "memory": 1024, "maxDuration": 30 }
   },
   "rewrites": [
     { "source": "/(.*)", "destination": "/api/$1" }
