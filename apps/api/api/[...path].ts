@@ -16,10 +16,14 @@ async function getApp() {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const app = await getApp();
 
-  // Vercel Functions llegan como /api/<path>. Nuestra API rutea desde "/".
-  if (req.url) req.url = req.url.replace(/^\/api(?=\/|$)/, '') || '/';
+  // Normalizar path para Fastify: en Vercel puede venir como /api/<path> o /<path>.
+  // Rewrite "/(.*)" -> "/api/$1" puede hacer que req.url sea /api/... o la ruta original.
+  const raw = req.url ?? '/';
+  const [pathname, qs = ''] = raw.split('?');
+  let path = (pathname || '/').replace(/^\/api(?=\/|$)/, '') || '/';
+  if (!path.startsWith('/')) path = '/' + path;
+  req.url = path + (qs ? '?' + qs : '');
 
-  // Fastify expone un servidor Node HTTP; reutilizamos el request/response.
   app.server.emit('request', req, res);
 }
 
