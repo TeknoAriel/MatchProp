@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import { config as loadEnv } from 'dotenv';
+loadEnv({ path: '.env.local', override: true }); // en local: .env.local (ej. vercel env pull) sobreescribe para usar Neon
 
 /** Feature flags centralizados (Sprint 9). En prod: demoMode=false, demo sources OFF. */
 export const featureFlags = {

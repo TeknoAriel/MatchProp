@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/[...path].ts": {
+    "api/[[...path]].ts": {
       "memory": 1024,
       "maxDuration": 30
     }
