@@ -529,7 +529,7 @@ export default function AssistantPage() {
         {showDebug && (
           <p className="text-xs text-gray-400 mb-2">Assistant UI build: {ASSISTANT_BUILD}</p>
         )}
-        <div className="flex items-center gap-2 text-sm text-[var(--mp-muted)] mb-1">
+        <div className="flex items-center gap-2 text-sm text-[var(--mp-muted)] mb-1 flex-wrap">
           <Link href="/search" className="hover:text-[var(--mp-foreground)]">
             Por filtros
           </Link>
@@ -540,6 +540,13 @@ export default function AssistantPage() {
           <span>·</span>
           <Link href="/searches" className="hover:text-[var(--mp-foreground)]">
             Mis búsquedas
+          </Link>
+          <span>·</span>
+          <Link
+            href="/settings/integrations/assistant"
+            className="hover:text-[var(--mp-foreground)] text-[var(--mp-accent)]"
+          >
+            Configurar asistente (IA y voz)
           </Link>
         </div>
 

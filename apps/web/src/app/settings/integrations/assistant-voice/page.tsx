@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 const API_BASE = '/api';
 
-export default function AssistantSettingsPage() {
+export default function AssistantVoiceSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -97,7 +97,7 @@ export default function AssistantSettingsPage() {
       setHasApiKey(hasApiKey || !!form.apiKey);
       setHasPassword(hasPassword || !!form.password);
       setHasToken(hasToken || !!form.token);
-      setMessage('Guardado. El asistente conversacional usará esta configuración.');
+      setMessage('Guardado. El asistente de voz usará esta configuración.');
     } finally {
       setSaving(false);
     }
@@ -115,7 +115,7 @@ export default function AssistantSettingsPage() {
     <main className="p-4">
       <div className="max-w-2xl mx-auto">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-xl font-bold text-[var(--mp-foreground)]">Asistente IA y voz</h1>
+          <h1 className="text-xl font-bold text-[var(--mp-foreground)]">Asistente de voz</h1>
           <Link
             href="/me/settings"
             className="px-3 py-1.5 text-sm bg-[var(--mp-card)] border border-[var(--mp-border)] rounded-lg hover:bg-[var(--mp-bg)]"
@@ -125,8 +125,8 @@ export default function AssistantSettingsPage() {
         </div>
 
         <p className="text-sm text-[var(--mp-muted)] mb-4">
-          Misma configuración para el asistente por texto y por voz. Usuario, contraseña, API key y
-          token según el proveedor (OpenAI, Anthropic, Azure, custom). Búsqueda y conversacional.
+          Configuración para búsqueda por voz (micrófono) y conversacional. Mismos campos que el
+          Asistente IA: usuario, contraseña, API key y token según el proveedor.
         </p>
 
         <form onSubmit={handleSave} className="space-y-4">
@@ -229,12 +229,12 @@ export default function AssistantSettingsPage() {
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
-              id="enabled"
+              id="enabled-voice"
               checked={form.isEnabled}
               onChange={(e) => setForm((f) => ({ ...f, isEnabled: e.target.checked }))}
               className="rounded border-[var(--mp-border)]"
             />
-            <label htmlFor="enabled">Habilitado</label>
+            <label htmlFor="enabled-voice">Habilitado</label>
           </div>
 
           <button
@@ -254,11 +254,17 @@ export default function AssistantSettingsPage() {
 
         <div className="mt-6 p-4 rounded-xl bg-[var(--mp-bg)] border border-[var(--mp-border)]">
           <p className="text-xs text-[var(--mp-muted)]">
-            Esta configuración se usa para el <strong>Asistente IA</strong> (texto) y el{' '}
-            <strong>Asistente de voz</strong> (Buscar con micrófono). Usá API Key para OpenAI/Anthropic.
-            Token para otros headers. Usuario y contraseña para Basic Auth (custom).
+            Comparte la misma configuración que el Asistente IA. Lo que guardás aquí se usa en
+            Buscar (micrófono) y en el chat conversacional. Usá API Key para OpenAI/Anthropic, token
+            para otros headers, usuario y contraseña para Basic Auth (custom).
           </p>
         </div>
+
+        <p className="mt-4 text-sm text-[var(--mp-muted)]">
+          <Link href="/assistant" className="text-[var(--mp-accent)] hover:underline">
+            Ir a Buscar (usar voz) →
+          </Link>
+        </p>
       </div>
     </main>
   );

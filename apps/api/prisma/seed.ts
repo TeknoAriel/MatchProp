@@ -209,6 +209,12 @@ async function main() {
         format: 'json',
       },
     ],
+    icasas: [
+      {
+        url: 'https://www.kiteprop.com/difusions/icasas',
+        format: 'json',
+      },
+    ],
     zonaprop: [
       {
         url: 'https://static.kiteprop.com/kp/difusions/13d87da051c790afaf09c7afd094f151d7d06290/zonaprop.xml',
@@ -221,7 +227,7 @@ async function main() {
     create: { id: 'default', sourcesJson: defaultIngestSources },
     update: { sourcesJson: defaultIngestSources },
   });
-  console.log('IngestSourceConfig (externalsite, yumblin, zonaprop) seeded');
+  console.log('IngestSourceConfig (externalsite, yumblin, icasas, zonaprop) seeded');
 
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
   console.log('---');

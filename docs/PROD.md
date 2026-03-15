@@ -22,6 +22,8 @@ Antes de ir a producción, asegurarse de que **no** haya fuentes ni datos de dem
 
 - **DEMO_MODE=0** (obligatorio). Con `DEMO_MODE=1` se permiten demo data y rutas de demo.
 - **KITEPROP_EXTERNALSITE_MODE** — no usar valor `fixture`; en prod debe estar desactivado o apuntar a entorno real.
+- **KITEPROP_DIFUSION_YUMBLIN_MODE** — no setear `fixture` en prod; sin setear usa URL de IngestSourceConfig o env para consumir propiedades reales.
+- **KITEPROP_DIFUSION_ICASAS_MODE** — no setear `fixture` en prod; sin setear usa URL de IngestSourceConfig o env para consumir propiedades reales.
 - **API_PARTNER_1** — fuente de listings demo; queda desactivada cuando `DEMO_MODE=0`.
 - **DEMO_LISTINGS_COUNT** — no setear en prod (o `0`). Solo tiene efecto con `DEMO_MODE=1`.
 - Scripts **demo:reset-and-seed** y **demo:data** — no ejecutar en prod; requieren `DEMO_MODE=1`.

@@ -77,11 +77,11 @@ const SECTIONS: SettingsSection[] = [
     badge: 'Admin',
     adminOnly: false,
   },
-  // --- Asistente ---
+  // --- Asistente (misma configuración para IA y voz) ---
   {
     id: 'asistente-ai',
     title: 'Asistente IA',
-    description: 'Usuario, contraseña, API key y token para LLM (OpenAI, Claude).',
+    description: 'Usuario, contraseña, API key y token para LLM (OpenAI, Claude). Búsqueda y chat.',
     href: '/settings/integrations/assistant',
     icon: '🤖',
     badge: 'Admin',
@@ -89,10 +89,12 @@ const SECTIONS: SettingsSection[] = [
   },
   {
     id: 'asistencia-voz',
-    title: 'Voz y conversacional',
-    description: 'Web Speech API. Asistente conversacional listo para conectar.',
-    href: '/assistant',
+    title: 'Asistente de voz',
+    description: 'Config igual al Asistente IA: usuario, contraseña, API key y token para búsqueda por voz y conversacional.',
+    href: '/settings/integrations/assistant-voice',
     icon: '🎤',
+    badge: 'Admin',
+    adminOnly: false,
   },
 ];
 

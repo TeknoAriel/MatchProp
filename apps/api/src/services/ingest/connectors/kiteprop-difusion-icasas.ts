@@ -1,15 +1,29 @@
 /**
  * Conector Kiteprop Difusión iCasas (JSON).
+ * URL desde IngestSourceConfig (sourcesJson.icasas[0].url) o env KITEPROP_DIFUSION_ICASAS_URL.
  * Fixture: KITEPROP_DIFUSION_ICASAS_MODE=fixture lee desde fixtures/icasas-sample.json.
- * Live: GET https://www.kiteprop.com/difusions/icasas, sigue redirect a static.kiteprop.com, parsea JSON.
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import type { SourceConnector } from '../types.js';
 import type { ListingSource } from '@prisma/client';
+import { prisma } from '../../../lib/prisma.js';
+
 const FIXTURE_PATH = join(process.cwd(), 'src/services/ingest/fixtures/icasas-sample.json');
 const LOCATION_MAX = 200;
 const DEFAULT_URL = 'https://www.kiteprop.com/difusions/icasas';
+
+async function getIcasasUrl(): Promise<string> {
+  const envUrl = process.env.KITEPROP_DIFUSION_ICASAS_URL;
+  if (envUrl) return envUrl;
+  const row = await prisma.ingestSourceConfig.findUnique({
+    where: { id: 'default' },
+  });
+  const json = (row?.sourcesJson as Record<string, { url?: string }[]>) ?? {};
+  const arr = json.icasas;
+  if (Array.isArray(arr) && arr[0]?.url) return String(arr[0].url);
+  return DEFAULT_URL;
+}
 
 const PROPERTY_TYPE_MAP: Record<string, string> = {
   apartamento: 'APARTMENT',
@@ -75,7 +89,8 @@ export function createKitepropDifusionIcasasConnector(): SourceConnector {
         return { items: slice, nextCursor };
       }
 
-      const res = await fetch(DEFAULT_URL, { redirect: 'follow' });
+      const url = await getIcasasUrl();
+      const res = await fetch(url, { redirect: 'follow' });
       if (!res.ok) throw new Error(`iCasas difusion fetch failed: ${res.status}`);
       const arr = (await res.json()) as Record<string, unknown>[];
       const items = Array.isArray(arr) ? arr.map(icasasToRaw) : [];

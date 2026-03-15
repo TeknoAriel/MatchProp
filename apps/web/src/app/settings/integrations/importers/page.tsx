@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 const API_BASE = '/api';
 
-/** Formato esperado: { "yumblin": [{ url, format }], "zonaprop": [...], ... } */
+/** Formato esperado: { "yumblin": [{ url, format }], "icasas": [...], "zonaprop": [...], ... } */
 type SourcesJson = Record<string, { url: string; format: string }[]>;
 
 const DEFAULT_SOURCES: SourcesJson = {
@@ -19,6 +19,12 @@ const DEFAULT_SOURCES: SourcesJson = {
   yumblin: [
     {
       url: 'https://static.kiteprop.com/kp/difusions/23705a4a85ab8f1d301c73aae5359a81a8b5c1ca/yumblin.json',
+      format: 'json',
+    },
+  ],
+  icasas: [
+    {
+      url: 'https://www.kiteprop.com/difusions/icasas',
       format: 'json',
     },
   ],
@@ -92,7 +98,7 @@ export default function ImportersSettingsPage() {
         setMessage('Error al guardar');
         return;
       }
-      setMessage('Guardado correctamente. Yumblin y otras fuentes usan estas URLs.');
+      setMessage('Guardado correctamente. Yumblin, iCasas y otras fuentes usan estas URLs.');
     } finally {
       setSaving(false);
     }
