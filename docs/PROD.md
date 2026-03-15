@@ -98,6 +98,8 @@ Usar para healthcheck (Vercel, Kubernetes, etc.).
 | STRIPE_WEBHOOK_SECRET   | No (Premium B2C)  | Webhook Stripe para premiumUntil   |
 | LEAD_DEBIT_CENTS        | No (default 100)  | Débito por activar lead (centavos) |
 
+**Integraciones (Settings):** Asistente IA (y Asistente de voz) y API Universal se configuran desde la UI en /settings/integrations (usuario, API key, token). Las credenciales se guardan cifradas en DB con `INTEGRATIONS_MASTER_KEY`. No hay variables de entorno adicionales obligatorias para el asistente conversacional.
+
 ### Auth / Rate limit
 
 - AUTH_RATE_LIMIT_MAX (default 10)

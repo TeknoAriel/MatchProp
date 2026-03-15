@@ -94,7 +94,7 @@ MatchProp es una plataforma de búsqueda inmobiliaria que conecta compradores co
 ## UX contract (MVP)
 
 - **Barra de búsqueda activa global:** en /feed, /feed/list, /assistant, /searches, /alerts se muestra una barra (sticky) con estado “Sin búsqueda activa” + “Crear búsqueda” o con la búsqueda activa (resumen, Cambiar, Alertas, Limpiar).
-- **Guardar búsqueda siempre visible:** en /assistant, cuando hay filtros detectados, siempre se muestran los CTAs “Guardar búsqueda”, “Activar alertas” y “Ver resultados ahora”.
+- **Guardar búsqueda siempre visible:** en /assistant, cuando hay filtros detectados, los CTAs son "Guardar", "Activar alertas" y "Ver listado" (título "Buscar"; ver ALINEACION_MASTERPLAN.md).
 - **Feed/List filtrado por búsqueda activa:** /feed y /feed/list usan por defecto la búsqueda activa (searchId); si no hay activa, se muestra un CTA para crear y guardar una búsqueda (sin bloquear navegación).
 - **Alertas accesibles:** en /searches/:id la sección Alertas (Activas/Pausadas) está siempre visible; en /alerts se listan las suscripciones con enlace a la búsqueda.
 
@@ -153,9 +153,15 @@ MatchProp es una plataforma de búsqueda inmobiliaria que conecta compradores co
 ## UX contract (MVP)
 
 - **Active search bar global:** En /feed, /feed/list, /assistant, /searches, /alerts una barra muestra “Sin búsqueda activa” + Crear búsqueda, o el resumen de la búsqueda activa + Cambiar / Alertas / Limpiar.
-- **Guardar búsqueda siempre visible:** En /assistant, cuando hay filtros detectados, los CTAs “Guardar búsqueda”, “Activar alertas” y “Ver resultados ahora” están siempre visibles.
+- **Guardar búsqueda siempre visible:** En /assistant, cuando hay filtros detectados, los CTAs "Guardar", "Activar alertas" y "Ver listado" están siempre visibles (ver ALINEACION_MASTERPLAN.md).
 - **Feed/List filtrado por búsqueda activa:** /feed y /feed/list usan por defecto la búsqueda activa del usuario; si no hay activa, se muestra CTA para crear y guardar una.
 - **Alertas accesibles:** Desde el detalle de una búsqueda (/searches/:id) el toggle Alertas (Activas/Pausadas) está siempre visible; /alerts lista las suscripciones con enlace a la búsqueda.
+
+---
+
+## Estado actual (alineación)
+
+Estado de implementación y UX actual: **[ALINEACION_MASTERPLAN.md](./ALINEACION_MASTERPLAN.md)** (Epics, Settings, importadores Yumblin/iCasas, producción, tests).
 
 ---
 

@@ -64,6 +64,7 @@ export default function AssistantChatInput({
         type="button"
         onClick={onSend}
         disabled={loading}
+        aria-label="Enviar búsqueda"
         className="flex-shrink-0 w-12 h-12 min-h-[48px] flex items-center justify-center rounded-xl btn-accent disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? (

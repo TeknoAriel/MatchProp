@@ -2,11 +2,10 @@
 
 ## Pre-deploy
 
-- [ ] `pnpm build:shared`
-- [ ] `pnpm --filter api build`
-- [ ] `pnpm --filter web build`
-- [ ] Variables API: `DATABASE_URL`, `JWT_SECRET`, `AUTH_REFRESH_SECRET`, `APP_URL`, `API_PUBLIC_URL`, `CORS_ORIGINS`, `COOKIE_SECURE`, `DEMO_MODE`
+- [ ] `pnpm run pre-deploy:verify` (build shared, typecheck, build api/web/admin, test:all). Ver [PROD.md](./PROD.md).
+- [ ] Variables API: `DATABASE_URL`, `JWT_SECRET`, `AUTH_REFRESH_SECRET`, `APP_URL`, `API_PUBLIC_URL`, `CORS_ORIGINS`, `COOKIE_SECURE`, `DEMO_MODE=0`, `INTEGRATIONS_MASTER_KEY`
 - [ ] Variables Web: `API_SERVER_URL`, `NEXT_PUBLIC_API_URL`
+- [ ] Migraciones: `pnpm run deploy:pre` (o `DATABASE_URL=... pnpm --filter api exec prisma migrate deploy` contra DB de prod).
 
 ## Deploy
 

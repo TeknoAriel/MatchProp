@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "clean:test": "bash scripts/clean-for-test.sh",
+    "clean:web": "rm -rf apps/web/.next",
     "dev": "pnpm --parallel -r run dev",
     "typecheck": "pnpm -r run typecheck",
     "test": "pnpm -r run test",

@@ -33,7 +33,7 @@ test.describe('smoke:ux', () => {
     await page.waitForURL(/\/(dashboard|feed)/, { timeout: 25000 });
 
     await page.goto('/assistant');
-    await expect(page.getByRole('heading', { name: 'Asistente de búsqueda' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Buscar' })).toBeVisible({
       timeout: 10000,
     });
 
@@ -42,12 +42,12 @@ test.describe('smoke:ux', () => {
     await textarea.waitFor({ state: 'visible' });
     await textarea.click();
     await textarea.pressSequentially(searchText, { delay: 20 });
-    await page.getByRole('button', { name: 'Generar búsqueda' }).click();
+    await page.getByRole('button', { name: 'Enviar búsqueda' }).click();
 
     await expect(page.getByText('Resumen').first()).toBeVisible({ timeout: 15000 });
-    await expect(page.getByRole('button', { name: 'Guardar búsqueda' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Guardar' })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Ver resultados ahora' }).click();
+    await page.getByRole('link', { name: 'Ver listado' }).click();
     await expect(
       page
         .getByRole('heading', { name: 'Resultados' })
@@ -67,15 +67,16 @@ test.describe('smoke:ux', () => {
 
     // Volver al assistant y guardar (re-ejecutar búsqueda con un ejemplo para tener botón Guardar)
     await page.goto('/assistant');
-    await expect(page.getByRole('heading', { name: 'Asistente de búsqueda' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Buscar' })).toBeVisible({
       timeout: 5000,
     });
     await page.getByRole('button', { name: 'Comprar depto 2 dorm Rosario hasta 120k USD' }).click();
     await expect(page.getByText('Resumen').first()).toBeVisible({ timeout: 15000 });
-    await page.getByRole('button', { name: 'Guardar búsqueda' }).click();
+    await page.getByRole('button', { name: 'Guardar' }).click();
     await expect(
       page
-        .getByRole('link', { name: /Ir a búsqueda/ })
+        .getByText('Guardada y activa')
+        .or(page.getByRole('link', { name: /Ir a búsqueda|Mis búsquedas/ }))
         .or(page.getByRole('link', { name: 'Ir a búsquedas guardadas' }))
     ).toBeVisible({ timeout: 5000 });
 
@@ -314,9 +315,9 @@ test.describe('smoke:ux', () => {
     await page.waitForURL(/\/(dashboard|feed)/, { timeout: 25000 });
     await page.goto('/assistant');
     await page.locator('textarea').first().fill('Depto 2 dorm Rosario hasta 120k USD');
-    await page.getByRole('button', { name: 'Generar búsqueda' }).click();
+    await page.getByRole('button', { name: 'Enviar búsqueda' }).click();
     await expect(page.getByText('Resumen').first()).toBeVisible({ timeout: 15000 });
-    await page.getByRole('button', { name: 'Ver resultados ahora' }).click();
+    await page.getByRole('link', { name: 'Ver listado' }).first().click();
     await page.waitForTimeout(5000);
     const hasResultados = await page.getByRole('heading', { name: 'Resultados' }).isVisible();
     const hasCards = await page.locator('a[href^="/listing/"]').first().isVisible();
@@ -341,10 +342,12 @@ test.describe('smoke:ux', () => {
     await page.waitForURL(/\/(dashboard|feed)/, { timeout: 25000 });
     await page.goto('/assistant');
     await page.locator('textarea').first().fill('Casa 3 dorm Funes');
-    await page.getByRole('button', { name: 'Generar búsqueda' }).click();
+    await page.getByRole('button', { name: 'Enviar búsqueda' }).click();
     await expect(page.getByText('Resumen').first()).toBeVisible({ timeout: 15000 });
-    await page.getByRole('button', { name: 'Guardar búsqueda' }).click();
-    await expect(page.getByRole('link', { name: /Ir a búsqueda/ })).toBeVisible({ timeout: 5000 });
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    await expect(
+      page.getByText('Guardada y activa').or(page.getByRole('link', { name: /Ir a búsqueda|Mis búsquedas/ }))
+    ).toBeVisible({ timeout: 5000 });
     await page.goto('/searches');
     const searchLink = page.locator('a[href^="/searches/"]').first();
     await expect(searchLink).toBeVisible();
