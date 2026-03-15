@@ -74,4 +74,10 @@ API del asistente: `POST /assistant/chat` usa credenciales de `AssistantConfig` 
 
 ---
 
+## Próximas tareas y mejoras
+
+Ver **[TAREAS_Y_MEJORAS.md](./TAREAS_Y_MEJORAS.md)** — prioridad (smoke en CI, migraciones en deploy, Mercado Pago), mejoras técnicas (deprecaciones, ESLint) y referencias.
+
+---
+
 *Última actualización: alineado a masterplan v3.0 y estado post–Sprint 14 / integraciones.*

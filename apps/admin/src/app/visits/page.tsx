@@ -3,7 +3,7 @@
  */
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -24,7 +24,7 @@ export default function VisitsPage() {
   const [loading, setLoading] = useState(true);
   const [upcoming, setUpcoming] = useState(true);
 
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/admin/debug/visits?limit=50&upcoming=${upcoming}`, {
@@ -37,11 +37,11 @@ export default function VisitsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [upcoming]);
 
   useEffect(() => {
     fetchData();
-  }, [upcoming]);
+  }, [fetchData]);
 
   if (loading) return <main className="p-6">Cargando...</main>;
 
