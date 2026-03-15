@@ -25,6 +25,7 @@
     "pre-deploy:verify": "bash scripts/pre-deploy-verify.sh",
     "demo:up": "bash scripts/demo-up-and-smoke.sh",
     "dev:up": "bash scripts/dev-up.sh",
+    "dev-local": "bash scripts/dev-local.sh",
     "dev:down": "bash scripts/dev-down.sh",
     "deploy:git": "bash scripts/deploy-git.sh",
     "audit:verify": "bash scripts/audit-verify.sh",

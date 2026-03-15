@@ -9,6 +9,7 @@ import { SkeletonList } from '../../../components/SkeletonLoader';
 import FilterChips from '../../../components/FilterChips';
 import InquiryModal from '../../../components/InquiryModal';
 import PlanErrorBlock from '../../../components/PlanErrorBlock';
+import BetaPremiumBanner from '../../../components/BetaPremiumBanner';
 import ShareModal from '../../../components/ShareModal';
 import { getListingImageUrl } from '../../../lib/demo-image';
 
@@ -561,6 +562,8 @@ function FeedListPageContent() {
         >
           🔍 Buscar
         </Link>
+
+        <BetaPremiumBanner className="mb-3" />
 
         {hasActiveSearch === false && (
           <div className="mb-3 p-3 rounded-xl border border-[var(--mp-border)] bg-[var(--mp-card)] text-sm text-[var(--mp-muted)]">

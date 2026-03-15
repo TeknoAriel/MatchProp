@@ -45,6 +45,15 @@ if [ ! -f apps/api/.env.local ]; then
   echo "Listo: DB local creada y apps/api/.env.local generado."
 fi
 
+# --- Si ya existe .env.local y DB responde, aplicar migraciones y seed ---
+if [ -f apps/api/.env.local ] && nc -z localhost 5432 2>/dev/null; then
+  echo "Aplicando migraciones..."
+  pnpm --filter api exec prisma generate
+  pnpm --filter api exec prisma migrate deploy
+  echo "Seed (admin users)..."
+  pnpm --filter api run prisma:seed 2>/dev/null || true
+fi
+
 # --- Asegurar env mínimo en API ---
 API_ENV="apps/api/.env"
 [ -f "$API_ENV" ] || touch "$API_ENV"

@@ -1,3 +1,8 @@
+/**
+ * Conector Kiteprop Difusión Yumblin (JSON).
+ * URL desde IngestSourceConfig (sourcesJson.yumblin[0].url) o env KITEPROP_DIFUSION_YUMBLIN_URL.
+ * Formato JSON tipo Kiteprop externalsite (id, images, property_type, for_rent, etc.).
+ */
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import type { SourceConnector } from '../types.js';
@@ -5,8 +10,8 @@ import type { ListingSource } from '@prisma/client';
 import { prisma } from '../../../lib/prisma.js';
 
 const FIXTURE_PATH = join(process.cwd(), 'src/services/ingest/fixtures/kiteprop-sample.min.json');
-const DEFAULT_TOKEN_URL =
-  'https://static.kiteprop.com/kp/difusions/4b3c894a10d905c82e85b35c410d7d4099551504/externalsite-2-9e4f284e1578b24afa155c578d05821ac4c56baa.json';
+const DEFAULT_URL =
+  'https://static.kiteprop.com/kp/difusions/23705a4a85ab8f1d301c73aae5359a81a8b5c1ca/yumblin.json';
 const LOCATION_MAX = 200;
 
 const PROPERTY_TYPE_MAP: Record<string, string> = {
@@ -38,11 +43,23 @@ function buildLocationText(raw: Record<string, unknown>): string | null {
   return trunc(s) || trunc(String(raw.address ?? ''));
 }
 
-export function createKitepropExternalsiteConnector(): SourceConnector {
-  const useFixture = process.env.KITEPROP_EXTERNALSITE_MODE === 'fixture';
+async function getYumblinUrl(): Promise<string> {
+  const envUrl = process.env.KITEPROP_DIFUSION_YUMBLIN_URL;
+  if (envUrl) return envUrl;
+  const row = await prisma.ingestSourceConfig.findUnique({
+    where: { id: 'default' },
+  });
+  const json = (row?.sourcesJson as Record<string, { url?: string }[]>) ?? {};
+  const arr = json.yumblin;
+  if (Array.isArray(arr) && arr[0]?.url) return String(arr[0].url);
+  return DEFAULT_URL;
+}
+
+export function createKitepropDifusionYumblinConnector(): SourceConnector {
+  const useFixture = process.env.KITEPROP_DIFUSION_YUMBLIN_MODE === 'fixture';
 
   return {
-    source: 'KITEPROP_EXTERNALSITE' as ListingSource,
+    source: 'KITEPROP_DIFUSION_YUMBLIN' as ListingSource,
     fetchBatch: async ({ cursor, limit }) => {
       if (useFixture) {
         const raw = readFileSync(FIXTURE_PATH, 'utf-8');
@@ -54,19 +71,14 @@ export function createKitepropExternalsiteConnector(): SourceConnector {
         return { items: slice, nextCursor };
       }
 
-      let url = process.env.KITEPROP_EXTERNALSITE_URL;
-      if (!url) {
-        const row = await prisma.ingestSourceConfig.findUnique({ where: { id: 'default' } });
-        const json = (row?.sourcesJson as Record<string, { url?: string }[]>) ?? {};
-        const arr = json.externalsite;
-        url = Array.isArray(arr) && arr[0]?.url ? String(arr[0].url) : DEFAULT_TOKEN_URL;
-      }
+      const url = await getYumblinUrl();
       const res = await fetch(url);
-      if (!res.ok) throw new Error(`Kiteprop externalsite fetch failed: ${res.status}`);
+      if (!res.ok) throw new Error(`Yumblin fetch failed: ${res.status}`);
       const items = (await res.json()) as Record<string, unknown>[];
+      const arr = Array.isArray(items) ? items : [];
       const start = cursor ? parseInt(cursor, 10) || 0 : 0;
-      const slice = items.slice(start, start + limit);
-      const nextCursor = start + slice.length < items.length ? String(start + slice.length) : null;
+      const slice = arr.slice(start, start + limit);
+      const nextCursor = start + slice.length < arr.length ? String(start + slice.length) : null;
       return { items: slice, nextCursor };
     },
     normalize: (raw) => {
@@ -82,7 +94,7 @@ export function createKitepropExternalsiteConnector(): SourceConnector {
       const publisherRef = agency?.id != null ? String(agency.id) : null;
 
       return {
-        source: 'KITEPROP_EXTERNALSITE' as ListingSource,
+        source: 'KITEPROP_DIFUSION_YUMBLIN' as ListingSource,
         externalId: id,
         publisherRef,
         status: raw.status === 'inactive' ? 'INACTIVE' : 'ACTIVE',

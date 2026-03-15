@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import { UserRole } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { encrypt } from '../lib/crypto.js';
 import { LeadDeliveryAttemptKind, LeadDeliveryAttemptStatus } from '@prisma/client';
@@ -17,8 +18,324 @@ const SPEC_FETCH_TIMEOUT_MS = 10000;
 
 export async function integrationsRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', fastify.authenticate);
+  fastify.addHook('preHandler', fastify.requireRole([UserRole.ADMIN]));
 
   const defaultConfig = parseKitepropOpenAPI();
+
+  // --- SendGrid (Magic Link) - config desde settings, habilitar en prod ---
+
+  fastify.get(
+    '/integrations/sendgrid',
+    {
+      schema: {
+        tags: ['Integrations'],
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              isEnabled: { type: 'boolean' },
+              hasApiKey: { type: 'boolean' },
+              fromEmail: { type: 'string', nullable: true },
+            },
+          },
+        },
+      },
+    },
+    async () => {
+      const row = await prisma.sendGridConfig.findUnique({
+        where: { id: 'default' },
+      });
+      return {
+        isEnabled: row?.isEnabled ?? false,
+        hasApiKey: !!row?.apiKeyEncrypted,
+        fromEmail: row?.fromEmail ?? 'noreply@matchprop.com',
+      };
+    }
+  );
+
+  fastify.put(
+    '/integrations/sendgrid',
+    {
+      schema: {
+        tags: ['Integrations'],
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: 'object',
+          properties: {
+            apiKey: { type: 'string' },
+            fromEmail: { type: 'string' },
+            isEnabled: { type: 'boolean' },
+          },
+        },
+        response: { 200: { type: 'object', properties: { ok: { type: 'boolean' } } } },
+      },
+    },
+    async (request) => {
+      const body = request.body as { apiKey?: string; fromEmail?: string; isEnabled?: boolean };
+      const masterKey = process.env.INTEGRATIONS_MASTER_KEY;
+      if (body.apiKey && !masterKey) {
+        throw fastify.httpErrors.preconditionFailed(
+          'INTEGRATIONS_MASTER_KEY no configurado. Necesario para cifrar la API key.'
+        );
+      }
+      const fromEmail = (body.fromEmail?.trim() || 'noreply@matchprop.com');
+      const isEnabled = body.isEnabled ?? false;
+      const existing = await prisma.sendGridConfig.findUnique({ where: { id: 'default' } });
+      const apiKeyEncrypted = body.apiKey ? encrypt(body.apiKey) : (existing?.apiKeyEncrypted ?? null);
+
+      await prisma.sendGridConfig.upsert({
+        where: { id: 'default' },
+        create: {
+          id: 'default',
+          apiKeyEncrypted,
+          fromEmail,
+          isEnabled,
+        },
+        update: {
+          apiKeyEncrypted,
+          fromEmail,
+          isEnabled,
+        },
+      });
+      return { ok: true };
+    }
+  );
+
+  // --- Asistente IA (usuario, contraseña, apiKey, token para LLM) ---
+
+  fastify.get(
+    '/integrations/assistant',
+    {
+      schema: {
+        tags: ['Integrations'],
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              hasApiKey: { type: 'boolean' },
+              hasUsername: { type: 'boolean' },
+              hasPassword: { type: 'boolean' },
+              hasToken: { type: 'boolean' },
+              provider: { type: 'string', nullable: true },
+              username: { type: 'string', nullable: true },
+              model: { type: 'string', nullable: true },
+              conversationalModel: { type: 'string', nullable: true },
+              baseUrl: { type: 'string', nullable: true },
+              isEnabled: { type: 'boolean' },
+            },
+          },
+        },
+      },
+    },
+    async () => {
+      const row = await prisma.assistantConfig.findUnique({ where: { id: 'default' } });
+      return {
+        hasApiKey: !!row?.apiKeyEncrypted,
+        hasUsername: !!row?.username,
+        hasPassword: !!row?.passwordEncrypted,
+        hasToken: !!row?.tokenEncrypted,
+        provider: row?.provider ?? null,
+        username: row?.username ?? null,
+        model: row?.model ?? null,
+        conversationalModel: row?.conversationalModel ?? null,
+        baseUrl: row?.baseUrl ?? null,
+        isEnabled: row?.isEnabled ?? false,
+      };
+    }
+  );
+
+  fastify.put(
+    '/integrations/assistant',
+    {
+      schema: {
+        tags: ['Integrations'],
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: 'object',
+          properties: {
+            username: { type: 'string' },
+            password: { type: 'string' },
+            apiKey: { type: 'string' },
+            token: { type: 'string' },
+            provider: { type: 'string' },
+            model: { type: 'string' },
+            conversationalModel: { type: 'string' },
+            baseUrl: { type: 'string' },
+            isEnabled: { type: 'boolean' },
+          },
+        },
+        response: { 200: { type: 'object', properties: { ok: { type: 'boolean' } } } },
+      },
+    },
+    async (request) => {
+      const body = request.body as {
+        username?: string;
+        password?: string;
+        apiKey?: string;
+        token?: string;
+        provider?: string;
+        model?: string;
+        conversationalModel?: string;
+        baseUrl?: string;
+        isEnabled?: boolean;
+      };
+      const masterKey = process.env.INTEGRATIONS_MASTER_KEY;
+      const needsEncrypt = body.apiKey || body.password || body.token;
+      if (needsEncrypt && !masterKey) {
+        throw fastify.httpErrors.preconditionFailed(
+          'INTEGRATIONS_MASTER_KEY no configurado para cifrar credenciales.'
+        );
+      }
+      const existing = await prisma.assistantConfig.findUnique({ where: { id: 'default' } });
+      const apiKeyEncrypted = body.apiKey ? encrypt(body.apiKey) : (existing?.apiKeyEncrypted ?? null);
+      const passwordEncrypted = body.password ? encrypt(body.password) : (existing?.passwordEncrypted ?? null);
+      const tokenEncrypted = body.token ? encrypt(body.token) : (existing?.tokenEncrypted ?? null);
+
+      await prisma.assistantConfig.upsert({
+        where: { id: 'default' },
+        create: {
+          id: 'default',
+          provider: body.provider ?? null,
+          username: body.username?.trim() || null,
+          passwordEncrypted,
+          apiKeyEncrypted,
+          tokenEncrypted,
+          model: body.model ?? null,
+          baseUrl: body.baseUrl ?? null,
+          conversationalModel: body.conversationalModel ?? null,
+          isEnabled: body.isEnabled ?? false,
+        },
+        update: {
+          ...(body.provider !== undefined && { provider: body.provider }),
+          ...(body.username !== undefined && { username: body.username?.trim() || null }),
+          ...(passwordEncrypted !== undefined && { passwordEncrypted }),
+          ...(apiKeyEncrypted !== undefined && { apiKeyEncrypted }),
+          ...(tokenEncrypted !== undefined && { tokenEncrypted }),
+          ...(body.model !== undefined && { model: body.model }),
+          ...(body.baseUrl !== undefined && { baseUrl: body.baseUrl }),
+          ...(body.conversationalModel !== undefined && { conversationalModel: body.conversationalModel }),
+          ...(body.isEnabled !== undefined && { isEnabled: body.isEnabled }),
+        },
+      });
+      return { ok: true };
+    }
+  );
+
+  // --- API Universal (status: env API_UNIVERSAL_KEY) ---
+
+  fastify.get(
+    '/integrations/api-universal-status',
+    {
+      schema: {
+        tags: ['Integrations'],
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              configured: { type: 'boolean' },
+              baseUrl: { type: 'string', nullable: true },
+            },
+          },
+        },
+      },
+    },
+    async () => {
+      const keys = (process.env.API_UNIVERSAL_KEY ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      return {
+        configured: keys.length > 0,
+        baseUrl: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001',
+      };
+    }
+  );
+
+  // --- Pasarela de pago (Stripe: env STRIPE_*) ---
+
+  fastify.get(
+    '/integrations/payments-status',
+    {
+      schema: {
+        tags: ['Integrations'],
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              stripeConfigured: { type: 'boolean' },
+            },
+          },
+        },
+      },
+    },
+    async () => {
+      const hasKey = !!(
+        process.env.STRIPE_SECRET_KEY &&
+        process.env.STRIPE_SECRET_KEY.length > 0
+      );
+      return { stripeConfigured: hasKey };
+    }
+  );
+
+  // --- Importadores (fuentes Kiteprop difusiones: yumblin, zonaprop, externalsite) ---
+
+  fastify.get(
+    '/integrations/importers',
+    {
+      schema: {
+        tags: ['Integrations'],
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              sourcesJson: { type: 'object' },
+            },
+          },
+        },
+      },
+    },
+    async () => {
+      const row = await prisma.ingestSourceConfig.findUnique({
+        where: { id: 'default' },
+      });
+      const sourcesJson = (row?.sourcesJson as Record<string, unknown>) ?? {};
+      return { sourcesJson };
+    }
+  );
+
+  fastify.put(
+    '/integrations/importers',
+    {
+      schema: {
+        tags: ['Integrations'],
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: 'object',
+          properties: {
+            sourcesJson: { type: 'object' },
+          },
+        },
+        response: { 200: { type: 'object', properties: { ok: { type: 'boolean' } } } },
+      },
+    },
+    async (request) => {
+      const body = request.body as { sourcesJson?: Record<string, unknown> };
+      const sourcesJson = (body.sourcesJson ?? {}) as object;
+      await prisma.ingestSourceConfig.upsert({
+        where: { id: 'default' },
+        create: { id: 'default', sourcesJson },
+        update: { sourcesJson },
+      });
+      return { ok: true };
+    }
+  );
+
+  // --- Kiteprop ---
 
   fastify.get(
     '/integrations/kiteprop',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -15,60 +15,82 @@ interface SettingsSection {
   external?: boolean;
   icon: string;
   badge?: string;
+  adminOnly?: boolean;
 }
 
 const SECTIONS: SettingsSection[] = [
+  // --- Integraciones Kiteprop (leads, delivery) ---
   {
     id: 'kiteprop',
-    title: 'Integración Kiteprop',
+    title: 'Kiteprop (leads)',
     description:
-      'Configurar API, clave, spec OpenAPI, plantilla de payload y probar envío de leads.',
+      'API, clave, spec OpenAPI, plantilla de payload. Envío de consultas a inmobiliarias.',
     href: '/settings/integrations/kiteprop',
     icon: '🔗',
-    badge: 'Agentes',
-  },
-  {
-    id: 'cargas-json',
-    title: 'Cargas JSON',
-    description:
-      'Ingest desde Zonaprop, Toctoc, iCasas y otros portales. Scripts: ingest:run, ingest:fixture-refresh. Ver docs/repo-map.md.',
-    icon: '📥',
-    badge: 'Backend',
-  },
-  {
-    id: 'crm-portales',
-    title: 'CRM y portales',
-    description:
-      'Webhook para CRM (listing.matches_found), API Partner. Panel Admin en puerto 3002.',
-    icon: '🏢',
     badge: 'Admin',
+    adminOnly: true,
   },
+  {
+    id: 'importers',
+    title: 'Fuentes de datos (Importadores)',
+    description: 'URLs de difusiones Kiteprop: yumblin, zonaprop, etc. Formato JSON/xml.',
+    href: '/settings/integrations/importers',
+    icon: '📥',
+    badge: 'Admin',
+    adminOnly: true,
+  },
+  {
+    id: 'sendgrid',
+    title: 'SendGrid (Magic Link)',
+    description: 'API key y email remitente para links de login por correo.',
+    href: '/settings/integrations/sendgrid',
+    icon: '📧',
+    badge: 'Admin',
+    adminOnly: true,
+  },
+  // --- API y conectores ---
   {
     id: 'api-universal',
     title: 'API Universal',
     description:
-      'Endpoints REST para integradores: feed, searches, leads, assistant. Ver repo-map y documentación.',
+      'Endpoints REST públicos para integradores (feed, listings). Autenticación por API key.',
+    href: '/settings/integrations/api-universal',
     icon: '🔌',
-    badge: 'Desarrolladores',
+    badge: 'Admin',
+    adminOnly: false,
   },
+  {
+    id: 'crm-portales',
+    title: 'CRM y portales',
+    description: 'Webhook CRM, API Partner. Panel Admin puerto 3002.',
+    icon: '🏢',
+    badge: 'Admin',
+    adminOnly: true,
+  },
+  // --- Pagos ---
   {
     id: 'pasarela-pago',
     title: 'Pasarela de pago',
-    description: 'Stripe B2C, planes Premium por rol. Configurar precios y webhooks.',
-    href: '/me/premium',
+    description: 'Stripe B2C, planes Premium. Configuración y estado.',
+    href: '/settings/integrations/payments',
     icon: '💳',
+    badge: 'Admin',
+    adminOnly: false,
   },
+  // --- Asistente ---
   {
     id: 'asistente-ai',
-    title: 'Asistente AI de búsqueda',
-    description: 'Parser texto → filtros. Ejemplos configurables. Búsqueda natural en lenguaje.',
-    href: '/assistant',
+    title: 'Asistente IA',
+    description: 'Usuario, contraseña, API key y token para LLM (OpenAI, Claude).',
+    href: '/settings/integrations/assistant',
     icon: '🤖',
+    badge: 'Admin',
+    adminOnly: false,
   },
   {
     id: 'asistencia-voz',
-    title: 'Asistencia por voz',
-    description: 'Web Speech API. Buscar por voz con el micrófono desde el asistente.',
+    title: 'Voz y conversacional',
+    description: 'Web Speech API. Asistente conversacional listo para conectar.',
     href: '/assistant',
     icon: '🎤',
   },
@@ -76,17 +98,28 @@ const SECTIONS: SettingsSection[] = [
 
 export default function SettingsPage() {
   const router = useRouter();
+  const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`${API_BASE}/me/profile`, { credentials: 'include' })
       .then((res) => {
-        if (res.status === 401) router.replace('/login');
+        if (res.status === 401) {
+          router.replace('/login');
+          return null;
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (data?.role) setRole(data.role);
       })
       .catch(() => {});
   }, [router]);
 
+  const isAdmin = role === 'ADMIN';
+  const sectionsToShow = SECTIONS.filter((s) => !s.adminOnly || isAdmin);
+
   return (
-    <main className="min-h-screen p-4 md:p-6">
+    <main className="p-4 md:p-6">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -105,8 +138,8 @@ export default function SettingsPage() {
           </Link>
         </div>
 
-        <div className="space-y-4">
-          {SECTIONS.map((s) => {
+        <div className="space-y-3">
+          {sectionsToShow.map((s) => {
             const content = (
               <div
                 className={`flex items-start gap-4 p-4 rounded-2xl border bg-[var(--mp-card)] border-[var(--mp-border)] transition-colors ${

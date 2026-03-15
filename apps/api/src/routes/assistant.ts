@@ -1,7 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import { getAssistantProvider } from '../services/assistant/index.js';
+import { chatCompletion } from '../services/assistant/conversational.js';
 import { assistantSearchRequestSchema, normalizeFilters } from '../schemas/search.js';
 import { executeFeed } from '../lib/feed-engine.js';
+import { prisma } from '../lib/prisma.js';
+import { decrypt } from '../lib/crypto.js';
 import type { SearchFilters } from '@matchprop/shared';
 
 const PREVIEW_LIMIT = 10;
@@ -210,6 +213,110 @@ export async function assistantRoutes(fastify: FastifyInstance) {
         nextCursor: result.nextCursor,
         limit: result.limit,
       };
+    }
+  );
+
+  // --- Asistente conversacional: listo para conectar cualquier modelo (OpenAI, Claude, etc.) ---
+  fastify.post(
+    '/chat',
+    {
+      config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
+      schema: {
+        tags: ['Assistant'],
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: 'object',
+          required: ['message'],
+          properties: {
+            message: { type: 'string', minLength: 1, maxLength: 2000 },
+            history: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: { role: { type: 'string' }, content: { type: 'string' } },
+              },
+            },
+          },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              reply: { type: 'string' },
+              model: { type: 'string', nullable: true },
+              configured: { type: 'boolean' },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { message, history = [] } = (request.body ?? {}) as {
+        message?: string;
+        history?: { role: string; content: string }[];
+      };
+      const config = await prisma.assistantConfig.findUnique({ where: { id: 'default' } });
+
+      const hasAuth = config?.apiKeyEncrypted || config?.tokenEncrypted;
+      if (!config?.isEnabled || !hasAuth) {
+        return reply.send({
+          reply:
+            'Conectá un modelo en Configuración → Asistente IA: completá API key o Token (y usuario/contraseña si aplica).',
+          model: null,
+          configured: false,
+        });
+      }
+
+      const modelId = config.conversationalModel ?? config.model ?? config.provider ?? 'unknown';
+      const provider = (config.provider ?? 'openai') as 'openai' | 'anthropic' | 'azure' | 'custom';
+
+      let apiKey: string;
+      try {
+        apiKey = config.apiKeyEncrypted
+          ? decrypt(config.apiKeyEncrypted)
+          : config.tokenEncrypted
+            ? decrypt(config.tokenEncrypted)
+            : '';
+      } catch {
+        return reply.send({
+          reply: 'Error al descifrar credenciales. Verificá INTEGRATIONS_MASTER_KEY.',
+          model: null,
+          configured: false,
+        });
+      }
+      if (!apiKey?.trim()) {
+        return reply.send({
+          reply: 'API key o Token vacío. Configurá en Asistente IA.',
+          model: null,
+          configured: false,
+        });
+      }
+
+      const result = await chatCompletion(
+        {
+          provider,
+          apiKey,
+          model: modelId,
+          baseUrl: config.baseUrl,
+        },
+        message ?? '',
+        history.map((h) => ({ role: h.role as 'user' | 'assistant' | 'system', content: h.content }))
+      );
+
+      if (result.error) {
+        request.log.warn({ err: result.error, model: modelId }, 'assistant/chat LLM error');
+        return reply.send({
+          reply: `Error del proveedor: ${result.error}`,
+          model: modelId,
+          configured: true,
+        });
+      }
+
+      return reply.send({
+        reply: result.reply,
+        model: result.model,
+        configured: true,
+      });
     }
   );
 }

@@ -71,6 +71,10 @@ export default function KitepropSettingsPage() {
           router.replace('/login');
           return null;
         }
+        if (res.status === 403) {
+          router.replace('/me/profile');
+          return null;
+        }
         return res.json();
       })
       .then((data) => {

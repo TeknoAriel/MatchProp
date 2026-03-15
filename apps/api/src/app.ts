@@ -30,6 +30,7 @@ import { notificationsRoutes } from './routes/notifications.js';
 import { profileRoutes } from './routes/profile.js';
 import { orgInvitationsRoutes } from './routes/org-invitations.js';
 import { integrationsRoutes } from './routes/integrations.js';
+import { apiUniversalRoutes } from './routes/api-universal.js';
 import { debugRoutes } from './routes/debug.js';
 import { statusRoutes } from './routes/status.js';
 import { prisma } from './lib/prisma.js';
@@ -205,6 +206,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   await fastify.register(profileRoutes);
   await fastify.register(orgInvitationsRoutes);
   await fastify.register(integrationsRoutes);
+  await fastify.register(apiUniversalRoutes);
   await fastify.register(debugRoutes);
   await fastify.register(statusRoutes);
 

@@ -6,6 +6,7 @@ build
 .env
 .env.local
 .env.*.local
+.env.vercel.prod
 .vercel
 *.log
 .logs/

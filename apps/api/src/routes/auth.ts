@@ -17,7 +17,7 @@ import {
   upsertUserAndIdentityForMagicLink,
   normalizeEmail,
 } from '../services/magic-link.js';
-import { getMailer } from '../services/mailer/index.js';
+import { getMailerForSend } from '../services/mailer/index.js';
 import { config, envFlag } from '../config.js';
 import { getOAuthAdapter, type OAuthProvider } from '../services/oauth/index.js';
 import {
@@ -239,7 +239,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         }
 
         const link = `${appUrl}/auth/magic/callback?token=${encodeURIComponent(token)}`;
-        const mailer = getMailer();
+        const mailer = await getMailerForSend();
         mailer.sendMagicLink(email, link).catch((err) => request.log.warn({ err }, 'Mailer send failed'));
         logAuthAudit({ event: 'magic_requested', email, ...meta }).catch((err) =>
           request.log.warn({ err }, 'Auth audit failed')

@@ -10,5 +10,6 @@ process.env.KITEPROP_EXTERNALSITE_MODE = 'fixture';
 process.env.KITEPROP_DIFUSION_ZONAPROP_MODE = 'fixture';
 process.env.KITEPROP_DIFUSION_TOCTOC_MODE = 'fixture';
 process.env.KITEPROP_DIFUSION_ICASAS_MODE = 'fixture';
+process.env.KITEPROP_DIFUSION_YUMBLIN_MODE = 'fixture';
 process.env.INTEGRATIONS_MASTER_KEY =
   process.env.INTEGRATIONS_MASTER_KEY || 'vitest-master-key-32-chars-minimum!!';

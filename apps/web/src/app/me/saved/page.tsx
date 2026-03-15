@@ -10,6 +10,7 @@ import ListingCardMini, {
 } from '../../../components/ListingCardMini';
 import ShareModal from '../../../components/ShareModal';
 import InquiryModal from '../../../components/InquiryModal';
+import BetaPremiumBanner from '../../../components/BetaPremiumBanner';
 
 const API_BASE = '/api';
 
@@ -376,10 +377,12 @@ function SavedPageContent() {
               fetchSaved();
             }}
             className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-          >
-            Actualizar
+        >
+          Actualizar
           </button>
         </div>
+
+        <BetaPremiumBanner className="mb-4" />
 
         <div className="flex flex-wrap gap-2 mb-6">
           <button

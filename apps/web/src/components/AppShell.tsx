@@ -34,14 +34,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   if (isPublic) return <>{children}</>;
 
   return (
-    <div className="min-h-screen flex bg-[var(--mp-bg)]">
-      {/* Sidebar Desktop - colapsable; ancho suficiente para que no se corten las etiquetas */}
+    <div className="min-h-screen h-screen flex overflow-hidden bg-[var(--mp-bg)]">
+      {/* Sidebar Desktop - colapsable, scroll interno, fijo en viewport */}
       <aside
-        className={`hidden md:flex flex-col border-r border-[var(--mp-border)] bg-[var(--mp-card)] transition-all duration-300 shrink-0 ${
+        className={`hidden md:flex flex-col h-screen border-r border-[var(--mp-border)] bg-[var(--mp-card)] transition-all duration-300 shrink-0 overflow-hidden ${
           sidebarOpen ? 'w-60' : 'w-16'
         }`}
       >
-        <div className="p-3 flex items-center justify-between border-b border-[var(--mp-border)] min-h-[52px]">
+        <div className="p-3 flex items-center justify-between border-b border-[var(--mp-border)] min-h-[52px] shrink-0">
           {sidebarOpen && (
             <Link href="/feed" className="font-bold text-lg text-[var(--mp-foreground)] truncate min-w-0">
               MatchProp
@@ -56,7 +56,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             {sidebarOpen ? '◀' : '▶'}
           </button>
         </div>
-        <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
+        <nav className="flex-1 min-h-0 p-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
           {NAV_ITEMS.map((item) => {
             const active = pathname === item.href || pathname?.startsWith(item.href + '/');
             return (
@@ -75,7 +75,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="p-2 border-t border-[var(--mp-border)] space-y-0.5">
+        <div className="p-2 border-t border-[var(--mp-border)] space-y-0.5 shrink-0">
           <Link
             href="/me/settings"
             className={`${NAV_LINK_CLASS} min-w-0 text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]`}
@@ -101,10 +101,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* Main content - overflow scroll para que no se vaya de página */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
         {/* Top bar mobile */}
-        <header className="md:hidden sticky top-0 z-20 bg-[var(--mp-card)] border-b border-[var(--mp-border)] px-4 py-2 flex items-center justify-between">
+        <header className="md:hidden sticky top-0 z-20 shrink-0 bg-[var(--mp-card)] border-b border-[var(--mp-border)] px-4 py-2 flex items-center justify-between">
           <Link href="/feed" className="font-bold text-lg text-[var(--mp-foreground)]">
             MatchProp
           </Link>
@@ -125,9 +125,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Contenedor principal - sin barra de búsqueda superior (se accede por nav Buscar) */}
-        <main className="flex-1 w-full min-h-[calc(100vh-120px)] md:min-h-[calc(100vh-80px)] pb-20 md:pb-0 flex flex-col">
-          <div className="flex-1 w-full max-w-2xl mx-auto px-4 md:px-6 py-4">
+        {/* Contenedor principal - scroll interno para contenido largo */}
+        <main className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden pb-20 md:pb-0">
+          <div className="w-full max-w-2xl mx-auto px-4 md:px-6 py-4 min-h-full">
             {children}
           </div>
         </main>

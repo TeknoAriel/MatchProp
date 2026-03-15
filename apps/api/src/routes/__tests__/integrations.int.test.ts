@@ -25,8 +25,8 @@ describe('Integrations Kiteprop', () => {
     const passwordHash = await bcrypt.hash('demo', 10);
     const user = await prisma.user.upsert({
       where: { email: TEST_USER_EMAIL },
-      create: { email: TEST_USER_EMAIL, passwordHash, role: 'AGENT' },
-      update: { passwordHash },
+      create: { email: TEST_USER_EMAIL, passwordHash, role: 'ADMIN' },
+      update: { passwordHash, role: 'ADMIN' },
     });
     userId = user.id;
 

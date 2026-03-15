@@ -5,6 +5,7 @@ import { createPartner1FixtureConnector } from './connectors/partner1-fixture.js
 import { createKitepropDifusionZonapropConnector } from './connectors/kiteprop-difusion-zonaprop.js';
 import { createKitepropDifusionToctocConnector } from './connectors/kiteprop-difusion-toctoc.js';
 import { createKitepropDifusionIcasasConnector } from './connectors/kiteprop-difusion-icasas.js';
+import { createKitepropDifusionYumblinConnector } from './connectors/kiteprop-difusion-yumblin.js';
 import { processIngestEvent } from './processor.js';
 import type { ListingSource } from '@prisma/client';
 import type { SourceConnector } from './types.js';
@@ -18,6 +19,7 @@ function buildConnectors(): Record<string, SourceConnector> {
     KITEPROP_DIFUSION_ZONAPROP: createKitepropDifusionZonapropConnector(),
     KITEPROP_DIFUSION_TOCTOC: createKitepropDifusionToctocConnector(),
     KITEPROP_DIFUSION_ICASAS: createKitepropDifusionIcasasConnector(),
+    KITEPROP_DIFUSION_YUMBLIN: createKitepropDifusionYumblinConnector(),
   };
   const api = createKitepropApiV1Connector();
   if (api) map.KITEPROP_API = api;

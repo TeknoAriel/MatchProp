@@ -12,12 +12,14 @@ const SOURCES = [
   'KITEPROP_DIFUSION_ZONAPROP',
   'KITEPROP_DIFUSION_TOCTOC',
   'KITEPROP_DIFUSION_ICASAS',
+  'KITEPROP_DIFUSION_YUMBLIN',
 ] as const;
 
 const MODE_ENV: Record<(typeof SOURCES)[number], string> = {
   KITEPROP_DIFUSION_ZONAPROP: 'KITEPROP_DIFUSION_ZONAPROP_MODE',
   KITEPROP_DIFUSION_TOCTOC: 'KITEPROP_DIFUSION_TOCTOC_MODE',
   KITEPROP_DIFUSION_ICASAS: 'KITEPROP_DIFUSION_ICASAS_MODE',
+  KITEPROP_DIFUSION_YUMBLIN: 'KITEPROP_DIFUSION_YUMBLIN_MODE',
 };
 
 async function runOne(
@@ -32,7 +34,8 @@ async function runOne(
       source: source as
         | 'KITEPROP_DIFUSION_ZONAPROP'
         | 'KITEPROP_DIFUSION_TOCTOC'
-        | 'KITEPROP_DIFUSION_ICASAS',
+        | 'KITEPROP_DIFUSION_ICASAS'
+        | 'KITEPROP_DIFUSION_YUMBLIN',
       limit: 500,
     });
     return { inserted: result.inserted };
@@ -44,7 +47,8 @@ async function runOne(
         source: source as
           | 'KITEPROP_DIFUSION_ZONAPROP'
           | 'KITEPROP_DIFUSION_TOCTOC'
-          | 'KITEPROP_DIFUSION_ICASAS',
+          | 'KITEPROP_DIFUSION_ICASAS'
+          | 'KITEPROP_DIFUSION_YUMBLIN',
         limit: 500,
       });
       console.warn(`  ${source} live falló (${msg}), usado fixture: ${fallback.inserted} listings`);

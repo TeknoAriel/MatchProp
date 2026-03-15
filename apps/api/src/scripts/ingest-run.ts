@@ -21,6 +21,7 @@ function parseArgs(): { source: ListingSource; limit: number } {
           'KITEPROP_DIFUSION_ZONAPROP',
           'KITEPROP_DIFUSION_TOCTOC',
           'KITEPROP_DIFUSION_ICASAS',
+          'KITEPROP_DIFUSION_YUMBLIN',
         ].includes(val)
       ) {
         source = val as ListingSource;

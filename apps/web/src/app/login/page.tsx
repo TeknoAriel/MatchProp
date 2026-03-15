@@ -12,6 +12,9 @@ function LoginPageContent() {
   const [oauthError, setOauthError] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const [demoError, setDemoError] = useState(false);
+  const [password, setPassword] = useState('');
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [pwdError, setPwdError] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -67,6 +70,29 @@ function LoginPageContent() {
       setDemoError(true);
     } finally {
       setDemoLoading(false);
+    }
+  }
+
+  async function handlePasswordLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setPwdError(false);
+    setPwdLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      if (res.ok) {
+        window.location.href = '/feed';
+        return;
+      }
+      setPwdError(true);
+    } catch {
+      setPwdError(true);
+    } finally {
+      setPwdLoading(false);
     }
   }
 
@@ -130,6 +156,29 @@ function LoginPageContent() {
             <p className="text-[var(--mp-muted)] text-xs">Para ingresar rápido, usá <strong>Entrar con link demo</strong>.</p>
           </div>
         )}
+
+        <form onSubmit={handlePasswordLogin} className="space-y-2 pt-4 border-t border-[var(--mp-border)]">
+          <p className="text-xs text-[var(--mp-muted)]">
+            Admin: entrar con email y contraseña para configuraciones
+          </p>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Contraseña"
+            className="w-full px-4 py-2 text-sm border border-[var(--mp-border)] rounded-lg bg-[var(--mp-card)]"
+          />
+          <button
+            type="submit"
+            disabled={pwdLoading}
+            className="w-full py-2 text-sm font-medium rounded-lg bg-slate-700 text-white hover:bg-slate-600 disabled:opacity-50"
+          >
+            {pwdLoading ? 'Entrando...' : 'Entrar con email y contraseña'}
+          </button>
+          {pwdError && (
+            <p className="text-xs text-red-600 text-center">Credenciales inválidas.</p>
+          )}
+        </form>
 
         <div className="space-y-1">
           <button

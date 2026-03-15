@@ -4,6 +4,28 @@ Guía mínima para tener Web + API funcionando en producción.
 
 ---
 
+## Levantar en local (entrar y probar)
+
+Un solo comando deja todo listo (DB, API, Web). Solo necesitás **Docker** corriendo y haber hecho `pnpm install` alguna vez.
+
+```bash
+cd /Users/arielcarnevali/MatchProp
+pnpm run dev-local
+```
+
+O: `bash scripts/dev-local.sh`
+
+- **Si no existe** `apps/api/.env.local`, el script levanta Postgres con Docker, corre migraciones, carga datos de demo y crea ese archivo. Así el botón «Entrar con link demo» funciona sin configurar nada más.
+- **Si ya tenés** `apps/api/.env.local` (por ejemplo con Neon), no se toca; se usan API + Web con tu DB.
+
+Cuando veas **"Listo. Entrá y probá"**:
+1. Abrí **http://localhost:3000/login**
+2. Clic en **«Entrar con link demo»** → entrás al feed y podés probar.
+
+Logs: `.logs/api.log` y `.logs/web.log`. Para bajar todo: `lsof -ti:3000 -ti:3001 | xargs kill -9`.
+
+---
+
 ## 1. Neon (base de datos)
 
 1. Entra a [neon.tech](https://neon.tech) e inicia sesión

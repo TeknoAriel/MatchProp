@@ -374,6 +374,7 @@ enum ListingSource {
   KITEPROP_DIFUSION_ZONAPROP
   KITEPROP_DIFUSION_TOCTOC
   KITEPROP_DIFUSION_ICASAS
+  KITEPROP_DIFUSION_YUMBLIN
   CRM_WEBHOOK
 }
 
@@ -810,6 +811,43 @@ model Notification {
 
   @@index([userId, createdAt])
   @@index([userId, readAt])
+}
+
+// --- SendGrid (Magic Link) - config desde settings, habilitar en prod ---
+
+model SendGridConfig {
+  id               String   @id @default("default")
+  apiKeyEncrypted  String?
+  fromEmail        String?  @default("noreply@matchprop.com")
+  isEnabled        Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// --- Asistente IA: API key para LLM, conversacional ---
+
+model AssistantConfig {
+  id                  String   @id @default("default")
+  provider            String?  @db.VarChar(50) // openai | anthropic | azure | custom
+  username            String?  @db.VarChar(200)
+  passwordEncrypted   String?
+  apiKeyEncrypted     String?
+  tokenEncrypted      String?
+  model               String?  @db.VarChar(100) // gpt-4, claude-3, etc.
+  baseUrl             String?  @db.VarChar(500) // custom endpoint
+  isEnabled           Boolean  @default(false)
+  conversationalModel String?  @db.VarChar(100)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+// --- Fuentes de ingest configurables (Kiteprop difusiones: yumblin, zonaprop, externalsite) ---
+
+model IngestSourceConfig {
+  id          String   @id @default("default")
+  sourcesJson Json     @default("{}") // { "yumblin": [{ url, format }], ... }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 // --- Sprint 6: Kiteprop integration ---

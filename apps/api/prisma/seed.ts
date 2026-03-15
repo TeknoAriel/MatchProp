@@ -44,6 +44,7 @@ async function main() {
 
   const passwordHash = await bcrypt.hash('demo', 10);
   const loadPasswordHash = await bcrypt.hash(LOAD_USER_PASSWORD, 10);
+  const adminKitePropHash = await bcrypt.hash('KiteProp123', 10);
 
   if (SEED_RESET) {
     const controlUser = await prisma.user.findUnique({ where: { email: CONTROL_EMAIL } });
@@ -68,6 +69,19 @@ async function main() {
     create: { email: 'admin@matchprop.com', passwordHash, role: 'ADMIN' },
     update: { passwordHash },
   });
+  const KITEPROP_ADMINS = [
+    'ariel@kiteprop.com',
+    'jonas@kiteprop.com',
+    'soporte@kiteprop.com',
+  ] as const;
+  for (const email of KITEPROP_ADMINS) {
+    await prisma.user.upsert({
+      where: { email },
+      create: { email, passwordHash: adminKitePropHash, role: 'ADMIN' },
+      update: { passwordHash: adminKitePropHash },
+    });
+  }
+  console.log(`Kiteprop admins ready (${KITEPROP_ADMINS.join(', ')})`);
   const agent = await prisma.user.upsert({
     where: { email: 'demo@matchprop.com' },
     create: { email: 'demo@matchprop.com', passwordHash, role: 'AGENT' },
@@ -181,6 +195,33 @@ async function main() {
     }
   }
   console.log(`Total swipes created: ${totalSwipes}`);
+
+  const defaultIngestSources = {
+    externalsite: [
+      {
+        url: 'https://static.kiteprop.com/kp/difusions/4b3c894a10d905c82e85b35c410d7d4099551504/externalsite-2-9e4f284e1578b24afa155c578d05821ac4c56baa.json',
+        format: 'json',
+      },
+    ],
+    yumblin: [
+      {
+        url: 'https://static.kiteprop.com/kp/difusions/23705a4a85ab8f1d301c73aae5359a81a8b5c1ca/yumblin.json',
+        format: 'json',
+      },
+    ],
+    zonaprop: [
+      {
+        url: 'https://static.kiteprop.com/kp/difusions/13d87da051c790afaf09c7afd094f151d7d06290/zonaprop.xml',
+        format: 'xml',
+      },
+    ],
+  };
+  await prisma.ingestSourceConfig.upsert({
+    where: { id: 'default' },
+    create: { id: 'default', sourcesJson: defaultIngestSources },
+    update: { sourcesJson: defaultIngestSources },
+  });
+  console.log('IngestSourceConfig (externalsite, yumblin, zonaprop) seeded');
 
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
   console.log('---');
