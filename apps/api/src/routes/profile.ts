@@ -8,6 +8,7 @@
 import { FastifyInstance } from 'fastify';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma.js';
+import { isKitepropAdmin } from '../lib/kiteprop-admins.js';
 
 const PROFILE_FIELDS = [
   'firstName',
@@ -97,9 +98,10 @@ export async function profileRoutes(fastify: FastifyInstance) {
         },
       });
       if (!u) throw fastify.httpErrors.unauthorized();
+      const effectiveRole = isKitepropAdmin(u.email) ? 'ADMIN' : u.role;
       return {
         email: u.email,
-        role: u.role,
+        role: effectiveRole,
         premiumUntil: u.premiumUntil?.toISOString() ?? null,
         hasPassword: !!u.passwordHash,
         profile: u.profile

@@ -57,7 +57,7 @@ const SECTIONS: SettingsSection[] = [
     href: '/settings/integrations/api-universal',
     icon: '🔌',
     badge: 'Admin',
-    adminOnly: false,
+    adminOnly: true,
   },
   {
     id: 'crm-portales',
@@ -75,9 +75,9 @@ const SECTIONS: SettingsSection[] = [
     href: '/settings/integrations/payments',
     icon: '💳',
     badge: 'Admin',
-    adminOnly: false,
+    adminOnly: true,
   },
-  // --- Asistente (misma configuración para IA y voz) ---
+  // --- Asistente (solo admin: ariel@kiteprop.com, jonas@, soporte@) ---
   {
     id: 'asistente-ai',
     title: 'Asistente IA',
@@ -85,7 +85,7 @@ const SECTIONS: SettingsSection[] = [
     href: '/settings/integrations/assistant',
     icon: '🤖',
     badge: 'Admin',
-    adminOnly: false,
+    adminOnly: true,
   },
   {
     id: 'asistencia-voz',
@@ -94,7 +94,7 @@ const SECTIONS: SettingsSection[] = [
     href: '/settings/integrations/assistant-voice',
     icon: '🎤',
     badge: 'Admin',
-    adminOnly: false,
+    adminOnly: true,
   },
 ];
 
