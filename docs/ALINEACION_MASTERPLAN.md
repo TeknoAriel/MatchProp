@@ -52,9 +52,11 @@ API del asistente: `POST /assistant/chat` usa credenciales de `AssistantConfig` 
 
 ---
 
-## Importadores (Kiteprop)
+## Importadores (Kiteprop) y cron
 
 - **Yumblin / iCasas:** Conectores en `IngestSourceConfig.sourcesJson` (o env). En **producción** no usar modo `fixture`; dejar que consuman URL real desde config o variables de entorno. Ver **PROD.md** → "Demo sources OFF en prod".
+- **Conexiones activas:** `getActiveIngestSources()` lee IngestSourceConfig y devuelve solo fuentes con URL; en prod se excluyen ejemplos (API_PARTNER_1, fixture).
+- **Cron horario:** `pnpm --filter api ingest:cron` recorre las conexiones activas con cursor (SyncWatermark) para nuevas propiedades y actualización de precios/estado. Ver [INGEST_CRON_Y_ACTUALIZACIONES.md](./INGEST_CRON_Y_ACTUALIZACIONES.md).
 
 ---
 

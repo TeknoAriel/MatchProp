@@ -247,22 +247,33 @@ export async function searchesRoutes(fastify: FastifyInstance) {
       ) {
         filters.operationType = q.operationType;
       }
-      const result = await executeFeed({
-        userId: user.userId,
-        limit,
-        cursor: q.cursor ?? null,
-        includeTotal,
-        filters,
-      });
 
-      if (result.error === 'INVALID_CURSOR') {
-        return reply.status(400).send({
-          message: 'Cursor inválido',
-          code: 'INVALID_CURSOR',
+      try {
+        const result = await executeFeed({
+          userId: user.userId,
+          limit,
+          cursor: q.cursor ?? null,
+          includeTotal,
+          filters,
         });
-      }
 
-      return result;
+        if (result.error === 'INVALID_CURSOR') {
+          return reply.status(400).send({
+            message: 'Cursor inválido',
+            code: 'INVALID_CURSOR',
+          });
+        }
+
+        return result;
+      } catch (err) {
+        request.log.error(err, 'Searches results error');
+        return {
+          items: [],
+          total: 0,
+          limit,
+          nextCursor: null,
+        };
+      }
     }
   );
 }

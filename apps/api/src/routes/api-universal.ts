@@ -39,11 +39,14 @@ export async function apiUniversalRoutes(fastify: FastifyInstance) {
         tags: ['API Universal'],
         description: 'Feed de listings (sin preferencias de usuario). Requiere X-API-Key.',
         querystring: {
-          limit: { type: 'number', default: 20 },
-          cursor: { type: 'string' },
-          operation: { type: 'string', enum: ['SALE', 'RENT'] },
-          minPrice: { type: 'number' },
-          maxPrice: { type: 'number' },
+          type: 'object',
+          properties: {
+            limit: { type: 'number', default: 20 },
+            cursor: { type: 'string' },
+            operation: { type: 'string', enum: ['SALE', 'RENT'] },
+            minPrice: { type: 'number' },
+            maxPrice: { type: 'number' },
+          },
         },
         response: {
           200: {
@@ -94,9 +97,12 @@ export async function apiUniversalRoutes(fastify: FastifyInstance) {
         tags: ['API Universal'],
         description: 'Lista de listings activos. Requiere X-API-Key.',
         querystring: {
-          limit: { type: 'number', default: 20 },
-          offset: { type: 'number', default: 0 },
-          source: { type: 'string' },
+          type: 'object',
+          properties: {
+            limit: { type: 'number', default: 20 },
+            offset: { type: 'number', default: 0 },
+            source: { type: 'string' },
+          },
         },
         response: {
           200: {

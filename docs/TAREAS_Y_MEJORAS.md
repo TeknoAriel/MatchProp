@@ -9,17 +9,19 @@ Documento vivo: próximas tareas priorizadas y mejoras técnicas. Alineado a [ma
 - **Epics E1–E8:** Implementados (feed, leads, chat, visitas, búsquedas/alertas, asistente conversacional, Stripe opcional, Kiteprop + Yumblin/iCasas).
 - **Deploy:** Vercel (Web + API) + Neon (PostgreSQL). Ver [SETUP_DEPLOY_SIMPLE.md](./SETUP_DEPLOY_SIMPLE.md) y [PROD.md](./PROD.md).
 
+**Última ejecución de tareas:** schema Fastify `/listings/share` (FSTDEP021), job CI `deploy-verify` (pre-deploy:verify con Postgres), documentación migraciones en PROD, actualización estado en esta tabla.
+
 ---
 
 ## Próximas tareas (priorizadas)
 
 ### Alta prioridad
 
-| Tarea | Descripción | DoD |
-|-------|-------------|-----|
-| **Smoke E2E en CI** | Ejecutar `pnpm smoke:ux` en pipeline (o job manual post-deploy) para validar flujos críticos. | Job configurado; falla del smoke bloquea o alerta. |
-| **Migraciones en deploy** | Asegurar que migraciones se ejecuten contra DB de prod en cada deploy (script o Vercel build step). | Documentado en PROD; ejecución automatizada o checklist. |
-| **Mercado Pago (LATAM)** | Payment adapter: Mercado Pago como provider (planificación en E7). | Spec + feature flag; integración opcional. |
+| Tarea | Descripción | DoD | Estado |
+|-------|-------------|-----|--------|
+| **Smoke E2E en CI** | Ejecutar `pnpm smoke:ux` en pipeline (o job manual post-deploy) para validar flujos críticos. | Job configurado; falla del smoke bloquea o alerta. | **Parcial:** job `deploy-verify` en CI ejecuta `pre-deploy:verify` (build + typecheck + test:all) con Postgres; smoke:ux con Playwright sigue siendo opcional (manual o job aparte). |
+| **Migraciones en deploy** | Asegurar que migraciones se ejecuten contra DB de prod en cada deploy (script o Vercel build step). | Documentado en PROD; ejecución automatizada o checklist. | **Hecho:** PROD.md actualizado (estrategia migraciones: ejecutar deploy:pre contra DB prod; Vercel no las corre; CI usa DB de prueba). |
+| **Mercado Pago (LATAM)** | Payment adapter: Mercado Pago como provider (planificación en E7). | Spec + feature flag; integración opcional. | Pendiente. |
 
 ### Media prioridad
 
@@ -32,12 +34,12 @@ Documento vivo: próximas tareas priorizadas y mejoras técnicas. Alineado a [ma
 
 ### Mejoras técnicas
 
-| Mejora | Descripción |
-|--------|-------------|
-| **Deprecación Vite CJS** | Resolver warning "CJS build of Vite's Node API is deprecated" en tests API (Vitest). |
-| **Fastify json schema** | Reemplazar shorthand schema en ruta `/listings/share` (FSTDEP021) por objeto completo para Fastify v5. |
-| **Punycode** | Sustituir uso de `punycode` por alternativa userland si Node lo depreca. |
-| **Admin ESLint** | Mantener reglas react-hooks (ej. dependencias de useEffect) sin warnings en build. |
+| Mejora | Descripción | Estado |
+|--------|-------------|--------|
+| **Deprecación Vite CJS** | Resolver warning "CJS build of Vite's Node API is deprecated" en tests API (Vitest). | Pendiente. |
+| **Fastify json schema** | Reemplazar shorthand schema (FSTDEP021) por objeto completo para Fastify v5. | **Hecho:** `/listings/share`, `/universal/feed`, `/universal/listings`: querystring con type: 'object', properties. |
+| **Punycode** | Sustituir uso de `punycode` por alternativa userland si Node lo depreca. | Pendiente. |
+| **Admin ESLint** | Mantener reglas react-hooks (ej. dependencias de useEffect) sin warnings en build. | Hecho (visits: useCallback). |
 
 ---
 

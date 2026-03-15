@@ -107,3 +107,45 @@ jobs:
 
       - name: Run integration tests
         run: pnpm --filter api run test:all
+
+  deploy-verify:
+    name: Deploy readiness (pre-deploy:verify)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: matchprop
+          POSTGRES_PASSWORD: matchprop
+          POSTGRES_DB: matchprop
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Setup DB for API tests
+        run: |
+          mkdir -p apps/api
+          echo "DATABASE_URL=postgresql://matchprop:matchprop@localhost:5432/matchprop" >> apps/api/.env
+          pnpm --filter api exec prisma generate
+          pnpm --filter api exec prisma migrate deploy
+
+      - name: Pre-deploy verify (build + typecheck + test:all)
+        run: pnpm run pre-deploy:verify

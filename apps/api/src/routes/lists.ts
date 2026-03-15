@@ -53,7 +53,11 @@ export async function listsRoutes(fastify: FastifyInstance) {
       });
       if (!dbUser) throw fastify.httpErrors.unauthorized();
       const isDemo = envFlag('DEMO_MODE');
-      const premiumFree = isDemo || envFlag('PREMIUM_FREE') || envFlag('PREMIUM_GRACE_PERIOD');
+      const premiumFree =
+        isDemo ||
+        envFlag('PREMIUM_FREE') ||
+        envFlag('PREMIUM_GRACE_PERIOD') ||
+        process.env.NODE_ENV === 'development';
       const simPremium =
         (process.env.NODE_ENV === 'development' || envFlag('DEMO_MODE')) &&
         ((request.cookies as Record<string, string> | undefined)?.['matchprop_premium_sim'] ===

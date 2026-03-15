@@ -28,6 +28,7 @@ function FeedPageContent() {
   const [customLists, setCustomLists] = useState<{ id: string; name: string; count: number }[]>([]);
   const [hasActiveSearch, setHasActiveSearch] = useState<boolean | null>(null);
   const [fallbackUsed, setFallbackUsed] = useState(false);
+  const [emptyCatalog, setEmptyCatalog] = useState(false);
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<string | null>(null);
   const [operationFilter, setOperationFilter] = useState<'SALE' | 'RENT' | null>(null);
   const [usedFeedAll, setUsedFeedAll] = useState(false);
@@ -79,6 +80,7 @@ function FeedPageContent() {
           setQueue(data.items ?? []);
           setNextCursor(data.nextCursor ?? null);
           setFallbackUsed(Boolean(data.fallbackUsed));
+          setEmptyCatalog(Boolean((data as { emptyCatalog?: boolean }).emptyCatalog));
           if (useFeedAll && (data.items?.length ?? 0) > 0) setUsedFeedAll(true);
         }
         setLoading(false);
@@ -335,6 +337,7 @@ function FeedPageContent() {
         if (data) {
           setQueue(data.items ?? []);
           setNextCursor(data.nextCursor ?? null);
+          setEmptyCatalog(Boolean((data as { emptyCatalog?: boolean }).emptyCatalog));
           if (useFeedAll && (data.items?.length ?? 0) > 0) setUsedFeedAll(true);
         }
         setLoading(false);
@@ -635,12 +638,24 @@ function FeedPageContent() {
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 py-12">
-            <p className="text-[var(--mp-foreground)] font-medium">No hay más resultados</p>
-            <p className="text-sm text-[var(--mp-muted)] max-w-xs">
-              {!usedFeedAll
-                ? 'Probá ampliar filtros o ver el catálogo completo.'
-                : 'No quedan propiedades. Agregá más datos o cambiá la búsqueda.'}
+            <p className="text-[var(--mp-foreground)] font-medium">
+              {emptyCatalog ? 'No hay propiedades en el catálogo' : 'No hay más resultados'}
             </p>
+            <p className="text-sm text-[var(--mp-muted)] max-w-xs">
+              {emptyCatalog
+                ? 'Activá conexiones (Yumblin, iCasas, etc.) en Ajustes > Integraciones > Importadores para cargar propiedades.'
+                : !usedFeedAll
+                  ? 'Probá ampliar filtros o ver el catálogo completo.'
+                  : 'No quedan propiedades. Agregá más datos o cambiá la búsqueda.'}
+            </p>
+            {emptyCatalog && (
+              <Link
+                href="/settings/integrations/importers"
+                className="mt-2 px-4 py-2 rounded-xl text-sm font-medium bg-[var(--mp-accent)] text-white"
+              >
+                Ir a Importadores
+              </Link>
+            )}
             <div className="flex flex-wrap gap-2 mt-4 justify-center">
               {!usedFeedAll && (
                 <button

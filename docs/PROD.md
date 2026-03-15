@@ -41,6 +41,7 @@ Con **DEMO_MODE=0**, los feature flags `demoMode`, `kitepropExternalsite` y `api
 | `pnpm build`                 | Build de todo el monorepo                                                           |
 | `pnpm --filter api start`    | Inicia API (tras build)                                                             |
 | `pnpm --filter web start`    | Inicia Web (tras build)                                                             |
+| `pnpm --filter api ingest:cron` | Cron horario: recorre conexiones activas (IngestSourceConfig), actualiza propiedades. Ver [INGEST_CRON_Y_ACTUALIZACIONES.md](./INGEST_CRON_Y_ACTUALIZACIONES.md). |
 
 ---
 
@@ -97,6 +98,7 @@ Usar para healthcheck (Vercel, Kubernetes, etc.).
 | STRIPE_SECRET_KEY       | No (Premium B2C)  | Stripe para checkout Premium       |
 | STRIPE_WEBHOOK_SECRET   | No (Premium B2C)  | Webhook Stripe para premiumUntil   |
 | LEAD_DEBIT_CENTS        | No (default 100)  | Débito por activar lead (centavos) |
+| PREMIUM_FREE            | No (solo pruebas) | 1 = planes liberados (listas, activar leads). No usar en prod cuando apliquen reglas de negocio. |
 
 **Integraciones (Settings):** Asistente IA (y Asistente de voz) y API Universal se configuran desde la UI en /settings/integrations (usuario, API key, token). Las credenciales se guardan cifradas en DB con `INTEGRATIONS_MASTER_KEY`. No hay variables de entorno adicionales obligatorias para el asistente conversacional.
 
@@ -135,9 +137,10 @@ Usar para healthcheck (Vercel, Kubernetes, etc.).
 
 ## Estrategia migraciones
 
-1. Pre-deploy: prisma migrate deploy en CI/staging
-2. Rollback: backups pre-migración
-3. Migraciones con IF NOT EXISTS: idempotentes
+1. **Pre-deploy:** ejecutar `pnpm run deploy:pre` (o `DATABASE_URL="..." pnpm --filter api exec prisma migrate deploy`) contra la DB de producción **antes** o justo después de cada deploy. Vercel no ejecuta migraciones; hay que correrlas desde tu máquina, un job de CI con acceso a prod, o un script de release.
+2. **CI:** el job `deploy-verify` en GitHub Actions corre migraciones contra una Postgres de CI y luego `pre-deploy:verify` (build + test:all); eso no actualiza la DB de prod.
+3. **Rollback:** backups pre-migración.
+4. **Idempotencia:** migraciones con IF NOT EXISTS cuando aplique.
 
 ---
 

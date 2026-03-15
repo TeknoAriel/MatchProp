@@ -58,6 +58,7 @@ fi
 API_ENV="apps/api/.env"
 [ -f "$API_ENV" ] || touch "$API_ENV"
 grep -q INTEGRATIONS_MASTER_KEY "$API_ENV" 2>/dev/null || echo "INTEGRATIONS_MASTER_KEY=dev-key-local" >> "$API_ENV"
+grep -q PREMIUM_FREE "$API_ENV" 2>/dev/null || echo "PREMIUM_FREE=1" >> "$API_ENV"
 
 # --- Asegurar que la Web apunte a la API local ---
 WEB_ENV="apps/web/.env.local"

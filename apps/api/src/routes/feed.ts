@@ -432,6 +432,10 @@ export async function feedRoutes(fastify: FastifyInstance) {
                 description:
                   'true si no hubo matches con la búsqueda activa y se devolvieron similares sin filtros',
               },
+              emptyCatalog: {
+                type: 'boolean',
+                description: 'true si no hay propiedades en el catálogo; activar conexiones en Ajustes',
+              },
             },
           },
           400: error400Schema,
@@ -556,6 +560,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
         });
       }
 
+      try {
       const baseWhere: Record<string, unknown> = {
         status: 'ACTIVE',
         swipeDecisions: { none: { userId: user.userId } },
@@ -707,10 +712,20 @@ export async function feedRoutes(fastify: FastifyInstance) {
           limit,
           nextCursor: fbNextCursor,
           fallbackUsed: true,
+          emptyCatalog: fbItems.length === 0,
         };
       }
 
-      return { items, total, limit, nextCursor, fallbackUsed };
+      const emptyCatalog = items.length === 0 && !hasCursor;
+      return { items, total, limit, nextCursor, fallbackUsed, emptyCatalog };
+    } catch (err) {
+      request.log.error(err, 'Feed error');
+      const limit = Math.min(
+        FEED_LIMIT_MAX,
+        Math.max(1, Math.floor(Number((request.query as Record<string, unknown>).limit)) || FEED_LIMIT_DEFAULT)
+      );
+      return { items: [], total: 0, limit, nextCursor: null, fallbackUsed: false, emptyCatalog: true };
+      }
     }
   );
 

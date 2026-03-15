@@ -148,7 +148,12 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
     {
       schema: {
         tags: ['Listings'],
-        querystring: { ids: { type: 'string', description: 'IDs separados por coma' } },
+        querystring: {
+          type: 'object',
+          properties: {
+            ids: { type: 'string', description: 'IDs separados por coma' },
+          },
+        },
         response: {
           200: {
             type: 'array',

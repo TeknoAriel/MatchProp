@@ -239,7 +239,10 @@ export async function leadRoutes(fastify: FastifyInstance) {
         select: { premiumUntil: true, role: true },
       });
       const premiumFree =
-        envFlag('DEMO_MODE') || envFlag('PREMIUM_FREE') || envFlag('PREMIUM_GRACE_PERIOD');
+        envFlag('DEMO_MODE') ||
+        envFlag('PREMIUM_FREE') ||
+        envFlag('PREMIUM_GRACE_PERIOD') ||
+        process.env.NODE_ENV === 'development';
       const simPremium =
         (process.env.NODE_ENV === 'development' || envFlag('DEMO_MODE')) &&
         ((request.cookies as Record<string, string> | undefined)?.['matchprop_premium_sim'] ===

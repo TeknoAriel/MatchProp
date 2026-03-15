@@ -78,10 +78,10 @@ async function main() {
     await prisma.user.upsert({
       where: { email },
       create: { email, passwordHash: adminKitePropHash, role: 'ADMIN' },
-      update: { passwordHash: adminKitePropHash },
+      update: { passwordHash: adminKitePropHash, role: 'ADMIN' },
     });
   }
-  console.log(`Kiteprop admins ready (${KITEPROP_ADMINS.join(', ')})`);
+  console.log(`Kiteprop admins ready (${KITEPROP_ADMINS.join(', ')}); rol ADMIN habilitado.`);
   const agent = await prisma.user.upsert({
     where: { email: 'demo@matchprop.com' },
     create: { email: 'demo@matchprop.com', passwordHash, role: 'AGENT' },

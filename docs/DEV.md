@@ -24,6 +24,18 @@ Si usás `nvm`, ejecutá `nvm use` en la raíz del repo (lee `.nvmrc`).
 - **3001**: API (Fastify)
 - **5432**: PostgreSQL
 
+## Usuarios admin (Kiteprop)
+
+Los administradores con rol **ADMIN** son: **ariel@kiteprop.com**, **jonas@kiteprop.com**, **soporte@kiteprop.com**. El seed los crea o actualiza con `role: ADMIN` y contraseña **KiteProp123** (para login con email/password si se usa). Para entrar como admin desde la Web: usá **magic link** con uno de esos emails; el JWT incluirá `role: ADMIN` y podrás acceder a Settings > Integraciones y rutas que requieran ADMIN. Si ya existía el usuario con otro rol, ejecutá de nuevo el seed para forzar `role: ADMIN`: `pnpm --filter api run prisma:seed`.
+
+## Planes liberados para pruebas
+
+En desarrollo y pruebas las restricciones de plan premium están **liberadas** para no bloquear flujos:
+
+- Con **DEMO_MODE=1** o **PREMIUM_FREE=1** o **NODE_ENV=development** se considera “premium free” y se permiten listas personalizadas, activación de leads, etc., sin exigir suscripción.
+- El script `dev-local` añade **PREMIUM_FREE=1** a `apps/api/.env` si no existe.
+- Cuando quieras aplicar las reglas de negocio (planes de pago), quitá PREMIUM_FREE y usá DEMO_MODE=0 en prod.
+
 ## Logs
 
 - `.logs/api.log` — API
