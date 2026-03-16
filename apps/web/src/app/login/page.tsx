@@ -15,6 +15,7 @@ function LoginPageContent() {
   const [password, setPassword] = useState('');
   const [pwdLoading, setPwdLoading] = useState(false);
   const [pwdError, setPwdError] = useState(false);
+  const [pwdMessage, setPwdMessage] = useState<string>('');
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -76,6 +77,7 @@ function LoginPageContent() {
   async function handlePasswordLogin(e: React.FormEvent) {
     e.preventDefault();
     setPwdError(false);
+    setPwdMessage('');
     setPwdLoading(true);
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
@@ -88,8 +90,11 @@ function LoginPageContent() {
         window.location.href = '/feed';
         return;
       }
+      const data = (await res.json().catch(() => ({}))) as { message?: string };
+      setPwdMessage(data?.message ?? 'Credenciales inválidas.');
       setPwdError(true);
     } catch {
+      setPwdMessage('Error de conexión.');
       setPwdError(true);
     } finally {
       setPwdLoading(false);
@@ -176,7 +181,7 @@ function LoginPageContent() {
             {pwdLoading ? 'Entrando...' : 'Entrar con email y contraseña'}
           </button>
           {pwdError && (
-            <p className="text-xs text-red-600 text-center">Credenciales inválidas.</p>
+            <p className="text-xs text-red-600 text-center">{pwdMessage || 'Credenciales inválidas.'}</p>
           )}
         </form>
 

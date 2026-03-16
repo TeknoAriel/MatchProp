@@ -23,6 +23,13 @@ import {
   isKitepropAdmin,
   KITEPROP_ADMIN_PASSWORD,
 } from '../lib/kiteprop-admins.js';
+
+/** Busca usuario por email sin distinguir mayúsculas/minúsculas (evita fallos si el usuario se creó por OAuth/magic con otra capitalización). */
+async function findUserByEmailIgnoreCase(email: string) {
+  return prisma.user.findFirst({
+    where: { email: { equals: email.trim().toLowerCase(), mode: 'insensitive' } },
+  });
+}
 import { getOAuthAdapter, type OAuthProvider } from '../services/oauth/index.js';
 import {
   createOAuthAttempt,
@@ -144,7 +151,16 @@ export async function authRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const body = loginSchema.parse(request.body);
+      const raw = request.body as unknown;
+      const parsed = loginSchema.safeParse(raw);
+      if (!parsed.success) {
+        const first = parsed.error.errors[0];
+        return reply.status(400).send({
+          message: first?.message ?? 'Email y contraseña son requeridos.',
+          code: 'VALIDATION_ERROR',
+        });
+      }
+      const body = parsed.data;
       const email = body.email.trim().toLowerCase();
 
       // Bootstrap admins Kiteprop: si el email es uno de los tres y la contraseña es la conocida,
@@ -152,11 +168,15 @@ export async function authRoutes(fastify: FastifyInstance) {
       const passwordTrimmed = typeof body.password === 'string' ? body.password.trim() : '';
       if (isKitepropAdmin(email) && passwordTrimmed === KITEPROP_ADMIN_PASSWORD) {
         const adminHash = await bcrypt.hash(KITEPROP_ADMIN_PASSWORD, 10);
-        const user = await prisma.user.upsert({
-          where: { email },
-          create: { email, passwordHash: adminHash, role: UserRole.ADMIN },
-          update: { passwordHash: adminHash, role: UserRole.ADMIN },
-        });
+        const existing = await findUserByEmailIgnoreCase(email);
+        const user = existing
+          ? await prisma.user.update({
+              where: { id: existing.id },
+              data: { passwordHash: adminHash, role: UserRole.ADMIN },
+            })
+          : await prisma.user.create({
+              data: { email, passwordHash: adminHash, role: UserRole.ADMIN },
+            });
         const meta = getClientMeta(request);
         const { refreshToken } = await createSession({
           userId: user.id,
@@ -175,9 +195,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         };
       }
 
-      const user = await prisma.user.findUnique({
-        where: { email },
-      });
+      const user = await findUserByEmailIgnoreCase(email);
       if (!user) {
         throw fastify.httpErrors.unauthorized('Credenciales inválidas');
       }

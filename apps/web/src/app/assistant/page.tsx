@@ -210,7 +210,13 @@ export default function AssistantPage() {
       }
       if (!res.ok) {
         const err = await res.json().catch(() => ({})) as { message?: string; code?: string };
-        const msg = err?.message ?? (res.status === 500 ? 'Error del servidor. Probá de nuevo en un momento.' : 'Error al buscar.');
+        let msg = err?.message;
+        if (!msg) {
+          if (res.status === 500) msg = 'Error del servidor. Probá de nuevo en un momento.';
+          else if (res.status === 502 || res.status === 503) msg = 'Servicio temporalmente no disponible. Probá en un momento.';
+          else if (res.status === 401) msg = 'Sesión expirada. Volvé a iniciar sesión.';
+          else msg = `Error al buscar (${res.status}). Probá de nuevo.`;
+        }
         setError(msg);
         return;
       }
