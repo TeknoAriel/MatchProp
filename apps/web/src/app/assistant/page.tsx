@@ -28,10 +28,12 @@ function mapFiltersToPreferenceBody(f: SearchFilters): Record<string, unknown> {
   return body;
 }
 
-/** Solo 1–2 ejemplos para invitar a tipear; el buscador es conversacional. */
+/** Ejemplos para invitar a tipear; el buscador es conversacional. */
 const EXAMPLES = [
-  'Venta departamento 3 ambientes Belgrano',
-  'Alquiler casa Palermo hasta 500k',
+  'Departamento 3 ambientes en venta, Belgrano',
+  'Casa en alquiler Palermo hasta 500k',
+  'Monocambiente con balcón, CABA',
+  'Ph con patio, 2 dormitorios',
 ];
 
 const showDebug =
@@ -525,83 +527,51 @@ export default function AssistantPage() {
   const showRelaxHint = previewLoaded && previewItems.length === 0 && hasFilters;
 
   return (
-    <main className="min-h-screen p-4">
+    <main className="min-h-screen p-4 pb-8">
       <ActiveSearchBar />
-      <div className="max-w-xl mx-auto space-y-4">
+      <div className="max-w-xl mx-auto space-y-5">
         {showDebug && (
           <p className="text-xs text-gray-400 mb-2">Assistant UI build: {ASSISTANT_BUILD}</p>
         )}
 
-        {/* Acceso rápido a módulos prioritarios (masterplan E5) */}
-        <section className="rounded-2xl border border-[var(--mp-border)] bg-[var(--mp-card)] p-4">
-          <h2 className="text-sm font-semibold text-[var(--mp-muted)] mb-3">Acceso rápido</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <Link
-              href="/searches"
-              className="flex items-center gap-3 p-3 rounded-xl bg-[var(--mp-bg)] hover:bg-[var(--mp-accent)]/10 border border-[var(--mp-border)] hover:border-[var(--mp-accent)]/40 transition-colors"
-            >
-              <span className="text-2xl">📁</span>
-              <div className="min-w-0">
-                <p className="font-medium text-[var(--mp-foreground)] text-sm">Búsquedas activas</p>
-                <p className="text-xs text-[var(--mp-muted)] truncate">Guardadas y filtros</p>
-              </div>
-            </Link>
-            <Link
-              href="/alerts"
-              className="flex items-center gap-3 p-3 rounded-xl bg-[var(--mp-bg)] hover:bg-[var(--mp-accent)]/10 border border-[var(--mp-border)] hover:border-[var(--mp-accent)]/40 transition-colors"
-            >
-              <span className="text-2xl">🔔</span>
-              <div className="min-w-0">
-                <p className="font-medium text-[var(--mp-foreground)] text-sm">Alertas activas</p>
-                <p className="text-xs text-[var(--mp-muted)] truncate">Nuevas, precio, vuelve</p>
-              </div>
-            </Link>
-            <Link
-              href="/leads"
-              className="flex items-center gap-3 p-3 rounded-xl bg-[var(--mp-bg)] hover:bg-[var(--mp-accent)]/10 border border-[var(--mp-border)] hover:border-[var(--mp-accent)]/40 transition-colors"
-            >
-              <span className="text-2xl">💬</span>
-              <div className="min-w-0">
-                <p className="font-medium text-[var(--mp-foreground)] text-sm">Consultas</p>
-                <p className="text-xs text-[var(--mp-muted)] truncate">Contactos con inmobiliarias</p>
-              </div>
-            </Link>
-          </div>
+        {/* Hero: contá lo que necesitás */}
+        <section className="text-center md:text-left">
+          <h1 className="text-2xl md:text-3xl font-bold text-[var(--mp-foreground)] mb-2">
+            Contá lo que necesitás
+          </h1>
+          <p className="text-[var(--mp-muted)] text-sm md:text-base max-w-lg">
+            Escribí o hablá en lenguaje natural. Te mostramos los mejores matches según tus gustos. Cuanto más nos contás, mejor afinamos.
+          </p>
         </section>
 
-        <div className="flex items-center gap-2 text-sm text-[var(--mp-muted)] mb-1 flex-wrap">
-          <Link href="/search" className="hover:text-[var(--mp-foreground)]">
+        {/* Tres formas de buscar */}
+        <div className="flex flex-wrap gap-2 items-center text-sm">
+          <span className="text-[var(--mp-muted)] font-medium">Buscar:</span>
+          <span className="px-3 py-1.5 rounded-full bg-[var(--mp-accent)] text-white font-medium text-xs">
+            Por texto o voz
+          </span>
+          <Link
+            href="/search"
+            className="px-3 py-1.5 rounded-full bg-[var(--mp-bg)] border border-[var(--mp-border)] text-[var(--mp-foreground)] hover:border-[var(--mp-accent)]/40 transition-colors"
+          >
             Por filtros
           </Link>
-          <span>·</span>
-          <Link href="/search/map" className="hover:text-[var(--mp-foreground)]">
-            Mapa
-          </Link>
-          <span>·</span>
-          <Link href="/searches" className="hover:text-[var(--mp-foreground)]">
-            Mis búsquedas
-          </Link>
-          <span>·</span>
           <Link
-            href="/settings/integrations/assistant"
-            className="hover:text-[var(--mp-foreground)] text-[var(--mp-accent)]"
+            href="/search/map"
+            className="px-3 py-1.5 rounded-full bg-[var(--mp-bg)] border border-[var(--mp-border)] text-[var(--mp-foreground)] hover:border-[var(--mp-accent)]/40 transition-colors"
           >
-            Configurar asistente (IA y voz)
+            En mapa
           </Link>
         </div>
 
-        <h1 className="text-2xl font-bold text-[var(--mp-foreground)] mb-1">Buscar</h1>
-        <p className="text-[var(--mp-muted)] text-sm mb-6">
-          Escribí qué buscás (zona, tipo, precio). Resultados al instante.
-        </p>
-
-        <div className="mb-4">
+        {/* Input principal */}
+        <section className="rounded-2xl border-2 border-[var(--mp-accent)]/30 bg-[var(--mp-card)] p-4 shadow-sm">
           <AssistantChatInput
             value={text}
             onChange={setText}
             onSend={() => handleBuscar()}
             loading={loading}
-            placeholder="Ej: departamento en Palermo, 2 dormitorios, hasta 100k USD"
+            placeholder="Ej: departamento 3 ambientes en Palermo, hasta 150k USD"
             voiceSupported={!!voiceSupported}
             voiceListening={!!voiceListening}
             onVoiceClick={() => {
@@ -610,25 +580,58 @@ export default function AssistantPage() {
             }}
             maxLength={500}
           />
-        </div>
+          <p className="text-xs text-[var(--mp-muted)] mt-2">
+            Podés refinar escribiendo de nuevo: &quot;con cochera&quot;, &quot;más barato&quot;, &quot;solo venta&quot;.
+          </p>
+        </section>
+
+        {/* Ejemplos como chips */}
         {EXAMPLES.length > 0 && (
-          <p className="text-xs text-slate-500 mb-4">
-            Ejemplos:{' '}
-            {EXAMPLES.map((ex, i) => (
-              <span key={ex}>
-                {i > 0 && ' · '}
+          <div>
+            <p className="text-xs font-medium text-[var(--mp-muted)] mb-2">Probá con:</p>
+            <div className="flex flex-wrap gap-2">
+              {EXAMPLES.map((ex) => (
                 <button
+                  key={ex}
                   type="button"
                   onClick={() => handleExampleClick(ex)}
                   disabled={loading}
-                  className="text-[var(--mp-accent)] hover:underline disabled:opacity-50"
+                  className="px-3 py-2 rounded-xl text-sm bg-[var(--mp-bg)] border border-[var(--mp-border)] text-[var(--mp-foreground)] hover:border-[var(--mp-accent)]/50 hover:bg-[var(--mp-accent)]/5 transition-colors disabled:opacity-50"
                 >
                   {ex}
                 </button>
-              </span>
-            ))}
-          </p>
+              ))}
+            </div>
+          </div>
         )}
+
+        {/* Acceso rápido compacto */}
+        <section className="flex flex-wrap gap-2">
+          <Link
+            href="/searches"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--mp-bg)] border border-[var(--mp-border)] text-sm text-[var(--mp-foreground)] hover:border-[var(--mp-accent)]/40"
+          >
+            <span>📁</span> Búsquedas
+          </Link>
+          <Link
+            href="/alerts"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--mp-bg)] border border-[var(--mp-border)] text-sm text-[var(--mp-foreground)] hover:border-[var(--mp-accent)]/40"
+          >
+            <span>🔔</span> Alertas
+          </Link>
+          <Link
+            href="/leads"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--mp-bg)] border border-[var(--mp-border)] text-sm text-[var(--mp-foreground)] hover:border-[var(--mp-accent)]/40"
+          >
+            <span>💬</span> Consultas
+          </Link>
+          <Link
+            href="/settings/integrations/assistant"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-[var(--mp-border)] text-xs text-[var(--mp-muted)] hover:text-[var(--mp-accent)]"
+          >
+            Configurar IA y voz
+          </Link>
+        </section>
         {voiceError && (
           <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200">
             <p className="text-amber-800 text-sm">{voiceError}</p>
@@ -661,9 +664,10 @@ export default function AssistantPage() {
         )}
 
         {result && (
-          <div className="mt-6 p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] shadow-sm space-y-3">
+          <div className="mt-6 p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] shadow-sm space-y-4">
+            <h2 className="text-sm font-semibold text-[var(--mp-muted)] uppercase tracking-wide">Tu búsqueda</h2>
             {filtersEmptyButExplained ? (
-              <p className="text-sm text-red-600">No se detectaron filtros.</p>
+              <p className="text-sm text-red-600">No se detectaron filtros. Escribí de nuevo con más detalle (zona, tipo, precio).</p>
             ) : (
               <p className="text-sm text-[var(--mp-foreground)]">{result.explanation}</p>
             )}
@@ -676,8 +680,9 @@ export default function AssistantPage() {
 
             {hasFilters && (
               <>
+                <p className="text-xs text-[var(--mp-muted)]">Seguí escribiendo para refinar o ajustá los filtros abajo.</p>
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm text-[var(--mp-muted)]">{humanSummary}</p>
+                  <p className="text-sm font-medium text-[var(--mp-foreground)]">{humanSummary}</p>
                   <div className="flex gap-1 shrink-0">
                     <button
                       type="button"
@@ -751,6 +756,7 @@ export default function AssistantPage() {
               </p>
             )}
 
+            <p className="text-sm font-semibold text-[var(--mp-muted)] mb-2">Seguí afinando</p>
             <div className="mb-4 p-3 rounded-xl bg-[var(--mp-card)] border border-[var(--mp-border)]">
               <FilterChips
                 operationFilter={operationFilter}
