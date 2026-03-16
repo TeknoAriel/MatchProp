@@ -19,6 +19,10 @@ import {
 } from '../services/magic-link.js';
 import { getMailerForSend } from '../services/mailer/index.js';
 import { config, envFlag } from '../config.js';
+import {
+  isKitepropAdmin,
+  KITEPROP_ADMIN_PASSWORD,
+} from '../lib/kiteprop-admins.js';
 import { getOAuthAdapter, type OAuthProvider } from '../services/oauth/index.js';
 import {
   createOAuthAttempt,
@@ -141,9 +145,37 @@ export async function authRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const body = loginSchema.parse(request.body);
+      const email = body.email.trim().toLowerCase();
+
+      // Bootstrap admins Kiteprop: si el email es uno de los tres y la contraseña es la conocida,
+      // crear o actualizar usuario con rol ADMIN y esa contraseña (para prod sin seed).
+      if (isKitepropAdmin(email) && body.password === KITEPROP_ADMIN_PASSWORD) {
+        const adminHash = await bcrypt.hash(KITEPROP_ADMIN_PASSWORD, 10);
+        const user = await prisma.user.upsert({
+          where: { email },
+          create: { email, passwordHash: adminHash, role: UserRole.ADMIN },
+          update: { passwordHash: adminHash, role: UserRole.ADMIN },
+        });
+        const meta = getClientMeta(request);
+        const { refreshToken } = await createSession({
+          userId: user.id,
+          ...meta,
+        });
+        const accessToken = signAccessToken(fastify, {
+          userId: user.id,
+          email: user.email,
+          role: user.role,
+        });
+        setAuthCookies(reply, accessToken, refreshToken);
+        return {
+          token: accessToken,
+          refreshToken,
+          user: { id: user.id, email: user.email, role: user.role },
+        };
+      }
 
       const user = await prisma.user.findUnique({
-        where: { email: body.email },
+        where: { email },
       });
       if (!user) {
         throw fastify.httpErrors.unauthorized('Credenciales inválidas');
