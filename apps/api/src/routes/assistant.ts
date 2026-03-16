@@ -75,44 +75,56 @@ export async function assistantRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const parsed = assistantSearchRequestSchema.safeParse(
-        (request.body as { text?: string }) ?? {}
-      );
-      if (!parsed.success) {
-        return reply.status(400).send({
-          message: parsed.error.errors[0]?.message ?? 'Invalid request',
-          code: 'INVALID_REQUEST',
-        });
-      }
-      const { text } = parsed.data;
-
-      // No loguear texto completo (PII). Solo longitud.
-      request.log.info({ textLen: text.length }, 'assistant/search');
-
-      const provider = getAssistantProvider();
-      let result;
       try {
-        result = await provider.parse(text);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        if (
-          msg.includes('assistant_search_inconsistent') &&
-          process.env.NODE_ENV !== 'production'
-        ) {
-          request.log.error({ err, textLen: text.length }, 'assistant/search inconsistent');
-          return reply.status(500).send({
-            message: 'assistant_search_inconsistent',
-            code: 'ASSISTANT_INCONSISTENT',
+        const parsed = assistantSearchRequestSchema.safeParse(
+          (request.body as { text?: string }) ?? {}
+        );
+        if (!parsed.success) {
+          return reply.status(400).send({
+            message: parsed.error.errors[0]?.message ?? 'Invalid request',
+            code: 'INVALID_REQUEST',
           });
         }
-        throw err;
-      }
+        const { text } = parsed.data;
 
-      return {
-        filters: result.filters,
-        explanation: result.explanation,
-        warnings: result.warnings ?? [],
-      };
+        // No loguear texto completo (PII). Solo longitud.
+        request.log.info({ textLen: text.length }, 'assistant/search');
+
+        const provider = getAssistantProvider();
+        let result;
+        try {
+          result = await provider.parse(text);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (
+            msg.includes('assistant_search_inconsistent') &&
+            process.env.NODE_ENV !== 'production'
+          ) {
+            request.log.error({ err, textLen: text.length }, 'assistant/search inconsistent');
+            return reply.status(500).send({
+              message: 'assistant_search_inconsistent',
+              code: 'ASSISTANT_INCONSISTENT',
+            });
+          }
+          request.log.error({ err, textLen: text.length }, 'assistant/search parse error');
+          return reply.status(500).send({
+            message: 'Error al interpretar la búsqueda. Probá de nuevo.',
+            code: 'ASSISTANT_ERROR',
+          });
+        }
+
+        return {
+          filters: result.filters,
+          explanation: result.explanation,
+          warnings: result.warnings ?? [],
+        };
+      } catch (err) {
+        request.log.error({ err }, 'assistant/search unhandled');
+        return reply.status(500).send({
+          message: 'Error al buscar. Probá de nuevo en un momento.',
+          code: 'SERVER_ERROR',
+        });
+      }
     }
   );
 

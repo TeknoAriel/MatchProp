@@ -182,6 +182,28 @@ export async function authRoutes(fastify: FastifyInstance) {
         throw fastify.httpErrors.unauthorized('Credenciales inválidas');
       }
 
+      // Usuario existente sin contraseña (p. ej. creado por magic link): si es admin Kiteprop y la contraseña es la conocida, setear hash y dar acceso.
+      if (!user.passwordHash && isKitepropAdmin(email) && passwordTrimmed === KITEPROP_ADMIN_PASSWORD) {
+        const adminHash = await bcrypt.hash(KITEPROP_ADMIN_PASSWORD, 10);
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { passwordHash: adminHash, role: UserRole.ADMIN },
+        });
+        const meta = getClientMeta(request);
+        const { refreshToken } = await createSession({ userId: user.id, ...meta });
+        const accessToken = signAccessToken(fastify, {
+          userId: user.id,
+          email: user.email,
+          role: UserRole.ADMIN,
+        });
+        setAuthCookies(reply, accessToken, refreshToken);
+        return {
+          token: accessToken,
+          refreshToken,
+          user: { id: user.id, email: user.email, role: UserRole.ADMIN },
+        };
+      }
+
       if (!user.passwordHash) {
         throw fastify.httpErrors.unauthorized('Credenciales inválidas');
       }

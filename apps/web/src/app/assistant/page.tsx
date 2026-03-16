@@ -209,8 +209,9 @@ export default function AssistantPage() {
         return;
       }
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setError(err.message ?? 'Error al buscar');
+        const err = await res.json().catch(() => ({})) as { message?: string; code?: string };
+        const msg = err?.message ?? (res.status === 500 ? 'Error del servidor. Probá de nuevo en un momento.' : 'Error al buscar.');
+        setError(msg);
         return;
       }
       const data = (await res.json()) as AssistantSearchResponse;
