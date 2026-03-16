@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import ActiveSearchBar from '../../components/ActiveSearchBar';
 
 const API_BASE = '/api';
 
@@ -136,6 +137,7 @@ export default function AlertsPage() {
 
   return (
     <main className="min-h-screen p-4">
+      <ActiveSearchBar />
       <div className="max-w-lg mx-auto">
         <div className="flex gap-4 mb-6">
           <Link href="/feed" className="text-sm text-blue-600 hover:underline">

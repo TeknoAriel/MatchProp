@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import type { ListingCard } from '@matchprop/shared';
+import ActiveSearchBar from '../../components/ActiveSearchBar';
 import FilterChips from '../../components/FilterChips';
 import InquiryModal from '../../components/InquiryModal';
 import PlanErrorBlock from '../../components/PlanErrorBlock';
@@ -380,6 +381,7 @@ function FeedPageContent() {
 
   return (
     <main className="min-h-screen flex flex-col bg-[var(--mp-bg)]">
+      <ActiveSearchBar />
       <div className="w-full flex-1 flex flex-col">
         {/* Header: título + nav compacta */}
         <div className="flex items-center justify-between mb-3">

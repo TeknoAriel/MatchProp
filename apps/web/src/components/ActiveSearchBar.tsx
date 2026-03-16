@@ -86,6 +86,13 @@ export default function ActiveSearchBar() {
                 Lista
               </Link>
               <Link
+                href="/alerts"
+                className="px-2 py-1.5 rounded-full text-xs font-medium text-[var(--mp-foreground)] bg-[var(--mp-bg)] border border-[var(--mp-border)]"
+                title="Alertas de esta búsqueda"
+              >
+                Alertas
+              </Link>
+              <Link
                 href="/assistant"
                 className="px-2 py-1.5 rounded-full text-xs text-[var(--mp-muted)] hover:text-[var(--mp-foreground)]"
               >

@@ -17,6 +17,14 @@ const NAV_ITEMS = [
   { href: '/me/profile', label: 'Perfil', icon: '👤' },
 ];
 
+/** Items que en móvil van dentro del menú "Más" (prioridad E5 masterplan) */
+const MAS_ITEMS = [
+  { href: '/leads', label: 'Consultas', icon: '💬', desc: 'Contactos con inmobiliarias' },
+  { href: '/alerts', label: 'Alertas activas', icon: '🔔', desc: 'Avisos de nuevas, precio, vuelve' },
+  { href: '/searches', label: 'Búsquedas activas', icon: '📁', desc: 'Guardadas y filtros' },
+  { href: '/dashboard', label: 'Inicio', icon: '🏠', desc: 'Ir al inicio' },
+];
+
 /** Tap target mínimo 44px para accesibilidad (25–70 años) */
 const NAV_LINK_CLASS =
   'flex items-center gap-3 px-3 py-3 rounded-xl text-[15px] font-medium transition-colors min-h-[44px]';
@@ -25,6 +33,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [masOpen, setMasOpen] = useState(false);
 
   const isPublic =
     pathname?.startsWith('/login') ||
@@ -132,16 +141,84 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </main>
 
-        {/* Bottom Nav - Mobile only */}
+        {/* Bottom Nav - Mobile only: Match, Lista, Buscar, Favoritos, Más, Perfil */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-[var(--mp-card)] border-t border-[var(--mp-border)] safe-area-pb">
-          <div className="flex justify-around items-center h-16 px-2">
+          <div className="flex justify-around items-center h-16 px-1">
             <NavLink href="/feed" icon="🔥" label="Match" pathname={pathname} />
             <NavLink href="/feed/list" icon="📋" label="Lista" pathname={pathname} />
             <NavLink href="/assistant" icon="🔍" label="Buscar" pathname={pathname} />
             <NavLink href="/me/saved" icon="★" label="Favoritos" pathname={pathname} />
+            <button
+              type="button"
+              onClick={() => setMasOpen(true)}
+              className={`flex flex-col items-center justify-center flex-1 py-3 min-h-[52px] rounded-xl transition-colors active:scale-[0.98] ${
+                MAS_ITEMS.some((m) => pathname === m.href || pathname?.startsWith(m.href + '/'))
+                  ? 'text-[var(--mp-accent)] font-semibold'
+                  : 'text-[var(--mp-muted)]'
+              }`}
+            >
+              <span className="text-[1.25rem]">⋯</span>
+              <span className="text-[13px]">Más</span>
+            </button>
             <NavLink href="/me/profile" icon="👤" label="Perfil" pathname={pathname} />
           </div>
         </nav>
+
+        {/* Sheet "Más" - Alertas, Búsquedas, Consultas (masterplan E5) */}
+        {masOpen && (
+          <>
+            <div
+              className="md:hidden fixed inset-0 z-40 bg-black/50"
+              aria-hidden
+              onClick={() => setMasOpen(false)}
+            />
+            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 max-h-[70vh] rounded-t-2xl bg-[var(--mp-card)] border-t border-[var(--mp-border)] shadow-lg safe-area-pb">
+              <div className="p-4 pb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">Más</h2>
+                    <p className="text-xs text-[var(--mp-muted)]">Consultas, alertas y búsquedas</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMasOpen(false)}
+                    className="p-2 rounded-full text-[var(--mp-muted)] hover:bg-[var(--mp-bg)]"
+                    aria-label="Cerrar"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="space-y-0.5">
+                  {MAS_ITEMS.map((item) => {
+                    const active = pathname === item.href || pathname?.startsWith(item.href + '/');
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMasOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl min-h-[52px] ${
+                          active
+                            ? 'bg-[var(--mp-accent)] text-white'
+                            : 'text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]'
+                        }`}
+                      >
+                        <span className="text-xl shrink-0">{item.icon}</span>
+                        <div className="min-w-0">
+                          <span className="font-medium block">{item.label}</span>
+                          {'desc' in item && (
+                            <span className={`text-xs block truncate ${active ? 'text-white/80' : 'text-[var(--mp-muted)]'}`}>
+                              {(item as { desc?: string }).desc}
+                            </span>
+                          )}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

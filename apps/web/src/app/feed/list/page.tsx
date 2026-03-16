@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { FixedSizeList as List } from 'react-window';
 import type { ListingCard } from '@matchprop/shared';
+import ActiveSearchBar from '../../../components/ActiveSearchBar';
 import { SkeletonList } from '../../../components/SkeletonLoader';
 import FilterChips from '../../../components/FilterChips';
 import InquiryModal from '../../../components/InquiryModal';
@@ -529,6 +530,7 @@ function FeedListPageContent() {
 
   return (
     <main className="min-h-screen bg-[var(--mp-bg)]">
+      <ActiveSearchBar />
       <div className="w-full">
         {/* Header: título + nav compacta */}
         <div className="flex items-center justify-between mb-3">

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { SavedSearchDTO } from '@matchprop/shared';
+import ActiveSearchBar from '../../components/ActiveSearchBar';
 import { filtersToHumanSummary } from '../../lib/filters-summary';
 
 const API_BASE = '/api';
@@ -78,6 +79,7 @@ export default function SearchesPage() {
 
   return (
     <main className="min-h-screen p-4">
+      <ActiveSearchBar />
       <div className="max-w-lg mx-auto">
         <div className="flex gap-4 mb-6">
           <Link href="/feed" className="text-sm text-blue-600 hover:underline">

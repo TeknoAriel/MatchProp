@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { AssistantSearchResponse, ListingCard, SearchFilters } from '@matchprop/shared';
 import { ASSISTANT_BUILD } from '../../lib/build-id';
 import { filtersToHumanSummary } from '../../lib/filters-summary';
+import ActiveSearchBar from '../../components/ActiveSearchBar';
 import FilterChips from '../../components/FilterChips';
 import AssistantChatInput from '../../components/AssistantChatInput';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
@@ -525,10 +526,49 @@ export default function AssistantPage() {
 
   return (
     <main className="min-h-screen p-4">
+      <ActiveSearchBar />
       <div className="max-w-xl mx-auto space-y-4">
         {showDebug && (
           <p className="text-xs text-gray-400 mb-2">Assistant UI build: {ASSISTANT_BUILD}</p>
         )}
+
+        {/* Acceso rápido a módulos prioritarios (masterplan E5) */}
+        <section className="rounded-2xl border border-[var(--mp-border)] bg-[var(--mp-card)] p-4">
+          <h2 className="text-sm font-semibold text-[var(--mp-muted)] mb-3">Acceso rápido</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <Link
+              href="/searches"
+              className="flex items-center gap-3 p-3 rounded-xl bg-[var(--mp-bg)] hover:bg-[var(--mp-accent)]/10 border border-[var(--mp-border)] hover:border-[var(--mp-accent)]/40 transition-colors"
+            >
+              <span className="text-2xl">📁</span>
+              <div className="min-w-0">
+                <p className="font-medium text-[var(--mp-foreground)] text-sm">Búsquedas activas</p>
+                <p className="text-xs text-[var(--mp-muted)] truncate">Guardadas y filtros</p>
+              </div>
+            </Link>
+            <Link
+              href="/alerts"
+              className="flex items-center gap-3 p-3 rounded-xl bg-[var(--mp-bg)] hover:bg-[var(--mp-accent)]/10 border border-[var(--mp-border)] hover:border-[var(--mp-accent)]/40 transition-colors"
+            >
+              <span className="text-2xl">🔔</span>
+              <div className="min-w-0">
+                <p className="font-medium text-[var(--mp-foreground)] text-sm">Alertas activas</p>
+                <p className="text-xs text-[var(--mp-muted)] truncate">Nuevas, precio, vuelve</p>
+              </div>
+            </Link>
+            <Link
+              href="/leads"
+              className="flex items-center gap-3 p-3 rounded-xl bg-[var(--mp-bg)] hover:bg-[var(--mp-accent)]/10 border border-[var(--mp-border)] hover:border-[var(--mp-accent)]/40 transition-colors"
+            >
+              <span className="text-2xl">💬</span>
+              <div className="min-w-0">
+                <p className="font-medium text-[var(--mp-foreground)] text-sm">Consultas</p>
+                <p className="text-xs text-[var(--mp-muted)] truncate">Contactos con inmobiliarias</p>
+              </div>
+            </Link>
+          </div>
+        </section>
+
         <div className="flex items-center gap-2 text-sm text-[var(--mp-muted)] mb-1 flex-wrap">
           <Link href="/search" className="hover:text-[var(--mp-foreground)]">
             Por filtros
