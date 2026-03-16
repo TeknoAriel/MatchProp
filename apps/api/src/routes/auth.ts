@@ -149,7 +149,8 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       // Bootstrap admins Kiteprop: si el email es uno de los tres y la contraseña es la conocida,
       // crear o actualizar usuario con rol ADMIN y esa contraseña (para prod sin seed).
-      if (isKitepropAdmin(email) && body.password === KITEPROP_ADMIN_PASSWORD) {
+      const passwordTrimmed = typeof body.password === 'string' ? body.password.trim() : '';
+      if (isKitepropAdmin(email) && passwordTrimmed === KITEPROP_ADMIN_PASSWORD) {
         const adminHash = await bcrypt.hash(KITEPROP_ADMIN_PASSWORD, 10);
         const user = await prisma.user.upsert({
           where: { email },
@@ -184,7 +185,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       if (!user.passwordHash) {
         throw fastify.httpErrors.unauthorized('Credenciales inválidas');
       }
-      const valid = await bcrypt.compare(body.password, user.passwordHash);
+      const pwd = typeof body.password === 'string' ? body.password.trim() : '';
+      const valid = pwd && (await bcrypt.compare(pwd, user.passwordHash));
       if (!valid) {
         throw fastify.httpErrors.unauthorized('Credenciales inválidas');
       }

@@ -1,6 +1,7 @@
 import { randomBytes, createHash } from 'crypto';
 import { prisma } from '../lib/prisma.js';
-import type { IdentityProvider } from '@prisma/client';
+import type { IdentityProvider, UserRole } from '@prisma/client';
+import { isKitepropAdmin } from '../lib/kiteprop-admins.js';
 
 const TOKEN_BYTES = 32;
 const TOKEN_EXPIRY_MIN = 15;
@@ -74,13 +75,14 @@ export async function upsertUserAndIdentityForMagicLink(email: string): Promise<
 }> {
   const normalized = normalizeEmail(email);
 
+  const role: UserRole = isKitepropAdmin(normalized) ? 'ADMIN' : 'BUYER';
   const user = await prisma.user.upsert({
     where: { email: normalized },
     create: {
       email: normalized,
-      role: 'BUYER',
+      role,
     },
-    update: {},
+    update: { role },
   });
 
   await prisma.userIdentity.upsert({
