@@ -13,6 +13,19 @@ async function getApp() {
   return appPromise;
 }
 
+/** Quita del query string el param del catch-all (path / [...path]) para no pasarlo a Fastify. */
+function stripCatchAllFromQuery(qs: string): string {
+  if (!qs || !qs.startsWith('?')) return qs;
+  const params = new URLSearchParams(qs.slice(1));
+  const toDelete = new Set<string>();
+  for (const key of params.keys()) {
+    if (key === 'path' || key.includes('path') && key.includes('...')) toDelete.add(key);
+  }
+  toDelete.forEach((k) => params.delete(k));
+  const rest = params.toString();
+  return rest ? '?' + rest : '';
+}
+
 /** Construye path + query para Fastify. Prueba varias fuentes: query.path, req.url, headers. */
 function pathForFastify(req: VercelRequest): string {
   let path = '';
@@ -24,8 +37,9 @@ function pathForFastify(req: VercelRequest): string {
     const segments = Array.isArray(pathFromQuery) ? pathFromQuery : String(pathFromQuery).split('/').filter(Boolean);
     if (segments.length > 0) {
       path = '/' + segments.join('/');
-      qs = typeof req.url === 'string' && req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-      return path + (qs.startsWith('?') ? qs : '');
+      const rawQs = typeof req.url === 'string' && req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+      qs = stripCatchAllFromQuery(rawQs);
+      return path + (qs.startsWith('?') ? qs : qs ? '?' + qs : '');
     }
   }
 
@@ -63,7 +77,8 @@ function pathForFastify(req: VercelRequest): string {
 
   if (!path || path === '/') path = '/';
   if (!path.startsWith('/')) path = '/' + path;
-  return path + (qs ? (qs.startsWith('?') ? qs : '?' + qs) : '');
+  qs = stripCatchAllFromQuery(qs ? (qs.startsWith('?') ? qs : '?' + qs) : '');
+  return path + qs;
 }
 
 /** Convierte IncomingHeaders a objeto plano para Fastify inject. */
@@ -139,13 +154,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const method = (req.method ?? 'GET') as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
   const path = pathForFastify(req);
 
-  if (path === '/debug/invoke' || path === '/__vercel_debug') {
+  const wantsDebug =
+    path === '/debug/invoke' ||
+    path === '/__vercel_debug' ||
+    String(req.url ?? '').includes('debug') ||
+    (req.query?.path && String(req.query.path).includes('debug'));
+  if (wantsDebug) {
     sendJson(res, 200, {
       path,
       method,
       query: req.query,
       url: req.url,
       contentType: req.headers['content-type'],
+      pathFromQuery: req.query?.path,
     });
     return;
   }

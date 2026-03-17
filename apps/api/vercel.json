@@ -5,8 +5,8 @@
       "maxDuration": 30
     }
   },
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/api/$1" }
+  "routes": [
+    { "src": "/(.*)", "dest": "/api/$1" }
   ],
   "buildCommand": "cd ../.. && NPM_CONFIG_PRODUCTION=false pnpm install && pnpm build:shared && pnpm --filter api exec prisma generate -- --schema=./prisma/schema.prisma && pnpm --filter api build"
 }
