@@ -28,7 +28,8 @@
     "demo:validate": "tsx src/scripts/demo-validate.ts",
     "crm:push:run": "tsx src/scripts/crm-push-run.ts",
     "ingest:bundle": "tsx src/scripts/ingest-bundle.ts",
-    "kiteprop:discover": "tsx src/scripts/kiteprop-discover-openapi.ts"
+    "kiteprop:discover": "tsx src/scripts/kiteprop-discover-openapi.ts",
+    "reset-users": "tsx src/scripts/reset-users.ts"
   },
   "dependencies": {
     "@vercel/node": "^3.2.20",

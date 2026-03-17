@@ -58,6 +58,41 @@ function headersForInject(headers: VercelRequest['headers']): Record<string, str
   return out;
 }
 
+/** Lee el body del request: usa req.body si existe, si no lee del stream (por si Vercel no lo inyecta). */
+function getRequestBody(
+  req: VercelRequest,
+  method: string
+): Promise<string | Record<string, unknown> | undefined> {
+  if (method === 'GET' || method === 'HEAD') return Promise.resolve(undefined);
+  if (req.body !== undefined && req.body !== null) {
+    return Promise.resolve(
+      typeof req.body === 'string' ? req.body : (req.body as Record<string, unknown>)
+    );
+  }
+  return new Promise((resolve) => {
+    const chunks: Buffer[] = [];
+    (req as NodeJS.ReadableStream).on('data', (chunk: Buffer) => chunks.push(chunk));
+    (req as NodeJS.ReadableStream).on('end', () => {
+      const raw = Buffer.concat(chunks).toString('utf8');
+      if (!raw.trim()) {
+        resolve(undefined);
+        return;
+      }
+      const ct = (req.headers['content-type'] ?? '').toLowerCase();
+      if (ct.includes('application/json')) {
+        try {
+          resolve(JSON.parse(raw) as Record<string, unknown>);
+        } catch {
+          resolve(raw);
+        }
+      } else {
+        resolve(raw);
+      }
+    });
+    (req as NodeJS.ReadableStream).on('error', () => resolve(undefined));
+  });
+}
+
 /** Respuesta de Fastify inject (LightMyRequest). */
 type InjectResponse = {
   statusCode: number;
@@ -65,22 +100,15 @@ type InjectResponse = {
   payload: string | Buffer;
 };
 
-/**
- * Usamos fastify.inject() en lugar de emit('request') para que el body llegue bien.
- * En Vercel el body ya viene parseado en req.body; si pasamos el stream a Fastify, suele estar vacío.
- */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const app = await getApp();
   const path = pathForFastify(req);
   const method = (req.method ?? 'GET') as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
   const headers = headersForInject(req.headers);
-
-  const payload =
-    method !== 'GET' && method !== 'HEAD' && req.body !== undefined
-      ? typeof req.body === 'string'
-        ? req.body
-        : req.body
-      : undefined;
+  let payload = await getRequestBody(req, method);
+  if (payload !== undefined && typeof payload === 'object' && !Buffer.isBuffer(payload)) {
+    if (!headers['content-type']) headers['content-type'] = 'application/json';
+  }
 
   const response = (await app.inject({
     method,
