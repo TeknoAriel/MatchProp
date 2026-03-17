@@ -13,38 +13,57 @@ async function getApp() {
   return appPromise;
 }
 
-/** Construye path + query para Fastify. En Vercel, el catch-all [[...path]] pone los segmentos en query.path. */
+/** Construye path + query para Fastify. Prueba varias fuentes: query.path, req.url, headers. */
 function pathForFastify(req: VercelRequest): string {
+  let path = '';
+  let qs = '';
+
+  // 1) query.path (catch-all [[...path]] en Vercel)
   const pathFromQuery = req.query?.path;
   if (pathFromQuery !== undefined && pathFromQuery !== null) {
     const segments = Array.isArray(pathFromQuery) ? pathFromQuery : String(pathFromQuery).split('/').filter(Boolean);
     if (segments.length > 0) {
-      const path = '/' + segments.join('/');
-      const qs = typeof req.url === 'string' && req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+      path = '/' + segments.join('/');
+      qs = typeof req.url === 'string' && req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
       return path + (qs.startsWith('?') ? qs : '');
     }
   }
-  const raw = (req.url ?? '/').trim() || '/';
-  let pathname: string;
-  let qs = '';
-  if (raw.startsWith('http://') || raw.startsWith('https://')) {
-    try {
-      const u = new URL(raw);
-      pathname = u.pathname;
-      qs = u.search ? u.search.slice(1) : '';
-    } catch {
+
+  // 2) req.url (path solo o URL completa)
+  const raw = ((req.url ?? '') as string).trim() || ((req.headers['x-url'] as string) ?? '').trim() || '';
+  if (raw) {
+    let pathname: string;
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      try {
+        const u = new URL(raw);
+        pathname = u.pathname;
+        qs = u.search ? u.search.slice(1) : '';
+      } catch {
+        const [p, q] = raw.split('?');
+        pathname = p ?? '/';
+        qs = q ?? '';
+      }
+    } else {
       const [p, q] = raw.split('?');
-      pathname = p ?? '/';
-      qs = q ?? '';
+      pathname = (p ?? '/').trim() || '/';
+      qs = (q ?? '').trim();
     }
-  } else {
-    const [p, q] = raw.split('?');
-    pathname = (p ?? '/').trim() || '/';
-    qs = (q ?? '').trim();
+    path = pathname.replace(/^\/api(?=\/|$)/i, '') || '/';
   }
-  let path = pathname.replace(/^\/api(?=\/|$)/i, '') || '/';
+
+  // 3) Referer (por si el path se perdió: ej. /api/assistant/search)
+  if ((!path || path === '/') && req.headers['referer']) {
+    try {
+      const ref = new URL(req.headers['referer'] as string);
+      path = ref.pathname.replace(/^\/api(?=\/|$)/i, '') || '/';
+    } catch {
+      // ignore
+    }
+  }
+
+  if (!path || path === '/') path = '/';
   if (!path.startsWith('/')) path = '/' + path;
-  return path + (qs ? '?' + qs : '');
+  return path + (qs ? (qs.startsWith('?') ? qs : '?' + qs) : '');
 }
 
 /** Convierte IncomingHeaders a objeto plano para Fastify inject. */
