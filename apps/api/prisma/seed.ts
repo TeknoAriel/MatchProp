@@ -199,7 +199,7 @@ async function main() {
   const defaultIngestSources = {
     externalsite: [
       {
-        url: 'https://static.kiteprop.com/kp/difusions/4b3c894a10d905c82e85b35c410d7d4099551504/externalsite-2-9e4f284e1578b24afa155c578d05821ac4c56baa.json',
+        url: 'https://static.kiteprop.com/kp/difusions/2a41bc8d62be280eacbcb8ac2c5ff6c51dc39af2/proppit.json',
         format: 'json',
       },
     ],
