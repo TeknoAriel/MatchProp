@@ -77,7 +77,9 @@ function headersForInject(headers: VercelRequest['headers']): Record<string, str
   return out;
 }
 
-/** Lee el body del request: usa req.body si existe, si no lee del stream (por si Vercel no lo inyecta). */
+const BODY_READ_TIMEOUT_MS = 8000;
+
+/** Lee el body del request: usa req.body si existe, si no lee del stream. Timeout para no colgar. */
 function getRequestBody(
   req: VercelRequest,
   method: string
@@ -89,26 +91,34 @@ function getRequestBody(
     );
   }
   return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      resolve(undefined);
+    }, BODY_READ_TIMEOUT_MS);
     const chunks: Buffer[] = [];
-    (req as NodeJS.ReadableStream).on('data', (chunk: Buffer) => chunks.push(chunk));
-    (req as NodeJS.ReadableStream).on('end', () => {
+    const stream = req as NodeJS.ReadableStream;
+    const done = (value: string | Record<string, unknown> | undefined) => {
+      clearTimeout(timeout);
+      resolve(value);
+    };
+    stream.on('data', (chunk: Buffer) => chunks.push(chunk));
+    stream.on('end', () => {
       const raw = Buffer.concat(chunks).toString('utf8');
       if (!raw.trim()) {
-        resolve(undefined);
+        done(undefined);
         return;
       }
       const ct = (req.headers['content-type'] ?? '').toLowerCase();
       if (ct.includes('application/json')) {
         try {
-          resolve(JSON.parse(raw) as Record<string, unknown>);
+          done(JSON.parse(raw) as Record<string, unknown>);
         } catch {
-          resolve(raw);
+          done(raw);
         }
       } else {
-        resolve(raw);
+        done(raw);
       }
     });
-    (req as NodeJS.ReadableStream).on('error', () => resolve(undefined));
+    stream.on('error', () => done(undefined));
   });
 }
 
@@ -119,27 +129,60 @@ type InjectResponse = {
   payload: string | Buffer;
 };
 
+function sendJson(res: VercelResponse, status: number, body: Record<string, unknown>) {
+  res.status(status);
+  res.setHeader('content-type', 'application/json');
+  res.end(JSON.stringify(body));
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const app = await getApp();
-  const path = pathForFastify(req);
   const method = (req.method ?? 'GET') as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
-  const headers = headersForInject(req.headers);
-  let payload = await getRequestBody(req, method);
-  if (payload !== undefined && typeof payload === 'object' && !Buffer.isBuffer(payload)) {
-    if (!headers['content-type']) headers['content-type'] = 'application/json';
+  const path = pathForFastify(req);
+
+  if (path === '/debug/invoke' || path === '/__vercel_debug') {
+    sendJson(res, 200, {
+      path,
+      method,
+      query: req.query,
+      url: req.url,
+      contentType: req.headers['content-type'],
+    });
+    return;
   }
 
-  const response = (await app.inject({
-    method,
-    url: path,
-    headers,
-    payload,
-  })) as unknown as InjectResponse;
+  try {
+    const app = await getApp();
+    const headers = headersForInject(req.headers);
+    let payload = await getRequestBody(req, method);
+    if (payload !== undefined && typeof payload === 'object' && !Buffer.isBuffer(payload)) {
+      if (!headers['content-type']) headers['content-type'] = 'application/json';
+    }
 
-  res.status(response.statusCode);
-  for (const [key, value] of Object.entries(response.headers)) {
-    if (value === undefined) continue;
-    res.setHeader(key, value);
+    const response = (await app.inject({
+      method,
+      url: path,
+      headers,
+      payload,
+    })) as unknown as InjectResponse;
+
+    res.status(response.statusCode);
+    if (response.statusCode === 404) {
+      res.setHeader('X-MatchProp-Path', path);
+      res.setHeader('X-MatchProp-Method', method);
+    }
+    for (const [key, value] of Object.entries(response.headers)) {
+      if (value === undefined) continue;
+      res.setHeader(key, value);
+    }
+    res.end(response.payload);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    console.error('[MatchProp handler error]', { path, method, message: msg, stack });
+    sendJson(res, 500, {
+      message: 'Error interno del servidor.',
+      code: 'HANDLER_ERROR',
+      debug: { path, method, error: msg },
+    });
   }
-  res.end(response.payload);
 }

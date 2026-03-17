@@ -90,8 +90,8 @@ function LoginPageContent() {
         window.location.href = '/feed';
         return;
       }
-      const data = (await res.json().catch(() => ({}))) as { message?: string };
-      setPwdMessage(data?.message ?? 'Credenciales inválidas.');
+      const data = (await res.json().catch(() => ({}))) as { message?: string; code?: string; debug?: { error?: string } };
+      setPwdMessage(data?.message ?? (data?.debug?.error ? `Error: ${data.debug.error}` : 'Credenciales inválidas.'));
       setPwdError(true);
     } catch {
       setPwdMessage('Error de conexión.');

@@ -209,7 +209,7 @@ export default function AssistantPage() {
         return;
       }
       if (!res.ok) {
-        const err = await res.json().catch(() => ({})) as { message?: string; code?: string };
+        const err = await res.json().catch(() => ({})) as { message?: string; code?: string; debug?: { path?: string; error?: string } };
         let msg = err?.message;
         if (!msg) {
           if (res.status === 500) msg = 'Error del servidor. Probá de nuevo en un momento.';
@@ -217,6 +217,8 @@ export default function AssistantPage() {
           else if (res.status === 401) msg = 'Sesión expirada. Volvé a iniciar sesión.';
           else msg = `Error al buscar (${res.status}). Probá de nuevo.`;
         }
+        const debugPath = res.headers.get('X-MatchProp-Path') ?? err?.debug?.path;
+        if (debugPath && process.env.NODE_ENV === 'development') msg += ` [path: ${debugPath}]`;
         setError(msg);
         return;
       }
