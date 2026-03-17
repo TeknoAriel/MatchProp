@@ -80,7 +80,9 @@ function LoginPageContent() {
     setPwdMessage('');
     setPwdLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
+      // En algunos deploys, `/auth/*` puede no reescribirse correctamente en la API.
+      // Usamos el alias estable `/login` para password login.
+      const res = await fetch(`${API_BASE}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

@@ -47,6 +47,139 @@ function getClientMeta(request: { ip?: string; headers?: { 'user-agent'?: string
 }
 
 export async function authRoutes(fastify: FastifyInstance) {
+  async function passwordLoginHandler(request: any, reply: any) {
+    const raw = request.body as unknown;
+    const parsed = loginSchema.safeParse(raw);
+    if (!parsed.success) {
+      const first = parsed.error.errors[0];
+      return reply.status(400).send({
+        message: first?.message ?? 'Email y contraseña son requeridos.',
+        code: 'VALIDATION_ERROR',
+      });
+    }
+    const body = parsed.data;
+    const email = body.email.trim().toLowerCase();
+
+    // Modo desarrollo/demo: atajo estable para admin local (README: admin@matchprop.com / demo).
+    // Solo se habilita en entornos no productivos o cuando DEMO_MODE=1.
+    const passwordTrimmed = typeof body.password === 'string' ? body.password.trim() : '';
+    const isDevEnv =
+      process.env.NODE_ENV !== 'production' || envFlag('DEMO_MODE') || process.env.VERCEL === '1';
+    if (isDevEnv && email === 'admin@matchprop.com' && passwordTrimmed === 'demo') {
+      const adminHash = await bcrypt.hash(passwordTrimmed, 10);
+      const existing = await findUserByEmailIgnoreCase(email);
+      const user = existing
+        ? await prisma.user.update({
+            where: { id: existing.id },
+            data: { passwordHash: adminHash, role: UserRole.ADMIN },
+          })
+        : await prisma.user.create({
+            data: { email, passwordHash: adminHash, role: UserRole.ADMIN },
+          });
+      const meta = getClientMeta(request);
+      const { refreshToken } = await createSession({
+        userId: user.id,
+        ...meta,
+      });
+      const accessToken = signAccessToken(fastify, {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+      });
+      setAuthCookies(reply, accessToken, refreshToken);
+      return {
+        token: accessToken,
+        refreshToken,
+        user: { id: user.id, email: user.email, role: user.role },
+      };
+    }
+
+    // Bootstrap admins Kiteprop: si el email es uno de los tres y la contraseña es la conocida,
+    // crear o actualizar usuario con rol ADMIN y esa contraseña (para prod sin seed).
+    if (isKitepropAdmin(email) && passwordTrimmed === KITEPROP_ADMIN_PASSWORD) {
+      const adminHash = await bcrypt.hash(KITEPROP_ADMIN_PASSWORD, 10);
+      const existing = await findUserByEmailIgnoreCase(email);
+      const user = existing
+        ? await prisma.user.update({
+            where: { id: existing.id },
+            data: { passwordHash: adminHash, role: UserRole.ADMIN },
+          })
+        : await prisma.user.create({
+            data: { email, passwordHash: adminHash, role: UserRole.ADMIN },
+          });
+      const meta = getClientMeta(request);
+      const { refreshToken } = await createSession({
+        userId: user.id,
+        ...meta,
+      });
+      const accessToken = signAccessToken(fastify, {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+      });
+      setAuthCookies(reply, accessToken, refreshToken);
+      return {
+        token: accessToken,
+        refreshToken,
+        user: { id: user.id, email: user.email, role: user.role },
+      };
+    }
+
+    const user = await findUserByEmailIgnoreCase(email);
+    if (!user) {
+      throw fastify.httpErrors.unauthorized('Credenciales inválidas');
+    }
+
+    // Usuario existente sin contraseña (p. ej. creado por magic link): si es admin Kiteprop y la contraseña es la conocida, setear hash y dar acceso.
+    if (!user.passwordHash && isKitepropAdmin(email) && passwordTrimmed === KITEPROP_ADMIN_PASSWORD) {
+      const adminHash = await bcrypt.hash(KITEPROP_ADMIN_PASSWORD, 10);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash: adminHash, role: UserRole.ADMIN },
+      });
+      const meta = getClientMeta(request);
+      const { refreshToken } = await createSession({ userId: user.id, ...meta });
+      const accessToken = signAccessToken(fastify, {
+        userId: user.id,
+        email: user.email,
+        role: UserRole.ADMIN,
+      });
+      setAuthCookies(reply, accessToken, refreshToken);
+      return {
+        token: accessToken,
+        refreshToken,
+        user: { id: user.id, email: user.email, role: UserRole.ADMIN },
+      };
+    }
+
+    if (!user.passwordHash) {
+      throw fastify.httpErrors.unauthorized('Credenciales inválidas');
+    }
+    const pwd = typeof body.password === 'string' ? body.password.trim() : '';
+    const valid = pwd && (await bcrypt.compare(pwd, user.passwordHash));
+    if (!valid) {
+      throw fastify.httpErrors.unauthorized('Credenciales inválidas');
+    }
+
+    const meta = getClientMeta(request);
+    const { refreshToken } = await createSession({
+      userId: user.id,
+      ...meta,
+    });
+    const accessToken = signAccessToken(fastify, {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+    setAuthCookies(reply, accessToken, refreshToken);
+
+    return {
+      token: accessToken,
+      refreshToken,
+      user: { id: user.id, email: user.email, role: user.role },
+    };
+  }
+
   fastify.post(
     '/auth/register',
     {
@@ -150,139 +283,11 @@ export async function authRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      const raw = request.body as unknown;
-      const parsed = loginSchema.safeParse(raw);
-      if (!parsed.success) {
-        const first = parsed.error.errors[0];
-        return reply.status(400).send({
-          message: first?.message ?? 'Email y contraseña son requeridos.',
-          code: 'VALIDATION_ERROR',
-        });
-      }
-      const body = parsed.data;
-      const email = body.email.trim().toLowerCase();
-
-      // Modo desarrollo/demo: atajo estable para admin local (README: admin@matchprop.com / demo).
-      // Solo se habilita en entornos no productivos o cuando DEMO_MODE=1.
-      const passwordTrimmed = typeof body.password === 'string' ? body.password.trim() : '';
-      const isDevEnv =
-        process.env.NODE_ENV !== 'production' || envFlag('DEMO_MODE') || process.env.VERCEL === '1';
-      if (isDevEnv && email === 'admin@matchprop.com' && passwordTrimmed === 'demo') {
-        const adminHash = await bcrypt.hash(passwordTrimmed, 10);
-        const existing = await findUserByEmailIgnoreCase(email);
-        const user = existing
-          ? await prisma.user.update({
-              where: { id: existing.id },
-              data: { passwordHash: adminHash, role: UserRole.ADMIN },
-            })
-          : await prisma.user.create({
-              data: { email, passwordHash: adminHash, role: UserRole.ADMIN },
-            });
-        const meta = getClientMeta(request);
-        const { refreshToken } = await createSession({
-          userId: user.id,
-          ...meta,
-        });
-        const accessToken = signAccessToken(fastify, {
-          userId: user.id,
-          email: user.email,
-          role: user.role,
-        });
-        setAuthCookies(reply, accessToken, refreshToken);
-        return {
-          token: accessToken,
-          refreshToken,
-          user: { id: user.id, email: user.email, role: user.role },
-        };
-      }
-
-      // Bootstrap admins Kiteprop: si el email es uno de los tres y la contraseña es la conocida,
-      // crear o actualizar usuario con rol ADMIN y esa contraseña (para prod sin seed).
-      if (isKitepropAdmin(email) && passwordTrimmed === KITEPROP_ADMIN_PASSWORD) {
-        const adminHash = await bcrypt.hash(KITEPROP_ADMIN_PASSWORD, 10);
-        const existing = await findUserByEmailIgnoreCase(email);
-        const user = existing
-          ? await prisma.user.update({
-              where: { id: existing.id },
-              data: { passwordHash: adminHash, role: UserRole.ADMIN },
-            })
-          : await prisma.user.create({
-              data: { email, passwordHash: adminHash, role: UserRole.ADMIN },
-            });
-        const meta = getClientMeta(request);
-        const { refreshToken } = await createSession({
-          userId: user.id,
-          ...meta,
-        });
-        const accessToken = signAccessToken(fastify, {
-          userId: user.id,
-          email: user.email,
-          role: user.role,
-        });
-        setAuthCookies(reply, accessToken, refreshToken);
-        return {
-          token: accessToken,
-          refreshToken,
-          user: { id: user.id, email: user.email, role: user.role },
-        };
-      }
-
-      const user = await findUserByEmailIgnoreCase(email);
-      if (!user) {
-        throw fastify.httpErrors.unauthorized('Credenciales inválidas');
-      }
-
-      // Usuario existente sin contraseña (p. ej. creado por magic link): si es admin Kiteprop y la contraseña es la conocida, setear hash y dar acceso.
-      if (!user.passwordHash && isKitepropAdmin(email) && passwordTrimmed === KITEPROP_ADMIN_PASSWORD) {
-        const adminHash = await bcrypt.hash(KITEPROP_ADMIN_PASSWORD, 10);
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { passwordHash: adminHash, role: UserRole.ADMIN },
-        });
-        const meta = getClientMeta(request);
-        const { refreshToken } = await createSession({ userId: user.id, ...meta });
-        const accessToken = signAccessToken(fastify, {
-          userId: user.id,
-          email: user.email,
-          role: UserRole.ADMIN,
-        });
-        setAuthCookies(reply, accessToken, refreshToken);
-        return {
-          token: accessToken,
-          refreshToken,
-          user: { id: user.id, email: user.email, role: UserRole.ADMIN },
-        };
-      }
-
-      if (!user.passwordHash) {
-        throw fastify.httpErrors.unauthorized('Credenciales inválidas');
-      }
-      const pwd = typeof body.password === 'string' ? body.password.trim() : '';
-      const valid = pwd && (await bcrypt.compare(pwd, user.passwordHash));
-      if (!valid) {
-        throw fastify.httpErrors.unauthorized('Credenciales inválidas');
-      }
-
-      const meta = getClientMeta(request);
-      const { refreshToken } = await createSession({
-        userId: user.id,
-        ...meta,
-      });
-      const accessToken = signAccessToken(fastify, {
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-      });
-      setAuthCookies(reply, accessToken, refreshToken);
-
-      return {
-        token: accessToken,
-        refreshToken,
-        user: { id: user.id, email: user.email, role: user.role },
-      };
-    }
+    passwordLoginHandler
   );
+
+  // Alias de password login sin prefijo `/auth/*` (workaround para entornos donde `/auth/*` no reescribe al handler).
+  fastify.post('/login', { schema: { tags: ['Auth'] } }, passwordLoginHandler);
 
   fastify.post(
     '/auth/magic/request',
