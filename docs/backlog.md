@@ -145,18 +145,30 @@
 
 ---
 
-### DT-002 — Elasticsearch/Meilisearch para búsqueda avanzada
+### DT-002 — Meilisearch para búsqueda avanzada ✅ ESTRUCTURA LISTA
 
-| Prioridad | Media (cuando se necesite full-text search) |
-|-----------|---------------------------------------------|
-| **Estado** | Pendiente |
-| **Trigger** | Necesidad de búsqueda full-text en descripciones |
+| Prioridad | Media |
+|-----------|-------|
+| **Estado** | Estructura creada, pendiente activar |
+| **Costo** | $0 (tier gratis: 10K docs, 100K búsquedas/mes) |
 
 **Situación actual:**
 - Búsqueda con `LIKE` en PostgreSQL
 - Funciona para filtros básicos
+- **Estructura Meilisearch ya creada** (ver abajo)
 
-**Solución propuesta:**
-- Meilisearch (más simple) o Elasticsearch
-- Índices para: título, descripción, ubicación
-- Autocompletado y facets
+**Archivos creados:**
+- `apps/api/src/lib/meilisearch.ts` - Cliente y funciones
+- `apps/api/src/scripts/setup-meilisearch.ts` - Script de setup
+- `docs/MEILISEARCH_INTEGRACION.md` - Documentación completa
+
+**Para activar:**
+1. Crear cuenta en https://cloud.meilisearch.com (gratis)
+2. Agregar `MEILISEARCH_HOST` y `MEILISEARCH_API_KEY` a .env
+3. Ejecutar: `npx tsx src/scripts/setup-meilisearch.ts`
+
+**Beneficios:**
+- Búsqueda full-text con typo-tolerance
+- Autocompletado instantáneo
+- Filtros combinados eficientes
+- Latencia < 50ms
