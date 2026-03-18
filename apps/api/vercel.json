@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "outputDirectory": "api",
   "functions": {
     "api/handler.ts": {
       "maxDuration": 30
