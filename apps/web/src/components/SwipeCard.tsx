@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import type { ListingCard } from '@matchprop/shared';
 
@@ -11,9 +12,11 @@ interface SwipeCardProps {
 }
 
 export default function SwipeCard({ card, onClick, showInvestorLink }: SwipeCardProps) {
+  const [imgError, setImgError] = useState(false);
   const priceText =
     card.price != null ? `${card.currency ?? 'USD'} ${card.price.toLocaleString()}` : 'Consultar';
   const zoneText = card.locationText ?? (card.bedrooms != null ? `${card.bedrooms} amb` : '');
+  const showImage = card.heroImageUrl && !imgError;
 
   return (
     <div
@@ -25,16 +28,14 @@ export default function SwipeCard({ card, onClick, showInvestorLink }: SwipeCard
     >
       {/* Imagen dominante con gradiente inferior (Tinder style) */}
       <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
-        {card.heroImageUrl ? (
+        {showImage ? (
           <>
             <img
-              src={card.heroImageUrl}
+              src={card.heroImageUrl!}
               alt={card.title ?? ''}
               className="w-full h-full object-cover"
               loading="lazy"
-              onError={(e) => { 
-                e.currentTarget.style.display = 'none';
-              }}
+              onError={() => setImgError(true)}
             />
             {/* Gradiente donde vive precio y zona */}
             <div
@@ -70,7 +71,7 @@ export default function SwipeCard({ card, onClick, showInvestorLink }: SwipeCard
         <h2 className="font-semibold text-lg truncate text-[var(--mp-foreground)]">
           {card.title ?? 'Sin título'}
         </h2>
-        {!card.heroImageUrl && (
+        {!showImage && (
           <p className="text-sm text-[var(--mp-muted)] truncate mt-0.5">
             {priceText} · {zoneText}
           </p>

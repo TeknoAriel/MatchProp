@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 
 export interface ListingCardMiniData {
@@ -81,6 +82,7 @@ export default function ListingCardMini({
   onToggleLike,
   onAddToList,
 }: ListingCardMiniProps) {
+  const [imgError, setImgError] = useState(false);
   const title = displayTitle(listing);
   const priceText =
     listing.price != null
@@ -91,6 +93,7 @@ export default function ListingCardMini({
   const inLists = status?.inLists ?? [];
   const inFavorite = status?.inFavorite ?? false;
   const inLike = status?.inLike ?? false;
+  const showImage = listing.heroImageUrl && !imgError;
 
   return (
     <div
@@ -111,15 +114,13 @@ export default function ListingCardMini({
       )}
       <Link href={href} className="block flex-1">
         <div className="aspect-video bg-slate-200 relative overflow-hidden">
-          {listing.heroImageUrl ? (
+          {showImage ? (
             <img
-              src={listing.heroImageUrl}
+              src={listing.heroImageUrl!}
               alt={title}
               className="w-full h-full object-cover"
               loading="lazy"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
+              onError={() => setImgError(true)}
             />
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import ShareModal from '../../../components/ShareModal';
@@ -51,6 +51,10 @@ export default function ListingDetailPage() {
   const [listing, setListing] = useState<ListingDetail | null>(null);
   const [loading, setLoading] = useState(!invalidId);
   const [imageIndex, setImageIndex] = useState(0);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  const handleImageError = useCallback((url: string) => {
+    setFailedImages(prev => new Set(prev).add(url));
+  }, []);
   const [matchSummary, setMatchSummary] = useState<{
     matchesCount: number;
     topSearchIds: string[];
@@ -293,16 +297,13 @@ export default function ListingDetailPage() {
 
         <div className="border rounded-2xl overflow-hidden bg-white shadow-lg">
           <div className="aspect-video bg-slate-100 relative group">
-            {currentImage ? (
+            {currentImage && !failedImages.has(currentImage.url) ? (
               <img
                 src={currentImage.url}
                 alt={listing.title ?? ''}
                 className="w-full h-full object-cover transition-transform duration-300"
                 loading="lazy"
-                onError={(e) => {
-                  e.currentTarget.src = '';
-                  e.currentTarget.style.display = 'none';
-                }}
+                onError={() => handleImageError(currentImage.url)}
               />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-gradient-to-br from-slate-50 to-slate-200">
@@ -354,15 +355,17 @@ export default function ListingDetailPage() {
                   onClick={() => setImageIndex(idx)}
                   className={`flex-shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all ${idx === imageIndex ? 'border-blue-500 ring-2 ring-blue-200' : 'border-transparent opacity-70 hover:opacity-100'}`}
                 >
-                  <img
-                    src={img.url}
-                    alt=""
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
+                  {!failedImages.has(img.url) ? (
+                    <img
+                      src={img.url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={() => handleImageError(img.url)}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400 text-xs">🏠</div>
+                  )}
                 </button>
               ))}
             </div>
