@@ -579,10 +579,11 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
         }),
       ]);
 
+      // Durante pruebas: todos los planes sin límites
       const limits: Record<string, Record<string, number | null>> = {
-        BUYER: { savedSearches: 3, savedLists: 0, alertsActive: 1 },
-        AGENT: { savedSearches: 10, savedLists: 5, alertsActive: 5 },
-        REALTOR: { savedSearches: 50, savedLists: 20, alertsActive: 20 },
+        BUYER: { savedSearches: null, savedLists: null, alertsActive: null },
+        AGENT: { savedSearches: null, savedLists: null, alertsActive: null },
+        REALTOR: { savedSearches: null, savedLists: null, alertsActive: null },
         INMOBILIARIA: { savedSearches: null, savedLists: null, alertsActive: null },
       };
 
