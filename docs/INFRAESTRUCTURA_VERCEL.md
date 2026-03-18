@@ -1,14 +1,15 @@
 # Infraestructura Vercel - MatchProp
 
 > Última actualización: 2026-03-18
+> Estado: ✅ **OPERATIVO**
 
 ## Resumen de Proyectos
 
-| Proyecto | URL Producción | Root Directory | Framework |
-|----------|---------------|----------------|-----------|
-| **match-prop-api-1jte** | `https://match-prop-admin-dsvv.vercel.app` | `apps/api` | Other |
-| **match-prop-web** | `https://match-prop-web.vercel.app` | `apps/web` | Next.js |
-| **match-prop-admin** | `https://match-prop-admin.vercel.app` | `apps/admin` | Next.js |
+| Proyecto | URL Producción | Root Directory | Framework | Estado |
+|----------|---------------|----------------|-----------|--------|
+| **match-prop-api-1jte** | `https://match-prop-admin-dsvv.vercel.app` | `apps/api` | Other | ✅ OK |
+| **match-prop-web** | `https://match-prop-web.vercel.app` | `apps/web` | Next.js | ✅ OK |
+| **match-prop-admin** | `https://match-prop-admin.vercel.app` | `apps/admin` | Next.js | ✅ OK |
 
 ## Repositorio GitHub
 
@@ -25,9 +26,9 @@
 ```json
 {
   "version": 2,
-  "outputDirectory": "api",
+  "outputDirectory": ".",
   "functions": {
-    "api/handler.ts": {
+    "api/handler.js": {
       "maxDuration": 30
     }
   },
@@ -40,26 +41,27 @@
 ### Build Process
 
 1. Vercel detecta `vercel-build` script en `package.json`
-2. Ejecuta: `cd ../.. && pnpm build:shared && cd apps/api && prisma generate`
-3. Esto compila `@matchprop/shared` y genera el cliente Prisma
-4. Luego Vercel compila `api/handler.ts` con `@vercel/node`
+2. Ejecuta: `cd ../.. && pnpm build:shared && cd apps/api && prisma generate && tsc`
+3. Esto compila `@matchprop/shared`, genera el cliente Prisma, y compila TypeScript a `dist/`
+4. El handler JavaScript (`api/handler.js`) importa el app compilado desde `dist/`
 
 ### Arquitectura del Handler
 
 ```
 apps/api/
 ├── api/
-│   └── handler.ts      # Entry point Vercel (catch-all)
+│   └── handler.js      # Entry point Vercel (JavaScript, importa dist/)
 ├── src/
-│   ├── app.ts          # Fastify app
+│   ├── app.ts          # Fastify app (TypeScript)
 │   ├── routes/         # Todas las rutas
 │   ├── services/       # Lógica de negocio
 │   └── lib/            # Utilidades
+├── dist/               # Código compilado (generado por tsc)
 └── prisma/
     └── schema.prisma   # Schema de BD
 ```
 
-El `handler.ts` recibe TODAS las requests y las inyecta en Fastify:
+El `handler.js` recibe TODAS las requests y las inyecta en Fastify:
 - Extrae el path de `x-vercel-original-url` o `req.url`
 - Quita el prefijo `/api` si existe
 - Usa `app.inject()` para ejecutar la ruta en Fastify
