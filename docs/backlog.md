@@ -106,3 +106,57 @@
 
 - Sprint 8a: Solo chat + filtro anti-PII (reducido)
 - Sprint 8b: Kiteprop por etapas + smoke (sin chat/agenda)
+
+---
+
+## Deuda Técnica
+
+### DT-001 — Infraestructura de imágenes escalable
+
+| Prioridad | Baja (mientras < 50K propiedades) |
+|-----------|-----------------------------------|
+| **Estado** | Pendiente |
+| **Trigger** | Escalar a > 50,000 propiedades o problemas de hot-linking |
+
+**Situación actual:**
+- URLs directas a `static.kiteprop.com` (CDN de Kiteprop)
+- Costo: $0
+- ~245,000 fotos en `ListingMedia`
+- Funciona para 15,613 propiedades actuales
+
+**Problema potencial:**
+- Dependencia de CDN de terceros
+- Posible bloqueo de hot-linking por portales
+- Sin control sobre optimización/transformaciones
+- No escalable a 150K+ propiedades con 1.5M imágenes
+
+**Solución propuesta:**
+1. **Etapa 1 (50K-150K props):** Cloudflare R2 + Workers (~$30/mes)
+   - Almacenamiento propio
+   - Egress gratis
+   - Transformaciones on-the-fly
+
+2. **Etapa 2 (150K+ props):** Cloudflare Images o imgix (~$150/mes)
+   - Transformaciones automáticas (WebP, resize)
+   - CDN global optimizado
+   - Blurhash para placeholders
+
+**Documentación:** `docs/ARQUITECTURA_IMAGENES.md`
+
+---
+
+### DT-002 — Elasticsearch/Meilisearch para búsqueda avanzada
+
+| Prioridad | Media (cuando se necesite full-text search) |
+|-----------|---------------------------------------------|
+| **Estado** | Pendiente |
+| **Trigger** | Necesidad de búsqueda full-text en descripciones |
+
+**Situación actual:**
+- Búsqueda con `LIKE` en PostgreSQL
+- Funciona para filtros básicos
+
+**Solución propuesta:**
+- Meilisearch (más simple) o Elasticsearch
+- Índices para: título, descripción, ubicación
+- Autocompletado y facets
