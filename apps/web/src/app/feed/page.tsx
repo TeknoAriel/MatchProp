@@ -9,6 +9,8 @@ import FilterChips from '../../components/FilterChips';
 import InquiryModal from '../../components/InquiryModal';
 import PlanErrorBlock from '../../components/PlanErrorBlock';
 import SwipeCard from '../../components/SwipeCard';
+import { useToast, getRandomMessage } from '../../components/FunToast';
+import Celebration, { useCelebration } from '../../components/Celebration';
 
 const API_BASE = '/api';
 const PRODUCT_NAME = process.env.NEXT_PUBLIC_PRODUCT_NAME || 'MatchProp';
@@ -24,6 +26,9 @@ function FeedPageContent() {
   );
   const [toast, setToast] = useState<string | null>(null);
   const [swipeDisabled, setSwipeDisabled] = useState(false);
+  const { showSuccess, showCelebration } = useToast();
+  const { celebrate, CelebrationComponent } = useCelebration();
+  const [likeCount, setLikeCount] = useState(0);
   const [addToListCard, setAddToListCard] = useState<ListingCard | null>(null);
   const [newListName, setNewListName] = useState('');
   const [customLists, setCustomLists] = useState<{ id: string; name: string; count: number }[]>([]);
@@ -112,8 +117,26 @@ function FeedPageContent() {
     setLastSwiped({ card, decision });
     setQueue((prev) => prev.filter((i) => i.id !== listingId));
 
-    // Like = agregar a "Mis like" (LATER)
+    // Like = agregar a "Mis like" (LATER) + mostrar feedback divertido
     if (decision === 'LIKE') {
+      const newCount = likeCount + 1;
+      setLikeCount(newCount);
+      
+      // Haptic feedback
+      if ('vibrate' in navigator) {
+        navigator.vibrate([10, 50, 10]);
+      }
+      
+      // Cada 5 likes, mostrar celebración de match
+      if (newCount % 5 === 0) {
+        celebrate('match', {
+          title: `¡${newCount} matches! 🔥`,
+          subtitle: 'Estás en racha. ¡Seguí así!',
+        });
+      } else {
+        showSuccess(getRandomMessage('saved'), '💚');
+      }
+      
       fetch(`${API_BASE}/saved`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -678,6 +701,9 @@ function FeedPageContent() {
           </div>
         )}
       </div>
+      
+      {/* Celebration modal */}
+      {CelebrationComponent}
     </main>
   );
 }

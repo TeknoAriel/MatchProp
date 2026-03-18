@@ -6,6 +6,8 @@ import Link from 'next/link';
 import type { SavedSearchDTO } from '@matchprop/shared';
 import { filtersToHumanSummary } from '../../lib/filters-summary';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
+import { WelcomeMessage, TipBanner, MotivationalBanner } from '../../components/FunTips';
+import { useToast } from '../../components/FunToast';
 
 const API_BASE = '/api';
 
@@ -16,7 +18,10 @@ export default function DashboardPage() {
   const [searchText, setSearchText] = useState('');
   const [searching, setSearching] = useState(false);
   const [recentMatches, setRecentMatches] = useState<number>(0);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [showTip, setShowTip] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { showSuccess } = useToast();
 
   const {
     isSupported: voiceSupported,
@@ -60,6 +65,16 @@ export default function DashboardPage() {
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
         if (data?.total) setRecentMatches(data.total);
+      })
+      .catch(() => {});
+
+    // Obtener nombre del usuario
+    fetch(`${API_BASE}/me/profile`, { credentials: 'include' })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data?.profile?.firstName) {
+          setUserName(data.profile.firstName);
+        }
       })
       .catch(() => {});
   }, [router]);
@@ -118,6 +133,7 @@ export default function DashboardPage() {
       credentials: 'include',
       body: JSON.stringify({ searchId }),
     });
+    showSuccess('¡Búsqueda activada! Buscando matches...', '🔍');
     router.push('/feed');
   }
 
@@ -131,15 +147,16 @@ export default function DashboardPage() {
 
   return (
     <main className="py-2">
-      {/* Header con saludo */}
+      {/* Header con saludo personalizado */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[var(--mp-foreground)]">
-          ¿Qué estás buscando?
-        </h1>
+        <WelcomeMessage name={userName} />
         <p className="text-[var(--mp-muted)] text-sm mt-1">
-          Describí tu búsqueda y te mostramos los matches
+          Describí lo que buscás y te mostramos los matches ✨
         </p>
       </div>
+
+      {/* Tip aleatorio */}
+      {showTip && <TipBanner onDismiss={() => setShowTip(false)} />}
 
       {/* Buscador principal */}
       <div className="mb-8">
@@ -269,18 +286,18 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Empty state */}
+      {/* Empty state + Motivational */}
       {searches.length === 0 && (
         <div className="text-center py-8">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-sky-50 flex items-center justify-center">
-            <span className="text-2xl">🏠</span>
+          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center">
+            <span className="text-4xl animate-float">🏠</span>
           </div>
-          <h3 className="font-medium text-[var(--mp-foreground)] mb-1">
-            Empezá tu búsqueda
+          <h3 className="font-semibold text-lg text-[var(--mp-foreground)] mb-2">
+            ¡Tu próximo hogar te espera! ✨
           </h3>
-          <p className="text-sm text-[var(--mp-muted)]">
+          <p className="text-sm text-[var(--mp-muted)] mb-6">
             Escribí arriba qué tipo de propiedad buscás<br />
-            y te mostramos los matches
+            y te mostramos los matches perfectos
           </p>
         </div>
       )}
