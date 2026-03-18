@@ -13,19 +13,6 @@ async function getApp() {
   return appPromise;
 }
 
-/** Quita del query string el param del catch-all (path / [...path]) para no pasarlo a Fastify. */
-function stripCatchAllFromQuery(qs: string): string {
-  if (!qs || !qs.startsWith('?')) return qs;
-  const params = new URLSearchParams(qs.slice(1));
-  const toDelete = new Set<string>();
-  for (const key of params.keys()) {
-    if (key === 'path' || key.includes('path') && key.includes('...')) toDelete.add(key);
-  }
-  toDelete.forEach((k) => params.delete(k));
-  const rest = params.toString();
-  return rest ? '?' + rest : '';
-}
-
 /** Construye path + query para Fastify. Usa x-vercel-original-url o req.url. */
 function pathForFastify(req: VercelRequest): string {
   // Vercel pone la URL original en este header cuando hay rewrite
