@@ -6,7 +6,10 @@
     "module": "CommonJS",
     "moduleResolution": "Node",
     "noImplicitAny": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "strict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "src/scripts/kiteprop-discover-openapi.ts"]

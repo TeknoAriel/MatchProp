@@ -1,11 +1,12 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { buildApp } from '../src/app.js';
+// @ts-nocheck
+/* eslint-disable */
 
-let appPromise: Promise<Awaited<ReturnType<typeof buildApp>>> | null = null;
+let appPromise = null;
 
 async function getApp() {
   if (!appPromise) {
-    appPromise = buildApp({ logger: false }).then(async (app: Awaited<ReturnType<typeof buildApp>>) => {
+    const { buildApp } = await import('../dist/app.js');
+    appPromise = buildApp({ logger: false }).then(async (app) => {
       await app.ready();
       return app;
     });
@@ -13,13 +14,11 @@ async function getApp() {
   return appPromise;
 }
 
-/** Construye path + query para Fastify. Usa x-vercel-original-url o req.url. */
-function pathForFastify(req: VercelRequest): string {
-  // Vercel pone la URL original en este header cuando hay rewrite
+function pathForFastify(req) {
   const originalUrl =
-    (req.headers['x-vercel-original-url'] as string) ||
-    (req.headers['x-original-url'] as string) ||
-    (req.headers['x-url'] as string) ||
+    req.headers['x-vercel-original-url'] ||
+    req.headers['x-original-url'] ||
+    req.headers['x-url'] ||
     req.url ||
     '/';
 
@@ -50,19 +49,15 @@ function pathForFastify(req: VercelRequest): string {
     }
   }
 
-  // Quitar /api/handler si el rewrite lo agregó
   pathname = pathname.replace(/^\/api\/handler\/?/i, '/');
-  // Quitar /api si existe
   pathname = pathname.replace(/^\/api(?=\/|$)/i, '') || '/';
-
   if (!pathname.startsWith('/')) pathname = '/' + pathname;
 
   return pathname + qs;
 }
 
-/** Convierte IncomingHeaders a objeto plano para Fastify inject. */
-function headersForInject(headers: VercelRequest['headers']): Record<string, string> {
-  const out: Record<string, string> = {};
+function headersForInject(headers) {
+  const out = {};
   if (!headers) return out;
   for (const [key, value] of Object.entries(headers)) {
     if (value === undefined || value === null) continue;
@@ -73,29 +68,20 @@ function headersForInject(headers: VercelRequest['headers']): Record<string, str
 
 const BODY_READ_TIMEOUT_MS = 8000;
 
-/** Lee el body del request: usa req.body si existe, si no lee del stream. Timeout para no colgar. */
-function getRequestBody(
-  req: VercelRequest,
-  method: string
-): Promise<string | Record<string, unknown> | undefined> {
+function getRequestBody(req, method) {
   if (method === 'GET' || method === 'HEAD') return Promise.resolve(undefined);
   if (req.body !== undefined && req.body !== null) {
-    return Promise.resolve(
-      typeof req.body === 'string' ? req.body : (req.body as Record<string, unknown>)
-    );
+    return Promise.resolve(typeof req.body === 'string' ? req.body : req.body);
   }
   return new Promise((resolve) => {
-    const timeout = setTimeout(() => {
-      resolve(undefined);
-    }, BODY_READ_TIMEOUT_MS);
-    const chunks: Buffer[] = [];
-    const stream = req as NodeJS.ReadableStream;
-    const done = (value: string | Record<string, unknown> | undefined) => {
+    const timeout = setTimeout(() => resolve(undefined), BODY_READ_TIMEOUT_MS);
+    const chunks = [];
+    const done = (value) => {
       clearTimeout(timeout);
       resolve(value);
     };
-    stream.on('data', (chunk: Buffer) => chunks.push(chunk));
-    stream.on('end', () => {
+    req.on('data', (chunk) => chunks.push(chunk));
+    req.on('end', () => {
       const raw = Buffer.concat(chunks).toString('utf8');
       if (!raw.trim()) {
         done(undefined);
@@ -104,7 +90,7 @@ function getRequestBody(
       const ct = (req.headers['content-type'] ?? '').toLowerCase();
       if (ct.includes('application/json')) {
         try {
-          done(JSON.parse(raw) as Record<string, unknown>);
+          done(JSON.parse(raw));
         } catch {
           done(raw);
         }
@@ -112,28 +98,20 @@ function getRequestBody(
         done(raw);
       }
     });
-    stream.on('error', () => done(undefined));
+    req.on('error', () => done(undefined));
   });
 }
 
-/** Respuesta de Fastify inject (LightMyRequest). */
-type InjectResponse = {
-  statusCode: number;
-  headers: Record<string, string | string[] | undefined>;
-  payload: string | Buffer;
-};
-
-function sendJson(res: VercelResponse, status: number, body: Record<string, unknown>) {
+function sendJson(res, status, body) {
   res.status(status);
   res.setHeader('content-type', 'application/json');
   res.end(JSON.stringify(body));
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const method = (req.method ?? 'GET') as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
+module.exports = async function handler(req, res) {
+  const method = req.method ?? 'GET';
   const path = pathForFastify(req);
 
-  // Debug endpoint para ver qué recibe el handler
   if (req.url?.includes('__debug_raw') || path === '/__debug_raw') {
     res.status(200).json({
       reqUrl: req.url,
@@ -143,28 +121,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'x-vercel-original-url': req.headers['x-vercel-original-url'],
         'x-original-url': req.headers['x-original-url'],
         'x-url': req.headers['x-url'],
-        'x-forwarded-host': req.headers['x-forwarded-host'],
-        'x-forwarded-proto': req.headers['x-forwarded-proto'],
         host: req.headers['host'],
       },
       query: req.query,
-    });
-    return;
-  }
-
-  const wantsDebug =
-    path === '/debug/invoke' ||
-    path === '/__vercel_debug' ||
-    String(req.url ?? '').includes('debug') ||
-    (req.query?.path && String(req.query.path).includes('debug'));
-  if (wantsDebug) {
-    sendJson(res, 200, {
-      path,
-      method,
-      query: req.query,
-      url: req.url,
-      contentType: req.headers['content-type'],
-      pathFromQuery: req.query?.path,
     });
     return;
   }
@@ -177,12 +136,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!headers['content-type']) headers['content-type'] = 'application/json';
     }
 
-    const response = (await app.inject({
-      method,
-      url: path,
-      headers,
-      payload,
-    })) as unknown as InjectResponse;
+    const response = await app.inject({ method, url: path, headers, payload });
 
     res.status(response.statusCode);
     if (response.statusCode === 404) {
@@ -196,12 +150,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.end(response.payload);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    const stack = err instanceof Error ? err.stack : undefined;
-    console.error('[MatchProp handler error]', { path, method, message: msg, stack });
+    console.error('[MatchProp handler error]', { path, method, message: msg });
     sendJson(res, 500, {
       message: 'Error interno del servidor.',
       code: 'HANDLER_ERROR',
       debug: { path, method, error: msg },
     });
   }
-}
+};

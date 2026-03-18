@@ -6,7 +6,7 @@
     "predev": "pnpm --filter @matchprop/shared build",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "vercel-build": "cd ../.. && pnpm build:shared && cd apps/api && prisma generate",
+    "vercel-build": "cd ../.. && pnpm build:shared && cd apps/api && prisma generate && tsc",
     "start": "node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

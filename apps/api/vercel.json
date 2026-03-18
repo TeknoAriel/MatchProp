@@ -1,8 +1,7 @@
 {
   "version": 2,
-  "outputDirectory": "api",
   "functions": {
-    "api/handler.ts": {
+    "api/handler.js": {
       "maxDuration": 30
     }
   },
