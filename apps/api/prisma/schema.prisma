@@ -69,6 +69,8 @@ model User {
   activeSearch        SavedSearch?  @relation("UserActiveSearch", fields: [activeSearchId], references: [id], onDelete: SetNull)
   alertSubscriptions  AlertSubscription[]
   leads               Lead[]
+  subscriptions       Subscription[]
+  payments            Payment[]
 }
 
 model UserIdentity {
@@ -938,4 +940,73 @@ model ListingMatchCandidate {
   @@unique([listingId, savedSearchId])
   @@index([listingId])
   @@index([savedSearchId, createdAt])
+}
+
+// --- Sistema de Suscripciones ---
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+  TRIALING
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  STRIPE
+  MERCADO_PAGO
+  MANUAL
+}
+
+model Subscription {
+  id                    String             @id @default(cuid())
+  userId                String
+  plan                  UserRole           @default(BUYER)
+  status                SubscriptionStatus @default(ACTIVE)
+  provider              PaymentProvider    @default(STRIPE)
+  providerSubscriptionId String?           // ID en Stripe/MercadoPago
+  providerCustomerId    String?           // Customer ID del provider
+  currentPeriodStart    DateTime           @default(now())
+  currentPeriodEnd      DateTime
+  cancelAtPeriodEnd     Boolean            @default(false)
+  cancelledAt           DateTime?
+  trialEndsAt           DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([providerSubscriptionId])
+}
+
+model Payment {
+  id                String         @id @default(cuid())
+  userId            String
+  subscriptionId    String?
+  amount            Int            // Centavos USD
+  currency          String         @default("USD")
+  status            PaymentStatus  @default(PENDING)
+  provider          PaymentProvider @default(STRIPE)
+  providerPaymentId String?        // ID del pago en el provider
+  description       String?
+  metadata          Json?
+  paidAt            DateTime?
+  createdAt         DateTime       @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([subscriptionId])
+  @@index([providerPaymentId])
 }
