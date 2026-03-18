@@ -1,19 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
 import Link from 'next/link';
 
-const API_BASE = '/api';
-
 export default function Home() {
-  useEffect(() => {
-    fetch(`${API_BASE}/auth/me`, { credentials: 'include' })
-      .then((res) => {
-        if (res.ok) window.location.href = '/feed'; // Tinder primero
-      })
-      .catch(() => {});
-  }, []);
-
+  // Sin auto-redirect: siempre mostramos la home. Si ya estás logueado, usá "Ver feed" o el menú.
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-8 bg-gradient-to-b from-slate-50 to-white">
       <div className="text-center max-w-md">

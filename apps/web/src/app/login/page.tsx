@@ -107,6 +107,14 @@ function LoginPageContent() {
     window.location.href = `${API_BASE}/auth/oauth/${provider}`;
   }
 
+  async function handleLogout() {
+    try {
+      await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
+    } finally {
+      window.location.href = '/login';
+    }
+  }
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6 sm:p-8 bg-[var(--mp-bg)]">
       <div className="w-full max-w-sm space-y-8">
@@ -260,6 +268,13 @@ function LoginPageContent() {
             ¿Primera vez? En la pantalla de passkey podés crear uno.
           </p>
         </div>
+
+        <p className="text-center text-xs text-[var(--mp-muted)] pt-4 border-t border-[var(--mp-border)]">
+          Si te redirige al feed al entrar, hay sesión activa.{' '}
+          <button type="button" onClick={handleLogout} className="underline hover:no-underline">
+            Cerrar sesión y limpiar
+          </button>
+        </p>
       </div>
     </main>
   );
