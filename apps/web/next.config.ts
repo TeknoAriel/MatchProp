@@ -1,11 +1,12 @@
 import type { NextConfig } from 'next';
 
+// URL de la API de producción (hardcoded para evitar problemas con env vars)
+const API_PROD_URL = 'https://match-prop-admin-dsvv.vercel.app';
+
 // Destino del proxy /api/* (solo server-side).
-// En Vercel sin API_SERVER_URL: fallback a API prod conocida para que el login funcione.
-const apiServerUrl =
-  process.env.API_SERVER_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  (process.env.VERCEL ? 'https://match-prop-admin-dsvv.vercel.app' : 'http://127.0.0.1:3001');
+const apiServerUrl = process.env.VERCEL
+  ? API_PROD_URL
+  : (process.env.API_SERVER_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001');
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@matchprop/shared'],
