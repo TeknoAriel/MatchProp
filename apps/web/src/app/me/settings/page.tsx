@@ -101,6 +101,7 @@ const SECTIONS: SettingsSection[] = [
 export default function SettingsPage() {
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
+  const [profileDone, setProfileDone] = useState(false);
 
   useEffect(() => {
     fetch(`${API_BASE}/me/profile`, { credentials: 'include' })
@@ -114,11 +115,16 @@ export default function SettingsPage() {
       .then((data) => {
         if (data?.role) setRole(data.role);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setProfileDone(true));
   }, [router]);
 
   const isAdmin = role === 'ADMIN';
-  const sectionsToShow = SECTIONS.filter((s) => !s.adminOnly || isAdmin);
+  // Mostrar siempre todas las secciones para que el menú no quede vacío si /me/profile falla (ej. 404).
+  // El backend devuelve 403 en integraciones para no-admin.
+  const sectionsToShow = profileDone && !isAdmin && role !== null
+    ? SECTIONS.filter((s) => !s.adminOnly)
+    : SECTIONS;
 
   return (
     <main className="p-4 md:p-6">
@@ -139,6 +145,13 @@ export default function SettingsPage() {
             Volver al perfil
           </Link>
         </div>
+
+        {profileDone && role === null && (
+          <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800">
+            No se pudo cargar el perfil. Si sos admin, verificá que la API esté conectada (ver{' '}
+            <code className="bg-amber-100 px-1 rounded">docs/CONEXIONES_VERIFICACION.md</code>). Las opciones siguientes pueden requerir rol Admin.
+          </div>
+        )}
 
         <div className="space-y-3">
           {sectionsToShow.map((s) => {
