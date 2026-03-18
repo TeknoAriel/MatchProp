@@ -71,13 +71,19 @@ function parseBathrooms(text: string): number | undefined {
 
 function parseLocation(text: string): string {
   const patterns = [
+    /en\s+([A-Za-záéíóúÁÉÍÓÚñÑ\s]+?)(?:\s+(?:casa|depto|departamento|terreno|local|oficina)|,|\.|$)/i,
     /en\s+([A-Za-záéíóúÁÉÍÓÚñÑ\s]+?)(?:\s|,|\.|$)/i,
-    /(zona\s+[A-Za-záéíóúÁÉÍÓÚñÑ\s]+?)(?:\s|,|\.|$)/i, // "zona norte" completo
-    /(?:en\s+)?(Palermo|Nordelta|Microcentro|Rosario|CABA|Belgrano|Caballito|Villa\s+Crespo)/i,
+    /(zona\s+[A-Za-záéíóúÁÉÍÓÚñÑ\s]+?)(?:\s|,|\.|$)/i,
+    /(?:en\s+)?(Palermo|Nordelta|Microcentro|Rosario|CABA|Belgrano|Caballito|Villa\s+Crespo|Funes|Fisherton|Roldán|Córdoba|Mendoza|Pilar|Tigre|San\s+Isidro|Vicente\s+López)/i,
   ];
   for (const p of patterns) {
     const m = text.match(p);
-    if (m?.[1]) return trunc(m[1]);
+    if (m?.[1]) {
+      const loc = trunc(m[1]);
+      const stopWords = ['casa', 'depto', 'departamento', 'terreno', 'local', 'oficina', 'house', 'apartment'];
+      const cleaned = loc.split(/\s+/).filter(w => !stopWords.includes(w.toLowerCase())).join(' ');
+      if (cleaned.trim()) return cleaned.trim();
+    }
   }
   return '';
 }
