@@ -146,6 +146,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const method = (req.method ?? 'GET') as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
   const path = pathForFastify(req);
 
+  // Debug endpoint para ver qué recibe el handler
+  if (req.url?.includes('__debug_raw') || path === '/__debug_raw') {
+    res.status(200).json({
+      reqUrl: req.url,
+      path,
+      method,
+      headers: {
+        'x-vercel-original-url': req.headers['x-vercel-original-url'],
+        'x-original-url': req.headers['x-original-url'],
+        'x-url': req.headers['x-url'],
+        'x-forwarded-host': req.headers['x-forwarded-host'],
+        'x-forwarded-proto': req.headers['x-forwarded-proto'],
+        host: req.headers['host'],
+      },
+      query: req.query,
+    });
+    return;
+  }
+
   const wantsDebug =
     path === '/debug/invoke' ||
     path === '/__vercel_debug' ||
