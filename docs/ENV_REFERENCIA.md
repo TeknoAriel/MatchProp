@@ -67,11 +67,24 @@ Tokens y URLs usados en el proyecto, sin valores reales.
 
 ---
 
+## Mercado Pago
+
+| Variable | Formato |
+|----------|---------|
+| `MERCADOPAGO_ACCESS_TOKEN` | `APP_USR-xxx...` (sandbox) o `APP_USR-xxx...` (producción) |
+| `MERCADOPAGO_PUBLIC_KEY` | `APP_USR-xxx...` |
+| `MERCADOPAGO_WEBHOOK_SECRET` | string (opcional, para verificar IPN) |
+
+> **Docs**: Ver `docs/MERCADOPAGO_SETUP.md` para configuración completa.
+
+---
+
 ## Stripe
 
 | Variable | Formato |
 |----------|---------|
 | `STRIPE_SECRET_KEY` | `sk_live_...` o `sk_test_...` |
+| `STRIPE_PUBLIC_KEY` | `pk_live_...` o `pk_test_...` |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` |
 | `STRIPE_PRICE_ID` | `price_...` (fallback) |
 | `STRIPE_PRICE_BUYER` | `price_...` |

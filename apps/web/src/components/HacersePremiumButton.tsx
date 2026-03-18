@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 const API_BASE = '/api';
@@ -10,60 +10,55 @@ type Props = {
   variant?: 'primary' | 'secondary';
   className?: string;
   children?: React.ReactNode;
+  plan?: string;
 };
 
 export default function HacersePremiumButton({
   variant = 'primary',
   className = '',
   children = 'Hacerse Premium',
+  plan = 'AGENT',
 }: Props) {
   const [loading, setLoading] = useState(false);
+  const [hasPaymentProviders, setHasPaymentProviders] = useState<boolean | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    fetch(`${API_BASE}/payments/config`)
+      .then((r) => r.json())
+      .then((data) => {
+        const mpEnabled = data?.providers?.mercadopago?.enabled ?? false;
+        const stripeEnabled = data?.providers?.stripe?.enabled ?? false;
+        setHasPaymentProviders(mpEnabled || stripeEnabled);
+      })
+      .catch(() => setHasPaymentProviders(false));
+  }, []);
 
   async function handleClick() {
     if (loading) return;
     setLoading(true);
-    
-    try {
-      // Primero intentar con el checkout real
-      const res = await fetch(`${API_BASE}/me/checkout-session`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      
-      if (res.status === 401) {
-        router.replace('/login');
-        return;
-      }
-      
-      const data = await res.json();
-      
-      if (res.ok && data?.url) {
-        window.location.href = data.url;
-        return;
-      }
-      
-      // Si falla (Stripe no configurado), activar simulación
-      activateSimPremium();
-      
-    } catch {
-      // En caso de error, activar simulación
-      activateSimPremium();
+
+    // Si hay proveedores de pago, ir al checkout
+    if (hasPaymentProviders) {
+      router.push(`/me/checkout?plan=${plan}`);
+      return;
     }
+
+    // Si no hay proveedores, activar simulación
+    activateSimPremium();
   }
 
   function activateSimPremium() {
     localStorage.setItem(PREMIUM_SIM_KEY, '1');
     document.cookie = `${PREMIUM_SIM_KEY}=1; path=/; max-age=${86400 * 30}`;
-    
-    // También actualizar en el servidor si es posible
+
     fetch(`${API_BASE}/me/subscription`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ plan: 'AGENT', provider: 'MANUAL' }),
+      body: JSON.stringify({ plan, provider: 'MANUAL' }),
     }).catch(() => {});
-    
+
     alert('¡Premium activado! (Modo prueba)');
     setLoading(false);
     router.refresh();
@@ -76,7 +71,7 @@ export default function HacersePremiumButton({
 
   return (
     <button onClick={handleClick} disabled={loading} className={`${baseClass} ${className}`}>
-      {loading ? 'Activando...' : children}
+      {loading ? 'Cargando...' : children}
     </button>
   );
 }

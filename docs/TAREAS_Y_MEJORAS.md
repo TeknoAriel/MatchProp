@@ -24,7 +24,7 @@ Documento vivo: próximas tareas priorizadas y mejoras técnicas. Alineado a [ma
 | **Cron sync propiedades** | Sincronización automática cada 6 horas desde Kiteprop. | Cron configurado en Vercel; eventos de precio/estado. | **Hecho:** `/cron/ingest` con CRON_SECRET, `/cron/status` público. |
 | **Smoke E2E en CI** | Ejecutar `pnpm smoke:ux` en pipeline (o job manual post-deploy) para validar flujos críticos. | Job configurado; falla del smoke bloquea o alerta. | **Parcial:** job `deploy-verify` en CI ejecuta `pre-deploy:verify` (build + typecheck + test:all) con Postgres; smoke:ux con Playwright sigue siendo opcional (manual o job aparte). |
 | **Migraciones en deploy** | Asegurar que migraciones se ejecuten contra DB de prod en cada deploy (script o Vercel build step). | Documentado en PROD; ejecución automatizada o checklist. | **Hecho:** PROD.md actualizado (estrategia migraciones: ejecutar deploy:pre contra DB prod; Vercel no las corre; CI usa DB de prueba). |
-| **Mercado Pago (LATAM)** | Payment adapter: Mercado Pago como provider (planificación en E7). | Spec + feature flag; integración opcional. | Pendiente. |
+| **Mercado Pago (LATAM)** | Payment adapter: Mercado Pago como provider (planificación en E7). | Spec + feature flag; integración opcional. | **Hecho:** Adapter MP, checkout, webhook IPN. Ver `docs/MERCADOPAGO_SETUP.md`. |
 
 ### Media prioridad
 

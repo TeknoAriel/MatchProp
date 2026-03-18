@@ -35,6 +35,7 @@ import { debugRoutes } from './routes/debug.js';
 import { statusRoutes } from './routes/status.js';
 import { cronRoutes } from './routes/cron.js';
 import { subscriptionRoutes } from './routes/subscriptions.js';
+import { paymentRoutes } from './routes/payments.js';
 import { prisma } from './lib/prisma.js';
 
 export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInstance> {
@@ -225,6 +226,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   await fastify.register(statusRoutes);
   await fastify.register(cronRoutes);
   await fastify.register(subscriptionRoutes);
+  await fastify.register(paymentRoutes);
 
   const { demoRoutes } = await import('./routes/demo.js');
   await fastify.register(demoRoutes);
