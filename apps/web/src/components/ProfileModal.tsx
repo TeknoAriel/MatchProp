@@ -18,6 +18,7 @@ export interface ProfileData {
   facebook?: string | null;
   website?: string | null;
   address?: string | null;
+  avatarUrl?: string | null;
 }
 
 export interface OrgData {
@@ -205,6 +206,36 @@ export default function ProfileModal({ open, onClose, onSaved }: ProfileModalPro
             <div className="h-48 flex items-center justify-center text-slate-500">Cargando...</div>
           ) : (
             <div className="space-y-6">
+              {/* Foto de perfil */}
+              <div className="flex items-center gap-4">
+                <div className="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden border-2 border-slate-300">
+                  {profile.avatarUrl ? (
+                    <img 
+                      src={profile.avatarUrl} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-3xl text-slate-400">👤</span>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Foto de perfil (URL)
+                  </label>
+                  <input
+                    type="url"
+                    value={profile.avatarUrl ?? ''}
+                    onChange={(e) => setProfile((p) => ({ ...p, avatarUrl: e.target.value }))}
+                    className={INPUT_CLASS}
+                    placeholder="https://ejemplo.com/mi-foto.jpg"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Pegá la URL de una imagen. Podés usar servicios como Imgur o Gravatar.
+                  </p>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
                 <input

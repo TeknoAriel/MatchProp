@@ -3,14 +3,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import ActiveSearchBar from '../../components/ActiveSearchBar';
 
 const API_BASE = '/api';
 
-const TYPE_LABELS: Record<string, string> = {
-  NEW_LISTING: 'Nuevas publicaciones',
-  PRICE_DROP: 'Bajó precio',
-  BACK_ON_MARKET: 'Volvió a estar activa',
+const TYPE_LABELS: Record<string, { label: string; icon: string; color: string }> = {
+  NEW_LISTING: { label: 'Nuevas publicaciones', icon: '🏠', color: 'bg-blue-100 text-blue-800' },
+  PRICE_DROP: { label: 'Bajó el precio', icon: '📉', color: 'bg-green-100 text-green-800' },
+  BACK_ON_MARKET: { label: 'Volvió al mercado', icon: '🔄', color: 'bg-purple-100 text-purple-800' },
 };
 
 type Subscription = {
@@ -27,181 +26,207 @@ export default function AlertsPage() {
   const router = useRouter();
   const [items, setItems] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
-  const [apiDown, setApiDown] = useState(false);
-  const [unauth, setUnauth] = useState(false);
-  const [loadingResult, setLoadingResult] = useState<string | null>(null);
-
-  function fetchSubs() {
-    return fetch(`${API_BASE}/alerts/subscriptions`, { credentials: 'include' })
-      .then((res) => {
-        if (res.status === 401) {
-          setUnauth(true);
-          return [];
-        }
-        if (!res.ok) {
-          setApiDown(true);
-          return [];
-        }
-        return res.json();
-      })
-      .then(setItems);
-  }
+  const [error, setError] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchSubs()
-      .catch(() => setApiDown(true))
+    fetch(`${API_BASE}/alerts/subscriptions`, { credentials: 'include' })
+      .then((res) => {
+        if (res.status === 401) {
+          router.replace('/login');
+          return [];
+        }
+        if (!res.ok) throw new Error('Error al cargar alertas');
+        return res.json();
+      })
+      .then(setItems)
+      .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [router]);
 
   async function toggleEnabled(sub: Subscription) {
-    const res = await fetch(`${API_BASE}/alerts/subscriptions/${sub.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ isEnabled: !sub.isEnabled }),
-    });
-    if (res.status === 401) window.location.href = '/login';
-    else if (res.ok)
-      setItems((prev) =>
-        prev.map((s) => (s.id === sub.id ? { ...s, isEnabled: !s.isEnabled } : s))
-      );
+    setTogglingId(sub.id);
+    try {
+      const res = await fetch(`${API_BASE}/alerts/subscriptions/${sub.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ isEnabled: !sub.isEnabled }),
+      });
+      if (res.status === 401) {
+        router.replace('/login');
+        return;
+      }
+      if (res.ok) {
+        setItems((prev) =>
+          prev.map((s) => (s.id === sub.id ? { ...s, isEnabled: !s.isEnabled } : s))
+        );
+      }
+    } finally {
+      setTogglingId(null);
+    }
   }
 
   async function deleteSub(id: string) {
+    if (!confirm('¿Eliminar esta alerta?')) return;
     const res = await fetch(`${API_BASE}/alerts/subscriptions/${id}`, {
       method: 'DELETE',
       credentials: 'include',
     });
-    if (res.status === 401) window.location.href = '/login';
+    if (res.status === 401) router.replace('/login');
     else if (res.ok) setItems((prev) => prev.filter((s) => s.id !== id));
   }
 
   async function verResultados(sub: Subscription) {
     if (!sub.savedSearchId) return;
-    setLoadingResult(sub.id);
-    try {
-      const res = await fetch(`${API_BASE}/me/active-search`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ searchId: sub.savedSearchId }),
-      });
-      if (res.status === 401) {
-        router.push('/login');
-        return;
-      }
-      if (res.ok) router.push('/feed');
-    } finally {
-      setLoadingResult(null);
-    }
+    await fetch(`${API_BASE}/me/active-search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ searchId: sub.savedSearchId }),
+    });
+    router.push('/feed/list');
   }
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <p>Cargando...</p>
+      <main className="min-h-[60vh] flex items-center justify-center">
+        <div className="w-8 h-8 border-3 border-sky-500 border-t-transparent rounded-full animate-spin" />
       </main>
     );
   }
 
-  if (unauth) {
+  if (error) {
     return (
-      <main className="min-h-screen p-4 flex flex-col items-center justify-center gap-4">
-        <p className="text-amber-600">Iniciá sesión para ver alertas.</p>
-        <Link
-          href="/login"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Ir a iniciar sesión
-        </Link>
-      </main>
-    );
-  }
-
-  if (apiDown) {
-    return (
-      <main className="min-h-screen p-4 flex flex-col items-center justify-center gap-4">
-        <p className="text-amber-600">No hay conexión con la API.</p>
-        <Link
-          href="/status"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Ver estado de conexión
-        </Link>
-        <Link href="/login" className="text-sm text-blue-600 hover:underline">
-          Ir a login
+      <main className="p-4 text-center">
+        <p className="text-red-600 mb-4">{error}</p>
+        <Link href="/dashboard" className="text-sky-600 hover:underline">
+          Volver al inicio
         </Link>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen p-4">
-      <ActiveSearchBar />
-      <div className="max-w-lg mx-auto">
-        <div className="flex gap-4 mb-6">
-          <Link href="/feed" className="text-sm text-blue-600 hover:underline">
-            ← Feed
-          </Link>
-          <Link href="/searches" className="text-sm text-blue-600 hover:underline">
-            Búsquedas
-          </Link>
-        </div>
-
-        <h1 className="text-xl font-bold mb-4">Alertas</h1>
-        <p className="text-sm text-gray-600 mb-4">
-          Alertas de nuevas publicaciones, bajas de precio y propiedades que vuelven al mercado.
-        </p>
-
-        <div className="space-y-3">
-          {items.map((sub) => (
-            <div
-              key={sub.id}
-              className="p-4 border rounded-lg bg-white flex items-center justify-between gap-4"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="font-medium truncate">{sub.savedSearchName ?? 'Búsqueda'}</p>
-                <p className="text-xs text-gray-500">
-                  {TYPE_LABELS[sub.type] ?? sub.type} · {sub.isEnabled ? 'Activa' : 'Pausada'} ·
-                  Última: {sub.lastRunAt ? new Date(sub.lastRunAt).toLocaleString() : 'Nunca'}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                {sub.savedSearchId && (
-                  <button
-                    onClick={() => verResultados(sub)}
-                    disabled={loadingResult === sub.id}
-                    className="px-3 py-1 bg-blue-100 text-blue-800 rounded text-sm hover:bg-blue-200 disabled:opacity-60"
-                  >
-                    {loadingResult === sub.id ? 'Cargando...' : 'Ver resultados'}
-                  </button>
-                )}
-                <button
-                  onClick={() => toggleEnabled(sub)}
-                  className={`px-3 py-1 rounded text-sm ${sub.isEnabled ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                >
-                  {sub.isEnabled ? 'Pausar' : 'Activar'}
-                </button>
-                <button
-                  onClick={() => deleteSub(sub.id)}
-                  className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm hover:bg-red-200"
-                >
-                  Eliminar
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {items.length === 0 && (
-          <p className="text-center text-gray-500 py-8">
-            No tenés alertas. Activá una desde una{' '}
-            <Link href="/searches" className="text-blue-600 hover:underline">
-              búsqueda guardada
-            </Link>
-            .
+    <main className="py-2">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--mp-foreground)]">Mis alertas</h1>
+          <p className="text-sm text-[var(--mp-muted)]">
+            Recibí avisos cuando haya novedades
           </p>
-        )}
+        </div>
+        <Link
+          href="/searches"
+          className="px-4 py-2 text-sm bg-sky-500 text-white rounded-xl hover:bg-sky-600"
+        >
+          + Nueva
+        </Link>
+      </div>
+
+      {items.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-sky-50 flex items-center justify-center">
+            <span className="text-3xl">🔔</span>
+          </div>
+          <h3 className="font-medium text-[var(--mp-foreground)] mb-2">
+            No tenés alertas activas
+          </h3>
+          <p className="text-sm text-[var(--mp-muted)] mb-4">
+            Creá una búsqueda y activá alertas para recibir avisos
+          </p>
+          <Link
+            href="/searches"
+            className="inline-block px-6 py-3 bg-sky-500 text-white rounded-xl font-medium hover:bg-sky-600"
+          >
+            Ver mis búsquedas
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {items.map((sub) => {
+            const typeInfo = TYPE_LABELS[sub.type] ?? { 
+              label: sub.type, 
+              icon: '🔔', 
+              color: 'bg-gray-100 text-gray-800' 
+            };
+            
+            return (
+              <div
+                key={sub.id}
+                className={`p-4 rounded-2xl border transition-all ${
+                  sub.isEnabled 
+                    ? 'bg-[var(--mp-card)] border-[var(--mp-border)]' 
+                    : 'bg-gray-50 border-gray-200 opacity-60'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  {/* Toggle switch */}
+                  <button
+                    onClick={() => toggleEnabled(sub)}
+                    disabled={togglingId === sub.id}
+                    className={`relative mt-1 w-12 h-7 rounded-full transition-colors flex-shrink-0 ${
+                      sub.isEnabled ? 'bg-green-500' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                        sub.isEnabled ? 'left-6' : 'left-1'
+                      }`}
+                    />
+                  </button>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${typeInfo.color}`}>
+                        {typeInfo.icon} {typeInfo.label}
+                      </span>
+                    </div>
+                    
+                    <h3 className="font-medium text-[var(--mp-foreground)] truncate">
+                      {sub.savedSearchName ?? 'Búsqueda guardada'}
+                    </h3>
+                    
+                    <p className="text-xs text-[var(--mp-muted)] mt-1">
+                      {sub.isEnabled ? '✓ Activa' : '⏸ Pausada'}
+                      {sub.lastRunAt && (
+                        <> · Última: {new Date(sub.lastRunAt).toLocaleDateString()}</>
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {sub.savedSearchId && (
+                      <button
+                        onClick={() => verResultados(sub)}
+                        className="px-3 py-2 bg-sky-100 text-sky-700 rounded-xl text-sm font-medium hover:bg-sky-200"
+                      >
+                        Ver resultados
+                      </button>
+                    )}
+                    <button
+                      onClick={() => deleteSub(sub.id)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-xl"
+                      title="Eliminar"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Tip */}
+      <div className="mt-8 p-4 rounded-2xl bg-sky-50 border border-sky-100">
+        <p className="text-sm text-sky-800">
+          <strong>💡 Tip:</strong> Podés tener alertas de diferentes tipos para la misma búsqueda: 
+          nuevas publicaciones, bajas de precio, o propiedades que vuelven al mercado.
+        </p>
       </div>
     </main>
   );

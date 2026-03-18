@@ -23,6 +23,7 @@ const PROFILE_FIELDS = [
   'facebook',
   'website',
   'address',
+  'avatarUrl',
 ] as const;
 
 const ORG_FIELDS = [

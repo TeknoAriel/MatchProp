@@ -173,6 +173,7 @@ model UserProfile {
   facebook  String?
   website   String?
   address   String?
+  avatarUrl String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

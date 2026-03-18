@@ -95,13 +95,28 @@ export default function ProfilePage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4">
+          {/* Avatar y nombre */}
+          <div className="flex items-center gap-4 pb-4 border-b border-slate-100">
+            <div className="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden border-2 border-slate-300">
+              {p.avatarUrl ? (
+                <img src={p.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl text-slate-400">👤</span>
+              )}
+            </div>
+            <div>
+              <h2 className="font-semibold text-lg">
+                {p.firstName || p.lastName
+                  ? [p.firstName, p.lastName].filter(Boolean).join(' ')
+                  : 'Sin nombre'}
+              </h2>
+              <span className="text-sm text-slate-500">{data.email}</span>
+            </div>
+          </div>
+
           <div>
             <span className="text-xs text-slate-500">Rol</span>
             <p className="font-medium">{ROLE_LABELS[data.role] ?? data.role}</p>
-          </div>
-          <div>
-            <span className="text-xs text-slate-500">Email</span>
-            <p className="font-medium">{data.email}</p>
           </div>
           <div>
             <span className="text-xs text-slate-500">Premium</span>
@@ -117,12 +132,6 @@ export default function ProfilePage() {
             </Link>
           </div>
 
-          {(p.firstName || p.lastName) && (
-            <div>
-              <span className="text-xs text-slate-500">Nombre completo</span>
-              <p className="font-medium">{[p.firstName, p.lastName].filter(Boolean).join(' ')}</p>
-            </div>
-          )}
           {p.dni && (
             <div>
               <span className="text-xs text-slate-500">DNI</span>
