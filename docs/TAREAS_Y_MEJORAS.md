@@ -8,8 +8,10 @@ Documento vivo: próximas tareas priorizadas y mejoras técnicas. Alineado a [ma
 
 - **Epics E1–E8:** Implementados (feed, leads, chat, visitas, búsquedas/alertas, asistente conversacional, Stripe opcional, Kiteprop + Yumblin/iCasas).
 - **Deploy:** Vercel (Web + API) + Neon (PostgreSQL). Ver [SETUP_DEPLOY_SIMPLE.md](./SETUP_DEPLOY_SIMPLE.md) y [PROD.md](./PROD.md).
+- **Cron Jobs:** Sincronización automática cada 6 horas con detección de cambios de precio/estado.
+- **Datos:** 331 propiedades de Kiteprop (solo datos reales, sin demo).
 
-**Última ejecución de tareas:** schema Fastify `/listings/share` (FSTDEP021), job CI `deploy-verify` (pre-deploy:verify con Postgres), documentación migraciones en PROD, actualización estado en esta tabla.
+**Última ejecución de tareas:** Cron job sync propiedades (6h), mejora parser ubicaciones, limpieza datos demo.
 
 ---
 
@@ -19,6 +21,7 @@ Documento vivo: próximas tareas priorizadas y mejoras técnicas. Alineado a [ma
 
 | Tarea | Descripción | DoD | Estado |
 |-------|-------------|-----|--------|
+| **Cron sync propiedades** | Sincronización automática cada 6 horas desde Kiteprop. | Cron configurado en Vercel; eventos de precio/estado. | **Hecho:** `/cron/ingest` con CRON_SECRET, `/cron/status` público. |
 | **Smoke E2E en CI** | Ejecutar `pnpm smoke:ux` en pipeline (o job manual post-deploy) para validar flujos críticos. | Job configurado; falla del smoke bloquea o alerta. | **Parcial:** job `deploy-verify` en CI ejecuta `pre-deploy:verify` (build + typecheck + test:all) con Postgres; smoke:ux con Playwright sigue siendo opcional (manual o job aparte). |
 | **Migraciones en deploy** | Asegurar que migraciones se ejecuten contra DB de prod en cada deploy (script o Vercel build step). | Documentado en PROD; ejecución automatizada o checklist. | **Hecho:** PROD.md actualizado (estrategia migraciones: ejecutar deploy:pre contra DB prod; Vercel no las corre; CI usa DB de prueba). |
 | **Mercado Pago (LATAM)** | Payment adapter: Mercado Pago como provider (planificación en E7). | Spec + feature flag; integración opcional. | Pendiente. |

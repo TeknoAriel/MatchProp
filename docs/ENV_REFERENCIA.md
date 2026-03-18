@@ -38,6 +38,7 @@ Tokens y URLs usados en el proyecto, sin valores reales.
 | `AUTH_REFRESH_SECRET` | Refresh tokens |
 | `INTEGRATIONS_MASTER_KEY` | API key master integraciones (32+ chars) |
 | `CRM_WEBHOOK_SECRET` | Firma webhook CRM |
+| `CRON_SECRET` | Token para autorizar cron jobs (sync propiedades cada 6h) |
 
 ---
 
