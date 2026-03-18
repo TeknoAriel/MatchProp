@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Tooltip, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 
 /** Key único por instancia para evitar "Map container is already initialized" al remontar */
 function useMapInstanceKey(mounted: boolean) {

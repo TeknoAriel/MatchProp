@@ -101,8 +101,10 @@ export default function AssistantPage() {
     isSupported: voiceSupported,
     isListening: voiceListening,
     transcript: voiceTranscript,
+    interimTranscript: voiceInterim,
     error: voiceError,
     start: voiceStart,
+    stop: voiceStop,
     reset: voiceReset,
   } = useSpeechRecognition('es-AR');
   const voiceHandledRef = useRef(false);
@@ -116,6 +118,13 @@ export default function AssistantPage() {
       handleBuscar(voiceTranscript);
     }
   }, [voiceTranscript, voiceListening]);
+
+  useEffect(() => {
+    if (voiceListening && (voiceTranscript || voiceInterim)) {
+      const display = voiceTranscript + (voiceInterim ? ' ' + voiceInterim : '');
+      setText(display.trim());
+    }
+  }, [voiceListening, voiceTranscript, voiceInterim]);
 
   // Persistencia: cargar active-search al montar para prefill queryText
   useEffect(() => {
@@ -647,10 +656,27 @@ export default function AssistantPage() {
           </div>
         )}
         {voiceListening && (
-          <p className="mb-4 text-sm text-slate-600 flex items-center gap-2">
-            <span className="inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            Escuchando... Decí tu búsqueda.
-          </p>
+          <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-200">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-block w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+              <span className="text-sm font-medium text-blue-800">Escuchando...</span>
+              <button
+                type="button"
+                onClick={voiceStop}
+                className="ml-auto px-3 py-1 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Listo
+              </button>
+            </div>
+            {(voiceTranscript || voiceInterim) ? (
+              <p className="text-sm text-blue-900">
+                {voiceTranscript}
+                {voiceInterim && <span className="text-blue-600 opacity-70"> {voiceInterim}</span>}
+              </p>
+            ) : (
+              <p className="text-sm text-blue-600">Decí tu búsqueda. Cortará después de una pausa.</p>
+            )}
+          </div>
         )}
 
         {(toast || toast2) && (
