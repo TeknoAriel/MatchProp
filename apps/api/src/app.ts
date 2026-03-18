@@ -140,6 +140,13 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
       db: dbOk ? 'ok' : 'error',
     });
   });
+  /** Diagnóstico: confirma que la ruta llegó bien (para depurar 404 Web→API en prod). */
+  fastify.get('/status/connect', async (request) => ({
+    ok: true,
+    path: request.url,
+    method: request.method,
+    api: 'match-prop-api',
+  }));
   fastify.get('/', async () => ({ message: 'MatchProp API', docs: '/docs' }));
 
   // Endpoint público para landing de listas compartidas (sin auth)

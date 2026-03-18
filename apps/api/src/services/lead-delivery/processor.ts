@@ -36,7 +36,12 @@ export async function processLeadCreatedEvent(
     where: { id: leadId },
     include: {
       listing: true,
-      user: { select: { email: true } },
+      user: {
+        select: {
+          email: true,
+          profile: { select: { phone: true, whatsapp: true } },
+        },
+      },
       publisher: { include: { endpoints: { where: { isEnabled: true } } } },
     },
   });
@@ -147,7 +152,12 @@ export async function processLeadActivatedEvent(
     where: { id: leadId },
     include: {
       listing: true,
-      user: { select: { email: true } },
+      user: {
+        select: {
+          email: true,
+          profile: { select: { phone: true, whatsapp: true } },
+        },
+      },
       publisher: { include: { endpoints: { where: { isEnabled: true } } } },
     },
   });

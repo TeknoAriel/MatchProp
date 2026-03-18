@@ -76,6 +76,7 @@ function pathForFastify(req: VercelRequest): string {
   }
 
   if (!path || path === '/') path = '/';
+  if (path.startsWith('/api/')) path = path.slice(4) || '/';
   if (!path.startsWith('/')) path = '/' + path;
   qs = stripCatchAllFromQuery(qs ? (qs.startsWith('?') ? qs : '?' + qs) : '');
   return path + qs;

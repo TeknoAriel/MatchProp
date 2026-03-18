@@ -79,6 +79,8 @@ curl -s -b cookies.txt https://match-prop-api-1jte.vercel.app/me/profile
 
 Si esto da 200 con cookies y desde la web da 404, el fallo está en la **conexión Web → API** (rewrite o variable de entorno).
 
+**Diagnóstico desde la web:** Abrí `/status` en la app. Ahí se llama a `GET /api/status/connect`; si la API responde, verás el `path` que recibió (confirma que el rewrite está llegando bien). Si ves 404, el header `X-MatchProp-Path` (si existe) indica qué path usó el handler.
+
 ---
 
 ## 5) Checklist punto por punto
@@ -101,3 +103,15 @@ Si esto da 200 con cookies y desde la web da 404, el fallo está en la **conexi�
 | Error 404 en buscar | `POST /api/assistant/search` devuelve 404 | Misma conexión; comprobar que la API recibe POST en `/assistant/search` (path que usa el handler). |
 
 No hay “repos incorrectos”: es un tema de **que la web en producción esté reenviando correctamente cada `/api/*` a la URL base de la API** y de que la API esté desplegada y respondiendo.
+
+---
+
+## 7) Lead a Kiteprop (mensaje por defecto)
+
+El payload que se envía a Kiteprop incluye por defecto un mensaje con este formato:
+
+`Consulta desde MatchProp sobre propiedad [título] de [fuente/editor]. Tel: [teléfono]. Mail: [email].`
+
+- El teléfono se toma del perfil del usuario (UserProfile.phone o whatsapp) si existe.
+- La “fuente” es el source del listing o el displayName del publisher.
+- Si no hay template personalizado en la integración Kiteprop, se usa este mensaje.

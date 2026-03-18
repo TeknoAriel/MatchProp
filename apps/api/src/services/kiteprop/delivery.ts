@@ -14,9 +14,10 @@ export async function deliverToKiteprop(
       title: string | null;
       price: number | null;
       currency: string | null;
+      source?: string;
     };
-    user: { email: string } | null;
-    publisher: { orgId: string | null } | null;
+    user: { email: string; profile?: { phone?: string | null; whatsapp?: string | null } | null } | null;
+    publisher: { orgId: string | null; displayName?: string } | null;
   },
   opts?: { testMode?: boolean; stage?: KitepropStage }
 ): Promise<{ ok: boolean; httpStatus?: number; snippet?: string }> {
@@ -62,13 +63,23 @@ export async function deliverToKiteprop(
   const baseUrl = integration.baseUrl.replace(/\/$/, '');
   const url = `${baseUrl}${integration.leadCreatePath.startsWith('/') ? integration.leadCreatePath : '/' + integration.leadCreatePath}`;
 
+  const buyerPhone =
+    (lead.user as { profile?: { phone?: string; whatsapp?: string } | null } | undefined)?.profile?.phone ||
+    (lead.user as { profile?: { phone?: string; whatsapp?: string } | null } | undefined)?.profile?.whatsapp ||
+    '';
+  const listingSource =
+    (lead.listing as { source?: string }).source ?? (lead.publisher?.displayName ?? 'MatchProp');
+  const defaultMessage =
+    `Consulta desde MatchProp sobre propiedad ${lead.listing.title ?? 'N/A'} de ${listingSource}. Tel: ${buyerPhone || '-'}. Mail: ${lead.user?.email ?? 'unknown@matchprop.com'}`;
+
   const context = {
     buyer: {
       email: lead.user?.email ?? 'unknown@matchprop.com',
       id: lead.userId ?? '',
+      phone: buyerPhone,
     },
     lead: {
-      message: lead.message ?? 'Consulta desde MatchProp',
+      message: lead.message ?? defaultMessage,
       id: lead.id,
     },
     listing: {
@@ -78,6 +89,7 @@ export async function deliverToKiteprop(
       price: lead.listing.price,
       currency: lead.listing.currency,
       url: '',
+      source: listingSource,
     },
   };
 
@@ -99,6 +111,7 @@ export async function deliverToKiteprop(
       ...base,
       email: ctx.buyer.email,
       name: ctx.buyer.email.split('@')[0] ?? 'Usuario',
+      phone: ctx.buyer.phone || undefined,
     };
   };
 

@@ -94,8 +94,14 @@ export default function ImportersSettingsPage() {
         router.replace('/login');
         return;
       }
+      if (res.status === 403) {
+        setMessage('Solo administradores pueden guardar fuentes de importación.');
+        return;
+      }
       if (!res.ok) {
-        setMessage('Error al guardar');
+        const errBody = await res.json().catch(() => ({}));
+        const msg = (errBody as { message?: string })?.message;
+        setMessage(msg || `Error al guardar (${res.status}). Revisá la consola o conectividad.`);
         return;
       }
       setMessage('Guardado correctamente. Yumblin, iCasas y otras fuentes usan estas URLs.');

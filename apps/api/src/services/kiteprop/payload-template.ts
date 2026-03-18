@@ -3,7 +3,7 @@
  * Replaces {{path}} with values from context. Missing => ''.
  */
 export type PayloadTemplateContext = {
-  buyer: { email: string; id: string };
+  buyer: { email: string; id: string; phone?: string };
   lead: { message: string | null; id: string };
   listing: {
     id: string;
@@ -12,6 +12,7 @@ export type PayloadTemplateContext = {
     price: number | null;
     currency: string | null;
     url?: string;
+    source?: string;
   };
 };
 

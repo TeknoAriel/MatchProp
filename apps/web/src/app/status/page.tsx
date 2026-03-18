@@ -16,6 +16,7 @@ export default function StatusPage() {
     bySource?: Record<string, number>;
   } | null>(null);
   const [listingsCountError, setListingsCountError] = useState<string | null>(null);
+  const [connectPath, setConnectPath] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [baseUrl, setBaseUrl] = useState<string>(API_BASE);
   useEffect(() => {
@@ -27,6 +28,7 @@ export default function StatusPage() {
     setApiOk('pending');
     setAuthOk('pending');
     setListingsCountError(null);
+    setConnectPath(null);
     setLoading(true);
 
     try {
@@ -34,6 +36,19 @@ export default function StatusPage() {
       setApiOk(healthRes.ok ? 'ok' : 'fail');
     } catch {
       setApiOk('fail');
+    }
+
+    try {
+      const connectRes = await fetch(`${API_BASE}/status/connect`, { credentials: 'include' });
+      if (connectRes.ok) {
+        const data = await connectRes.json().catch(() => ({}));
+        setConnectPath((data as { path?: string })?.path ?? 'ok');
+      } else {
+        const pathHeader = connectRes.headers.get('X-MatchProp-Path');
+        setConnectPath(pathHeader ? `404 path=${pathHeader}` : `status=${connectRes.status}`);
+      }
+    } catch {
+      setConnectPath('error');
     }
 
     try {
@@ -94,6 +109,12 @@ export default function StatusPage() {
             }
           >
             {apiOk === 'pending' ? '...' : apiOk === 'ok' ? 'OK' : 'DOWN'}
+          </span>
+        </li>
+        <li className="flex items-center justify-between p-3 rounded-xl bg-white shadow-sm border border-gray-100">
+          <span>CONNECT (GET /api/status/connect)</span>
+          <span className="text-xs font-mono text-gray-600" title={connectPath ?? ''}>
+            {connectPath ?? '...'}
           </span>
         </li>
         <li className="flex items-center justify-between p-3 rounded-xl bg-white shadow-sm border border-gray-100">
