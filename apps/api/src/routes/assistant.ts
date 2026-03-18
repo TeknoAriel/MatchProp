@@ -220,10 +220,11 @@ export async function assistantRoutes(fastify: FastifyInstance) {
         });
       }
 
+      const feedResult = result as { items: unknown[]; nextCursor: string | null; limit: number };
       return {
-        items: result.items,
-        nextCursor: result.nextCursor,
-        limit: result.limit,
+        items: feedResult.items,
+        nextCursor: feedResult.nextCursor,
+        limit: feedResult.limit,
       };
     }
   );

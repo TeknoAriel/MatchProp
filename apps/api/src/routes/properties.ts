@@ -50,12 +50,11 @@ export async function propertyRoutes(fastify: FastifyInstance) {
       const user = request.user as { userId: string; role: UserRole };
       const body = createPropertySchema.parse(request.body);
 
-      const property = await prisma.property.create({
-        data: {
-          ...body,
-          createdById: user.role === UserRole.AGENT ? user.userId : undefined,
-        },
-      });
+      const data = { ...body } as Record<string, unknown>;
+      if (user.role === UserRole.AGENT) {
+        data.createdById = user.userId;
+      }
+      const property = await prisma.property.create({ data });
       return reply.status(201).send(property);
     }
   );
