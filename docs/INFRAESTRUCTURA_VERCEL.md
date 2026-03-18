@@ -189,6 +189,35 @@ MatchProp/
 
 ---
 
+## Cron Jobs
+
+El sistema tiene un cron job configurado para sincronizar propiedades cada 6 horas:
+
+```json
+{
+  "crons": [
+    {
+      "path": "/cron/ingest",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}
+```
+
+**Endpoints de Cron:**
+- `POST /cron/ingest` - Ejecuta sincronización (requiere CRON_SECRET)
+- `GET /cron/status` - Estado del último sync y conteo de listings
+
+**Variables requeridas en Vercel:**
+- `CRON_SECRET` - Token para autorizar el cron job (generar con `openssl rand -base64 32`)
+
+**Sincronización Incremental:**
+- Detecta cambios de precio (`PRICE_CHANGED` event)
+- Detecta cambios de estado (`STATUS_CHANGED` event)
+- Guarda `lastSyncedAt` y `lastSeenAt` por listing
+
+---
+
 ## Comandos Útiles
 
 ```bash

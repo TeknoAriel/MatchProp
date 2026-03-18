@@ -3,10 +3,16 @@
   "outputDirectory": ".",
   "functions": {
     "api/handler.js": {
-      "maxDuration": 30
+      "maxDuration": 60
     }
   },
   "routes": [
     { "src": "/(.*)", "dest": "/api/handler" }
+  ],
+  "crons": [
+    {
+      "path": "/cron/ingest",
+      "schedule": "0 */6 * * *"
+    }
   ]
 }
