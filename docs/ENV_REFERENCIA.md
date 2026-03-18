@@ -6,14 +6,16 @@ Tokens y URLs usados en el proyecto, sin valores reales.
 
 ## URLs (producción)
 
-| Variable | Formato | Dónde |
-|----------|---------|-------|
+| Variable | Valor Producción | Dónde |
+|----------|------------------|-------|
 | `APP_URL` | `https://match-prop-web.vercel.app` | API |
-| `API_PUBLIC_URL` | `https://TU-PROYECTO-API.vercel.app` | API |
-| `API_SERVER_URL` | `https://TU-PROYECTO-API.vercel.app` | Web (server-side) |
-| `NEXT_PUBLIC_API_URL` | `https://TU-PROYECTO-API.vercel.app` | Web (cliente) |
-| `NEXT_PUBLIC_ADMIN_URL` | `https://TU-ADMIN.vercel.app` | Web (opcional) |
+| `API_PUBLIC_URL` | `https://match-prop-admin-dsvv.vercel.app` | API |
+| `API_SERVER_URL` | `https://match-prop-admin-dsvv.vercel.app` | Web (server-side) |
+| `NEXT_PUBLIC_API_URL` | `https://match-prop-admin-dsvv.vercel.app` | Web (cliente) |
+| `NEXT_PUBLIC_ADMIN_URL` | `https://match-prop-admin.vercel.app` | Web (opcional) |
 | `CORS_ORIGINS` | `https://match-prop-web.vercel.app` | API |
+
+> **Nota**: La API está desplegada en el proyecto `match-prop-api-1jte` con URL `match-prop-admin-dsvv.vercel.app`
 
 ---
 

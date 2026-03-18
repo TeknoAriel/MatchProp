@@ -5,7 +5,7 @@ import type { NextConfig } from 'next';
 const apiServerUrl =
   process.env.API_SERVER_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  (process.env.VERCEL ? 'https://match-prop-api-1jte.vercel.app' : 'http://127.0.0.1:3001');
+  (process.env.VERCEL ? 'https://match-prop-admin-dsvv.vercel.app' : 'http://127.0.0.1:3001');
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@matchprop/shared'],
