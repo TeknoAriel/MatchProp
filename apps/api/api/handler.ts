@@ -26,60 +26,51 @@ function stripCatchAllFromQuery(qs: string): string {
   return rest ? '?' + rest : '';
 }
 
-/** Construye path + query para Fastify. Prueba varias fuentes: query.path, req.url, headers. */
+/** Construye path + query para Fastify. Usa x-vercel-original-url o req.url. */
 function pathForFastify(req: VercelRequest): string {
-  let path = '';
+  // Vercel pone la URL original en este header cuando hay rewrite
+  const originalUrl =
+    (req.headers['x-vercel-original-url'] as string) ||
+    (req.headers['x-original-url'] as string) ||
+    (req.headers['x-url'] as string) ||
+    req.url ||
+    '/';
+
+  let pathname = '/';
   let qs = '';
 
-  // 1) query.path (catch-all [[...path]] en Vercel)
-  const pathFromQuery = req.query?.path;
-  if (pathFromQuery !== undefined && pathFromQuery !== null) {
-    const segments = Array.isArray(pathFromQuery) ? pathFromQuery : String(pathFromQuery).split('/').filter(Boolean);
-    if (segments.length > 0) {
-      path = '/' + segments.join('/');
-      const rawQs = typeof req.url === 'string' && req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-      qs = stripCatchAllFromQuery(rawQs);
-      return path + (qs.startsWith('?') ? qs : qs ? '?' + qs : '');
-    }
-  }
-
-  // 2) req.url (path solo o URL completa)
-  const raw = ((req.url ?? '') as string).trim() || ((req.headers['x-url'] as string) ?? '').trim() || '';
-  if (raw) {
-    let pathname: string;
-    if (raw.startsWith('http://') || raw.startsWith('https://')) {
-      try {
-        const u = new URL(raw);
-        pathname = u.pathname;
-        qs = u.search ? u.search.slice(1) : '';
-      } catch {
-        const [p, q] = raw.split('?');
-        pathname = p ?? '/';
-        qs = q ?? '';
-      }
-    } else {
-      const [p, q] = raw.split('?');
-      pathname = (p ?? '/').trim() || '/';
-      qs = (q ?? '').trim();
-    }
-    path = pathname.replace(/^\/api(?=\/|$)/i, '') || '/';
-  }
-
-  // 3) Referer (por si el path se perdió: ej. /api/assistant/search)
-  if ((!path || path === '/') && req.headers['referer']) {
+  if (originalUrl.startsWith('http://') || originalUrl.startsWith('https://')) {
     try {
-      const ref = new URL(req.headers['referer'] as string);
-      path = ref.pathname.replace(/^\/api(?=\/|$)/i, '') || '/';
+      const u = new URL(originalUrl);
+      pathname = u.pathname;
+      qs = u.search || '';
     } catch {
-      // ignore
+      const idx = originalUrl.indexOf('?');
+      if (idx >= 0) {
+        pathname = originalUrl.slice(originalUrl.indexOf('/', 8), idx) || '/';
+        qs = originalUrl.slice(idx);
+      } else {
+        pathname = originalUrl.slice(originalUrl.indexOf('/', 8)) || '/';
+      }
+    }
+  } else {
+    const idx = originalUrl.indexOf('?');
+    if (idx >= 0) {
+      pathname = originalUrl.slice(0, idx) || '/';
+      qs = originalUrl.slice(idx);
+    } else {
+      pathname = originalUrl || '/';
     }
   }
 
-  if (!path || path === '/') path = '/';
-  if (path.startsWith('/api/')) path = path.slice(4) || '/';
-  if (!path.startsWith('/')) path = '/' + path;
-  qs = stripCatchAllFromQuery(qs ? (qs.startsWith('?') ? qs : '?' + qs) : '');
-  return path + qs;
+  // Quitar /api/handler si el rewrite lo agregó
+  pathname = pathname.replace(/^\/api\/handler\/?/i, '/');
+  // Quitar /api si existe
+  pathname = pathname.replace(/^\/api(?=\/|$)/i, '') || '/';
+
+  if (!pathname.startsWith('/')) pathname = '/' + pathname;
+
+  return pathname + qs;
 }
 
 /** Convierte IncomingHeaders a objeto plano para Fastify inject. */

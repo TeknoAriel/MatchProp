@@ -1,11 +1,11 @@
 {
   "functions": {
-    "api/[...path].ts": {
+    "api/handler.ts": {
       "maxDuration": 30
     }
   },
   "rewrites": [
-    { "source": "/:path*", "destination": "/api/:path*" }
+    { "source": "/(.*)", "destination": "/api/handler" }
   ],
   "buildCommand": "cd ../.. && NPM_CONFIG_PRODUCTION=false pnpm install && pnpm build:shared && pnpm --filter api prisma:generate && pnpm --filter api build"
 }
