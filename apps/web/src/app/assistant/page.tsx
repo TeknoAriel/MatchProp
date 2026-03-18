@@ -320,10 +320,22 @@ export default function AssistantPage() {
   }): SearchFilters {
     const base = (result?.filters ?? {}) as SearchFilters;
     const next: SearchFilters = { ...base };
+    
     const pt = overrides?.propertyType !== undefined ? overrides.propertyType : propertyTypeFilter;
     const op = overrides?.operation !== undefined ? overrides.operation : operationFilter;
-    if (pt) next.propertyType = [pt];
-    if (op) next.operationType = op;
+    
+    if (pt) {
+      next.propertyType = [pt];
+    } else {
+      delete next.propertyType;
+    }
+    
+    if (op) {
+      next.operationType = op;
+    } else {
+      delete next.operationType;
+    }
+    
     return next;
   }
 
@@ -332,14 +344,14 @@ export default function AssistantPage() {
     mode?: FallbackMode,
     filterOverrides?: { propertyType?: string | null; operation?: 'SALE' | 'RENT' | null }
   ) {
-    // Permitir cuando result existe (incluso con filters vacío) para Ver similares / Ver catálogo
-    if (!result) return;
     const isLoadMore = !!cursor;
     const useMode = mode ?? fallbackMode;
     const filters = getEffectiveFilters(filterOverrides);
+    
     if (isLoadMore) setLoadingMore(true);
     else setLoadingPreview(true);
     setError(null);
+    
     try {
       const { items, nextCursor, finalMode } = await fetchPreview(filters, cursor, useMode);
       if (isLoadMore) {
