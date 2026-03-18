@@ -9,20 +9,21 @@ const NAV_ITEMS = [
   { href: '/dashboard', label: 'Inicio', icon: '🏠' },
   { href: '/feed', label: 'Match', icon: '🔥' },
   { href: '/feed/list', label: 'Lista', icon: '📋' },
-  { href: '/assistant', label: 'Buscar', icon: '🔍' },
-  { href: '/me/saved', label: 'Favoritos', icon: '★' },
-  { href: '/alerts', label: 'Alertas', icon: '🔔' },
+  { href: '/search/map', label: 'Mapa', icon: '🗺️' },
+  { href: '/me/saved', label: 'Favoritos', icon: '⭐' },
   { href: '/searches', label: 'Búsquedas', icon: '📁' },
+  { href: '/alerts', label: 'Alertas', icon: '🔔' },
   { href: '/leads', label: 'Consultas', icon: '💬' },
   { href: '/me/profile', label: 'Perfil', icon: '👤' },
 ];
 
-/** Items que en móvil van dentro del menú "Más" (prioridad E5 masterplan) */
+/** Items que en móvil van dentro del menú "Más" */
 const MAS_ITEMS = [
+  { href: '/search/map', label: 'Ver en mapa', icon: '🗺️', desc: 'Propiedades con ubicación' },
+  { href: '/searches', label: 'Mis búsquedas', icon: '📁', desc: 'Búsquedas guardadas' },
+  { href: '/alerts', label: 'Alertas', icon: '🔔', desc: 'Avisos de nuevas propiedades' },
   { href: '/leads', label: 'Consultas', icon: '💬', desc: 'Contactos con inmobiliarias' },
-  { href: '/alerts', label: 'Alertas activas', icon: '🔔', desc: 'Avisos de nuevas, precio, vuelve' },
-  { href: '/searches', label: 'Búsquedas activas', icon: '📁', desc: 'Guardadas y filtros' },
-  { href: '/dashboard', label: 'Inicio', icon: '🏠', desc: 'Ir al inicio' },
+  { href: '/me/profile', label: 'Mi perfil', icon: '👤', desc: 'Datos y preferencias' },
 ];
 
 /** Tap target mínimo 44px para accesibilidad (25–70 años) */
@@ -141,13 +142,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </main>
 
-        {/* Bottom Nav - Mobile only: Match, Lista, Buscar, Favoritos, Más, Perfil */}
+        {/* Bottom Nav - Mobile only: Inicio, Match, Lista, Favoritos, Más */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-[var(--mp-card)] border-t border-[var(--mp-border)] safe-area-pb">
           <div className="flex justify-around items-center h-16 px-1">
+            <NavLink href="/dashboard" icon="🏠" label="Inicio" pathname={pathname} />
             <NavLink href="/feed" icon="🔥" label="Match" pathname={pathname} />
             <NavLink href="/feed/list" icon="📋" label="Lista" pathname={pathname} />
-            <NavLink href="/assistant" icon="🔍" label="Buscar" pathname={pathname} />
-            <NavLink href="/me/saved" icon="★" label="Favoritos" pathname={pathname} />
+            <NavLink href="/me/saved" icon="⭐" label="Favoritos" pathname={pathname} />
             <button
               type="button"
               onClick={() => setMasOpen(true)}
@@ -160,7 +161,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <span className="text-[1.25rem]">⋯</span>
               <span className="text-[13px]">Más</span>
             </button>
-            <NavLink href="/me/profile" icon="👤" label="Perfil" pathname={pathname} />
           </div>
         </nav>
 
