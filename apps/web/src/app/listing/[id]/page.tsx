@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { getListingImageUrl } from '../../../lib/demo-image';
 import ShareModal from '../../../components/ShareModal';
 import ReverseMatchingMiniDashboard from '../../../components/ReverseMatchingMiniDashboard';
 import InquiryModal from '../../../components/InquiryModal';
@@ -269,15 +268,11 @@ export default function ListingDetailPage() {
     );
   }
 
-  const rawImages = listing.media?.length
+  const images = listing.media?.length
     ? [...listing.media].sort((a, b) => a.sortOrder - b.sortOrder)
     : listing.heroImageUrl
       ? [{ url: listing.heroImageUrl, sortOrder: 0 }]
       : [];
-  const images = rawImages.map((m) => ({
-    ...m,
-    url: getListingImageUrl(id, m.url) || m.url,
-  }));
   const currentImage = images[imageIndex];
   const hasMultiple = images.length > 1;
 
@@ -296,17 +291,23 @@ export default function ListingDetailPage() {
           ← Volver al feed
         </Link>
 
-        <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
-          <div className="aspect-video bg-gray-200 relative">
+        <div className="border rounded-2xl overflow-hidden bg-white shadow-lg">
+          <div className="aspect-video bg-slate-100 relative group">
             {currentImage ? (
               <img
                 src={currentImage.url}
                 alt={listing.title ?? ''}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-300"
+                loading="lazy"
+                onError={(e) => {
+                  e.currentTarget.src = '';
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">
-                Sin imagen
+              <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-gradient-to-br from-slate-50 to-slate-200">
+                <span className="text-6xl mb-2">🏠</span>
+                <span className="text-sm">Sin imágenes disponibles</span>
               </div>
             )}
             {hasMultiple && (
@@ -314,25 +315,58 @@ export default function ListingDetailPage() {
                 <button
                   type="button"
                   onClick={() => setImageIndex((i) => (i <= 0 ? images.length - 1 : i - 1))}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
                   aria-label="Anterior"
                 >
-                  ‹
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                 </button>
                 <button
                   type="button"
                   onClick={() => setImageIndex((i) => (i >= images.length - 1 ? 0 : i + 1))}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
                   aria-label="Siguiente"
                 >
-                  ›
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </button>
-                <span className="absolute bottom-2 right-2 text-xs bg-black/50 text-white px-2 py-1 rounded">
-                  {imageIndex + 1} / {images.length}
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  {images.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setImageIndex(idx)}
+                      className={`w-2.5 h-2.5 rounded-full transition-all ${idx === imageIndex ? 'bg-white w-6' : 'bg-white/60 hover:bg-white/80'}`}
+                      aria-label={`Ir a imagen ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+                <span className="absolute top-3 right-3 text-xs bg-black/60 text-white px-3 py-1.5 rounded-full font-medium">
+                  📷 {imageIndex + 1} / {images.length}
                 </span>
               </>
             )}
           </div>
+          {hasMultiple && images.length > 2 && (
+            <div className="flex gap-1 p-2 overflow-x-auto bg-slate-50">
+              {images.map((img, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setImageIndex(idx)}
+                  className={`flex-shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all ${idx === imageIndex ? 'border-blue-500 ring-2 ring-blue-200' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                >
+                  <img
+                    src={img.url}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
           <div className="p-4">
             {myStatus && (
               <div className="flex flex-wrap gap-2 mb-4 p-3 rounded-xl bg-slate-50 border border-slate-100">

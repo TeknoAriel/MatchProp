@@ -12,7 +12,6 @@ import InquiryModal from '../../../components/InquiryModal';
 import PlanErrorBlock from '../../../components/PlanErrorBlock';
 import BetaPremiumBanner from '../../../components/BetaPremiumBanner';
 import ShareModal from '../../../components/ShareModal';
-import { getListingImageUrl } from '../../../lib/demo-image';
 
 const API_BASE = '/api';
 const PRODUCT_NAME = process.env.NEXT_PUBLIC_PRODUCT_NAME || 'MatchProp';
@@ -727,20 +726,20 @@ function FeedListPageContent() {
                             ))}
                           </div>
                         )}
-                        {(() => {
-                          const imgUrl = getListingImageUrl(card.id, card.heroImageUrl);
-                          return imgUrl ? (
-                            <img
-                              src={imgUrl}
-                              alt={card.title ?? ''}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                              Sin imagen
-                            </div>
-                          );
-                        })()}
+                        {card.heroImageUrl ? (
+                          <img
+                            src={card.heroImageUrl}
+                            alt={card.title ?? ''}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200">
+                            <span className="text-3xl mb-1">🏠</span>
+                            <span className="text-xs">Sin imagen</span>
+                          </div>
+                        )}
                       </div>
                       <div className="p-3">
                         <h2 className="font-semibold truncate">{card.title ?? 'Sin título'}</h2>
@@ -1021,20 +1020,20 @@ function FeedListPageContent() {
                           ))}
                         </div>
                       )}
-                      {(() => {
-                        const imgUrl = getListingImageUrl(card.id, card.heroImageUrl);
-                        return imgUrl ? (
-                          <img
-                            src={imgUrl}
-                            alt={card.title ?? ''}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                            Sin imagen
-                          </div>
-                        );
-                      })()}
+                      {card.heroImageUrl ? (
+                        <img
+                          src={card.heroImageUrl}
+                          alt={card.title ?? ''}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200">
+                          <span className="text-3xl mb-1">🏠</span>
+                          <span className="text-xs">Sin imagen</span>
+                        </div>
+                      )}
                     </div>
                     <div className="p-3">
                       <h2 className="font-semibold truncate">{card.title ?? 'Sin título'}</h2>

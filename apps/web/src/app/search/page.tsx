@@ -6,7 +6,6 @@ import Link from 'next/link';
 import type { ListingCard, SearchFilters } from '@matchprop/shared';
 import { filtersToHumanSummary } from '../../lib/filters-summary';
 import InquiryModal from '../../components/InquiryModal';
-import { getListingImageUrl } from '../../lib/demo-image';
 
 const API_BASE = '/api';
 const PROPERTY_TYPES = ['APARTMENT', 'HOUSE', 'LAND', 'OFFICE', 'OTHER'] as const;
@@ -967,16 +966,19 @@ export default function ManualSearchPage() {
                       href={`/listing/${card.id}`}
                       className="block hover:bg-slate-50/50 transition-colors"
                     >
-                      <div className="aspect-[16/10] bg-gray-200">
-                        {getListingImageUrl(card.id, card.heroImageUrl) ? (
+                      <div className="aspect-[16/10] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
+                        {card.heroImageUrl ? (
                           <img
-                            src={getListingImageUrl(card.id, card.heroImageUrl)!}
+                            src={card.heroImageUrl}
                             alt={card.title ?? ''}
                             className="w-full h-full object-cover"
+                            loading="lazy"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                            Sin imagen
+                          <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                            <span className="text-3xl mb-1">🏠</span>
+                            <span className="text-xs">Sin imagen</span>
                           </div>
                         )}
                       </div>

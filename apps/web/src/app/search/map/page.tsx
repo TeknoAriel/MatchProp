@@ -259,30 +259,49 @@ function PropertyCardHorizontal({
   isSelected: boolean;
   onClick: () => void;
 }) {
+  const [imgError, setImgError] = useState(false);
+  
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 w-48 h-full rounded-xl overflow-hidden border transition-all text-left ${
+      className={`shrink-0 w-52 h-full rounded-xl overflow-hidden border transition-all text-left bg-white ${
         isSelected
           ? 'border-sky-500 shadow-lg scale-[1.02]'
-          : 'border-[var(--mp-border)] hover:border-sky-300'
+          : 'border-[var(--mp-border)] hover:border-sky-300 hover:shadow-md'
       }`}
     >
-      <div className="h-24 bg-gray-200">
-        {card.heroImageUrl ? (
-          <img src={card.heroImageUrl} alt="" className="w-full h-full object-cover" />
+      <div className="h-28 bg-gradient-to-br from-slate-100 to-slate-200 relative overflow-hidden">
+        {card.heroImageUrl && !imgError ? (
+          <img 
+            src={card.heroImageUrl} 
+            alt="" 
+            className="w-full h-full object-cover"
+            loading="lazy"
+            onError={() => setImgError(true)}
+          />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl">
-            🏠
+          <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+            <span className="text-3xl mb-1">🏠</span>
+            <span className="text-xs">Sin imagen</span>
           </div>
         )}
+        {card.operationType && (
+          <span className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 text-white text-xs rounded-full font-medium">
+            {card.operationType === 'SALE' ? 'Venta' : 'Alquiler'}
+          </span>
+        )}
       </div>
-      <div className="p-2">
-        <p className="text-sm font-semibold text-sky-600 truncate">
+      <div className="p-2.5">
+        <p className="text-sm font-bold text-sky-600 truncate">
           {card.currency || 'USD'} {card.price?.toLocaleString() || 'Consultar'}
         </p>
-        <p className="text-xs text-[var(--mp-foreground)] truncate">{card.title || 'Propiedad'}</p>
+        <p className="text-xs text-[var(--mp-foreground)] truncate font-medium mt-0.5">{card.title || 'Propiedad'}</p>
         <p className="text-xs text-[var(--mp-muted)] truncate">{card.locationText}</p>
+        {card.bedrooms && (
+          <p className="text-xs text-[var(--mp-muted)] mt-1">
+            {card.bedrooms} amb {card.areaTotal ? `· ${card.areaTotal}m²` : ''}
+          </p>
+        )}
       </div>
     </button>
   );
@@ -297,6 +316,8 @@ function PropertyCardVertical({
   isSelected: boolean;
   onClick: () => void;
 }) {
+  const [imgError, setImgError] = useState(false);
+  
   return (
     <Link
       href={`/listing/${card.id}`}
@@ -304,35 +325,61 @@ function PropertyCardVertical({
         e.preventDefault();
         onClick();
       }}
-      className={`block rounded-xl overflow-hidden border transition-all ${
+      className={`block rounded-xl overflow-hidden border transition-all bg-white ${
         isSelected
           ? 'border-sky-500 shadow-md'
-          : 'border-[var(--mp-border)] hover:border-sky-300'
+          : 'border-[var(--mp-border)] hover:border-sky-300 hover:shadow-sm'
       }`}
     >
       <div className="flex">
-        <div className="w-28 h-24 shrink-0 bg-gray-200">
-          {card.heroImageUrl ? (
-            <img src={card.heroImageUrl} alt="" className="w-full h-full object-cover" />
+        <div className="w-32 h-28 shrink-0 bg-gradient-to-br from-slate-100 to-slate-200 relative overflow-hidden">
+          {card.heroImageUrl && !imgError ? (
+            <img 
+              src={card.heroImageUrl} 
+              alt="" 
+              className="w-full h-full object-cover"
+              loading="lazy"
+              onError={() => setImgError(true)}
+            />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl">
-              🏠
+            <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+              <span className="text-2xl mb-1">🏠</span>
+              <span className="text-xs">Sin imagen</span>
             </div>
+          )}
+          {card.operationType && (
+            <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-black/60 text-white text-xs rounded-full font-medium">
+              {card.operationType === 'SALE' ? 'Venta' : 'Alq'}
+            </span>
           )}
         </div>
         <div className="flex-1 p-3 min-w-0">
-          <p className="text-sm font-semibold text-sky-600">
+          <p className="text-sm font-bold text-sky-600">
             {card.currency || 'USD'} {card.price?.toLocaleString() || 'Consultar'}
           </p>
-          <p className="text-sm text-[var(--mp-foreground)] truncate font-medium">
+          <p className="text-sm text-[var(--mp-foreground)] truncate font-medium mt-0.5">
             {card.title || 'Propiedad'}
           </p>
           <p className="text-xs text-[var(--mp-muted)] truncate mt-1">{card.locationText}</p>
-          {card.bedrooms && (
-            <p className="text-xs text-[var(--mp-muted)] mt-1">
-              {card.bedrooms} amb · {card.areaTotal ? `${card.areaTotal}m²` : ''}
-            </p>
-          )}
+          <div className="flex items-center gap-2 mt-1.5">
+            {card.bedrooms && (
+              <span className="text-xs text-[var(--mp-muted)] bg-slate-100 px-1.5 py-0.5 rounded">
+                {card.bedrooms} amb
+              </span>
+            )}
+            {card.areaTotal && (
+              <span className="text-xs text-[var(--mp-muted)] bg-slate-100 px-1.5 py-0.5 rounded">
+                {card.areaTotal}m²
+              </span>
+            )}
+          </div>
+          <Link
+            href={`/listing/${card.id}`}
+            className="inline-block mt-2 text-xs text-sky-600 font-medium hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            Ver detalle →
+          </Link>
         </div>
       </div>
     </Link>

@@ -24,13 +24,17 @@ export default function SwipeCard({ card, onClick, showInvestorLink }: SwipeCard
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
     >
       {/* Imagen dominante con gradiente inferior (Tinder style) */}
-      <div className="aspect-[4/3] relative overflow-hidden bg-slate-200">
+      <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
         {card.heroImageUrl ? (
           <>
             <img
               src={card.heroImageUrl}
               alt={card.title ?? ''}
               className="w-full h-full object-cover"
+              loading="lazy"
+              onError={(e) => { 
+                e.currentTarget.style.display = 'none';
+              }}
             />
             {/* Gradiente donde vive precio y zona */}
             <div
@@ -46,10 +50,10 @@ export default function SwipeCard({ card, onClick, showInvestorLink }: SwipeCard
             </div>
           </>
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
-            <span className="text-sm">Sin imagen</span>
-            <p className="text-lg font-semibold mt-2">{priceText}</p>
-            <p className="text-xs">{zoneText}</p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200">
+            <span className="text-5xl mb-3">🏠</span>
+            <p className="text-xl font-bold text-slate-700">{priceText}</p>
+            <p className="text-sm text-slate-500">{zoneText}</p>
           </div>
         )}
         {showInvestorLink && (

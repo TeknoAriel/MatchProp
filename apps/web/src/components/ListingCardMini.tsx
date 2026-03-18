@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { getListingImageUrl } from '../lib/demo-image';
 
 export interface ListingCardMiniData {
   id: string;
@@ -111,16 +110,21 @@ export default function ListingCardMini({
         </div>
       )}
       <Link href={href} className="block flex-1">
-        <div className="aspect-video bg-slate-200 relative">
-          {getListingImageUrl(listing.id, listing.heroImageUrl) ? (
+        <div className="aspect-video bg-slate-200 relative overflow-hidden">
+          {listing.heroImageUrl ? (
             <img
-              src={getListingImageUrl(listing.id, listing.heroImageUrl)!}
-              alt=""
+              src={listing.heroImageUrl}
+              alt={title}
               className="w-full h-full object-cover"
+              loading="lazy"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm">
-              Sin imagen
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200">
+              <span className="text-4xl mb-2">🏠</span>
+              <span className="text-xs">Sin imagen</span>
             </div>
           )}
           {badges && (listing.operationType || listing.propertyType) && (
