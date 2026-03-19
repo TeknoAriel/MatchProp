@@ -2,6 +2,14 @@
 
 Este documento describe la configuración correcta para los 3 proyectos de Vercel.
 
+## URL única de pruebas
+
+**Para probar la app siempre usá solo:** **https://match-prop-web.vercel.app/**
+
+Detalle y qué hacer cuando no se ven cambios: ver **[URL_PRUEBAS_Y_PROYECTOS.md](./URL_PRUEBAS_Y_PROYECTOS.md)**.
+
+---
+
 ## Estado de reconexión (checkpoint)
 
 - **Repo:** `git@github.com:TeknoAriel/MatchProp.git` — `main` al día con `origin/main`.
@@ -24,7 +32,9 @@ MatchProp/
 
 ---
 
-## 1. match-prop-web (Frontend)
+## 1. match-prop-web (Frontend) — URL de pruebas
+
+**URL producción:** https://match-prop-web.vercel.app/
 
 ### Settings → General
 | Campo | Valor |
@@ -41,6 +51,12 @@ MatchProp/
 | `NEXT_PUBLIC_API_URL` | `https://match-prop-api-1jte.vercel.app` |
 | `NEXT_PUBLIC_PRODUCT_NAME` | `MatchProp` |
 | `NEXT_PUBLIC_PREMIUM_GRACE_PERIOD` | `1` |
+
+### Settings → Git → Ignored Build Step
+Comando (solo build cuando cambien web o shared):
+```bash
+bash scripts/vercel-should-build-web.sh
+```
 
 ### apps/web/vercel.json
 ```json
@@ -67,6 +83,11 @@ MatchProp/
 | Variable | Valor |
 |----------|-------|
 | `NEXT_PUBLIC_API_URL` | `https://match-prop-api-1jte.vercel.app` |
+
+### Settings → Git → Ignored Build Step
+```bash
+bash scripts/vercel-should-build-admin.sh
+```
 
 ### apps/admin/vercel.json
 ```json
@@ -101,6 +122,11 @@ MatchProp/
 | `SENDGRID_API_KEY` | (opcional) Para emails |
 | `STRIPE_*` | (opcional) Para pagos |
 | `MERCADOPAGO_*` | (opcional) Para pagos |
+
+### Settings → Git → Ignored Build Step
+```bash
+bash scripts/vercel-should-build-api.sh
+```
 
 ### apps/api/vercel.json
 ```json
@@ -143,10 +169,14 @@ En la misma sección, verificar que:
 En Settings → General → Node.js Version:
 - Debería ser **20.x** (no 18.x ni 22.x)
 
-### 4. Verificar Git Integration
+### 4. Git e Ignored Build Step (recomendado)
 En Settings → Git:
-- Production Branch: `main`
-- Ignored Build Step: _(vacío)_
+- **Production Branch:** `main`
+- **Ignored Build Step:** para que web solo se construya cuando cambie la app de usuario, poné:
+  ```bash
+  bash scripts/vercel-should-build-web.sh
+  ```
+  Así, cuando toquemos solo `apps/api` o `apps/admin`, no se re-despliega web y en **match-prop-web.vercel.app** seguís viendo la última versión estable. Cuando toquemos `apps/web` o `packages/shared`, sí se despliega y ves los cambios en la URL única.
 
 ### 5. Forzar Redeploy Limpio
 ```bash
