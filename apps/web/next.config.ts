@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 
 // URL de la API de producción (hardcoded para evitar problemas con env vars)
-const API_PROD_URL = 'https://match-prop-api-1jte.vercel.app';
+const API_PROD_URL = 'https://match-prop-admin-dsvv.vercel.app';
 
 // Destino del proxy /api/* (solo server-side).
 const apiServerUrl = process.env.VERCEL

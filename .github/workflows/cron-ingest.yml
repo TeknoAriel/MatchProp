@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Trigger ingest cron
         env:
-          API_URL: https://match-prop-api-1jte.vercel.app/cron/ingest
+          API_URL: https://match-prop-admin-dsvv.vercel.app/cron/ingest
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           if [ -z "$CRON_SECRET" ]; then

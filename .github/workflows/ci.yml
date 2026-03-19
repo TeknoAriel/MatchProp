@@ -168,4 +168,4 @@ jobs:
         run: sleep 180
       - name: Smoke prod URLs
         run: |
-          WEB_URL="https://match-prop-web.vercel.app" API_URL="https://match-prop-api-1jte.vercel.app" bash scripts/smoke-prod.sh
+          WEB_URL="https://match-prop-web.vercel.app" API_URL="https://match-prop-admin-dsvv.vercel.app" bash scripts/smoke-prod.sh
