@@ -99,7 +99,7 @@ function Confetti({ colors }: { colors: string[] }) {
     const newPieces = Array.from({ length: 50 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
-      color: colors[Math.floor(Math.random() * colors.length)],
+      color: colors[Math.floor(Math.random() * colors.length)] ?? '#fbbf24',
       delay: Math.random() * 0.5,
       rotation: Math.random() * 360,
       size: Math.random() * 8 + 4,

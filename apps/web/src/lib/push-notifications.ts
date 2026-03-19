@@ -80,15 +80,15 @@ const NOTIFICATION_MESSAGES = {
 
 type NotificationType = keyof typeof NOTIFICATION_MESSAGES;
 
-function getRandomItem<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
+function getRandomItem<T>(arr: T[], fallback: T): T {
+  return arr[Math.floor(Math.random() * arr.length)] ?? fallback;
 }
 
 export function getNotificationContent(type: NotificationType): { title: string; body: string } {
   const messages = NOTIFICATION_MESSAGES[type];
   return {
-    title: getRandomItem(messages.titles),
-    body: getRandomItem(messages.bodies),
+    title: getRandomItem(messages.titles, '¡Novedad!'),
+    body: getRandomItem(messages.bodies, 'Tenés algo nuevo para ver'),
   };
 }
 
@@ -126,15 +126,21 @@ export async function showNotification(
 
   const content = getNotificationContent(type);
   
-  const notification = new Notification(options?.customTitle ?? content.title, {
+  const notificationOptions: NotificationOptions & { vibrate?: number[] } = {
     body: options?.customBody ?? content.body,
     icon: options?.icon ?? '/icon-192.png',
     badge: '/icon-192.png',
     tag: options?.tag ?? type,
     data: options?.data,
-    vibrate: [200, 100, 200], // Patrón de vibración
     requireInteraction: type === 'newMessage' || type === 'visitReminder',
-  });
+  };
+  
+  // vibrate no está en todos los navegadores
+  if ('vibrate' in navigator) {
+    (notificationOptions as { vibrate?: number[] }).vibrate = [200, 100, 200];
+  }
+  
+  const notification = new Notification(options?.customTitle ?? content.title, notificationOptions);
 
   if (options?.onClick) {
     notification.onclick = () => {

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import type { SavedSearchDTO } from '@matchprop/shared';
 import { filtersToHumanSummary } from '../../lib/filters-summary';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
-import { WelcomeMessage, TipBanner, MotivationalBanner } from '../../components/FunTips';
+import { WelcomeMessage, TipBanner } from '../../components/FunTips';
 import { useToast } from '../../components/FunToast';
 
 const API_BASE = '/api';

@@ -60,7 +60,7 @@ export function TipBanner({ onDismiss }: { onDismiss?: () => void }) {
 
   useEffect(() => {
     const randomTip = TIPS[Math.floor(Math.random() * TIPS.length)];
-    setTip(randomTip);
+    if (randomTip) setTip(randomTip);
   }, []);
 
   if (!tip || !visible) return null;
@@ -94,7 +94,7 @@ export function MotivationalBanner() {
 
   useEffect(() => {
     const randomMessage = MOTIVATIONAL[Math.floor(Math.random() * MOTIVATIONAL.length)];
-    setMessage(randomMessage);
+    if (randomMessage) setMessage(randomMessage);
   }, []);
 
   if (!message) return null;
@@ -124,7 +124,8 @@ export function WelcomeMessage({ name }: { name?: string | null }) {
   const [greeting, setGreeting] = useState('');
 
   useEffect(() => {
-    setGreeting(greetings[Math.floor(Math.random() * greetings.length)]);
+    const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+    setGreeting(randomGreeting ?? '¡Hola! 👋');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name]);
 

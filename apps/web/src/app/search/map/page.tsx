@@ -74,8 +74,9 @@ export default function SearchMapPage() {
         if (data?.items) {
           const normalized = normalizeItems(data.items);
           setItems(normalized);
-          if (normalized.length > 0) {
-            setCenter({ lat: normalized[0].lat, lng: normalized[0].lng });
+          const first = normalized[0];
+          if (first) {
+            setCenter({ lat: first.lat, lng: first.lng });
           }
         }
       })

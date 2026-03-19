@@ -10,7 +10,7 @@ import InquiryModal from '../../components/InquiryModal';
 import PlanErrorBlock from '../../components/PlanErrorBlock';
 import SwipeCard from '../../components/SwipeCard';
 import { useToast, getRandomMessage } from '../../components/FunToast';
-import Celebration, { useCelebration } from '../../components/Celebration';
+import { useCelebration } from '../../components/Celebration';
 
 const API_BASE = '/api';
 const PRODUCT_NAME = process.env.NEXT_PUBLIC_PRODUCT_NAME || 'MatchProp';
@@ -26,7 +26,7 @@ function FeedPageContent() {
   );
   const [toast, setToast] = useState<string | null>(null);
   const [swipeDisabled, setSwipeDisabled] = useState(false);
-  const { showSuccess, showCelebration } = useToast();
+  const { showSuccess } = useToast();
   const { celebrate, CelebrationComponent } = useCelebration();
   const [likeCount, setLikeCount] = useState(0);
   const [addToListCard, setAddToListCard] = useState<ListingCard | null>(null);

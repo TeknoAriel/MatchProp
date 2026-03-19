@@ -119,12 +119,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const showSuccess = useCallback((message: string, emoji?: string) => {
-    const funMessage = message || FUN_SUCCESS_MESSAGES[Math.floor(Math.random() * FUN_SUCCESS_MESSAGES.length)];
+    const randomSuccess = FUN_SUCCESS_MESSAGES[Math.floor(Math.random() * FUN_SUCCESS_MESSAGES.length)] ?? '¡Listo!';
+    const funMessage = message || randomSuccess;
     showToast('success', funMessage, { emoji });
   }, [showToast]);
 
   const showError = useCallback((message: string) => {
-    const funMessage = message || FUN_ERROR_MESSAGES[Math.floor(Math.random() * FUN_ERROR_MESSAGES.length)];
+    const randomError = FUN_ERROR_MESSAGES[Math.floor(Math.random() * FUN_ERROR_MESSAGES.length)] ?? 'Error';
+    const funMessage = message || randomError;
     showToast('error', funMessage);
   }, [showToast]);
 
@@ -213,5 +215,5 @@ export const FUN_MESSAGES = {
 
 export function getRandomMessage(type: keyof typeof FUN_MESSAGES): string {
   const messages = FUN_MESSAGES[type];
-  return messages[Math.floor(Math.random() * messages.length)];
+  return messages[Math.floor(Math.random() * messages.length)] ?? '¡Listo!';
 }
