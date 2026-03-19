@@ -174,6 +174,10 @@ export default function StatusPage() {
         apagada.
       </p>
 
+      <p className="text-xs text-gray-400 mt-4 font-mono" title="Commit desplegado (Vercel)">
+        Versión: {process.env.NEXT_PUBLIC_APP_VERSION ?? '—'}
+      </p>
+
       <div className="mt-6 flex gap-4">
         <Link href="/login" className="text-blue-600 hover:underline text-sm">
           Login

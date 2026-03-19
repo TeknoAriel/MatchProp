@@ -1,0 +1,19 @@
+# Verificación periódica de producción. Si falla, el workflow queda en error (visible en Actions).
+name: Smoke prod (schedule)
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # cada 15 min
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    name: Prod health check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Smoke prod
+        run: bash scripts/smoke-prod.sh
+        env:
+          WEB_URL: https://match-prop-web.vercel.app
+          API_URL: https://match-prop-api-1jte.vercel.app

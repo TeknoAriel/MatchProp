@@ -6,7 +6,8 @@ Este documento describe la configuración correcta para los 3 proyectos de Verce
 
 **Para probar la app siempre usá solo:** **https://match-prop-web.vercel.app/**
 
-Detalle y qué hacer cuando no se ven cambios: ver **[URL_PRUEBAS_Y_PROYECTOS.md](./URL_PRUEBAS_Y_PROYECTOS.md)**.
+Detalle y qué hacer cuando no se ven cambios: ver **[URL_PRUEBAS_Y_PROYECTOS.md](./URL_PRUEBAS_Y_PROYECTOS.md)**.  
+Gates de CI, smoke y release: **[ESTABILIDAD_Y_RELEASE.md](./ESTABILIDAD_Y_RELEASE.md)**.
 
 ---
 

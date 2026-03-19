@@ -6,15 +6,23 @@ on:
   pull_request:
     branches: [main, master]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PNPM_VERSION: '9'
+
 jobs:
   typecheck:
+    name: Typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: ${{ env.PNPM_VERSION }}
 
       - uses: actions/setup-node@v4
         with:
@@ -22,19 +30,19 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-
       - run: pnpm build:shared
-
       - run: pnpm -r run typecheck
+      - run: pnpm --filter api run typecheck:vercel
 
   lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: ${{ env.PNPM_VERSION }}
 
       - uses: actions/setup-node@v4
         with:
@@ -42,18 +50,18 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-
       - run: pnpm lint
       - run: pnpm format:check
 
   unit-tests:
+    name: Unit tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: ${{ env.PNPM_VERSION }}
 
       - uses: actions/setup-node@v4
         with:
@@ -61,12 +69,11 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-
       - run: pnpm build:shared
-
       - run: pnpm -r run test
 
   integration-tests:
+    name: Integration tests
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -88,7 +95,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: ${{ env.PNPM_VERSION }}
 
       - uses: actions/setup-node@v4
         with:
@@ -96,7 +103,6 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-
       - run: pnpm build:shared
 
       - name: Setup DB
@@ -108,9 +114,10 @@ jobs:
       - name: Run integration tests
         run: pnpm --filter api run test:all
 
-  deploy-verify:
-    name: Deploy readiness (pre-deploy:verify)
+  build:
+    name: Full build (gate)
     runs-on: ubuntu-latest
+    needs: [typecheck, lint, unit-tests, integration-tests]
     services:
       postgres:
         image: postgres:16
@@ -131,7 +138,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: ${{ env.PNPM_VERSION }}
 
       - uses: actions/setup-node@v4
         with:
@@ -140,12 +147,25 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Setup DB for API tests
+      - name: Setup DB for pre-deploy
         run: |
           mkdir -p apps/api
           echo "DATABASE_URL=postgresql://matchprop:matchprop@localhost:5432/matchprop" >> apps/api/.env
           pnpm --filter api exec prisma generate
           pnpm --filter api exec prisma migrate deploy
 
-      - name: Pre-deploy verify (build + typecheck + test:all)
+      - name: Pre-deploy verify (build api + web + admin + test:all)
         run: pnpm run pre-deploy:verify
+
+  smoke-prod:
+    name: Smoke prod (post-merge)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for Vercel deploy
+        run: sleep 180
+      - name: Smoke prod URLs
+        run: |
+          WEB_URL="https://match-prop-web.vercel.app" API_URL="https://match-prop-api-1jte.vercel.app" bash scripts/smoke-prod.sh
