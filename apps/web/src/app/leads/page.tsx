@@ -6,6 +6,7 @@ import Link from 'next/link';
 import HacersePremiumButton from '../../components/HacersePremiumButton';
 import VisitScheduleModal from '../../components/VisitScheduleModal';
 import PremiumGraceBanner from '../../components/PremiumGraceBanner';
+import ListingImage from '../../components/ListingImage';
 
 const API_BASE = '/api';
 const GRACE_PERIOD = process.env.NEXT_PUBLIC_PREMIUM_GRACE_PERIOD === '1';
@@ -210,18 +211,14 @@ export default function LeadsPage() {
               >
                 <div className="flex">
                   <Link href={`/listing/${lead.listingId}`} className="flex flex-1 min-w-0">
-                    <div className="w-24 h-24 bg-gray-200 shrink-0">
-                      {lead.listing.heroImageUrl ? (
-                        <img
-                          src={lead.listing.heroImageUrl}
-                          alt={lead.listing.title ?? ''}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                          Sin img
-                        </div>
-                      )}
+                    <div className="w-24 h-24 shrink-0 overflow-hidden">
+                      <ListingImage 
+                        src={lead.listing.heroImageUrl} 
+                        alt={lead.listing.title ?? ''}
+                        fallbackClassName="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-200"
+                        fallbackIcon="🏠"
+                        fallbackText=""
+                      />
                     </div>
                     <div className="p-3 flex-1 min-w-0">
                       <h2 className="font-medium truncate">{lead.listing.title ?? 'Sin título'}</h2>

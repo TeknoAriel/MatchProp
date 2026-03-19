@@ -10,6 +10,7 @@ import ActiveSearchBar from '../../components/ActiveSearchBar';
 import FilterChips from '../../components/FilterChips';
 import AssistantChatInput from '../../components/AssistantChatInput';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
+import ListingImage from '../../components/ListingImage';
 
 const API_BASE = '/api';
 
@@ -904,17 +905,15 @@ export default function AssistantPage() {
                           href={`/listing/${card.id}`}
                           className="flex gap-3 p-4 block hover:bg-slate-50/50 transition-colors"
                         >
-                          {card.heroImageUrl ? (
-                            <img
-                              src={card.heroImageUrl}
-                              alt=""
-                              className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
+                          <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                            <ListingImage 
+                              src={card.heroImageUrl} 
+                              alt="" 
+                              fallbackClassName="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-200"
+                              fallbackIcon="🏠"
+                              fallbackText=""
                             />
-                          ) : (
-                            <div className="w-20 h-20 rounded-lg bg-slate-200 flex-shrink-0 flex items-center justify-center text-slate-400 text-xs">
-                              Sin foto
-                            </div>
-                          )}
+                          </div>
                           <div className="min-w-0 flex-1">
                             <p className="font-semibold text-slate-900 truncate">
                               {card.title || 'Sin título'}
