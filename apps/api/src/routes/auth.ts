@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma.js';
 import { registerSchema, loginSchema } from '../schemas/auth.js';
@@ -47,7 +47,7 @@ function getClientMeta(request: { ip?: string; headers?: { 'user-agent'?: string
 }
 
 export async function authRoutes(fastify: FastifyInstance) {
-  async function passwordLoginHandler(request: any, reply: any) {
+  async function passwordLoginHandler(request: FastifyRequest, reply: FastifyReply) {
     const raw = request.body as unknown;
     const parsed = loginSchema.safeParse(raw);
     if (!parsed.success) {

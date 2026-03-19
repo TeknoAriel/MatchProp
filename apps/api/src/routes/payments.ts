@@ -167,7 +167,9 @@ export async function paymentRoutes(fastify: FastifyInstance) {
         data: {
           userId,
           plan: body.plan as UserRole,
-          status: 'PENDING',
+          // La suscripción se crea antes de que el pago esté aprobado.
+          // Como SubscriptionStatus no tiene PENDING, usamos TRIALING hasta el webhook.
+          status: 'TRIALING',
           provider,
           currentPeriodStart: new Date(),
           currentPeriodEnd: periodEnd,

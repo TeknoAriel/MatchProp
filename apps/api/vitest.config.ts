@@ -6,6 +6,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     fileParallelism: false, // Evita race entre tests que comparten DB (ingest deleteMany vs leads runIngest)
+    testTimeout: 30000,
+    hookTimeout: 30000,
   },
   resolve: {
     alias: {

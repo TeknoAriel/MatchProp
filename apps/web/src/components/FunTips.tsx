@@ -126,7 +126,6 @@ export function WelcomeMessage({ name }: { name?: string | null }) {
   useEffect(() => {
     const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
     setGreeting(randomGreeting ?? '¡Hola! 👋');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name]);
 
   return (
