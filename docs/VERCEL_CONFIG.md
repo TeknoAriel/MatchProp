@@ -2,6 +2,13 @@
 
 Este documento describe la configuración correcta para los 3 proyectos de Vercel.
 
+## Estado de reconexión (checkpoint)
+
+- **Repo:** `git@github.com:TeknoAriel/MatchProp.git` — `main` al día con `origin/main`.
+- **Último commit:** `c84b96d` — chore: unificar imágenes con ListingImage, limpiar código.
+- **Vercel:** Los 3 proyectos (web, admin, api) deben estar vinculados a este mismo repo; Root Directory por app: `apps/web`, `apps/admin`, `apps/api`.
+- **Imágenes:** Todos los listados usan `ListingImage` con fallback; eliminado `demo-image.ts` y scripts de migración ya ejecutados.
+
 ## Estructura del Monorepo
 
 ```
