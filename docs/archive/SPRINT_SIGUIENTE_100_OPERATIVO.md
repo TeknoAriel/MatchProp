@@ -212,12 +212,12 @@ Al terminar las cuatro etapas y rellenar el checklist de revisión final, la app
 
 | Documento                                                  | Uso                                                  |
 | ---------------------------------------------------------- | ---------------------------------------------------- |
-| [masterplan.md](../masterplan.md)                           | Epics, UX contract, non-negotiables                  |
-| [PROD.md](../PROD.md)                                       | Checklist pre-deploy, variables, Docker, healthcheck |
+| [masterplan.md](../masterplan.md)                          | Epics, UX contract, non-negotiables                  |
+| [PROD.md](../PROD.md)                                      | Checklist pre-deploy, variables, Docker, healthcheck |
 | [AUDITORIA_FULLSTACK.md](./AUDITORIA_FULLSTACK.md)         | Estado actual, módulos, pendientes                   |
-| [FEATURE_FLAGS.md](../FEATURE_FLAGS.md)                     | Flags por env                                        |
+| [FEATURE_FLAGS.md](../FEATURE_FLAGS.md)                    | Flags por env                                        |
 | [plan-completamiento-100.md](./plan-completamiento-100.md) | Fases 1–5 y resumen                                  |
-| [repo-map.md](../repo-map.md)                               | Scripts, endpoints, tests                            |
+| [repo-map.md](../repo-map.md)                              | Scripts, endpoints, tests                            |
 
 ---
 

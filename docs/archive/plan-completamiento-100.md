@@ -178,12 +178,12 @@
 
 | Documento                                                                            | Uso                                                      |
 | ------------------------------------------------------------------------------------ | -------------------------------------------------------- |
-| [masterplan.md](../masterplan.md)                                                     | Epics, UX contract, Sprint 14, non-negotiables           |
-| [alignment-checklist.md](../alignment-checklist.md)                                   | Estado DONE/PARTIAL por requisito                        |
-| [backlog.md](../backlog.md)                                                           | Sprints 8, 8.3, 9; definición de done por epic           |
-| [gap-check.md](../gap-check.md)                                                       | Gaps funcionales y técnicos                              |
+| [masterplan.md](../masterplan.md)                                                    | Epics, UX contract, Sprint 14, non-negotiables           |
+| [alignment-checklist.md](../alignment-checklist.md)                                  | Estado DONE/PARTIAL por requisito                        |
+| [backlog.md](../backlog.md)                                                          | Sprints 8, 8.3, 9; definición de done por epic           |
+| [gap-check.md](../gap-check.md)                                                      | Gaps funcionales y técnicos                              |
 | [estado-app-y-pendientes.md](./estado-app-y-pendientes.md)                           | Resumen realizado vs pendiente (antes de este plan)      |
-| [agent-guide.md](../agent-guide.md)                                                   | Cómo validar demo, smoke, CRM push                       |
+| [agent-guide.md](../agent-guide.md)                                                  | Cómo validar demo, smoke, CRM push                       |
 | [revision-responsive-sprint-siguiente.md](./revision-responsive-sprint-siguiente.md) | Responsive y recomendación sprint                        |
 | [sprint-fase-2-y-3.md](./sprint-fase-2-y-3.md)                                       | **Sprint concreto Fase 2 + Fase 3** (tareas y checklist) |
 
