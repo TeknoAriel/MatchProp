@@ -115,6 +115,8 @@ jobs:
           pnpm exec prisma migrate deploy
 
       - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql://matchprop:matchprop@localhost:5432/matchprop
         run: pnpm --filter api run test:all
 
   build:
@@ -158,6 +160,8 @@ jobs:
           pnpm --filter api exec prisma migrate deploy
 
       - name: Pre-deploy verify (build api + web + admin + test:all)
+        env:
+          DATABASE_URL: postgresql://matchprop:matchprop@localhost:5432/matchprop
         run: pnpm run pre-deploy:verify
 
   smoke-prod:

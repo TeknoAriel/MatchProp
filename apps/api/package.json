@@ -14,7 +14,7 @@
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "typecheck:vercel": "tsc -p tsconfig.vercel.json --noEmit",
-    "test": "vitest run src/lib",
+    "test": "vitest run src/lib --exclude '**/*.int.test.ts'",
     "test:all": "vitest run",
     "test:watch": "vitest",
     "load:feed": "k6 run loadtest/feed_read.js",
