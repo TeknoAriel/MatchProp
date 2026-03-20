@@ -92,8 +92,15 @@ function LoginPageContent() {
         window.location.href = '/feed';
         return;
       }
-      const data = (await res.json().catch(() => ({}))) as { message?: string; code?: string; debug?: { error?: string } };
-      setPwdMessage(data?.message ?? (data?.debug?.error ? `Error: ${data.debug.error}` : 'Credenciales inválidas.'));
+      const data = (await res.json().catch(() => ({}))) as {
+        message?: string;
+        code?: string;
+        debug?: { error?: string };
+      };
+      setPwdMessage(
+        data?.message ??
+          (data?.debug?.error ? `Error: ${data.debug.error}` : 'Credenciales inválidas.')
+      );
       setPwdError(true);
     } catch {
       setPwdMessage('Error de conexión.');
@@ -124,7 +131,10 @@ function LoginPageContent() {
 
         <form onSubmit={handleMagicLink} className="space-y-5">
           <div>
-            <label htmlFor="email" className="block text-[15px] font-medium mb-2 text-[var(--mp-foreground)]">
+            <label
+              htmlFor="email"
+              className="block text-[15px] font-medium mb-2 text-[var(--mp-foreground)]"
+            >
               Email
             </label>
             <input
@@ -161,18 +171,25 @@ function LoginPageContent() {
                 </a>
               </>
             ) : (
-              <p className="text-green-600">Revisá tu correo. Si existe, recibirás un link para iniciar sesión.</p>
+              <p className="text-green-600">
+                Revisá tu correo. Si existe, recibirás un link para iniciar sesión.
+              </p>
             )}
           </div>
         )}
         {status === 'error' && (
           <div className="text-sm text-red-600 text-center space-y-1">
             <p>Error. Intentá de nuevo.</p>
-            <p className="text-[var(--mp-muted)] text-xs">Para ingresar rápido, usá <strong>Entrar con link demo</strong>.</p>
+            <p className="text-[var(--mp-muted)] text-xs">
+              Para ingresar rápido, usá <strong>Entrar con link demo</strong>.
+            </p>
           </div>
         )}
 
-        <form onSubmit={handlePasswordLogin} className="space-y-2 pt-4 border-t border-[var(--mp-border)]">
+        <form
+          onSubmit={handlePasswordLogin}
+          className="space-y-2 pt-4 border-t border-[var(--mp-border)]"
+        >
           <p className="text-xs text-[var(--mp-muted)]">
             Admin: entrar con email y contraseña para configuraciones
           </p>
@@ -191,7 +208,9 @@ function LoginPageContent() {
             {pwdLoading ? 'Entrando...' : 'Entrar con email y contraseña'}
           </button>
           {pwdError && (
-            <p className="text-xs text-red-600 text-center">{pwdMessage || 'Credenciales inválidas.'}</p>
+            <p className="text-xs text-red-600 text-center">
+              {pwdMessage || 'Credenciales inválidas.'}
+            </p>
           )}
         </form>
 
@@ -206,7 +225,8 @@ function LoginPageContent() {
           </button>
           {demoError && (
             <p className="text-xs text-red-600 text-center">
-              No se pudo conectar con la API. Dejá la terminal abierta con <code className="bg-black/10 px-1 rounded">pnpm run dev-local</code>.
+              No se pudo conectar con la API. Dejá la terminal abierta con{' '}
+              <code className="bg-black/10 px-1 rounded">pnpm run dev-local</code>.
             </p>
           )}
         </div>

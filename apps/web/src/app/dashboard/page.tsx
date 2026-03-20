@@ -54,7 +54,7 @@ export default function DashboardPage() {
         }
         if (res.ok) {
           const raw = await res.json();
-          const list = Array.isArray(raw) ? raw : raw?.searches ?? [];
+          const list = Array.isArray(raw) ? raw : (raw?.searches ?? []);
           setSearches(list);
         }
       })
@@ -62,7 +62,7 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
 
     fetch(`${API_BASE}/feed?limit=1`, { credentials: 'include' })
-      .then((res) => res.ok ? res.json() : null)
+      .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.total) setRecentMatches(data.total);
       })
@@ -70,7 +70,7 @@ export default function DashboardPage() {
 
     // Obtener nombre del usuario
     fetch(`${API_BASE}/me/profile`, { credentials: 'include' })
-      .then((res) => res.ok ? res.json() : null)
+      .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.profile?.firstName) {
           setUserName(data.profile.firstName);
@@ -178,8 +178,8 @@ export default function DashboardPage() {
                 onClick={isListening ? stopVoice : startVoice}
                 disabled={searching}
                 className={`p-2.5 rounded-xl transition-all ${
-                  isListening 
-                    ? 'bg-red-500 text-white animate-pulse' 
+                  isListening
+                    ? 'bg-red-500 text-white animate-pulse'
                     : 'bg-[var(--mp-bg)] text-[var(--mp-muted)] hover:bg-sky-100 hover:text-sky-600'
                 }`}
               >
@@ -200,7 +200,7 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
-        
+
         {isListening && (
           <p className="mt-2 text-sm text-sky-600 flex items-center gap-2">
             <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
@@ -227,7 +227,7 @@ export default function DashboardPage() {
 
       {/* Stats rápidos */}
       {recentMatches > 0 && (
-        <Link 
+        <Link
           href="/feed"
           className="block mb-6 p-4 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white"
         >
@@ -246,13 +246,8 @@ export default function DashboardPage() {
       {searches.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">
-              Mis búsquedas
-            </h2>
-            <Link 
-              href="/searches" 
-              className="text-sm text-sky-600 hover:underline"
-            >
+            <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">Mis búsquedas</h2>
+            <Link href="/searches" className="text-sm text-sky-600 hover:underline">
               Ver todas
             </Link>
           </div>
@@ -296,8 +291,8 @@ export default function DashboardPage() {
             ¡Tu próximo hogar te espera! ✨
           </h3>
           <p className="text-sm text-[var(--mp-muted)] mb-6">
-            Escribí arriba qué tipo de propiedad buscás<br />
-            y te mostramos los matches perfectos
+            Escribí arriba qué tipo de propiedad buscás
+            <br />y te mostramos los matches perfectos
           </p>
         </div>
       )}

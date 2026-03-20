@@ -210,9 +210,9 @@ export default function ProfileModal({ open, onClose, onSaved }: ProfileModalPro
               <div className="flex items-center gap-4">
                 <div className="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden border-2 border-slate-300">
                   {profile.avatarUrl ? (
-                    <img 
-                      src={profile.avatarUrl} 
-                      alt="Avatar" 
+                    <img
+                      src={profile.avatarUrl}
+                      alt="Avatar"
                       className="w-full h-full object-cover"
                     />
                   ) : (

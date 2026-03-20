@@ -1,6 +1,6 @@
 /**
  * Sistema de Suscripciones y Pagos
- * 
+ *
  * GET  /plans                    - Lista planes disponibles
  * GET  /me/subscription          - Suscripción actual del usuario
  * POST /me/subscription          - Crear/actualizar suscripción
@@ -10,7 +10,7 @@
  */
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
-import { UserRole, SubscriptionStatus, PaymentStatus, PaymentProvider } from '@prisma/client';
+import { UserRole, PaymentProvider } from '@prisma/client';
 
 // Planes y precios (centavos USD)
 export const PLANS = {
@@ -132,14 +132,14 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
     },
     async (request) => {
       const user = request.user as { userId: string };
-      
+
       const [dbUser, subscription] = await Promise.all([
         prisma.user.findUnique({
           where: { id: user.userId },
           select: { role: true, premiumUntil: true },
         }),
         prisma.subscription.findFirst({
-          where: { 
+          where: {
             userId: user.userId,
             status: { in: ['ACTIVE', 'TRIALING', 'PAST_DUE'] },
           },
@@ -150,20 +150,27 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
       if (!dbUser) throw fastify.httpErrors.unauthorized();
 
       const isPremium = !!(dbUser.premiumUntil && dbUser.premiumUntil > new Date());
-      const daysRemaining = subscription 
-        ? Math.max(0, Math.ceil((subscription.currentPeriodEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+      const daysRemaining = subscription
+        ? Math.max(
+            0,
+            Math.ceil(
+              (subscription.currentPeriodEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+            )
+          )
         : 0;
 
       return {
-        subscription: subscription ? {
-          id: subscription.id,
-          plan: subscription.plan,
-          status: subscription.status,
-          currentPeriodStart: subscription.currentPeriodStart.toISOString(),
-          currentPeriodEnd: subscription.currentPeriodEnd.toISOString(),
-          cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-          daysRemaining,
-        } : null,
+        subscription: subscription
+          ? {
+              id: subscription.id,
+              plan: subscription.plan,
+              status: subscription.status,
+              currentPeriodStart: subscription.currentPeriodStart.toISOString(),
+              currentPeriodEnd: subscription.currentPeriodEnd.toISOString(),
+              cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+              daysRemaining,
+            }
+          : null,
         user: {
           role: dbUser.role,
           premiumUntil: dbUser.premiumUntil?.toISOString() ?? null,
@@ -186,7 +193,11 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
           properties: {
             plan: { type: 'string', enum: ['BUYER', 'AGENT', 'REALTOR', 'INMOBILIARIA'] },
             billingCycle: { type: 'string', enum: ['monthly', 'yearly'], default: 'monthly' },
-            provider: { type: 'string', enum: ['STRIPE', 'MERCADO_PAGO', 'MANUAL'], default: 'STRIPE' },
+            provider: {
+              type: 'string',
+              enum: ['STRIPE', 'MERCADO_PAGO', 'MANUAL'],
+              default: 'STRIPE',
+            },
           },
         },
         response: {
@@ -202,8 +213,8 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const userId = (request.user as { userId: string }).userId;
-      const body = request.body as { 
-        plan: keyof typeof PLANS; 
+      const body = request.body as {
+        plan: keyof typeof PLANS;
         billingCycle?: 'monthly' | 'yearly';
         provider?: PaymentProvider;
       };
@@ -219,7 +230,8 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
       });
 
       // Calcular precio con descuento si aplica
-      const hasOrgDiscount = (body.plan === 'AGENT' || body.plan === 'REALTOR') && !!dbUser?.organizationId;
+      const hasOrgDiscount =
+        (body.plan === 'AGENT' || body.plan === 'REALTOR') && !!dbUser?.organizationId;
       const basePrice = body.billingCycle === 'yearly' ? plan.priceYearly : plan.priceMonthly;
       const finalPrice = hasOrgDiscount ? Math.round(basePrice * (1 - ORG_DISCOUNT)) : basePrice;
 
@@ -317,7 +329,7 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
       const body = request.body as { immediate?: boolean; reason?: string };
 
       const subscription = await prisma.subscription.findFirst({
-        where: { 
+        where: {
           userId,
           status: { in: ['ACTIVE', 'TRIALING'] },
         },
@@ -470,7 +482,7 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
       const body = request.body as { newPlan: keyof typeof PLANS };
 
       const currentSub = await prisma.subscription.findFirst({
-        where: { 
+        where: {
           userId,
           status: 'ACTIVE',
         },
@@ -478,8 +490,8 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
       });
 
       if (!currentSub) {
-        return reply.status(400).send({ 
-          message: 'No tenés una suscripción activa. Creá una nueva.' 
+        return reply.status(400).send({
+          message: 'No tenés una suscripción activa. Creá una nueva.',
         });
       }
 
@@ -491,9 +503,10 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
       }
 
       // Calcular prorrateo
-      const daysRemaining = Math.max(0, Math.ceil(
-        (currentSub.currentPeriodEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-      ));
+      const daysRemaining = Math.max(
+        0,
+        Math.ceil((currentSub.currentPeriodEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      );
       const daysInPeriod = 30;
       const currentDailyRate = currentPlan.priceMonthly / daysInPeriod;
       const newDailyRate = newPlan.priceMonthly / daysInPeriod;
@@ -518,12 +531,10 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
       });
 
       const isUpgrade = newPlan.priceMonthly > currentPlan.priceMonthly;
-      
+
       return {
         ok: true,
-        message: isUpgrade
-          ? `Upgrade a ${newPlan.name} completado!`
-          : `Cambiado a ${newPlan.name}`,
+        message: isUpgrade ? `Upgrade a ${newPlan.name} completado!` : `Cambiado a ${newPlan.name}`,
         proratedAmount: proratedAmount / 100,
       };
     }

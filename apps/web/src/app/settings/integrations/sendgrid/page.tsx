@@ -134,7 +134,9 @@ export default function SendGridSettingsPage() {
               type="password"
               value={form.apiKey}
               onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
-              placeholder={config?.hasApiKey ? '•••••••• (dejar vacío para no cambiar)' : 'SG.xxx...'}
+              placeholder={
+                config?.hasApiKey ? '•••••••• (dejar vacío para no cambiar)' : 'SG.xxx...'
+              }
               className="w-full px-4 py-3 border border-[var(--mp-border)] rounded-xl bg-[var(--mp-card)] text-[var(--mp-foreground)]"
             />
             <p className="mt-1 text-xs text-[var(--mp-muted)]">

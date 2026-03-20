@@ -69,7 +69,9 @@ export async function listsRoutes(fastify: FastifyInstance) {
       const canCreateLists =
         isDemo ||
         (isPremium &&
-          (premiumFree ? true : ['AGENT', 'REALTOR', 'INMOBILIARIA', 'ADMIN'].includes(dbUser.role)));
+          (premiumFree
+            ? true
+            : ['AGENT', 'REALTOR', 'INMOBILIARIA', 'ADMIN'].includes(dbUser.role)));
       if (!canCreateLists) {
         throw fastify.httpErrors.forbidden(
           'Necesitás plan Agente o superior para crear listas personalizadas. Usuario (1 USD) solo puede usar Like y Favoritos.'

@@ -53,11 +53,7 @@ function CheckoutContent() {
   }, []);
 
   const plan = plans.find((p) => p.id === selectedPlan);
-  const price = plan
-    ? billingCycle === 'yearly'
-      ? plan.priceYearly
-      : plan.priceMonthly
-    : 0;
+  const price = plan ? (billingCycle === 'yearly' ? plan.priceYearly : plan.priceMonthly) : 0;
 
   async function handleCheckout() {
     setLoading(true);
@@ -114,15 +110,11 @@ function CheckoutContent() {
         <h1 className="text-2xl font-bold text-[var(--mp-foreground)] mb-2">
           Completar suscripción
         </h1>
-        <p className="text-[var(--mp-muted)] mb-8">
-          Elegí tu plan y método de pago
-        </p>
+        <p className="text-[var(--mp-muted)] mb-8">Elegí tu plan y método de pago</p>
 
         {/* Selector de plan */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-[var(--mp-foreground)] mb-2">
-            Plan
-          </label>
+          <label className="block text-sm font-medium text-[var(--mp-foreground)] mb-2">Plan</label>
           <div className="grid gap-3 sm:grid-cols-2">
             {plans.map((p) => (
               <button
@@ -220,9 +212,7 @@ function CheckoutContent() {
                 </div>
                 <div className="text-left">
                   <p className="font-medium text-[var(--mp-foreground)]">Stripe</p>
-                  <p className="text-xs text-[var(--mp-muted)]">
-                    Apple Pay, Google Pay, tarjetas
-                  </p>
+                  <p className="text-xs text-[var(--mp-muted)]">Apple Pay, Google Pay, tarjetas</p>
                 </div>
               </button>
             )}
@@ -245,9 +235,7 @@ function CheckoutContent() {
             </div>
             <div className="flex justify-between">
               <span className="text-[var(--mp-muted)]">Ciclo</span>
-              <span className="font-medium">
-                {billingCycle === 'yearly' ? 'Anual' : 'Mensual'}
-              </span>
+              <span className="font-medium">{billingCycle === 'yearly' ? 'Anual' : 'Mensual'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-[var(--mp-muted)]">Método</span>
@@ -262,7 +250,8 @@ function CheckoutContent() {
                   ${price} {currency}
                   {currency === 'ARS' && (
                     <span className="text-xs font-normal text-[var(--mp-muted)]">
-                      {' '}(≈${price} ARS)
+                      {' '}
+                      (≈${price} ARS)
                     </span>
                   )}
                 </span>

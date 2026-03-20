@@ -133,9 +133,7 @@ export default function SearchMapPage() {
           <button
             onClick={() => setShowList(!showList)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              showList 
-                ? 'bg-sky-500 text-white' 
-                : 'bg-[var(--mp-bg)] text-[var(--mp-muted)]'
+              showList ? 'bg-sky-500 text-white' : 'bg-[var(--mp-bg)] text-[var(--mp-muted)]'
             }`}
           >
             {showList ? '📋 Lista' : '📋'}
@@ -225,7 +223,8 @@ export default function SearchMapPage() {
                   {selectedItem.title || 'Propiedad'}
                 </h3>
                 <p className="text-sm font-semibold text-sky-600">
-                  {selectedItem.currency || 'USD'} {selectedItem.price?.toLocaleString() || 'Consultar'}
+                  {selectedItem.currency || 'USD'}{' '}
+                  {selectedItem.price?.toLocaleString() || 'Consultar'}
                 </p>
                 <p className="text-xs text-[var(--mp-muted)] truncate">
                   {selectedItem.locationText}
@@ -237,10 +236,7 @@ export default function SearchMapPage() {
                   Ver detalle →
                 </Link>
               </div>
-              <button
-                onClick={() => setSelectedId(null)}
-                className="p-2 text-[var(--mp-muted)]"
-              >
+              <button onClick={() => setSelectedId(null)} className="p-2 text-[var(--mp-muted)]">
                 ✕
               </button>
             </div>
@@ -261,7 +257,7 @@ function PropertyCardHorizontal({
   onClick: () => void;
 }) {
   const [imgError, setImgError] = useState(false);
-  
+
   return (
     <button
       onClick={onClick}
@@ -273,9 +269,9 @@ function PropertyCardHorizontal({
     >
       <div className="h-28 bg-gradient-to-br from-slate-100 to-slate-200 relative overflow-hidden">
         {card.heroImageUrl && !imgError ? (
-          <img 
-            src={card.heroImageUrl} 
-            alt="" 
+          <img
+            src={card.heroImageUrl}
+            alt=""
             className="w-full h-full object-cover"
             loading="lazy"
             onError={() => setImgError(true)}
@@ -296,7 +292,9 @@ function PropertyCardHorizontal({
         <p className="text-sm font-bold text-sky-600 truncate">
           {card.currency || 'USD'} {card.price?.toLocaleString() || 'Consultar'}
         </p>
-        <p className="text-xs text-[var(--mp-foreground)] truncate font-medium mt-0.5">{card.title || 'Propiedad'}</p>
+        <p className="text-xs text-[var(--mp-foreground)] truncate font-medium mt-0.5">
+          {card.title || 'Propiedad'}
+        </p>
         <p className="text-xs text-[var(--mp-muted)] truncate">{card.locationText}</p>
         {card.bedrooms && (
           <p className="text-xs text-[var(--mp-muted)] mt-1">
@@ -318,7 +316,7 @@ function PropertyCardVertical({
   onClick: () => void;
 }) {
   const [imgError, setImgError] = useState(false);
-  
+
   return (
     <Link
       href={`/listing/${card.id}`}
@@ -335,9 +333,9 @@ function PropertyCardVertical({
       <div className="flex">
         <div className="w-32 h-28 shrink-0 bg-gradient-to-br from-slate-100 to-slate-200 relative overflow-hidden">
           {card.heroImageUrl && !imgError ? (
-            <img 
-              src={card.heroImageUrl} 
-              alt="" 
+            <img
+              src={card.heroImageUrl}
+              alt=""
               className="w-full h-full object-cover"
               loading="lazy"
               onError={() => setImgError(true)}

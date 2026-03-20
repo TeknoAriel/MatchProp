@@ -32,7 +32,10 @@ export async function chatCompletion(
   history: ChatMessage[] = []
 ): Promise<ConversationalResult> {
   const messages: ChatMessage[] = [
-    ...history.map((h) => ({ role: h.role as 'user' | 'assistant' | 'system', content: h.content })),
+    ...history.map((h) => ({
+      role: h.role as 'user' | 'assistant' | 'system',
+      content: h.content,
+    })),
     { role: 'user', content: message },
   ];
 

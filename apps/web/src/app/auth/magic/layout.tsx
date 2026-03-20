@@ -1,7 +1,3 @@
-export default function AuthMagicLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthMagicLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }

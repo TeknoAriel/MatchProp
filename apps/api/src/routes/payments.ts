@@ -1,6 +1,6 @@
 /**
  * Payment Routes - Mercado Pago + Stripe
- * 
+ *
  * POST /payments/checkout          - Crear sesión de checkout (MP o Stripe)
  * POST /payments/webhook/mp        - Webhook de Mercado Pago (IPN)
  * POST /payments/webhook/stripe    - Webhook de Stripe
@@ -150,7 +150,8 @@ export async function paymentRoutes(fastify: FastifyInstance) {
       }
 
       // Calcular precio
-      const hasOrgDiscount = (body.plan === 'AGENT' || body.plan === 'REALTOR') && !!user.organizationId;
+      const hasOrgDiscount =
+        (body.plan === 'AGENT' || body.plan === 'REALTOR') && !!user.organizationId;
       const basePriceUSD = body.billingCycle === 'yearly' ? plan.priceYearly : plan.priceMonthly;
       const finalPriceUSD = hasOrgDiscount ? Math.round(basePriceUSD * 0.8) : basePriceUSD;
 
@@ -235,8 +236,8 @@ export async function paymentRoutes(fastify: FastifyInstance) {
       // STRIPE (placeholder - implementar cuando sea necesario)
       if (provider === 'STRIPE') {
         // TODO: Implementar Stripe Checkout
-        return reply.status(501).send({ 
-          message: 'Stripe checkout aún no implementado. Usá Mercado Pago.' 
+        return reply.status(501).send({
+          message: 'Stripe checkout aún no implementado. Usá Mercado Pago.',
         });
       }
 
@@ -351,7 +352,9 @@ export async function paymentRoutes(fastify: FastifyInstance) {
             },
           });
 
-          fastify.log.info(`Suscripción ${subscriptionId} activada para user ${subscription.userId}`);
+          fastify.log.info(
+            `Suscripción ${subscriptionId} activada para user ${subscription.userId}`
+          );
         }
 
         // Si el pago fue rechazado, marcar suscripción como cancelada

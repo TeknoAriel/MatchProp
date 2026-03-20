@@ -54,7 +54,7 @@ export function useSpeechRecognition(lang = 'es-AR') {
   const [transcript, setTranscript] = useState('');
   const [interimTranscript, setInterimTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
-  
+
   const recognitionRef = useRef<RecognitionInstance | null>(null);
   const silenceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const maxTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -164,7 +164,7 @@ export function useSpeechRecognition(lang = 'es-AR') {
         finalTranscriptRef.current += final;
         setTranscript(finalTranscriptRef.current.trim());
       }
-      
+
       setInterimTranscript(interim);
       resetSilenceTimeout();
     };
@@ -200,7 +200,7 @@ export function useSpeechRecognition(lang = 'es-AR') {
     try {
       recognition.start();
       resetSilenceTimeout();
-    } catch (e) {
+    } catch (_e) {
       setError('No se pudo iniciar el reconocimiento de voz.');
       setIsListening(false);
     }
@@ -233,14 +233,14 @@ export function useSpeechRecognition(lang = 'es-AR') {
     };
   }, [clearTimeouts]);
 
-  return { 
-    isSupported, 
-    isListening, 
-    transcript, 
+  return {
+    isSupported,
+    isListening,
+    transcript,
     interimTranscript,
-    error, 
-    start, 
-    stop, 
-    reset 
+    error,
+    start,
+    stop,
+    reset,
   };
 }

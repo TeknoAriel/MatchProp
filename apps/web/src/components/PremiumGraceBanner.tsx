@@ -12,8 +12,8 @@ export default function PremiumGraceBanner({
 }) {
   const content = (
     <>
-      <span className="font-medium">Próximamente será premium.</span>{' '}
-      Por ahora: uso sin límites (período de prueba 3-6 meses).{' '}
+      <span className="font-medium">Próximamente será premium.</span> Por ahora: uso sin límites
+      (período de prueba 3-6 meses).{' '}
       <Link
         href="/me/premium"
         className="underline font-medium hover:no-underline"

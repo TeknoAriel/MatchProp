@@ -42,9 +42,15 @@ export async function getActiveIngestSources(): Promise<ActiveSource[]> {
 
   // Fuentes que pueden venir solo por env (sin entrada en sourcesJson)
   if (demoMode) return out;
-  if (process.env.KITEPROP_DIFUSION_YUMBLIN_URL && !out.some((a) => a.source === 'KITEPROP_DIFUSION_YUMBLIN'))
+  if (
+    process.env.KITEPROP_DIFUSION_YUMBLIN_URL &&
+    !out.some((a) => a.source === 'KITEPROP_DIFUSION_YUMBLIN')
+  )
     out.push({ source: 'KITEPROP_DIFUSION_YUMBLIN', key: 'yumblin' });
-  if (process.env.KITEPROP_DIFUSION_ICASAS_URL && !out.some((a) => a.source === 'KITEPROP_DIFUSION_ICASAS'))
+  if (
+    process.env.KITEPROP_DIFUSION_ICASAS_URL &&
+    !out.some((a) => a.source === 'KITEPROP_DIFUSION_ICASAS')
+  )
     out.push({ source: 'KITEPROP_DIFUSION_ICASAS', key: 'icasas' });
 
   return out;

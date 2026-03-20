@@ -5,11 +5,7 @@
 // Mensajes divertidos para notificaciones
 const NOTIFICATION_MESSAGES = {
   match: {
-    titles: [
-      '🎉 ¡Tenemos match!',
-      '✨ ¡Encontramos algo para vos!',
-      '🏠 ¡Esta te va a encantar!',
-    ],
+    titles: ['🎉 ¡Tenemos match!', '✨ ¡Encontramos algo para vos!', '🏠 ¡Esta te va a encantar!'],
     bodies: [
       'Una propiedad coincide perfectamente con tu búsqueda',
       'Mirá esta propiedad que encontramos para vos',
@@ -17,11 +13,7 @@ const NOTIFICATION_MESSAGES = {
     ],
   },
   priceDown: {
-    titles: [
-      '📉 ¡Urraa! ¡Bajó de precio!',
-      '💰 ¡Buenas noticias!',
-      '🎯 ¡Oferta detectada!',
-    ],
+    titles: ['📉 ¡Urraa! ¡Bajó de precio!', '💰 ¡Buenas noticias!', '🎯 ¡Oferta detectada!'],
     bodies: [
       'Una propiedad que seguís acaba de bajar de precio',
       'El precio bajó en una propiedad de tu lista',
@@ -29,11 +21,7 @@ const NOTIFICATION_MESSAGES = {
     ],
   },
   newMessage: {
-    titles: [
-      '💬 ¡Te respondieron!',
-      '📩 ¡Nuevo mensaje!',
-      '🔔 ¡Ding dong!',
-    ],
+    titles: ['💬 ¡Te respondieron!', '📩 ¡Nuevo mensaje!', '🔔 ¡Ding dong!'],
     bodies: [
       'Tenés una respuesta a tu consulta',
       'Alguien te escribió sobre una propiedad',
@@ -41,11 +29,7 @@ const NOTIFICATION_MESSAGES = {
     ],
   },
   newListing: {
-    titles: [
-      '🆕 ¡Nueva propiedad!',
-      '🔥 ¡Recién publicada!',
-      '👀 ¡Mirá esto!',
-    ],
+    titles: ['🆕 ¡Nueva propiedad!', '🔥 ¡Recién publicada!', '👀 ¡Mirá esto!'],
     bodies: [
       'Hay una nueva propiedad que coincide con tu búsqueda',
       'Acaba de publicarse algo que te puede interesar',
@@ -53,11 +37,7 @@ const NOTIFICATION_MESSAGES = {
     ],
   },
   visitReminder: {
-    titles: [
-      '📅 ¡Recordatorio de visita!',
-      '🏠 ¡Hoy tenés visita!',
-      '⏰ ¡No te olvides!',
-    ],
+    titles: ['📅 ¡Recordatorio de visita!', '🏠 ¡Hoy tenés visita!', '⏰ ¡No te olvides!'],
     bodies: [
       'Tu visita es hoy. ¡Suerte!',
       'Recordá tu visita programada',
@@ -65,11 +45,7 @@ const NOTIFICATION_MESSAGES = {
     ],
   },
   leadActive: {
-    titles: [
-      '🚀 ¡Consulta activada!',
-      '✅ ¡Ya podés chatear!',
-      '💬 ¡Conectado!',
-    ],
+    titles: ['🚀 ¡Consulta activada!', '✅ ¡Ya podés chatear!', '💬 ¡Conectado!'],
     bodies: [
       'Tu consulta fue activada. Ya podés coordinar',
       'Ahora podés chatear y agendar visitas',
@@ -125,7 +101,7 @@ export async function showNotification(
   if (!hasPermission) return;
 
   const content = getNotificationContent(type);
-  
+
   const notificationOptions: NotificationOptions & { vibrate?: number[] } = {
     body: options?.customBody ?? content.body,
     icon: options?.icon ?? '/icon-192.png',
@@ -134,12 +110,12 @@ export async function showNotification(
     data: options?.data,
     requireInteraction: type === 'newMessage' || type === 'visitReminder',
   };
-  
+
   // vibrate no está en todos los navegadores
   if ('vibrate' in navigator) {
     (notificationOptions as { vibrate?: number[] }).vibrate = [200, 100, 200];
   }
-  
+
   const notification = new Notification(options?.customTitle ?? content.title, notificationOptions);
 
   if (options?.onClick) {
@@ -168,13 +144,15 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 }
 
 // Suscribirse a notificaciones push del servidor
-export async function subscribeToPush(registration: ServiceWorkerRegistration): Promise<PushSubscription | null> {
+export async function subscribeToPush(
+  registration: ServiceWorkerRegistration
+): Promise<PushSubscription | null> {
   try {
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
     });
-    
+
     // Enviar la suscripción al servidor
     await fetch('/api/notifications/subscribe', {
       method: 'POST',
@@ -192,9 +170,12 @@ export async function subscribeToPush(registration: ServiceWorkerRegistration): 
 
 // Clase para manejar notificaciones in-app
 export class InAppNotificationManager {
-  private listeners: Set<(notification: { type: NotificationType; data?: unknown }) => void> = new Set();
+  private listeners: Set<(notification: { type: NotificationType; data?: unknown }) => void> =
+    new Set();
 
-  subscribe(callback: (notification: { type: NotificationType; data?: unknown }) => void): () => void {
+  subscribe(
+    callback: (notification: { type: NotificationType; data?: unknown }) => void
+  ): () => void {
     this.listeners.add(callback);
     return () => this.listeners.delete(callback);
   }

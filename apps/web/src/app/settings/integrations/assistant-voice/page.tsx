@@ -164,7 +164,9 @@ export default function AssistantVoiceSettingsPage() {
               value={form.password}
               onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
               className="w-full px-3 py-2 border rounded-lg bg-[var(--mp-card)] border-[var(--mp-border)]"
-              placeholder={hasPassword ? '•••••••• (dejar vacío para mantener)' : 'Contraseña (si aplica)'}
+              placeholder={
+                hasPassword ? '•••••••• (dejar vacío para mantener)' : 'Contraseña (si aplica)'
+              }
               autoComplete="current-password"
             />
           </div>
@@ -176,7 +178,9 @@ export default function AssistantVoiceSettingsPage() {
               value={form.apiKey}
               onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
               className="w-full px-3 py-2 border rounded-lg bg-[var(--mp-card)] border-[var(--mp-border)]"
-              placeholder={hasApiKey ? '•••••••• (dejar vacío para mantener)' : 'sk-... o sk-ant-...'}
+              placeholder={
+                hasApiKey ? '•••••••• (dejar vacío para mantener)' : 'sk-... o sk-ant-...'
+              }
               autoComplete="off"
             />
           </div>

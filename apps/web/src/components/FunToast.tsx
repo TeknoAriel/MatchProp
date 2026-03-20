@@ -13,7 +13,11 @@ interface Toast {
 }
 
 interface ToastContextValue {
-  showToast: (type: ToastType, message: string, options?: { emoji?: string; duration?: number }) => void;
+  showToast: (
+    type: ToastType,
+    message: string,
+    options?: { emoji?: string; duration?: number }
+  ) => void;
   showSuccess: (message: string, emoji?: string) => void;
   showError: (message: string) => void;
   showCelebration: (message: string, emoji?: string) => void;
@@ -22,7 +26,10 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const TOAST_CONFIG: Record<ToastType, { defaultEmoji: string; bgClass: string; textClass: string }> = {
+const TOAST_CONFIG: Record<
+  ToastType,
+  { defaultEmoji: string; bgClass: string; textClass: string }
+> = {
   success: {
     defaultEmoji: '✅',
     bgClass: 'bg-green-50 border-green-200',
@@ -73,7 +80,7 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
     const duration = toast.duration ?? 3000;
     const exitTimer = setTimeout(() => setExiting(true), duration - 300);
     const closeTimer = setTimeout(onClose, duration);
-    
+
     return () => {
       clearTimeout(exitTimer);
       clearTimeout(closeTimer);
@@ -94,9 +101,7 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
         setTimeout(onClose, 300);
       }}
     >
-      <span className="text-2xl animate-bounce-slow">
-        {toast.emoji ?? config.defaultEmoji}
-      </span>
+      <span className="text-2xl animate-bounce-slow">{toast.emoji ?? config.defaultEmoji}</span>
       <p className={`font-medium ${config.textClass}`}>{toast.message}</p>
     </div>
   );
@@ -109,47 +114,56 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const showToast = useCallback((
-    type: ToastType,
-    message: string,
-    options?: { emoji?: string; duration?: number }
-  ) => {
-    const id = `${Date.now()}-${Math.random()}`;
-    setToasts((prev) => [...prev.slice(-4), { id, type, message, ...options }]);
-  }, []);
+  const showToast = useCallback(
+    (type: ToastType, message: string, options?: { emoji?: string; duration?: number }) => {
+      const id = `${Date.now()}-${Math.random()}`;
+      setToasts((prev) => [...prev.slice(-4), { id, type, message, ...options }]);
+    },
+    []
+  );
 
-  const showSuccess = useCallback((message: string, emoji?: string) => {
-    const randomSuccess = FUN_SUCCESS_MESSAGES[Math.floor(Math.random() * FUN_SUCCESS_MESSAGES.length)] ?? '¡Listo!';
-    const funMessage = message || randomSuccess;
-    showToast('success', funMessage, { emoji });
-  }, [showToast]);
+  const showSuccess = useCallback(
+    (message: string, emoji?: string) => {
+      const randomSuccess =
+        FUN_SUCCESS_MESSAGES[Math.floor(Math.random() * FUN_SUCCESS_MESSAGES.length)] ?? '¡Listo!';
+      const funMessage = message || randomSuccess;
+      showToast('success', funMessage, { emoji });
+    },
+    [showToast]
+  );
 
-  const showError = useCallback((message: string) => {
-    const randomError = FUN_ERROR_MESSAGES[Math.floor(Math.random() * FUN_ERROR_MESSAGES.length)] ?? 'Error';
-    const funMessage = message || randomError;
-    showToast('error', funMessage);
-  }, [showToast]);
+  const showError = useCallback(
+    (message: string) => {
+      const randomError =
+        FUN_ERROR_MESSAGES[Math.floor(Math.random() * FUN_ERROR_MESSAGES.length)] ?? 'Error';
+      const funMessage = message || randomError;
+      showToast('error', funMessage);
+    },
+    [showToast]
+  );
 
-  const showCelebration = useCallback((message: string, emoji?: string) => {
-    showToast('celebration', message, { emoji, duration: 4000 });
-  }, [showToast]);
+  const showCelebration = useCallback(
+    (message: string, emoji?: string) => {
+      showToast('celebration', message, { emoji, duration: 4000 });
+    },
+    [showToast]
+  );
 
-  const showTip = useCallback((message: string) => {
-    showToast('tip', message, { duration: 5000 });
-  }, [showToast]);
+  const showTip = useCallback(
+    (message: string) => {
+      showToast('tip', message, { duration: 5000 });
+    },
+    [showToast]
+  );
 
   return (
     <ToastContext.Provider value={{ showToast, showSuccess, showError, showCelebration, showTip }}>
       {children}
-      
+
       {/* Toast container */}
       <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
         {toasts.map((toast) => (
-          <ToastItem
-            key={toast.id}
-            toast={toast}
-            onClose={() => removeToast(toast.id)}
-          />
+          <ToastItem key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
         ))}
       </div>
     </ToastContext.Provider>

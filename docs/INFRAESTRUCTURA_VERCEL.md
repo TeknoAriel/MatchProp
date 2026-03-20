@@ -5,11 +5,11 @@
 
 ## Resumen de Proyectos
 
-| Proyecto | URL Producción | Root Directory | Framework | Estado |
-|----------|---------------|----------------|-----------|--------|
-| **match-prop-api-1jte** | `https://match-prop-admin-dsvv.vercel.app` | `apps/api` | Other | ✅ OK |
-| **match-prop-web** | `https://match-prop-web.vercel.app` | `apps/web` | Next.js | ✅ OK |
-| **match-prop-admin** | `https://match-prop-admin.vercel.app` | `apps/admin` | Next.js | ✅ OK |
+| Proyecto                | URL Producción                             | Root Directory | Framework | Estado |
+| ----------------------- | ------------------------------------------ | -------------- | --------- | ------ |
+| **match-prop-api-1jte** | `https://match-prop-admin-dsvv.vercel.app` | `apps/api`     | Other     | ✅ OK  |
+| **match-prop-web**      | `https://match-prop-web.vercel.app`        | `apps/web`     | Next.js   | ✅ OK  |
+| **match-prop-admin**    | `https://match-prop-admin.vercel.app`      | `apps/admin`   | Next.js   | ✅ OK  |
 
 ## Repositorio GitHub
 
@@ -32,9 +32,7 @@
       "maxDuration": 30
     }
   },
-  "routes": [
-    { "src": "/(.*)", "dest": "/api/handler" }
-  ]
+  "routes": [{ "src": "/(.*)", "dest": "/api/handler" }]
 }
 ```
 
@@ -62,22 +60,23 @@ apps/api/
 ```
 
 El `handler.js` recibe TODAS las requests y las inyecta en Fastify:
+
 - Extrae el path de `x-vercel-original-url` o `req.url`
 - Quita el prefijo `/api` si existe
 - Usa `app.inject()` para ejecutar la ruta en Fastify
 
 ### Variables de Entorno Requeridas (API)
 
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@host/db` |
-| `JWT_SECRET` | Secreto para JWT | `openssl rand -base64 32` |
-| `AUTH_REFRESH_SECRET` | Secreto para refresh tokens | `openssl rand -base64 32` |
-| `APP_URL` | URL del frontend | `https://match-prop-web.vercel.app` |
-| `API_PUBLIC_URL` | URL pública de la API | `https://match-prop-admin-dsvv.vercel.app` |
-| `CORS_ORIGINS` | Orígenes permitidos | `https://match-prop-web.vercel.app` |
-| `COOKIE_SECURE` | Cookies solo HTTPS | `true` |
-| `INTEGRATIONS_MASTER_KEY` | API key integraciones | `openssl rand -base64 32` |
+| Variable                  | Descripción                  | Ejemplo                                    |
+| ------------------------- | ---------------------------- | ------------------------------------------ |
+| `DATABASE_URL`            | PostgreSQL connection string | `postgresql://user:pass@host/db`           |
+| `JWT_SECRET`              | Secreto para JWT             | `openssl rand -base64 32`                  |
+| `AUTH_REFRESH_SECRET`     | Secreto para refresh tokens  | `openssl rand -base64 32`                  |
+| `APP_URL`                 | URL del frontend             | `https://match-prop-web.vercel.app`        |
+| `API_PUBLIC_URL`          | URL pública de la API        | `https://match-prop-admin-dsvv.vercel.app` |
+| `CORS_ORIGINS`            | Orígenes permitidos          | `https://match-prop-web.vercel.app`        |
+| `COOKIE_SECURE`           | Cookies solo HTTPS           | `true`                                     |
+| `INTEGRATIONS_MASTER_KEY` | API key integraciones        | `openssl rand -base64 32`                  |
 
 ---
 
@@ -99,34 +98,38 @@ const apiServerUrl =
 
 ### Variables de Entorno Requeridas (Web)
 
-| Variable | Descripción | Valor Producción |
-|----------|-------------|------------------|
-| `API_SERVER_URL` | URL de la API (server-side) | `https://match-prop-admin-dsvv.vercel.app` |
-| `NEXT_PUBLIC_API_URL` | URL de la API (cliente) | `https://match-prop-admin-dsvv.vercel.app` |
+| Variable              | Descripción                 | Valor Producción                           |
+| --------------------- | --------------------------- | ------------------------------------------ |
+| `API_SERVER_URL`      | URL de la API (server-side) | `https://match-prop-admin-dsvv.vercel.app` |
+| `NEXT_PUBLIC_API_URL` | URL de la API (cliente)     | `https://match-prop-admin-dsvv.vercel.app` |
 
 ---
 
 ## Endpoints de Verificación
 
 ### Health Check
+
 ```bash
 curl https://match-prop-admin-dsvv.vercel.app/health
 # {"status":"ok","timestamp":"2026-03-18","db":"ok"}
 ```
 
 ### Status Connect (diagnóstico)
+
 ```bash
 curl https://match-prop-admin-dsvv.vercel.app/status/connect
 # {"ok":true,"path":"/status/connect","method":"GET","api":"match-prop-api"}
 ```
 
 ### Root
+
 ```bash
 curl https://match-prop-admin-dsvv.vercel.app/
 # {"message":"MatchProp API","docs":"/docs"}
 ```
 
 ### Swagger Docs
+
 ```
 https://match-prop-admin-dsvv.vercel.app/docs
 ```
@@ -136,22 +139,27 @@ https://match-prop-admin-dsvv.vercel.app/docs
 ## Troubleshooting
 
 ### Error: "DEPLOYMENT_NOT_FOUND"
+
 - El proyecto de Vercel no está conectado al repo de GitHub
 - Solución: Settings → Git → Connect Repository
 
 ### Error: "No Output Directory named 'public'"
+
 - El `vercel.json` no tiene `outputDirectory` configurado
 - Solución: Agregar `"outputDirectory": "api"` en vercel.json
 
 ### Error: "Cannot find module '@matchprop/shared'"
+
 - El script `vercel-build` no está ejecutándose
 - Solución: Verificar que `package.json` tenga el script `vercel-build`
 
 ### Error: "Cannot find module '@prisma/client'"
+
 - El cliente Prisma no se generó antes del build
 - Solución: `vercel-build` debe incluir `prisma generate`
 
 ### Health devuelve `"db":"error"`
+
 - Falta la variable `DATABASE_URL` en Vercel
 - Solución: Settings → Environment Variables → Agregar DATABASE_URL
 
@@ -205,13 +213,16 @@ El sistema tiene un cron job configurado para sincronizar propiedades cada 6 hor
 ```
 
 **Endpoints de Cron:**
+
 - `POST /cron/ingest` - Ejecuta sincronización (requiere CRON_SECRET)
 - `GET /cron/status` - Estado del último sync y conteo de listings
 
 **Variables requeridas en Vercel:**
+
 - `CRON_SECRET` - Token para autorizar el cron job (generar con `openssl rand -base64 32`)
 
 **Sincronización Incremental:**
+
 - Detecta cambios de precio (`PRICE_CHANGED` event)
 - Detecta cambios de estado (`STATUS_CHANGED` event)
 - Guarda `lastSyncedAt` y `lastSeenAt` por listing

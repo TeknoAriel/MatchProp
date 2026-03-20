@@ -38,28 +38,33 @@ MatchProp/
 **URL producción:** https://match-prop-web.vercel.app/
 
 ### Settings → General
-| Campo | Valor |
-|-------|-------|
-| **Root Directory** | `apps/web` |
-| **Framework Preset** | Next.js |
-| **Build Command** | _(dejar vacío - usa vercel.json)_ |
-| **Install Command** | _(dejar vacío - usa vercel.json)_ |
-| **Output Directory** | _(dejar vacío - default .next)_ |
+
+| Campo                | Valor                             |
+| -------------------- | --------------------------------- |
+| **Root Directory**   | `apps/web`                        |
+| **Framework Preset** | Next.js                           |
+| **Build Command**    | _(dejar vacío - usa vercel.json)_ |
+| **Install Command**  | _(dejar vacío - usa vercel.json)_ |
+| **Output Directory** | _(dejar vacío - default .next)_   |
 
 ### Settings → Environment Variables
-| Variable | Valor |
-|----------|-------|
-| `NEXT_PUBLIC_API_URL` | `https://match-prop-api-1jte.vercel.app` |
-| `NEXT_PUBLIC_PRODUCT_NAME` | `MatchProp` |
-| `NEXT_PUBLIC_PREMIUM_GRACE_PERIOD` | `1` |
+
+| Variable                           | Valor                                    |
+| ---------------------------------- | ---------------------------------------- |
+| `NEXT_PUBLIC_API_URL`              | `https://match-prop-api-1jte.vercel.app` |
+| `NEXT_PUBLIC_PRODUCT_NAME`         | `MatchProp`                              |
+| `NEXT_PUBLIC_PREMIUM_GRACE_PERIOD` | `1`                                      |
 
 ### Settings → Git → Ignored Build Step
+
 Comando (solo build cuando cambien web o shared):
+
 ```bash
 bash scripts/vercel-should-build-web.sh
 ```
 
 ### apps/web/vercel.json
+
 ```json
 {
   "framework": "nextjs",
@@ -73,24 +78,28 @@ bash scripts/vercel-should-build-web.sh
 ## 2. match-prop-admin (Panel Admin)
 
 ### Settings → General
-| Campo | Valor |
-|-------|-------|
-| **Root Directory** | `apps/admin` |
-| **Framework Preset** | Next.js |
-| **Build Command** | _(dejar vacío - usa vercel.json)_ |
-| **Install Command** | _(dejar vacío - usa vercel.json)_ |
+
+| Campo                | Valor                             |
+| -------------------- | --------------------------------- |
+| **Root Directory**   | `apps/admin`                      |
+| **Framework Preset** | Next.js                           |
+| **Build Command**    | _(dejar vacío - usa vercel.json)_ |
+| **Install Command**  | _(dejar vacío - usa vercel.json)_ |
 
 ### Settings → Environment Variables
-| Variable | Valor |
-|----------|-------|
+
+| Variable              | Valor                                    |
+| --------------------- | ---------------------------------------- |
 | `NEXT_PUBLIC_API_URL` | `https://match-prop-api-1jte.vercel.app` |
 
 ### Settings → Git → Ignored Build Step
+
 ```bash
 bash scripts/vercel-should-build-admin.sh
 ```
 
 ### apps/admin/vercel.json
+
 ```json
 {
   "framework": "nextjs",
@@ -104,32 +113,36 @@ bash scripts/vercel-should-build-admin.sh
 ## 3. match-prop-api-1jte (API)
 
 ### Settings → General
-| Campo | Valor |
-|-------|-------|
-| **Root Directory** | `apps/api` |
-| **Framework Preset** | Other |
-| **Build Command** | _(dejar vacío - usa vercel.json)_ |
-| **Install Command** | _(dejar vacío - usa vercel.json)_ |
-| **Output Directory** | `.` |
+
+| Campo                | Valor                             |
+| -------------------- | --------------------------------- |
+| **Root Directory**   | `apps/api`                        |
+| **Framework Preset** | Other                             |
+| **Build Command**    | _(dejar vacío - usa vercel.json)_ |
+| **Install Command**  | _(dejar vacío - usa vercel.json)_ |
+| **Output Directory** | `.`                               |
 
 ### Settings → Environment Variables
-| Variable | Descripción |
-|----------|-------------|
-| `DATABASE_URL` | URL de PostgreSQL (Neon) |
-| `JWT_SECRET` | Secret para JWT |
-| `GROQ_API_KEY` | API key de Groq |
-| `KITEPROP_LEAD_URL` | URL de leads Kiteprop |
-| `KITEPROP_LEAD_TOKEN` | Token de autenticación |
-| `SENDGRID_API_KEY` | (opcional) Para emails |
-| `STRIPE_*` | (opcional) Para pagos |
-| `MERCADOPAGO_*` | (opcional) Para pagos |
+
+| Variable              | Descripción              |
+| --------------------- | ------------------------ |
+| `DATABASE_URL`        | URL de PostgreSQL (Neon) |
+| `JWT_SECRET`          | Secret para JWT          |
+| `GROQ_API_KEY`        | API key de Groq          |
+| `KITEPROP_LEAD_URL`   | URL de leads Kiteprop    |
+| `KITEPROP_LEAD_TOKEN` | Token de autenticación   |
+| `SENDGRID_API_KEY`    | (opcional) Para emails   |
+| `STRIPE_*`            | (opcional) Para pagos    |
+| `MERCADOPAGO_*`       | (opcional) Para pagos    |
 
 ### Settings → Git → Ignored Build Step
+
 ```bash
 bash scripts/vercel-should-build-api.sh
 ```
 
 ### apps/api/vercel.json
+
 ```json
 {
   "version": 2,
@@ -139,9 +152,7 @@ bash scripts/vercel-should-build-api.sh
       "maxDuration": 60
     }
   },
-  "routes": [
-    { "src": "/(.*)", "dest": "/api/handler" }
-  ],
+  "routes": [{ "src": "/(.*)", "dest": "/api/handler" }],
   "crons": [
     {
       "path": "/cron/ingest",
@@ -158,20 +169,28 @@ bash scripts/vercel-should-build-api.sh
 Si `match-prop-web` falla pero `match-prop-admin` funciona:
 
 ### 1. Verificar Root Directory
+
 En Vercel → match-prop-web → Settings → General:
+
 - **Root Directory** debe ser exactamente `apps/web`
 
 ### 2. Verificar que NO haya overrides
+
 En la misma sección, verificar que:
+
 - **Build Command** esté **vacío** (no override)
 - **Install Command** esté **vacío** (no override)
 
 ### 3. Verificar Node Version
+
 En Settings → General → Node.js Version:
+
 - Debería ser **20.x** (no 18.x ni 22.x)
 
 ### 4. Git e Ignored Build Step (recomendado)
+
 En Settings → Git:
+
 - **Production Branch:** `main`
 - **Ignored Build Step:** para que web solo se construya cuando cambie la app de usuario, poné:
   ```bash
@@ -180,12 +199,14 @@ En Settings → Git:
   Así, cuando toquemos solo `apps/api` o `apps/admin`, no se re-despliega web y en **match-prop-web.vercel.app** seguís viendo la última versión estable. Cuando toquemos `apps/web` o `packages/shared`, sí se despliega y ves los cambios en la URL única.
 
 ### 5. Forzar Redeploy Limpio
+
 ```bash
 # Desde el directorio del proyecto
 npx vercel --force --prod
 ```
 
 O desde Vercel UI:
+
 1. Ir a Deployments
 2. Click en los 3 puntos del último deploy exitoso
 3. Click "Redeploy"
@@ -195,11 +216,11 @@ O desde Vercel UI:
 
 ## URLs de Producción
 
-| Proyecto | URL |
-|----------|-----|
-| Web | https://match-prop-web.vercel.app |
-| Admin | https://match-prop-admin.vercel.app |
-| API | https://match-prop-api-1jte.vercel.app |
+| Proyecto | URL                                    |
+| -------- | -------------------------------------- |
+| Web      | https://match-prop-web.vercel.app      |
+| Admin    | https://match-prop-admin.vercel.app    |
+| API      | https://match-prop-api-1jte.vercel.app |
 
 ---
 

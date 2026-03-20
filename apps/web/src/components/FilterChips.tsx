@@ -38,9 +38,7 @@ export default function FilterChips({
         onClick={() => onOperationChange(operationFilter === 'SALE' ? null : 'SALE')}
         disabled={disabled}
         className={`${chip} ${
-          operationFilter === 'SALE'
-            ? 'bg-violet-600 text-white border border-violet-600'
-            : idle
+          operationFilter === 'SALE' ? 'bg-violet-600 text-white border border-violet-600' : idle
         }`}
       >
         Venta
@@ -50,9 +48,7 @@ export default function FilterChips({
         onClick={() => onOperationChange(operationFilter === 'RENT' ? null : 'RENT')}
         disabled={disabled}
         className={`${chip} ${
-          operationFilter === 'RENT'
-            ? 'bg-rose-500 text-white border border-rose-500'
-            : idle
+          operationFilter === 'RENT' ? 'bg-rose-500 text-white border border-rose-500' : idle
         }`}
       >
         Alquiler
@@ -68,11 +64,7 @@ export default function FilterChips({
             type="button"
             onClick={() => onPropertyTypeChange(isActive ? null : value)}
             disabled={disabled}
-            className={`${chip} ${
-              isActive
-                ? 'bg-sky-600 text-white border border-sky-600'
-                : idle
-            }`}
+            className={`${chip} ${isActive ? 'bg-sky-600 text-white border border-sky-600' : idle}`}
           >
             {label}
           </button>

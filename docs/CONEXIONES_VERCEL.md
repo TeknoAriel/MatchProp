@@ -2,11 +2,11 @@
 
 ## URLs de producción
 
-| Servicio | URL |
-|----------|-----|
-| Web | https://match-prop-web.vercel.app |
-| API | https://match-prop-api-1jte.vercel.app |
-| Login | https://match-prop-web.vercel.app/login |
+| Servicio   | URL                                           |
+| ---------- | --------------------------------------------- |
+| Web        | https://match-prop-web.vercel.app             |
+| API        | https://match-prop-api-1jte.vercel.app        |
+| Login      | https://match-prop-web.vercel.app/login       |
 | API Health | https://match-prop-api-1jte.vercel.app/health |
 
 ## Flujo de conexión

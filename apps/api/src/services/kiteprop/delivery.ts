@@ -16,7 +16,10 @@ export async function deliverToKiteprop(
       currency: string | null;
       source?: string;
     };
-    user: { email: string; profile?: { phone?: string | null; whatsapp?: string | null } | null } | null;
+    user: {
+      email: string;
+      profile?: { phone?: string | null; whatsapp?: string | null } | null;
+    } | null;
     publisher: { orgId: string | null; displayName?: string } | null;
   },
   opts?: { testMode?: boolean; stage?: KitepropStage }
@@ -64,13 +67,14 @@ export async function deliverToKiteprop(
   const url = `${baseUrl}${integration.leadCreatePath.startsWith('/') ? integration.leadCreatePath : '/' + integration.leadCreatePath}`;
 
   const buyerPhone =
-    (lead.user as { profile?: { phone?: string; whatsapp?: string } | null } | undefined)?.profile?.phone ||
-    (lead.user as { profile?: { phone?: string; whatsapp?: string } | null } | undefined)?.profile?.whatsapp ||
+    (lead.user as { profile?: { phone?: string; whatsapp?: string } | null } | undefined)?.profile
+      ?.phone ||
+    (lead.user as { profile?: { phone?: string; whatsapp?: string } | null } | undefined)?.profile
+      ?.whatsapp ||
     '';
   const listingSource =
-    (lead.listing as { source?: string }).source ?? (lead.publisher?.displayName ?? 'MatchProp');
-  const defaultMessage =
-    `Consulta desde MatchProp sobre propiedad ${lead.listing.title ?? 'N/A'} de ${listingSource}. Tel: ${buyerPhone || '-'}. Mail: ${lead.user?.email ?? 'unknown@matchprop.com'}`;
+    (lead.listing as { source?: string }).source ?? lead.publisher?.displayName ?? 'MatchProp';
+  const defaultMessage = `Consulta desde MatchProp sobre propiedad ${lead.listing.title ?? 'N/A'} de ${listingSource}. Tel: ${buyerPhone || '-'}. Mail: ${lead.user?.email ?? 'unknown@matchprop.com'}`;
 
   const context = {
     buyer: {

@@ -53,7 +53,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       >
         <div className="p-3 flex items-center justify-between border-b border-[var(--mp-border)] min-h-[52px] shrink-0">
           {sidebarOpen && (
-            <Link href="/feed" className="font-bold text-lg text-[var(--mp-foreground)] truncate min-w-0">
+            <Link
+              href="/feed"
+              className="font-bold text-lg text-[var(--mp-foreground)] truncate min-w-0"
+            >
               MatchProp
             </Link>
           )}
@@ -106,7 +109,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             className={`${NAV_LINK_CLASS} w-full min-w-0 text-left text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]`}
           >
             <span className="text-lg shrink-0">{theme === 'dark' ? '☀️' : '🌙'}</span>
-            {sidebarOpen && <span className="truncate">{theme === 'dark' ? 'Claro' : 'Oscuro'}</span>}
+            {sidebarOpen && (
+              <span className="truncate">{theme === 'dark' ? 'Claro' : 'Oscuro'}</span>
+            )}
           </button>
         </div>
       </aside>
@@ -137,9 +142,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Contenedor principal - scroll interno para contenido largo */}
         <main className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden pb-20 md:pb-0">
-          <div className="w-full max-w-2xl mx-auto px-4 md:px-6 py-4 min-h-full">
-            {children}
-          </div>
+          <div className="w-full max-w-2xl mx-auto px-4 md:px-6 py-4 min-h-full">{children}</div>
         </main>
 
         {/* Bottom Nav - Mobile only: Inicio, Match, Lista, Favoritos, Más */}
@@ -206,7 +209,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         <div className="min-w-0">
                           <span className="font-medium block">{item.label}</span>
                           {'desc' in item && (
-                            <span className={`text-xs block truncate ${active ? 'text-white/80' : 'text-[var(--mp-muted)]'}`}>
+                            <span
+                              className={`text-xs block truncate ${active ? 'text-white/80' : 'text-[var(--mp-muted)]'}`}
+                            >
                               {(item as { desc?: string }).desc}
                             </span>
                           )}

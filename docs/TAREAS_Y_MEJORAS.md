@@ -19,30 +19,30 @@ Documento vivo: próximas tareas priorizadas y mejoras técnicas. Alineado a [ma
 
 ### Alta prioridad
 
-| Tarea | Descripción | DoD | Estado |
-|-------|-------------|-----|--------|
-| **Cron sync propiedades** | Sincronización automática cada 6 horas desde Kiteprop. | Cron configurado en Vercel; eventos de precio/estado. | **Hecho:** `/cron/ingest` con CRON_SECRET, `/cron/status` público. |
-| **Smoke E2E en CI** | Ejecutar `pnpm smoke:ux` en pipeline (o job manual post-deploy) para validar flujos críticos. | Job configurado; falla del smoke bloquea o alerta. | **Parcial:** job `deploy-verify` en CI ejecuta `pre-deploy:verify` (build + typecheck + test:all) con Postgres; smoke:ux con Playwright sigue siendo opcional (manual o job aparte). |
-| **Migraciones en deploy** | Asegurar que migraciones se ejecuten contra DB de prod en cada deploy (script o Vercel build step). | Documentado en PROD; ejecución automatizada o checklist. | **Hecho:** PROD.md actualizado (estrategia migraciones: ejecutar deploy:pre contra DB prod; Vercel no las corre; CI usa DB de prueba). |
-| **Mercado Pago (LATAM)** | Payment adapter: Mercado Pago como provider (planificación en E7). | Spec + feature flag; integración opcional. | **Hecho:** Adapter MP, checkout, webhook IPN. Ver `docs/MERCADOPAGO_SETUP.md`. |
+| Tarea                     | Descripción                                                                                         | DoD                                                      | Estado                                                                                                                                                                               |
+| ------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Cron sync propiedades** | Sincronización automática cada 6 horas desde Kiteprop.                                              | Cron configurado en Vercel; eventos de precio/estado.    | **Hecho:** `/cron/ingest` con CRON_SECRET, `/cron/status` público.                                                                                                                   |
+| **Smoke E2E en CI**       | Ejecutar `pnpm smoke:ux` en pipeline (o job manual post-deploy) para validar flujos críticos.       | Job configurado; falla del smoke bloquea o alerta.       | **Parcial:** job `deploy-verify` en CI ejecuta `pre-deploy:verify` (build + typecheck + test:all) con Postgres; smoke:ux con Playwright sigue siendo opcional (manual o job aparte). |
+| **Migraciones en deploy** | Asegurar que migraciones se ejecuten contra DB de prod en cada deploy (script o Vercel build step). | Documentado en PROD; ejecución automatizada o checklist. | **Hecho:** PROD.md actualizado (estrategia migraciones: ejecutar deploy:pre contra DB prod; Vercel no las corre; CI usa DB de prueba).                                               |
+| **Mercado Pago (LATAM)**  | Payment adapter: Mercado Pago como provider (planificación en E7).                                  | Spec + feature flag; integración opcional.               | **Hecho:** Adapter MP, checkout, webhook IPN. Ver `docs/MERCADOPAGO_SETUP.md`.                                                                                                       |
 
 ### Media prioridad
 
-| Tarea | Descripción | DoD |
-|-------|-------------|-----|
+| Tarea                    | Descripción                                                                            | DoD                                           |
+| ------------------------ | -------------------------------------------------------------------------------------- | --------------------------------------------- |
 | **Analytics trackEvent** | Modelo/helper `trackEvent` sin PII; eventos mínimos (vistas, guardados, activaciones). | Endpoint o servicio; sin exponer PII en logs. |
-| **Virtualización lista** | Lista larga en feed/list con virtualización para mejor performance. | Scroll fluido con muchos ítems. |
-| **Portal SEO** | Páginas públicas indexables (landing, búsquedas por zona). | Meta tags, sitemap. |
-| **Dashboard analytics** | Vistas básicas para admin (leads, alertas, matches). | Solo lectura; datos agregados. |
+| **Virtualización lista** | Lista larga en feed/list con virtualización para mejor performance.                    | Scroll fluido con muchos ítems.               |
+| **Portal SEO**           | Páginas públicas indexables (landing, búsquedas por zona).                             | Meta tags, sitemap.                           |
+| **Dashboard analytics**  | Vistas básicas para admin (leads, alertas, matches).                                   | Solo lectura; datos agregados.                |
 
 ### Mejoras técnicas
 
-| Mejora | Descripción | Estado |
-|--------|-------------|--------|
-| **Deprecación Vite CJS** | Resolver warning "CJS build of Vite's Node API is deprecated" en tests API (Vitest). | Pendiente. |
-| **Fastify json schema** | Reemplazar shorthand schema (FSTDEP021) por objeto completo para Fastify v5. | **Hecho:** `/listings/share`, `/universal/feed`, `/universal/listings`: querystring con type: 'object', properties. |
-| **Punycode** | Sustituir uso de `punycode` por alternativa userland si Node lo depreca. | Pendiente. |
-| **Admin ESLint** | Mantener reglas react-hooks (ej. dependencias de useEffect) sin warnings en build. | Hecho (visits: useCallback). |
+| Mejora                   | Descripción                                                                          | Estado                                                                                                              |
+| ------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| **Deprecación Vite CJS** | Resolver warning "CJS build of Vite's Node API is deprecated" en tests API (Vitest). | Pendiente.                                                                                                          |
+| **Fastify json schema**  | Reemplazar shorthand schema (FSTDEP021) por objeto completo para Fastify v5.         | **Hecho:** `/listings/share`, `/universal/feed`, `/universal/listings`: querystring con type: 'object', properties. |
+| **Punycode**             | Sustituir uso de `punycode` por alternativa userland si Node lo depreca.             | Pendiente.                                                                                                          |
+| **Admin ESLint**         | Mantener reglas react-hooks (ej. dependencias de useEffect) sin warnings en build.   | Hecho (visits: useCallback).                                                                                        |
 
 ---
 
@@ -62,4 +62,4 @@ Documento vivo: próximas tareas priorizadas y mejoras técnicas. Alineado a [ma
 
 ---
 
-*Última actualización: alineado a estado actual post-deploy y ALINEACION_MASTERPLAN.*
+_Última actualización: alineado a estado actual post-deploy y ALINEACION_MASTERPLAN._

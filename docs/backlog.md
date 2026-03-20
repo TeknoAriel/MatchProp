@@ -113,24 +113,27 @@
 
 ### DT-001 — Infraestructura de imágenes escalable
 
-| Prioridad | Baja (mientras < 50K propiedades) |
-|-----------|-----------------------------------|
-| **Estado** | Pendiente |
+| Prioridad   | Baja (mientras < 50K propiedades)                         |
+| ----------- | --------------------------------------------------------- |
+| **Estado**  | Pendiente                                                 |
 | **Trigger** | Escalar a > 50,000 propiedades o problemas de hot-linking |
 
 **Situación actual:**
+
 - URLs directas a `static.kiteprop.com` (CDN de Kiteprop)
 - Costo: $0
 - ~245,000 fotos en `ListingMedia`
 - Funciona para 15,613 propiedades actuales
 
 **Problema potencial:**
+
 - Dependencia de CDN de terceros
 - Posible bloqueo de hot-linking por portales
 - Sin control sobre optimización/transformaciones
 - No escalable a 150K+ propiedades con 1.5M imágenes
 
 **Solución propuesta:**
+
 1. **Etapa 1 (50K-150K props):** Cloudflare R2 + Workers (~$30/mes)
    - Almacenamiento propio
    - Egress gratis
@@ -147,21 +150,24 @@
 
 ### DT-002 — Motor de búsqueda avanzado (Meilisearch/Elasticsearch)
 
-| Prioridad | Baja |
-|-----------|------|
-| **Estado** | Pendiente - implementar cuando sea necesario |
+| Prioridad   | Baja                                                         |
+| ----------- | ------------------------------------------------------------ |
+| **Estado**  | Pendiente - implementar cuando sea necesario                 |
 | **Trigger** | Búsqueda PostgreSQL se vuelve lenta o necesidad de full-text |
 
 **Situación actual:**
+
 - Búsqueda con `LIKE` en PostgreSQL
 - Funciona bien para 15K-50K propiedades
 
 **Opciones cuando sea necesario:**
+
 - Meilisearch (más simple, hosting ~$30/mes)
 - Elasticsearch (más potente, hosting ~$50/mes)
 - Algolia (SaaS, ~$50/mes para 50K docs)
 
 **Beneficios futuros:**
+
 - Búsqueda full-text con typo-tolerance
 - Autocompletado instantáneo
 - Filtros combinados eficientes

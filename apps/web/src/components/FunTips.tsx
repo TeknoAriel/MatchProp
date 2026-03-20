@@ -55,7 +55,7 @@ const MOTIVATIONAL = [
 ];
 
 export function TipBanner({ onDismiss }: { onDismiss?: () => void }) {
-  const [tip, setTip] = useState<typeof TIPS[0] | null>(null);
+  const [tip, setTip] = useState<(typeof TIPS)[0] | null>(null);
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
@@ -90,7 +90,7 @@ export function TipBanner({ onDismiss }: { onDismiss?: () => void }) {
 }
 
 export function MotivationalBanner() {
-  const [message, setMessage] = useState<typeof MOTIVATIONAL[0] | null>(null);
+  const [message, setMessage] = useState<(typeof MOTIVATIONAL)[0] | null>(null);
 
   useEffect(() => {
     const randomMessage = MOTIVATIONAL[Math.floor(Math.random() * MOTIVATIONAL.length)];
@@ -128,9 +128,7 @@ export function WelcomeMessage({ name }: { name?: string | null }) {
     setGreeting(randomGreeting ?? '¡Hola! 👋');
   }, [name]);
 
-  return (
-    <h1 className="text-2xl font-bold text-[var(--mp-foreground)]">{greeting}</h1>
-  );
+  return <h1 className="text-2xl font-bold text-[var(--mp-foreground)]">{greeting}</h1>;
 }
 
 export function StreakCounter({ days }: { days: number }) {
@@ -170,10 +168,17 @@ export function AchievementBadge({
 
   if (level === 0) return null;
 
-  const colors = ['bg-gray-100 text-gray-600', 'bg-blue-100 text-blue-700', 'bg-purple-100 text-purple-700', 'bg-amber-100 text-amber-700'];
+  const colors = [
+    'bg-gray-100 text-gray-600',
+    'bg-blue-100 text-blue-700',
+    'bg-purple-100 text-purple-700',
+    'bg-amber-100 text-amber-700',
+  ];
 
   return (
-    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${colors[level - 1]}`}>
+    <div
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${colors[level - 1]}`}
+    >
       <span>{badge.emoji}</span>
       <span>{badge.label}</span>
       <span className="ml-1">Lv.{level}</span>
@@ -221,9 +226,7 @@ export function ProgressRing({
           className="text-sky-500 transition-all duration-500"
         />
       </svg>
-      {emoji && (
-        <span className="absolute text-xl">{emoji}</span>
-      )}
+      {emoji && <span className="absolute text-xl">{emoji}</span>}
     </div>
   );
 }

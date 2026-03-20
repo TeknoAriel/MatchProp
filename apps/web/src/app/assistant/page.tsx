@@ -219,11 +219,16 @@ export default function AssistantPage() {
         return;
       }
       if (!res.ok) {
-        const err = await res.json().catch(() => ({})) as { message?: string; code?: string; debug?: { path?: string; error?: string } };
+        const err = (await res.json().catch(() => ({}))) as {
+          message?: string;
+          code?: string;
+          debug?: { path?: string; error?: string };
+        };
         let msg = err?.message;
         if (!msg) {
           if (res.status === 500) msg = 'Error del servidor. Probá de nuevo en un momento.';
-          else if (res.status === 502 || res.status === 503) msg = 'Servicio temporalmente no disponible. Probá en un momento.';
+          else if (res.status === 502 || res.status === 503)
+            msg = 'Servicio temporalmente no disponible. Probá en un momento.';
           else if (res.status === 401) msg = 'Sesión expirada. Volvé a iniciar sesión.';
           else msg = `Error al buscar (${res.status}). Probá de nuevo.`;
         }
@@ -321,22 +326,22 @@ export default function AssistantPage() {
   }): SearchFilters {
     const base = (result?.filters ?? {}) as SearchFilters;
     const next: SearchFilters = { ...base };
-    
+
     const pt = overrides?.propertyType !== undefined ? overrides.propertyType : propertyTypeFilter;
     const op = overrides?.operation !== undefined ? overrides.operation : operationFilter;
-    
+
     if (pt) {
       next.propertyType = [pt];
     } else {
       delete next.propertyType;
     }
-    
+
     if (op) {
       next.operationType = op;
     } else {
       delete next.operationType;
     }
-    
+
     return next;
   }
 
@@ -348,11 +353,11 @@ export default function AssistantPage() {
     const isLoadMore = !!cursor;
     const useMode = mode ?? fallbackMode;
     const filters = getEffectiveFilters(filterOverrides);
-    
+
     if (isLoadMore) setLoadingMore(true);
     else setLoadingPreview(true);
     setError(null);
-    
+
     try {
       const { items, nextCursor, finalMode } = await fetchPreview(filters, cursor, useMode);
       if (isLoadMore) {
@@ -571,7 +576,8 @@ export default function AssistantPage() {
             Contá lo que necesitás
           </h1>
           <p className="text-[var(--mp-muted)] text-sm md:text-base max-w-lg">
-            Escribí o hablá en lenguaje natural. Te mostramos los mejores matches según tus gustos. Cuanto más nos contás, mejor afinamos.
+            Escribí o hablá en lenguaje natural. Te mostramos los mejores matches según tus gustos.
+            Cuanto más nos contás, mejor afinamos.
           </p>
         </section>
 
@@ -612,7 +618,8 @@ export default function AssistantPage() {
             maxLength={500}
           />
           <p className="text-xs text-[var(--mp-muted)] mt-2">
-            Podés refinar escribiendo de nuevo: &quot;con cochera&quot;, &quot;más barato&quot;, &quot;solo venta&quot;.
+            Podés refinar escribiendo de nuevo: &quot;con cochera&quot;, &quot;más barato&quot;,
+            &quot;solo venta&quot;.
           </p>
         </section>
 
@@ -681,13 +688,15 @@ export default function AssistantPage() {
                 Listo
               </button>
             </div>
-            {(voiceTranscript || voiceInterim) ? (
+            {voiceTranscript || voiceInterim ? (
               <p className="text-sm text-blue-900">
                 {voiceTranscript}
                 {voiceInterim && <span className="text-blue-600 opacity-70"> {voiceInterim}</span>}
               </p>
             ) : (
-              <p className="text-sm text-blue-600">Decí tu búsqueda. Cortará después de una pausa.</p>
+              <p className="text-sm text-blue-600">
+                Decí tu búsqueda. Cortará después de una pausa.
+              </p>
             )}
           </div>
         )}
@@ -713,9 +722,13 @@ export default function AssistantPage() {
 
         {result && (
           <div className="mt-6 p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] shadow-sm space-y-4">
-            <h2 className="text-sm font-semibold text-[var(--mp-muted)] uppercase tracking-wide">Tu búsqueda</h2>
+            <h2 className="text-sm font-semibold text-[var(--mp-muted)] uppercase tracking-wide">
+              Tu búsqueda
+            </h2>
             {filtersEmptyButExplained ? (
-              <p className="text-sm text-red-600">No se detectaron filtros. Escribí de nuevo con más detalle (zona, tipo, precio).</p>
+              <p className="text-sm text-red-600">
+                No se detectaron filtros. Escribí de nuevo con más detalle (zona, tipo, precio).
+              </p>
             ) : (
               <p className="text-sm text-[var(--mp-foreground)]">{result.explanation}</p>
             )}
@@ -728,7 +741,9 @@ export default function AssistantPage() {
 
             {hasFilters && (
               <>
-                <p className="text-xs text-[var(--mp-muted)]">Seguí escribiendo para refinar o ajustá los filtros abajo.</p>
+                <p className="text-xs text-[var(--mp-muted)]">
+                  Seguí escribiendo para refinar o ajustá los filtros abajo.
+                </p>
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-medium text-[var(--mp-foreground)]">{humanSummary}</p>
                   <div className="flex gap-1 shrink-0">
@@ -906,9 +921,9 @@ export default function AssistantPage() {
                           className="flex gap-3 p-4 block hover:bg-slate-50/50 transition-colors"
                         >
                           <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                            <ListingImage 
-                              src={card.heroImageUrl} 
-                              alt="" 
+                            <ListingImage
+                              src={card.heroImageUrl}
+                              alt=""
                               fallbackClassName="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-200"
                               fallbackIcon="🏠"
                               fallbackText=""

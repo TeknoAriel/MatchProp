@@ -35,10 +35,11 @@ export default function Home() {
           <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-lg">
             <span className="text-4xl">🏠</span>
           </div>
-          
+
           <h1 className="text-3xl font-bold text-slate-900 mb-3">MatchProp</h1>
           <p className="text-lg text-slate-600 mb-8">
-            Encontrá tu próximo hogar.<br />
+            Encontrá tu próximo hogar.
+            <br />
             <span className="text-sky-600 font-medium">Decí qué buscás y te matcheamos.</span>
           </p>
 
@@ -49,7 +50,7 @@ export default function Home() {
             >
               Empezar a buscar
             </Link>
-            
+
             <p className="text-sm text-slate-500">
               ¿Ya tenés cuenta?{' '}
               <Link href="/login" className="text-sky-600 font-medium hover:underline">

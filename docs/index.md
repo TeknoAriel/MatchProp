@@ -6,28 +6,28 @@
 
 ## Estrategia y planificación
 
-| Documento                                          | Descripción                                                              |
-| -------------------------------------------------- | ------------------------------------------------------------------------ |
-| [masterplan.md](./masterplan.md)                   | Masterplan v3.0 (frozen) — Epics E1–E8, non-negotiables, DoD             |
-| [ALINEACION_MASTERPLAN.md](./ALINEACION_MASTERPLAN.md) | Estado actual vs masterplan — Epics, UX, Settings, deploy, validación   |
-| [TAREAS_Y_MEJORAS.md](./TAREAS_Y_MEJORAS.md)     | Próximas tareas priorizadas y mejoras técnicas                           |
-| [alignment-checklist.md](./alignment-checklist.md) | Checklist alineación Masterplan ↔ repo (estado DONE/PARTIAL/NOT STARTED) |
-| [backlog.md](./backlog.md)                         | Backlog maestro — Epics, tickets MVP/Next/Later, sprints 8–9             |
-| [gap-check.md](./gap-check.md)                     | Auditoría de brechas — gaps funcionales, técnicos, riesgos               |
+| Documento                                              | Descripción                                                              |
+| ------------------------------------------------------ | ------------------------------------------------------------------------ |
+| [masterplan.md](./masterplan.md)                       | Masterplan v3.0 (frozen) — Epics E1–E8, non-negotiables, DoD             |
+| [ALINEACION_MASTERPLAN.md](./ALINEACION_MASTERPLAN.md) | Estado actual vs masterplan — Epics, UX, Settings, deploy, validación    |
+| [TAREAS_Y_MEJORAS.md](./TAREAS_Y_MEJORAS.md)           | Próximas tareas priorizadas y mejoras técnicas                           |
+| [alignment-checklist.md](./alignment-checklist.md)     | Checklist alineación Masterplan ↔ repo (estado DONE/PARTIAL/NOT STARTED) |
+| [backlog.md](./backlog.md)                             | Backlog maestro — Epics, tickets MVP/Next/Later, sprints 8–9             |
+| [gap-check.md](./gap-check.md)                         | Auditoría de brechas — gaps funcionales, técnicos, riesgos               |
 
 ---
 
 ## Operación y referencias técnicas
 
-| Documento                                  | Descripción                                                   |
-| ------------------------------------------ | ------------------------------------------------------------- |
-| [repo-map.md](./repo-map.md)               | Mapa del repo — scripts, puertos, modelos, endpoints, tests   |
-| [AUDIT_MATCHPROP.md](./AUDIT_MATCHPROP.md) | Auditoría técnica completa — arquitectura, seguridad, sprints |
-| [DEV.md](./DEV.md)                         | Desarrollo local — requisitos, comandos, troubleshooting      |
-| [PROD.md](./PROD.md)                       | Producción — variables de entorno, observabilidad, seguridad  |
-| [SETUP_DEPLOY_SIMPLE.md](./SETUP_DEPLOY_SIMPLE.md) | Deploy simple — Neon + Vercel, variables, URLs                 |
-| [DEPLOY_CHECKLIST.md](./DEPLOY_CHECKLIST.md) | Checklist pre-deploy, deploy, post-deploy                      |
-| [demo.md](./demo.md)                       | Prueba real solo con navegador — escenario demo 1-click       |
+| Documento                                          | Descripción                                                   |
+| -------------------------------------------------- | ------------------------------------------------------------- |
+| [repo-map.md](./repo-map.md)                       | Mapa del repo — scripts, puertos, modelos, endpoints, tests   |
+| [AUDIT_MATCHPROP.md](./AUDIT_MATCHPROP.md)         | Auditoría técnica completa — arquitectura, seguridad, sprints |
+| [DEV.md](./DEV.md)                                 | Desarrollo local — requisitos, comandos, troubleshooting      |
+| [PROD.md](./PROD.md)                               | Producción — variables de entorno, observabilidad, seguridad  |
+| [SETUP_DEPLOY_SIMPLE.md](./SETUP_DEPLOY_SIMPLE.md) | Deploy simple — Neon + Vercel, variables, URLs                |
+| [DEPLOY_CHECKLIST.md](./DEPLOY_CHECKLIST.md)       | Checklist pre-deploy, deploy, post-deploy                     |
+| [demo.md](./demo.md)                               | Prueba real solo con navegador — escenario demo 1-click       |
 
 ---
 

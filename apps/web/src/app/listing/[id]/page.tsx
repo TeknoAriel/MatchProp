@@ -53,7 +53,7 @@ export default function ListingDetailPage() {
   const [imageIndex, setImageIndex] = useState(0);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const handleImageError = useCallback((url: string) => {
-    setFailedImages(prev => new Set(prev).add(url));
+    setFailedImages((prev) => new Set(prev).add(url));
   }, []);
   const [matchSummary, setMatchSummary] = useState<{
     matchesCount: number;
@@ -319,7 +319,14 @@ export default function ListingDetailPage() {
                   className="absolute left-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
                   aria-label="Anterior"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
                 </button>
                 <button
                   type="button"
@@ -327,7 +334,14 @@ export default function ListingDetailPage() {
                   className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
                   aria-label="Siguiente"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
                 </button>
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
                   {images.map((_, idx) => (
@@ -364,7 +378,9 @@ export default function ListingDetailPage() {
                       onError={() => handleImageError(img.url)}
                     />
                   ) : (
-                    <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400 text-xs">🏠</div>
+                    <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400 text-xs">
+                      🏠
+                    </div>
                   )}
                 </button>
               ))}

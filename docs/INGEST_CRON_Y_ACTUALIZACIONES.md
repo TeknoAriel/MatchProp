@@ -33,13 +33,13 @@ El **buscador** usa el catálogo de propiedades en la base de datos. Ese catálo
 
 ## Resumen
 
-| Tema | Cómo se resuelve |
-|------|------------------|
-| Catálogo desde conexiones reales | IngestSourceConfig con URLs; en prod no usar fixture ni API_PARTNER_1. |
-| Cron cada hora | `pnpm --filter api ingest:cron`; programar con cron o Vercel Cron. |
-| Continuar desde último id | SyncWatermark por fuente; cada conector usa cursor (ej. offset) y devuelve nextCursor. |
-| Cambio de precios | Upsert + ListingEvent PRICE_CHANGED. |
-| Propiedad pasa a inactiva | Upsert con status INACTIVE + ListingEvent STATUS_CHANGED; fuentes pueden enviar status. |
+| Tema                             | Cómo se resuelve                                                                        |
+| -------------------------------- | --------------------------------------------------------------------------------------- |
+| Catálogo desde conexiones reales | IngestSourceConfig con URLs; en prod no usar fixture ni API_PARTNER_1.                  |
+| Cron cada hora                   | `pnpm --filter api ingest:cron`; programar con cron o Vercel Cron.                      |
+| Continuar desde último id        | SyncWatermark por fuente; cada conector usa cursor (ej. offset) y devuelve nextCursor.  |
+| Cambio de precios                | Upsert + ListingEvent PRICE_CHANGED.                                                    |
+| Propiedad pasa a inactiva        | Upsert con status INACTIVE + ListingEvent STATUS_CHANGED; fuentes pueden enviar status. |
 
 ---
 

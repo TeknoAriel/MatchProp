@@ -90,7 +90,9 @@ export default function ApiUniversalSettingsPage() {
                 Feed paginado (limit, cursor, operation, minPrice, maxPrice)
               </li>
               <li>
-                <code className="text-[var(--mp-foreground)]">GET {baseUrl}/universal/listings</code>{' '}
+                <code className="text-[var(--mp-foreground)]">
+                  GET {baseUrl}/universal/listings
+                </code>{' '}
                 — Lista con offset (limit, offset, source)
               </li>
               <li>

@@ -2,12 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react';
 
-type CelebrationType = 
-  | 'match' 
-  | 'price_drop' 
-  | 'new_message' 
-  | 'lead_active' 
-  | 'saved' 
+type CelebrationType =
+  | 'match'
+  | 'price_drop'
+  | 'new_message'
+  | 'lead_active'
+  | 'saved'
   | 'alert'
   | 'premium';
 
@@ -19,14 +19,17 @@ interface CelebrationProps {
   autoClose?: number;
 }
 
-const CELEBRATION_CONFIG: Record<CelebrationType, {
-  emoji: string;
-  defaultTitle: string;
-  defaultSubtitle: string;
-  color: string;
-  bgGradient: string;
-  confettiColors: string[];
-}> = {
+const CELEBRATION_CONFIG: Record<
+  CelebrationType,
+  {
+    emoji: string;
+    defaultTitle: string;
+    defaultSubtitle: string;
+    color: string;
+    bgGradient: string;
+    confettiColors: string[];
+  }
+> = {
   match: {
     emoji: '🎉',
     defaultTitle: '¡Enhorabuena! ¡Tenemos match!',
@@ -86,14 +89,16 @@ const CELEBRATION_CONFIG: Record<CelebrationType, {
 };
 
 function Confetti({ colors }: { colors: string[] }) {
-  const [pieces, setPieces] = useState<Array<{
-    id: number;
-    x: number;
-    color: string;
-    delay: number;
-    rotation: number;
-    size: number;
-  }>>([]);
+  const [pieces, setPieces] = useState<
+    Array<{
+      id: number;
+      x: number;
+      color: string;
+      delay: number;
+      rotation: number;
+      size: number;
+    }>
+  >([]);
 
   useEffect(() => {
     const newPieces = Array.from({ length: 50 }, (_, i) => ({
@@ -158,7 +163,7 @@ export default function Celebration({
   if (!visible) return null;
 
   return (
-    <div 
+    <div
       className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-300 ${
         exiting ? 'opacity-0' : 'opacity-100'
       }`}
@@ -166,12 +171,12 @@ export default function Celebration({
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-      
+
       {/* Confetti */}
       <Confetti colors={config.confettiColors} />
 
       {/* Card */}
-      <div 
+      <div
         className={`relative bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all duration-300 ${
           exiting ? 'scale-95 opacity-0' : 'scale-100 opacity-100 animate-bounce-in'
         }`}
@@ -184,7 +189,9 @@ export default function Celebration({
           {/* Emoji with pulse animation */}
           <div className="relative inline-block mb-4">
             <span className="text-7xl animate-bounce-slow">{config.emoji}</span>
-            <div className={`absolute inset-0 animate-ping opacity-30 rounded-full bg-gradient-to-r ${config.bgGradient}`} />
+            <div
+              className={`absolute inset-0 animate-ping opacity-30 rounded-full bg-gradient-to-r ${config.bgGradient}`}
+            />
           </div>
 
           {/* Title */}
@@ -193,9 +200,7 @@ export default function Celebration({
           </h2>
 
           {/* Subtitle */}
-          <p className="text-gray-600 mb-6">
-            {subtitle || config.defaultSubtitle}
-          </p>
+          <p className="text-gray-600 mb-6">{subtitle || config.defaultSubtitle}</p>
 
           {/* Button */}
           <button
@@ -218,12 +223,12 @@ export function useCelebration() {
     subtitle?: string;
   } | null>(null);
 
-  const celebrate = useCallback((
-    type: CelebrationType,
-    options?: { title?: string; subtitle?: string }
-  ) => {
-    setCelebration({ type, ...options });
-  }, []);
+  const celebrate = useCallback(
+    (type: CelebrationType, options?: { title?: string; subtitle?: string }) => {
+      setCelebration({ type, ...options });
+    },
+    []
+  );
 
   const dismiss = useCallback(() => {
     setCelebration(null);

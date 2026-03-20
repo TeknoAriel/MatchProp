@@ -66,17 +66,17 @@ apps/api/src/
 
 ## Web — Rutas principales
 
-| Ruta | Descripción |
-|------|-------------|
-| `/` | Landing, redirect a /feed si auth |
-| `/login` | Magic link, OAuth, Passkey |
-| `/feed` | Match tipo Tinder |
-| `/feed/list` | Listado clásico |
-| `/assistant` | Búsqueda por asistente |
-| `/dashboard` | Resumen de búsqueda activa |
-| `/me/saved` | Favoritos |
-| `/me/profile` | Perfil |
-| `/leads` | Consultas enviadas |
+| Ruta          | Descripción                       |
+| ------------- | --------------------------------- |
+| `/`           | Landing, redirect a /feed si auth |
+| `/login`      | Magic link, OAuth, Passkey        |
+| `/feed`       | Match tipo Tinder                 |
+| `/feed/list`  | Listado clásico                   |
+| `/assistant`  | Búsqueda por asistente            |
+| `/dashboard`  | Resumen de búsqueda activa        |
+| `/me/saved`   | Favoritos                         |
+| `/me/profile` | Perfil                            |
+| `/leads`      | Consultas enviadas                |
 
 ---
 
@@ -101,12 +101,12 @@ apps/api/src/
 
 ## Demo vs producción
 
-| | Demo (DEMO_MODE=1) | Producción (DEMO_MODE=0) |
-|---|-------------------|--------------------------|
-| Listings demo | ✓ 200 API_PARTNER_1 | ✗ |
-| Kiteprop fixture | ✓ | ✗ |
-| Link acceso dev | ✓ | ✗ |
-| Stripe | Opcional | Requerido para Premium |
+|                  | Demo (DEMO_MODE=1)  | Producción (DEMO_MODE=0) |
+| ---------------- | ------------------- | ------------------------ |
+| Listings demo    | ✓ 200 API_PARTNER_1 | ✗                        |
+| Kiteprop fixture | ✓                   | ✗                        |
+| Link acceso dev  | ✓                   | ✗                        |
+| Stripe           | Opcional            | Requerido para Premium   |
 
 ---
 

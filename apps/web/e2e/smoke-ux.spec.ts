@@ -346,7 +346,9 @@ test.describe('smoke:ux', () => {
     await expect(page.getByText('Resumen').first()).toBeVisible({ timeout: 15000 });
     await page.getByRole('button', { name: 'Guardar' }).click();
     await expect(
-      page.getByText('Guardada y activa').or(page.getByRole('link', { name: /Ir a búsqueda|Mis búsquedas/ }))
+      page
+        .getByText('Guardada y activa')
+        .or(page.getByRole('link', { name: /Ir a búsqueda|Mis búsquedas/ }))
     ).toBeVisible({ timeout: 5000 });
     await page.goto('/searches');
     const searchLink = page.locator('a[href^="/searches/"]').first();
@@ -383,7 +385,10 @@ test.describe('smoke:ux', () => {
     }
     await page.getByRole('button', { name: 'Crear escenario demo' }).click();
     await expect(
-      page.getByText('Listo').or(page.getByRole('link', { name: /Búsqueda guardada/ })).first()
+      page
+        .getByText('Listo')
+        .or(page.getByRole('link', { name: /Búsqueda guardada/ }))
+        .first()
     ).toBeVisible({ timeout: 15000 });
     await page.goto('/leads');
     await expect(page.getByRole('heading', { name: /Mis consultas|Consultas/ })).toBeVisible({

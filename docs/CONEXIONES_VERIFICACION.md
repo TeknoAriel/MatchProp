@@ -6,11 +6,11 @@ Repositorio: **MatchProp** (monorepo pnpm). Apps: `apps/web`, `apps/api`, `apps/
 
 ## 1) Estructura del repo y deploys
 
-| App | Ruta en repo | Deploy Vercel (ejemplo) | Qué hace |
-|-----|--------------|-------------------------|----------|
-| Web | `apps/web` | match-prop-web.vercel.app | Next.js; login, feed, listas, búsqueda, configuraciones. Todas las llamadas al backend pasan por `/api/*` → reescritas a la API. |
-| API | `apps/api` | match-prop-api-1jte.vercel.app | Fastify en serverless (`api/[[...path]].ts`). Salud, auth, feed, listas, leads, asistente, integraciones, etc. |
-| Admin | `apps/admin` | (opcional) otro proyecto Vercel | Next.js puerto 3002; panel interno. No es el mismo que "Configuraciones" de la web. |
+| App   | Ruta en repo | Deploy Vercel (ejemplo)         | Qué hace                                                                                                                         |
+| ----- | ------------ | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Web   | `apps/web`   | match-prop-web.vercel.app       | Next.js; login, feed, listas, búsqueda, configuraciones. Todas las llamadas al backend pasan por `/api/*` → reescritas a la API. |
+| API   | `apps/api`   | match-prop-api-1jte.vercel.app  | Fastify en serverless (`api/[[...path]].ts`). Salud, auth, feed, listas, leads, asistente, integraciones, etc.                   |
+| Admin | `apps/admin` | (opcional) otro proyecto Vercel | Next.js puerto 3002; panel interno. No es el mismo que "Configuraciones" de la web.                                              |
 
 **Confirmación:** Un solo repo. No hay que conectar “otro repo”; todo está en este.
 
@@ -25,10 +25,10 @@ Repositorio: **MatchProp** (monorepo pnpm). Apps: `apps/web`, `apps/api`, `apps/
 
 **Variables en el proyecto Web (Vercel):**
 
-| Variable | Valor | Obligatorio |
-|----------|--------|-------------|
-| `API_SERVER_URL` | `https://match-prop-api-1jte.vercel.app` | **Sí** (o la URL real de tu API) |
-| `NEXT_PUBLIC_API_URL` | Mismo valor | Opcional (solo si el cliente usa esta URL en algún sitio) |
+| Variable              | Valor                                    | Obligatorio                                               |
+| --------------------- | ---------------------------------------- | --------------------------------------------------------- |
+| `API_SERVER_URL`      | `https://match-prop-api-1jte.vercel.app` | **Sí** (o la URL real de tu API)                          |
+| `NEXT_PUBLIC_API_URL` | Mismo valor                              | Opcional (solo si el cliente usa esta URL en algún sitio) |
 
 Si `API_SERVER_URL` no está definida, `next.config.ts` usa un fallback cuando `VERCEL === '1'` a esa URL. Aun así, **conviene definirla** en el dashboard de Vercel (proyecto Web) para no depender del fallback y poder cambiarla sin rebuild.
 
@@ -40,15 +40,15 @@ Si `API_SERVER_URL` no está definida, `next.config.ts` usa un fallback cuando `
 
 Todas estas rutas son **relativas al origen** (`/api/...`), por tanto las sirve el **mismo deploy de la web** y el servidor Next las reescribe a la API.
 
-| Funcionalidad | Rutas API que usa | Si falla (404/red) |
-|---------------|--------------------|--------------------|
-| Login (password) | `POST /login` | "Credenciales inválidas" o error de red |
-| Perfil / rol | `GET /me/profile` | Menú de Configuraciones vacío o sin opciones admin |
-| Listas (agregar, crear) | `GET /me/lists`, `POST /me/lists`, `POST /me/lists/:id/items` | "Error al agregar" / no permite guardar lista |
-| Búsqueda por asistente | `POST /assistant/search`, `POST /assistant/preview` | Error 404 en buscar |
-| Feed / listado | `GET /feed`, `GET /status/listings-count` | Listado vacío o error |
-| Alertas | `GET /alerts/subscriptions`, `POST /alerts/subscriptions` | Alerta "sin conexión API" |
-| Config integraciones | `GET/PUT /integrations/importers`, `GET/PUT /integrations/kiteprop`, etc. | Páginas de config no cargan o 403 |
+| Funcionalidad           | Rutas API que usa                                                         | Si falla (404/red)                                 |
+| ----------------------- | ------------------------------------------------------------------------- | -------------------------------------------------- |
+| Login (password)        | `POST /login`                                                             | "Credenciales inválidas" o error de red            |
+| Perfil / rol            | `GET /me/profile`                                                         | Menú de Configuraciones vacío o sin opciones admin |
+| Listas (agregar, crear) | `GET /me/lists`, `POST /me/lists`, `POST /me/lists/:id/items`             | "Error al agregar" / no permite guardar lista      |
+| Búsqueda por asistente  | `POST /assistant/search`, `POST /assistant/preview`                       | Error 404 en buscar                                |
+| Feed / listado          | `GET /feed`, `GET /status/listings-count`                                 | Listado vacío o error                              |
+| Alertas                 | `GET /alerts/subscriptions`, `POST /alerts/subscriptions`                 | Alerta "sin conexión API"                          |
+| Config integraciones    | `GET/PUT /integrations/importers`, `GET/PUT /integrations/kiteprop`, etc. | Páginas de config no cargan o 403                  |
 
 Todas dependen de que **el rewrite Web → API funcione** y de que la **API** tenga el path correcto (el handler Vercel `api/[[...path]].ts` recibe el path y lo pasa a Fastify).
 
@@ -96,11 +96,11 @@ Si esto da 200 con cookies y desde la web da 404, el fallo está en la **conexi�
 
 ## 6) Resumen de causas típicas de los 3 problemas
 
-| Problema | Causa más probable | Qué revisar |
-|----------|--------------------|-------------|
-| No muestra el menú de configuración | `GET /api/me/profile` devuelve 404 o no se ejecuta | Variable `API_SERVER_URL` en proyecto Web; que el rewrite apunte a la API correcta. |
-| No permite guardar lista / "Error al agregar" | `POST /api/me/lists` o `POST /api/me/lists/:id/items` devuelve 404 o error | Igual: conexión Web → API; en Red del navegador ver status y body de esa petición. |
-| Error 404 en buscar | `POST /api/assistant/search` devuelve 404 | Misma conexión; comprobar que la API recibe POST en `/assistant/search` (path que usa el handler). |
+| Problema                                      | Causa más probable                                                         | Qué revisar                                                                                        |
+| --------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| No muestra el menú de configuración           | `GET /api/me/profile` devuelve 404 o no se ejecuta                         | Variable `API_SERVER_URL` en proyecto Web; que el rewrite apunte a la API correcta.                |
+| No permite guardar lista / "Error al agregar" | `POST /api/me/lists` o `POST /api/me/lists/:id/items` devuelve 404 o error | Igual: conexión Web → API; en Red del navegador ver status y body de esa petición.                 |
+| Error 404 en buscar                           | `POST /api/assistant/search` devuelve 404                                  | Misma conexión; comprobar que la API recibe POST en `/assistant/search` (path que usa el handler). |
 
 No hay “repos incorrectos”: es un tema de **que la web en producción esté reenviando correctamente cada `/api/*` a la URL base de la API** y de que la API esté desplegada y respondiendo.
 

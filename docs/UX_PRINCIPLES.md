@@ -17,7 +17,7 @@
 
 ## Implementación
 
-- **globals.css:** Variables CSS (--mp-*), font-size 16px, line-height 1.6, antialiasing.
+- **globals.css:** Variables CSS (--mp-\*), font-size 16px, line-height 1.6, antialiasing.
 - **AppShell:** min-h 44–52px en nav items; tipografía 15px; bordes redondeados (rounded-xl).
 - **Login:** Inputs grandes, botón primario destacado, espaciado generoso.
 - **Responsive:** 320px y 375px sin overflow; bottom nav en móvil con íconos + labels.

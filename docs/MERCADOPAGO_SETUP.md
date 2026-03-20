@@ -17,6 +17,7 @@ Guía para integrar Mercado Pago como proveedor de pagos en MatchProp.
 ### Para desarrollo (Sandbox)
 
 En el Dashboard de tu aplicación:
+
 - **Public Key**: Se usa en el frontend (no sensible)
 - **Access Token de prueba**: Para transacciones de prueba
 
@@ -90,17 +91,18 @@ Mercado Pago provee usuarios de prueba para sandbox:
 
 ### Tarjetas de prueba comunes (Argentina)
 
-| Tarjeta | Número | CVV | Vencimiento |
-|---------|--------|-----|-------------|
-| Mastercard aprobada | 5031 7557 3453 0604 | 123 | 11/25 |
-| Visa aprobada | 4509 9535 6623 3704 | 123 | 11/25 |
-| Tarjeta rechazada | 4000 0000 0000 0002 | 123 | 11/25 |
+| Tarjeta             | Número              | CVV | Vencimiento |
+| ------------------- | ------------------- | --- | ----------- |
+| Mastercard aprobada | 5031 7557 3453 0604 | 123 | 11/25       |
+| Visa aprobada       | 4509 9535 6623 3704 | 123 | 11/25       |
+| Tarjeta rechazada   | 4000 0000 0000 0002 | 123 | 11/25       |
 
 ---
 
 ## 7. Endpoints de la API
 
 ### `GET /payments/config`
+
 Retorna configuración de proveedores (público).
 
 ```json
@@ -115,6 +117,7 @@ Retorna configuración de proveedores (público).
 ```
 
 ### `POST /payments/checkout`
+
 Crea sesión de checkout (requiere auth).
 
 ```json
@@ -134,6 +137,7 @@ Crea sesión de checkout (requiere auth).
 ```
 
 ### `POST /payments/webhook/mp`
+
 Recibe notificaciones de Mercado Pago (IPN).
 
 ---
@@ -141,15 +145,18 @@ Recibe notificaciones de Mercado Pago (IPN).
 ## 8. Monitoreo
 
 ### Ver pagos en el Dashboard de MP
+
 - Dashboard > Ventas > Ver pagos
 
 ### Ver en nuestra base de datos
+
 ```sql
 SELECT * FROM "Payment" WHERE provider = 'MERCADO_PAGO' ORDER BY "createdAt" DESC;
 SELECT * FROM "Subscription" WHERE provider = 'MERCADO_PAGO' ORDER BY "createdAt" DESC;
 ```
 
 ### Logs de webhooks
+
 Los webhooks se loguean en Vercel Functions logs.
 
 ---
@@ -157,6 +164,7 @@ Los webhooks se loguean en Vercel Functions logs.
 ## 9. Precios y tipo de cambio
 
 Actualmente usamos un tipo de cambio fijo:
+
 - `USD_TO_ARS = 1000` (en `/routes/payments.ts`)
 
 **Recomendación**: Implementar un job para actualizar el tipo de cambio diariamente usando una API como [DolarApi](https://dolarapi.com/).
@@ -166,16 +174,19 @@ Actualmente usamos un tipo de cambio fijo:
 ## 10. Troubleshooting
 
 ### El webhook no llega
+
 1. Verificar que la URL del webhook sea correcta
 2. Verificar que el webhook esté activo en el Dashboard de MP
 3. Revisar logs en Vercel
 
 ### Pago aprobado pero usuario no tiene premium
+
 1. Verificar que el webhook se procesó (`Payment.status = 'COMPLETED'`)
 2. Verificar que la suscripción se activó (`Subscription.status = 'ACTIVE'`)
 3. Si no, revisar logs del webhook
 
 ### Error "Mercado Pago no está configurado"
+
 - Verificar que `MERCADOPAGO_ACCESS_TOKEN` esté en las variables de entorno
 
 ---

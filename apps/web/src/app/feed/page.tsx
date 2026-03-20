@@ -121,12 +121,12 @@ function FeedPageContent() {
     if (decision === 'LIKE') {
       const newCount = likeCount + 1;
       setLikeCount(newCount);
-      
+
       // Haptic feedback
       if ('vibrate' in navigator) {
         navigator.vibrate([10, 50, 10]);
       }
-      
+
       // Cada 5 likes, mostrar celebración de match
       if (newCount % 5 === 0) {
         celebrate('match', {
@@ -136,7 +136,7 @@ function FeedPageContent() {
       } else {
         showSuccess(getRandomMessage('saved'), '💚');
       }
-      
+
       fetch(`${API_BASE}/saved`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -410,9 +410,15 @@ function FeedPageContent() {
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-lg font-bold text-[var(--mp-foreground)]">{PRODUCT_NAME}</h1>
           <nav className="flex items-center gap-3 text-xs text-[var(--mp-muted)]">
-            <Link href="/feed/list" className="hover:text-[var(--mp-foreground)] transition-colors">Lista</Link>
-            <Link href="/me/saved" className="hover:text-[var(--mp-foreground)] transition-colors">Favoritos</Link>
-            <Link href="/leads" className="hover:text-[var(--mp-foreground)] transition-colors">Consultas</Link>
+            <Link href="/feed/list" className="hover:text-[var(--mp-foreground)] transition-colors">
+              Lista
+            </Link>
+            <Link href="/me/saved" className="hover:text-[var(--mp-foreground)] transition-colors">
+              Favoritos
+            </Link>
+            <Link href="/leads" className="hover:text-[var(--mp-foreground)] transition-colors">
+              Consultas
+            </Link>
           </nav>
         </div>
 
@@ -432,7 +438,9 @@ function FeedPageContent() {
         {hasActiveSearch === false && (
           <div className="mb-3 p-3 rounded-xl border border-[var(--mp-border)] bg-[var(--mp-card)] text-sm text-[var(--mp-muted)]">
             Definí qué buscás para ver solo lo que te interesa.{' '}
-            <Link href="/assistant" className="text-[var(--mp-accent)] font-medium hover:underline">Buscar</Link>
+            <Link href="/assistant" className="text-[var(--mp-accent)] font-medium hover:underline">
+              Buscar
+            </Link>
           </div>
         )}
 
@@ -701,7 +709,7 @@ function FeedPageContent() {
           </div>
         )}
       </div>
-      
+
       {/* Celebration modal */}
       {CelebrationComponent}
     </main>

@@ -19,20 +19,20 @@ Ahí se ven **todos los cambios** que hacemos en el frontend (`apps/web`). No us
 2. **Caché del navegador**  
    Hacé **recarga forzada**: `Ctrl+Shift+R` (Windows/Linux) o `Cmd+Shift+R` (Mac). O probá en una ventana de incógnito.
 
-3. **Estabas en otra URL**  
-   - **match-prop-admin.vercel.app** = panel admin (otra app).  
+3. **Estabas en otra URL**
+   - **match-prop-admin.vercel.app** = panel admin (otra app).
    - **match-prop-api-1jte.vercel.app** = API (JSON, no interfaz).  
-   Para probar la app que usa el usuario final, solo **match-prop-web.vercel.app**.
+     Para probar la app que usa el usuario final, solo **match-prop-web.vercel.app**.
 
 ---
 
 ## Resumen de las 3 URLs (solo una es para probar la app)
 
-| URL | Para qué | ¿Probás cambios de la app ahí? |
-|-----|----------|---------------------------------|
-| **https://match-prop-web.vercel.app/** | App principal (feed, búsqueda, mapa, perfil, etc.) | **Sí — siempre probá acá** |
-| https://match-prop-admin.vercel.app | Panel admin (gestión interna) | No |
-| https://match-prop-api-1jte.vercel.app | API (backend) | No (es JSON) |
+| URL                                    | Para qué                                           | ¿Probás cambios de la app ahí? |
+| -------------------------------------- | -------------------------------------------------- | ------------------------------ |
+| **https://match-prop-web.vercel.app/** | App principal (feed, búsqueda, mapa, perfil, etc.) | **Sí — siempre probá acá**     |
+| https://match-prop-admin.vercel.app    | Panel admin (gestión interna)                      | No                             |
+| https://match-prop-api-1jte.vercel.app | API (backend)                                      | No (es JSON)                   |
 
 ---
 

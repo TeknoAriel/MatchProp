@@ -177,8 +177,9 @@ export default function ImportersSettingsPage() {
 
         <div className="mt-6 p-4 rounded-xl bg-[var(--mp-bg)] border border-[var(--mp-border)]">
           <p className="text-xs text-[var(--mp-muted)]">
-            <strong>externalsite:</strong> Token Kiteprop (KITEPROP_EXTERNALSITE). <strong>yumblin:</strong> producción.
-            También: KITEPROP_EXTERNALSITE_URL, KITEPROP_DIFUSION_YUMBLIN_URL en .env.
+            <strong>externalsite:</strong> Token Kiteprop (KITEPROP_EXTERNALSITE).{' '}
+            <strong>yumblin:</strong> producción. También: KITEPROP_EXTERNALSITE_URL,
+            KITEPROP_DIFUSION_YUMBLIN_URL en .env.
           </p>
         </div>
       </div>

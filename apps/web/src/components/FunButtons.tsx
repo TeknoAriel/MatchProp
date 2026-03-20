@@ -19,7 +19,8 @@ const VARIANT_CLASSES = {
   secondary: 'bg-gray-100 hover:bg-gray-200 text-gray-800',
   success: 'bg-green-500 hover:bg-green-600 text-white',
   danger: 'bg-red-500 hover:bg-red-600 text-white',
-  premium: 'bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white',
+  premium:
+    'bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white',
 };
 
 const SIZE_CLASSES = {
@@ -43,11 +44,11 @@ export function FunButton({
 
   const handleClick = () => {
     if (disabled || loading) return;
-    
+
     if (haptic && 'vibrate' in navigator) {
       navigator.vibrate(10);
     }
-    
+
     onClick?.();
   };
 
@@ -114,16 +115,15 @@ export function LikeButton({
         ${sizeClasses[size]}
         rounded-full flex items-center justify-center
         transition-all duration-200
-        ${liked 
-          ? 'bg-red-100 text-red-500 hover:bg-red-200' 
-          : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'
+        ${
+          liked
+            ? 'bg-red-100 text-red-500 hover:bg-red-200'
+            : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'
         }
         ${animating ? 'scale-125' : 'scale-100'}
       `}
     >
-      <span className={animating ? 'animate-bounce-in' : ''}>
-        {liked ? '❤️' : '🤍'}
-      </span>
+      <span className={animating ? 'animate-bounce-in' : ''}>{liked ? '❤️' : '🤍'}</span>
     </button>
   );
 }
@@ -162,16 +162,15 @@ export function FavoriteButton({
         ${sizeClasses[size]}
         rounded-full flex items-center justify-center
         transition-all duration-200
-        ${favorited 
-          ? 'bg-amber-100 text-amber-500 hover:bg-amber-200' 
-          : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'
+        ${
+          favorited
+            ? 'bg-amber-100 text-amber-500 hover:bg-amber-200'
+            : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'
         }
         ${animating ? 'scale-125 rotate-12' : 'scale-100 rotate-0'}
       `}
     >
-      <span className={animating ? 'animate-bounce-in' : ''}>
-        {favorited ? '⭐' : '☆'}
-      </span>
+      <span className={animating ? 'animate-bounce-in' : ''}>{favorited ? '⭐' : '☆'}</span>
     </button>
   );
 }
@@ -236,13 +235,7 @@ export function MatchSwipeButton({
 }
 
 // Badge de notificación animado
-export function NotificationBadge({
-  count,
-  animate = true,
-}: {
-  count: number;
-  animate?: boolean;
-}) {
+export function NotificationBadge({ count, animate = true }: { count: number; animate?: boolean }) {
   if (count === 0) return null;
 
   return (
@@ -260,11 +253,7 @@ export function NotificationBadge({
 }
 
 // Skeleton loader divertido
-export function FunSkeleton({
-  type = 'card',
-}: {
-  type?: 'card' | 'text' | 'avatar' | 'button';
-}) {
+export function FunSkeleton({ type = 'card' }: { type?: 'card' | 'text' | 'avatar' | 'button' }) {
   const skeletons = {
     card: (
       <div className="bg-white rounded-2xl p-4 space-y-3 animate-pulse">
@@ -288,13 +277,7 @@ export function FunSkeleton({
 }
 
 // Indicador de carga divertido
-export function FunLoader({
-  message,
-  emoji = '🏠',
-}: {
-  message?: string;
-  emoji?: string;
-}) {
+export function FunLoader({ message, emoji = '🏠' }: { message?: string; emoji?: string }) {
   const loadingMessages = [
     'Buscando tu casa ideal...',
     'Explorando opciones...',
@@ -302,7 +285,8 @@ export function FunLoader({
     'Un momento...',
   ];
 
-  const displayMessage = message ?? loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
+  const displayMessage =
+    message ?? loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
 
   return (
     <div className="flex flex-col items-center justify-center py-12">

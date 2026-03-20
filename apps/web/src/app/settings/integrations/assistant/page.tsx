@@ -164,7 +164,9 @@ export default function AssistantSettingsPage() {
               value={form.password}
               onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
               className="w-full px-3 py-2 border rounded-lg bg-[var(--mp-card)] border-[var(--mp-border)]"
-              placeholder={hasPassword ? '•••••••• (dejar vacío para mantener)' : 'Contraseña (si aplica)'}
+              placeholder={
+                hasPassword ? '•••••••• (dejar vacío para mantener)' : 'Contraseña (si aplica)'
+              }
               autoComplete="current-password"
             />
           </div>
@@ -176,7 +178,9 @@ export default function AssistantSettingsPage() {
               value={form.apiKey}
               onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
               className="w-full px-3 py-2 border rounded-lg bg-[var(--mp-card)] border-[var(--mp-border)]"
-              placeholder={hasApiKey ? '•••••••• (dejar vacío para mantener)' : 'sk-... o sk-ant-...'}
+              placeholder={
+                hasApiKey ? '•••••••• (dejar vacío para mantener)' : 'sk-... o sk-ant-...'
+              }
               autoComplete="off"
             />
           </div>
@@ -255,8 +259,9 @@ export default function AssistantSettingsPage() {
         <div className="mt-6 p-4 rounded-xl bg-[var(--mp-bg)] border border-[var(--mp-border)]">
           <p className="text-xs text-[var(--mp-muted)]">
             Esta configuración se usa para el <strong>Asistente IA</strong> (texto) y el{' '}
-            <strong>Asistente de voz</strong> (Buscar con micrófono). Usá API Key para OpenAI/Anthropic.
-            Token para otros headers. Usuario y contraseña para Basic Auth (custom).
+            <strong>Asistente de voz</strong> (Buscar con micrófono). Usá API Key para
+            OpenAI/Anthropic. Token para otros headers. Usuario y contraseña para Basic Auth
+            (custom).
           </p>
         </div>
       </div>

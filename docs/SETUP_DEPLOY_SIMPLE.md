@@ -19,6 +19,7 @@ O: `bash scripts/dev-local.sh`
 - **Si ya tenés** `apps/api/.env.local` (por ejemplo con Neon), no se toca; se usan API + Web con tu DB.
 
 Cuando veas **"Listo. Entrá y probá"**:
+
 1. Abrí **http://localhost:3000/login**
 2. Clic en **«Entrar con link demo»** → entrás al feed y podés probar.
 
@@ -52,17 +53,17 @@ DATABASE_URL="postgresql://..." pnpm --filter api exec prisma migrate deploy
 
 Proyecto con Root `apps/api`. Ir a **Settings → Environment Variables**.
 
-| Variable | Valor | Notas |
-|----------|-------|-------|
-| `DATABASE_URL` | *(URL de Neon del paso 1)* | |
-| `JWT_SECRET` | *(generar)* | `openssl rand -base64 32` |
-| `AUTH_REFRESH_SECRET` | *(generar)* | `openssl rand -base64 32` |
-| `APP_URL` | `https://match-prop-web.vercel.app` | URL del Web |
-| `API_PUBLIC_URL` | `https://TU-API.vercel.app` | URL pública de este proyecto API |
-| `CORS_ORIGINS` | `https://match-prop-web.vercel.app` | |
-| `COOKIE_SECURE` | `true` | |
-| `DEMO_MODE` | `0` | o `1` para demo/premium gratuito |
-| `INTEGRATIONS_MASTER_KEY` | *(generar)* | `openssl rand -base64 32` |
+| Variable                  | Valor                               | Notas                            |
+| ------------------------- | ----------------------------------- | -------------------------------- |
+| `DATABASE_URL`            | _(URL de Neon del paso 1)_          |                                  |
+| `JWT_SECRET`              | _(generar)_                         | `openssl rand -base64 32`        |
+| `AUTH_REFRESH_SECRET`     | _(generar)_                         | `openssl rand -base64 32`        |
+| `APP_URL`                 | `https://match-prop-web.vercel.app` | URL del Web                      |
+| `API_PUBLIC_URL`          | `https://TU-API.vercel.app`         | URL pública de este proyecto API |
+| `CORS_ORIGINS`            | `https://match-prop-web.vercel.app` |                                  |
+| `COOKIE_SECURE`           | `true`                              |                                  |
+| `DEMO_MODE`               | `0`                                 | o `1` para demo/premium gratuito |
+| `INTEGRATIONS_MASTER_KEY` | _(generar)_                         | `openssl rand -base64 32`        |
 
 **WebAuthn (producción):** `WEBAUTHN_RP_ID=match-prop-web.vercel.app`, `WEBAUTHN_RP_NAME=MatchProp`, `WEBAUTHN_ORIGIN=https://match-prop-web.vercel.app` (ya configurados vía CLI).
 
@@ -72,10 +73,10 @@ Proyecto con Root `apps/api`. Ir a **Settings → Environment Variables**.
 
 Proyecto con Root `apps/web`. Ir a **Settings → Environment Variables**.
 
-| Variable | Valor |
-|----------|-------|
-| `API_SERVER_URL` | `https://TU-API.vercel.app` *(misma URL que API_PUBLIC_URL)* |
-| `NEXT_PUBLIC_API_URL` | `https://TU-API.vercel.app` |
+| Variable              | Valor                                                        |
+| --------------------- | ------------------------------------------------------------ |
+| `API_SERVER_URL`      | `https://TU-API.vercel.app` _(misma URL que API_PUBLIC_URL)_ |
+| `NEXT_PUBLIC_API_URL` | `https://TU-API.vercel.app`                                  |
 
 ---
 

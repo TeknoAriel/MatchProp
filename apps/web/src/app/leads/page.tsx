@@ -212,8 +212,8 @@ export default function LeadsPage() {
                 <div className="flex">
                   <Link href={`/listing/${lead.listingId}`} className="flex flex-1 min-w-0">
                     <div className="w-24 h-24 shrink-0 overflow-hidden">
-                      <ListingImage 
-                        src={lead.listing.heroImageUrl} 
+                      <ListingImage
+                        src={lead.listing.heroImageUrl}
                         alt={lead.listing.title ?? ''}
                         fallbackClassName="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-200"
                         fallbackIcon="🏠"

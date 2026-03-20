@@ -61,9 +61,9 @@ Ruta de crecimiento por etapas, documentada y reproducible.
 
 ## Comandos por etapa
 
-| Etapa   | Comando                  | Descripción                    |
-|---------|--------------------------|--------------------------------|
-| Dev     | `pnpm dev:up`           | Levantar todo local            |
-| Verificar | `pnpm pre-deploy:verify` | Build + tests                  |
-| Deploy  | `bash scripts/deploy-git.sh` | Push y deploy automático   |
-| Migraciones | `pnpm deploy:pre`    | Antes de start en prod         |
+| Etapa       | Comando                      | Descripción              |
+| ----------- | ---------------------------- | ------------------------ |
+| Dev         | `pnpm dev:up`                | Levantar todo local      |
+| Verificar   | `pnpm pre-deploy:verify`     | Build + tests            |
+| Deploy      | `bash scripts/deploy-git.sh` | Push y deploy automático |
+| Migraciones | `pnpm deploy:pre`            | Antes de start en prod   |

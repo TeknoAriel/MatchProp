@@ -19,10 +19,7 @@ import {
 } from '../services/magic-link.js';
 import { getMailerForSend } from '../services/mailer/index.js';
 import { config, envFlag } from '../config.js';
-import {
-  isKitepropAdmin,
-  KITEPROP_ADMIN_PASSWORD,
-} from '../lib/kiteprop-admins.js';
+import { isKitepropAdmin, KITEPROP_ADMIN_PASSWORD } from '../lib/kiteprop-admins.js';
 
 /** Busca usuario por email sin distinguir mayúsculas/minúsculas (evita fallos si el usuario se creó por OAuth/magic con otra capitalización). */
 async function findUserByEmailIgnoreCase(email: string) {
@@ -131,7 +128,11 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
 
     // Usuario existente sin contraseña (p. ej. creado por magic link): si es admin Kiteprop y la contraseña es la conocida, setear hash y dar acceso.
-    if (!user.passwordHash && isKitepropAdmin(email) && passwordTrimmed === KITEPROP_ADMIN_PASSWORD) {
+    if (
+      !user.passwordHash &&
+      isKitepropAdmin(email) &&
+      passwordTrimmed === KITEPROP_ADMIN_PASSWORD
+    ) {
       const adminHash = await bcrypt.hash(KITEPROP_ADMIN_PASSWORD, 10);
       await prisma.user.update({
         where: { id: user.id },
@@ -344,7 +345,8 @@ export async function authRoutes(fastify: FastifyInstance) {
           } catch (err2) {
             request.log.error({ err: err2, email }, 'Magic link request failed');
             return reply.status(200).send({
-              message: 'La base de datos no está disponible. Usá «Entrar con link demo» para acceder.',
+              message:
+                'La base de datos no está disponible. Usá «Entrar con link demo» para acceder.',
               ...(isDev && { devLink: `${appUrl}/login?useDemo=1` }),
             });
           }
@@ -352,7 +354,9 @@ export async function authRoutes(fastify: FastifyInstance) {
 
         const link = `${appUrl}/auth/magic/callback?token=${encodeURIComponent(token)}`;
         const mailer = await getMailerForSend();
-        mailer.sendMagicLink(email, link).catch((err) => request.log.warn({ err }, 'Mailer send failed'));
+        mailer
+          .sendMagicLink(email, link)
+          .catch((err) => request.log.warn({ err }, 'Mailer send failed'));
         logAuthAudit({ event: 'magic_requested', email, ...meta }).catch((err) =>
           request.log.warn({ err }, 'Auth audit failed')
         );

@@ -21,6 +21,7 @@ Guía para publicar MatchProp con acceso público y testers beta.
 3. Usar esa URL en la API (Vercel)
 
 **Producción:** añadir a la URL:
+
 ```
 ?connection_limit=50&pool_timeout=20
 ```
@@ -35,19 +36,19 @@ La API se deploya como **Vercel Serverless Functions** desde `apps/api` (ver `ap
 2. **Root Directory**: `apps/api`
 3. **Environment Variables** (mismas que en `.env.example`, versión prod):
 
-| Variable | Valor |
-|----------|-------|
-| `NODE_ENV` | production |
-| `PORT` | 3001 |
-| `DATABASE_URL` | (desde PostgreSQL) |
-| `JWT_SECRET` | (generar: `openssl rand -base64 32`) |
-| `AUTH_REFRESH_SECRET` | (generar) |
-| `APP_URL` | https://tu-dominio.vercel.app |
-| `API_PUBLIC_URL` | https://tu-api.railway.app |
-| `CORS_ORIGINS` | https://tu-dominio.vercel.app |
-| `COOKIE_SECURE` | true |
-| `DEMO_MODE` | 0 |
-| `INTEGRATIONS_MASTER_KEY` | (generar) |
+| Variable                  | Valor                                |
+| ------------------------- | ------------------------------------ |
+| `NODE_ENV`                | production                           |
+| `PORT`                    | 3001                                 |
+| `DATABASE_URL`            | (desde PostgreSQL)                   |
+| `JWT_SECRET`              | (generar: `openssl rand -base64 32`) |
+| `AUTH_REFRESH_SECRET`     | (generar)                            |
+| `APP_URL`                 | https://tu-dominio.vercel.app        |
+| `API_PUBLIC_URL`          | https://tu-api.railway.app           |
+| `CORS_ORIGINS`            | https://tu-dominio.vercel.app        |
+| `COOKIE_SECURE`           | true                                 |
+| `DEMO_MODE`               | 0                                    |
+| `INTEGRATIONS_MASTER_KEY` | (generar)                            |
 
 **Migraciones (Neon):** correr una vez desde tu máquina:
 
@@ -69,10 +70,10 @@ DATABASE_URL="TU_DATABASE_URL_DE_NEON" pnpm --filter api exec prisma migrate dep
 5. **Install Command:** `cd ../.. && pnpm install`
 6. **Variables de entorno:**
 
-| Variable | Valor |
-|----------|-------|
-| `API_SERVER_URL` | https://tu-api.vercel.app (o railway.app) |
-| `NEXT_PUBLIC_API_URL` | https://tu-api.vercel.app (opcional) |
+| Variable              | Valor                                     |
+| --------------------- | ----------------------------------------- |
+| `API_SERVER_URL`      | https://tu-api.vercel.app (o railway.app) |
+| `NEXT_PUBLIC_API_URL` | https://tu-api.vercel.app (opcional)      |
 
 **Fallback automático:** Si no definís `API_SERVER_URL` y el proyecto corre en Vercel, el proxy `/api/*` usa por defecto la API de producción conocida (`next.config.ts`). Conviene definirla igual para mayor control.
 
@@ -90,6 +91,7 @@ DATABASE_URL="TU_DATABASE_URL_DE_NEON" pnpm --filter api exec prisma migrate dep
 - **API:** `api.matchprop.com` (CNAME a Vercel)
 
 Actualizar en ambos servicios:
+
 - `APP_URL` = URL de la web
 - `API_PUBLIC_URL` = URL de la API
 - `CORS_ORIGINS` = URL de la web
@@ -112,6 +114,7 @@ Actualizar en ambos servicios:
 ### Datos de prueba
 
 Con `DEMO_MODE=0` no hay listings demo. Opciones:
+
 - Conectar fuentes reales (Kiteprop, etc.)
 - O mantener `DEMO_MODE=1` solo para staging interno (no producción pública)
 

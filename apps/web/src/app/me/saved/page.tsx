@@ -377,8 +377,8 @@ function SavedPageContent() {
               fetchSaved();
             }}
             className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-        >
-          Actualizar
+          >
+            Actualizar
           </button>
         </div>
 

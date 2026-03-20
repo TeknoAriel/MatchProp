@@ -33,13 +33,13 @@ export async function cronRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const auth = request.headers.authorization;
       const token = auth?.replace('Bearer ', '');
-      
+
       if (!CRON_SECRET || token !== CRON_SECRET) {
         return reply.status(401).send({ message: 'Unauthorized' });
       }
 
       const start = Date.now();
-      
+
       try {
         const result = await runIngest({
           source: 'KITEPROP_EXTERNALSITE',
@@ -47,7 +47,7 @@ export async function cronRoutes(fastify: FastifyInstance) {
         });
 
         const duration = Date.now() - start;
-        
+
         await prisma.outboxEvent.create({
           data: {
             type: 'CRON_INGEST_COMPLETED',
@@ -71,7 +71,7 @@ export async function cronRoutes(fastify: FastifyInstance) {
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         console.error('[Cron Ingest Error]', msg);
-        
+
         return reply.status(500).send({
           ok: false,
           error: msg,

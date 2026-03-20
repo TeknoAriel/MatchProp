@@ -23,7 +23,9 @@ async function main() {
   for (const { source, key } of sources) {
     try {
       const result = await runIngest({ source, limit: 200 });
-      console.log(`  ${key} (${source}): ${result.inserted} listings, nextCursor=${result.nextCursor ?? 'null'}`);
+      console.log(
+        `  ${key} (${source}): ${result.inserted} listings, nextCursor=${result.nextCursor ?? 'null'}`
+      );
     } catch (err) {
       console.error(`  ${key} (${source}): ERROR`, err);
     }

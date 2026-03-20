@@ -313,7 +313,10 @@ export async function assistantRoutes(fastify: FastifyInstance) {
           baseUrl: config.baseUrl,
         },
         message ?? '',
-        history.map((h) => ({ role: h.role as 'user' | 'assistant' | 'system', content: h.content }))
+        history.map((h) => ({
+          role: h.role as 'user' | 'assistant' | 'system',
+          content: h.content,
+        }))
       );
 
       if (result.error) {

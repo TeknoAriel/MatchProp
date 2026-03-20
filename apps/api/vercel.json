@@ -6,7 +6,5 @@
       "maxDuration": 60
     }
   },
-  "routes": [
-    { "src": "/(.*)", "dest": "/api/handler" }
-  ]
+  "routes": [{ "src": "/(.*)", "dest": "/api/handler" }]
 }

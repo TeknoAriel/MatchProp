@@ -9,7 +9,11 @@ const API_BASE = '/api';
 const TYPE_LABELS: Record<string, { label: string; icon: string; color: string }> = {
   NEW_LISTING: { label: 'Nuevas publicaciones', icon: '🏠', color: 'bg-blue-100 text-blue-800' },
   PRICE_DROP: { label: 'Bajó el precio', icon: '📉', color: 'bg-green-100 text-green-800' },
-  BACK_ON_MARKET: { label: 'Volvió al mercado', icon: '🔄', color: 'bg-purple-100 text-purple-800' },
+  BACK_ON_MARKET: {
+    label: 'Volvió al mercado',
+    icon: '🔄',
+    color: 'bg-purple-100 text-purple-800',
+  },
 };
 
 type Subscription = {
@@ -112,9 +116,7 @@ export default function AlertsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[var(--mp-foreground)]">Mis alertas</h1>
-          <p className="text-sm text-[var(--mp-muted)]">
-            Recibí avisos cuando haya novedades
-          </p>
+          <p className="text-sm text-[var(--mp-muted)]">Recibí avisos cuando haya novedades</p>
         </div>
         <Link
           href="/searches"
@@ -129,9 +131,7 @@ export default function AlertsPage() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-sky-50 flex items-center justify-center">
             <span className="text-3xl">🔔</span>
           </div>
-          <h3 className="font-medium text-[var(--mp-foreground)] mb-2">
-            No tenés alertas activas
-          </h3>
+          <h3 className="font-medium text-[var(--mp-foreground)] mb-2">No tenés alertas activas</h3>
           <p className="text-sm text-[var(--mp-muted)] mb-4">
             Creá una búsqueda y activá alertas para recibir avisos
           </p>
@@ -145,18 +145,18 @@ export default function AlertsPage() {
       ) : (
         <div className="space-y-3">
           {items.map((sub) => {
-            const typeInfo = TYPE_LABELS[sub.type] ?? { 
-              label: sub.type, 
-              icon: '🔔', 
-              color: 'bg-gray-100 text-gray-800' 
+            const typeInfo = TYPE_LABELS[sub.type] ?? {
+              label: sub.type,
+              icon: '🔔',
+              color: 'bg-gray-100 text-gray-800',
             };
-            
+
             return (
               <div
                 key={sub.id}
                 className={`p-4 rounded-2xl border transition-all ${
-                  sub.isEnabled 
-                    ? 'bg-[var(--mp-card)] border-[var(--mp-border)]' 
+                  sub.isEnabled
+                    ? 'bg-[var(--mp-card)] border-[var(--mp-border)]'
                     : 'bg-gray-50 border-gray-200 opacity-60'
                 }`}
               >
@@ -179,15 +179,17 @@ export default function AlertsPage() {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${typeInfo.color}`}>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${typeInfo.color}`}
+                      >
                         {typeInfo.icon} {typeInfo.label}
                       </span>
                     </div>
-                    
+
                     <h3 className="font-medium text-[var(--mp-foreground)] truncate">
                       {sub.savedSearchName ?? 'Búsqueda guardada'}
                     </h3>
-                    
+
                     <p className="text-xs text-[var(--mp-muted)] mt-1">
                       {sub.isEnabled ? '✓ Activa' : '⏸ Pausada'}
                       {sub.lastRunAt && (
@@ -224,7 +226,7 @@ export default function AlertsPage() {
       {/* Tip */}
       <div className="mt-8 p-4 rounded-2xl bg-sky-50 border border-sky-100">
         <p className="text-sm text-sky-800">
-          <strong>💡 Tip:</strong> Podés tener alertas de diferentes tipos para la misma búsqueda: 
+          <strong>💡 Tip:</strong> Podés tener alertas de diferentes tipos para la misma búsqueda:
           nuevas publicaciones, bajas de precio, o propiedades que vuelven al mercado.
         </p>
       </div>

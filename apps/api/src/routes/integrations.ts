@@ -79,10 +79,12 @@ export async function integrationsRoutes(fastify: FastifyInstance) {
           'INTEGRATIONS_MASTER_KEY no configurado. Necesario para cifrar la API key.'
         );
       }
-      const fromEmail = (body.fromEmail?.trim() || 'noreply@matchprop.com');
+      const fromEmail = body.fromEmail?.trim() || 'noreply@matchprop.com';
       const isEnabled = body.isEnabled ?? false;
       const existing = await prisma.sendGridConfig.findUnique({ where: { id: 'default' } });
-      const apiKeyEncrypted = body.apiKey ? encrypt(body.apiKey) : (existing?.apiKeyEncrypted ?? null);
+      const apiKeyEncrypted = body.apiKey
+        ? encrypt(body.apiKey)
+        : (existing?.apiKeyEncrypted ?? null);
 
       await prisma.sendGridConfig.upsert({
         where: { id: 'default' },
@@ -189,8 +191,12 @@ export async function integrationsRoutes(fastify: FastifyInstance) {
         );
       }
       const existing = await prisma.assistantConfig.findUnique({ where: { id: 'default' } });
-      const apiKeyEncrypted = body.apiKey ? encrypt(body.apiKey) : (existing?.apiKeyEncrypted ?? null);
-      const passwordEncrypted = body.password ? encrypt(body.password) : (existing?.passwordEncrypted ?? null);
+      const apiKeyEncrypted = body.apiKey
+        ? encrypt(body.apiKey)
+        : (existing?.apiKeyEncrypted ?? null);
+      const passwordEncrypted = body.password
+        ? encrypt(body.password)
+        : (existing?.passwordEncrypted ?? null);
       const tokenEncrypted = body.token ? encrypt(body.token) : (existing?.tokenEncrypted ?? null);
 
       await prisma.assistantConfig.upsert({
@@ -215,7 +221,9 @@ export async function integrationsRoutes(fastify: FastifyInstance) {
           ...(tokenEncrypted !== undefined && { tokenEncrypted }),
           ...(body.model !== undefined && { model: body.model }),
           ...(body.baseUrl !== undefined && { baseUrl: body.baseUrl }),
-          ...(body.conversationalModel !== undefined && { conversationalModel: body.conversationalModel }),
+          ...(body.conversationalModel !== undefined && {
+            conversationalModel: body.conversationalModel,
+          }),
           ...(body.isEnabled !== undefined && { isEnabled: body.isEnabled }),
         },
       });
@@ -273,10 +281,7 @@ export async function integrationsRoutes(fastify: FastifyInstance) {
       },
     },
     async () => {
-      const hasKey = !!(
-        process.env.STRIPE_SECRET_KEY &&
-        process.env.STRIPE_SECRET_KEY.length > 0
-      );
+      const hasKey = !!(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.length > 0);
       return { stripeConfigured: hasKey };
     }
   );

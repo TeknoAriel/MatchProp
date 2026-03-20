@@ -83,6 +83,7 @@ La ruta `/cron/ingest` existe en el código pero puede que el deploy actual de l
 3. O hacer push a `main` tocando `apps/api` para forzar un nuevo deploy
 
 Verificar después:
+
 ```bash
 curl -s -X POST "https://match-prop-admin-dsvv.vercel.app/cron/ingest" -H "Authorization: Bearer TU_CRON_SECRET" -H "Content-Type: application/json"
 ```
@@ -93,11 +94,11 @@ Debe devolver 200 y JSON con `ok`, no 404.
 
 ## 5. Verificar que todo funciona
 
-| Qué | URL | Qué revisar |
-|-----|-----|-------------|
-| Web | https://match-prop-web.vercel.app | Carga la home |
-| API health | https://match-prop-admin-dsvv.vercel.app/health | 200 y `{"status":"ok",...}` |
-| Login | https://match-prop-web.vercel.app/login | "Entrar con link demo" funciona |
+| Qué        | URL                                             | Qué revisar                     |
+| ---------- | ----------------------------------------------- | ------------------------------- |
+| Web        | https://match-prop-web.vercel.app               | Carga la home                   |
+| API health | https://match-prop-admin-dsvv.vercel.app/health | 200 y `{"status":"ok",...}`     |
+| Login      | https://match-prop-web.vercel.app/login         | "Entrar con link demo" funciona |
 
 Smoke desde tu máquina:
 
@@ -109,11 +110,11 @@ pnpm smoke:prod
 
 ## Resumen de URLs clave
 
-| Recurso | URL |
-|---------|-----|
-| GitHub secrets | https://github.com/TeknoAriel/MatchProp/settings/secrets/actions |
-| Vercel API env | https://vercel.com/teknoariels-projects/match-prop-api-1jte/settings/environment-variables |
-| Vercel Web | https://vercel.com/teknoariels-projects/match-prop-web |
-| Vercel Admin | https://vercel.com/teknoariels-projects/match-prop-admin |
-| PR #1 | https://github.com/TeknoAriel/MatchProp/pull/1 |
-| Vercel API deployments | https://vercel.com/teknoariels-projects/match-prop-api-1jte/deployments |
+| Recurso                | URL                                                                                        |
+| ---------------------- | ------------------------------------------------------------------------------------------ |
+| GitHub secrets         | https://github.com/TeknoAriel/MatchProp/settings/secrets/actions                           |
+| Vercel API env         | https://vercel.com/teknoariels-projects/match-prop-api-1jte/settings/environment-variables |
+| Vercel Web             | https://vercel.com/teknoariels-projects/match-prop-web                                     |
+| Vercel Admin           | https://vercel.com/teknoariels-projects/match-prop-admin                                   |
+| PR #1                  | https://github.com/TeknoAriel/MatchProp/pull/1                                             |
+| Vercel API deployments | https://vercel.com/teknoariels-projects/match-prop-api-1jte/deployments                    |

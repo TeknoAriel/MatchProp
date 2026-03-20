@@ -6,12 +6,12 @@ Objetivo: **100.000 usuarios concurrentes** sobre **200.000 propiedades**.
 
 ## Resumen
 
-| Componente | Estado | Recomendación |
-|------------|--------|---------------|
-| Feed (cursor paginado) | ✓ Índices óptimos | Mantener `limit` ≤ 50 |
-| Caché total feed | ✓ 100k entradas LRU | Ajustar `FEED_CACHE_MAX_ENTRIES` |
-| Connection pool | Configurable | `connection_limit` en DATABASE_URL |
-| Under-pressure | ✓ 1GB heap en dev | 512MB en prod, monitorear |
+| Componente             | Estado              | Recomendación                      |
+| ---------------------- | ------------------- | ---------------------------------- |
+| Feed (cursor paginado) | ✓ Índices óptimos   | Mantener `limit` ≤ 50              |
+| Caché total feed       | ✓ 100k entradas LRU | Ajustar `FEED_CACHE_MAX_ENTRIES`   |
+| Connection pool        | Configurable        | `connection_limit` en DATABASE_URL |
+| Under-pressure         | ✓ 1GB heap en dev   | 512MB en prod, monitorear          |
 
 ---
 

@@ -208,7 +208,10 @@ export default function LeadVisitsPage() {
         </nav>
         {GRACE_PERIOD && (
           <p className="text-xs text-slate-700 bg-[var(--mp-premium)]/15 border border-[var(--mp-premium)]/40 rounded-xl px-3 py-2 mb-4">
-            Modo prueba: agenda premium habilitada. <Link href="/me/premium" className="underline font-medium">Ver planes</Link>
+            Modo prueba: agenda premium habilitada.{' '}
+            <Link href="/me/premium" className="underline font-medium">
+              Ver planes
+            </Link>
           </p>
         )}
         <div className="flex flex-wrap justify-between items-center gap-2 mb-6">

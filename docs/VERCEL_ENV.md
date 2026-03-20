@@ -26,4 +26,3 @@ openssl rand -base64 32
 - `API_SERVER_URL` = URL pública de la API (Vercel)
 - `NEXT_PUBLIC_API_URL` = URL pública de la API (Vercel)
 - `NEXT_PUBLIC_PRODUCT_NAME` (opcional)
-

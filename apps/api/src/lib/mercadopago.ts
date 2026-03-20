@@ -1,8 +1,8 @@
 /**
  * Mercado Pago Integration
- * 
+ *
  * Documentación: https://www.mercadopago.com/developers/es/docs
- * 
+ *
  * Variables de entorno requeridas:
  * - MERCADOPAGO_ACCESS_TOKEN: Token de acceso (producción o sandbox)
  * - MERCADOPAGO_PUBLIC_KEY: Clave pública para el frontend
@@ -53,7 +53,16 @@ export interface PaymentNotification {
 
 export interface PaymentDetails {
   id: number;
-  status: 'pending' | 'approved' | 'authorized' | 'in_process' | 'in_mediation' | 'rejected' | 'cancelled' | 'refunded' | 'charged_back';
+  status:
+    | 'pending'
+    | 'approved'
+    | 'authorized'
+    | 'in_process'
+    | 'in_mediation'
+    | 'rejected'
+    | 'cancelled'
+    | 'refunded'
+    | 'charged_back';
   statusDetail: string;
   externalReference: string;
   transactionAmount: number;
@@ -106,11 +115,13 @@ export async function createPreference(input: CreatePreferenceInput): Promise<Pr
       },
     ],
     payer: input.payerEmail ? { email: input.payerEmail } : undefined,
-    back_urls: input.backUrls ? {
-      success: input.backUrls.success,
-      failure: input.backUrls.failure,
-      pending: input.backUrls.pending,
-    } : undefined,
+    back_urls: input.backUrls
+      ? {
+          success: input.backUrls.success,
+          failure: input.backUrls.failure,
+          pending: input.backUrls.pending,
+        }
+      : undefined,
     auto_return: input.autoReturn,
     external_reference: input.externalReference,
     notification_url: input.notificationUrl,
@@ -132,8 +143,8 @@ export async function createPreference(input: CreatePreferenceInput): Promise<Pr
     throw new Error(`Error al crear preferencia MP: ${res.status} ${error}`);
   }
 
-  const data = await res.json() as Record<string, unknown>;
-  
+  const data = (await res.json()) as Record<string, unknown>;
+
   return {
     id: data.id as string,
     initPoint: data.init_point as string,
@@ -160,8 +171,8 @@ export async function getPayment(paymentId: string | number): Promise<PaymentDet
     throw new Error(`Error al obtener pago MP: ${res.status} ${error}`);
   }
 
-  const data = await res.json() as Record<string, unknown>;
-  
+  const data = (await res.json()) as Record<string, unknown>;
+
   return {
     id: data.id as number,
     status: data.status as PaymentDetails['status'],
@@ -177,14 +188,14 @@ export async function getPayment(paymentId: string | number): Promise<PaymentDet
       email: (data.payer as Record<string, unknown>)?.email as string,
       id: (data.payer as Record<string, unknown>)?.id as string | null,
     },
-    metadata: data.metadata as Record<string, unknown> ?? {},
+    metadata: (data.metadata as Record<string, unknown>) ?? {},
   };
 }
 
 export function verifyWebhookSignature(
   body: string,
   signature: string | undefined,
-  requestId: string | undefined
+  _requestId: string | undefined
 ): boolean {
   const config = getConfig();
   if (!config?.webhookSecret) {
@@ -195,8 +206,8 @@ export function verifyWebhookSignature(
 
   // MP usa HMAC-SHA256 con el formato: ts=TIMESTAMP,v1=SIGNATURE
   const parts = signature.split(',');
-  const tsMatch = parts.find(p => p.startsWith('ts='));
-  const sigMatch = parts.find(p => p.startsWith('v1='));
+  const tsMatch = parts.find((p) => p.startsWith('ts='));
+  const sigMatch = parts.find((p) => p.startsWith('v1='));
 
   if (!tsMatch || !sigMatch) return false;
 
@@ -206,7 +217,9 @@ export function verifyWebhookSignature(
 }
 
 // Tipos de estado para mapear a nuestro modelo
-export function mapMPStatusToPaymentStatus(mpStatus: PaymentDetails['status']): 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED' {
+export function mapMPStatusToPaymentStatus(
+  mpStatus: PaymentDetails['status']
+): 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED' {
   switch (mpStatus) {
     case 'approved':
     case 'authorized':

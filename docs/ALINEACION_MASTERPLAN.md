@@ -16,16 +16,16 @@ Documento de referencia: **[masterplan.md](./masterplan.md)** (Frozen v3.0).
 
 ## Epics vs implementación
 
-| Epic | Estado | Notas |
-|------|--------|--------|
-| **E1** UX Tinder (Feed + Swipe + Lista) | ✅ | Feed, lista, swipe LIKE/NOPE, undo, empty state |
-| **E2** Funnel anti-cierre (Leads) | ✅ | PENDING → ACTIVE/CLOSED, premiumUntil, LeadEvent |
-| **E3** Chat controlado + anti-PII | ✅ | Chat solo lead ACTIVE, filtro bloqueo PII |
-| **E4** Agenda de visitas | ✅ | Visit, POST/GET /leads/:id/visits |
-| **E5** Búsquedas activas + Alertas | ✅ | SavedSearch, AlertSubscription, AlertDelivery, runner |
-| **E6** Asistente de búsqueda | ✅ | Parser texto→SearchFilters; **+ Asistente conversacional** por API key/token (OpenAI/Anthropic); UI: Buscar, Ver listado, Guardar |
-| **E7** Monetización B2B/B2C | ✅ (parcial) | Stripe opcional (Premium B2C); wallet B2B (débito leads) |
-| **E8** Adapter + Analytics | ✅ (parcial) | Kiteprop config/spec/cifrado; importadores Yumblin, iCasas; analytics mínimos |
+| Epic                                    | Estado       | Notas                                                                                                                             |
+| --------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| **E1** UX Tinder (Feed + Swipe + Lista) | ✅           | Feed, lista, swipe LIKE/NOPE, undo, empty state                                                                                   |
+| **E2** Funnel anti-cierre (Leads)       | ✅           | PENDING → ACTIVE/CLOSED, premiumUntil, LeadEvent                                                                                  |
+| **E3** Chat controlado + anti-PII       | ✅           | Chat solo lead ACTIVE, filtro bloqueo PII                                                                                         |
+| **E4** Agenda de visitas                | ✅           | Visit, POST/GET /leads/:id/visits                                                                                                 |
+| **E5** Búsquedas activas + Alertas      | ✅           | SavedSearch, AlertSubscription, AlertDelivery, runner                                                                             |
+| **E6** Asistente de búsqueda            | ✅           | Parser texto→SearchFilters; **+ Asistente conversacional** por API key/token (OpenAI/Anthropic); UI: Buscar, Ver listado, Guardar |
+| **E7** Monetización B2B/B2C             | ✅ (parcial) | Stripe opcional (Premium B2C); wallet B2B (débito leads)                                                                          |
+| **E8** Adapter + Analytics              | ✅ (parcial) | Kiteprop config/spec/cifrado; importadores Yumblin, iCasas; analytics mínimos                                                     |
 
 ---
 
@@ -41,12 +41,12 @@ Documento de referencia: **[masterplan.md](./masterplan.md)** (Frozen v3.0).
 
 ## Settings e integraciones
 
-| Sección | Ruta | Descripción |
-|--------|------|-------------|
-| API Universal | /settings/integrations/api-universal | Estado y documentación de la API pública |
-| Pasarela de pago | /settings/integrations/payments | Estado Stripe (checkout, webhook) |
-| Asistente IA | /settings/integrations/assistant | Usuario, contraseña, API key, token (cifrados en DB) |
-| Asistente de voz | /settings/integrations/assistant-voice | Misma configuración que Asistente IA, página propia |
+| Sección          | Ruta                                   | Descripción                                          |
+| ---------------- | -------------------------------------- | ---------------------------------------------------- |
+| API Universal    | /settings/integrations/api-universal   | Estado y documentación de la API pública             |
+| Pasarela de pago | /settings/integrations/payments        | Estado Stripe (checkout, webhook)                    |
+| Asistente IA     | /settings/integrations/assistant       | Usuario, contraseña, API key, token (cifrados en DB) |
+| Asistente de voz | /settings/integrations/assistant-voice | Misma configuración que Asistente IA, página propia  |
 
 API del asistente: `POST /assistant/chat` usa credenciales de `AssistantConfig` (API key o token según provider).
 
@@ -82,4 +82,4 @@ Ver **[TAREAS_Y_MEJORAS.md](./TAREAS_Y_MEJORAS.md)** — prioridad (smoke en CI,
 
 ---
 
-*Última actualización: alineado a masterplan v3.0 y estado post–Sprint 14 / integraciones.*
+_Última actualización: alineado a masterplan v3.0 y estado post–Sprint 14 / integraciones._

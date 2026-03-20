@@ -34,13 +34,13 @@ Con **DEMO_MODE=0**, los feature flags `demoMode`, `kitepropExternalsite` y `api
 
 ## Comandos
 
-| Comando                      | Descripción                                                                         |
-| ---------------------------- | ----------------------------------------------------------------------------------- |
-| `pnpm run deploy:pre`        | Pre-deploy: prisma generate + migrate deploy                                        |
-| `pnpm run pre-deploy:verify` | Verificación: build shared + typecheck + build api/web/admin + test:all (sin smoke) |
-| `pnpm build`                 | Build de todo el monorepo                                                           |
-| `pnpm --filter api start`    | Inicia API (tras build)                                                             |
-| `pnpm --filter web start`    | Inicia Web (tras build)                                                             |
+| Comando                         | Descripción                                                                                                                                                       |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm run deploy:pre`           | Pre-deploy: prisma generate + migrate deploy                                                                                                                      |
+| `pnpm run pre-deploy:verify`    | Verificación: build shared + typecheck + build api/web/admin + test:all (sin smoke)                                                                               |
+| `pnpm build`                    | Build de todo el monorepo                                                                                                                                         |
+| `pnpm --filter api start`       | Inicia API (tras build)                                                                                                                                           |
+| `pnpm --filter web start`       | Inicia Web (tras build)                                                                                                                                           |
 | `pnpm --filter api ingest:cron` | Cron horario: recorre conexiones activas (IngestSourceConfig), actualiza propiedades. Ver [INGEST_CRON_Y_ACTUALIZACIONES.md](./INGEST_CRON_Y_ACTUALIZACIONES.md). |
 
 ---
@@ -84,20 +84,20 @@ Usar para healthcheck (Vercel, Kubernetes, etc.).
 
 ### API
 
-| Variable                | Requerido         | Descripción                        |
-| ----------------------- | ----------------- | ---------------------------------- |
-| PORT                    | No (default 3001) | Puerto API                         |
-| DATABASE_URL            | Sí                | URL PostgreSQL                     |
-| JWT_SECRET              | Sí                | Secret JWT (no usar valor dev)     |
-| AUTH_REFRESH_SECRET     | Sí                | Secret refresh token               |
-| APP_URL                 | Sí                | URL pública de la app              |
-| API_PUBLIC_URL          | Sí                | URL pública de la API              |
-| CORS_ORIGINS            | Sí                | Orígenes permitidos                |
-| COOKIE_SECURE           | Sí                | true en prod (HTTPS)               |
-| INTEGRATIONS_MASTER_KEY | Sí (Kiteprop)     | Clave para cifrar API keys         |
-| STRIPE_SECRET_KEY       | No (Premium B2C)  | Stripe para checkout Premium       |
-| STRIPE_WEBHOOK_SECRET   | No (Premium B2C)  | Webhook Stripe para premiumUntil   |
-| LEAD_DEBIT_CENTS        | No (default 100)  | Débito por activar lead (centavos) |
+| Variable                | Requerido         | Descripción                                                                                      |
+| ----------------------- | ----------------- | ------------------------------------------------------------------------------------------------ |
+| PORT                    | No (default 3001) | Puerto API                                                                                       |
+| DATABASE_URL            | Sí                | URL PostgreSQL                                                                                   |
+| JWT_SECRET              | Sí                | Secret JWT (no usar valor dev)                                                                   |
+| AUTH_REFRESH_SECRET     | Sí                | Secret refresh token                                                                             |
+| APP_URL                 | Sí                | URL pública de la app                                                                            |
+| API_PUBLIC_URL          | Sí                | URL pública de la API                                                                            |
+| CORS_ORIGINS            | Sí                | Orígenes permitidos                                                                              |
+| COOKIE_SECURE           | Sí                | true en prod (HTTPS)                                                                             |
+| INTEGRATIONS_MASTER_KEY | Sí (Kiteprop)     | Clave para cifrar API keys                                                                       |
+| STRIPE_SECRET_KEY       | No (Premium B2C)  | Stripe para checkout Premium                                                                     |
+| STRIPE_WEBHOOK_SECRET   | No (Premium B2C)  | Webhook Stripe para premiumUntil                                                                 |
+| LEAD_DEBIT_CENTS        | No (default 100)  | Débito por activar lead (centavos)                                                               |
 | PREMIUM_FREE            | No (solo pruebas) | 1 = planes liberados (listas, activar leads). No usar en prod cuando apliquen reglas de negocio. |
 
 **Integraciones (Settings):** Asistente IA (y Asistente de voz) y API Universal se configuran desde la UI en /settings/integrations (usuario, API key, token). Las credenciales se guardan cifradas en DB con `INTEGRATIONS_MASTER_KEY`. No hay variables de entorno adicionales obligatorias para el asistente conversacional.

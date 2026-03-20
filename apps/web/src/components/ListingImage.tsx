@@ -31,13 +31,6 @@ export default function ListingImage({
   }
 
   return (
-    <img
-      src={src}
-      alt={alt}
-      className={className}
-      loading="lazy"
-      onError={() => setError(true)}
-    />
+    <img src={src} alt={alt} className={className} loading="lazy" onError={() => setError(true)} />
   );
 }
-

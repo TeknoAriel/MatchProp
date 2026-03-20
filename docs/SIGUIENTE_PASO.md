@@ -6,11 +6,11 @@ El código está en **https://github.com/TeknoAriel/MatchProp**. Para tener la a
 
 ## Documentación de deploy (fuente de verdad)
 
-| Documento | Uso |
-|-----------|-----|
-| **[SETUP_DEPLOY_SIMPLE.md](./SETUP_DEPLOY_SIMPLE.md)** | Pasos mínimos: Neon, migraciones, variables en Vercel (API + Web), URLs de referencia. |
-| **[PROD.md](./PROD.md)** | Producción: checklist pre-deploy, variables de entorno, demo sources OFF, seguridad, health. |
-| **[DEPLOY_CHECKLIST.md](./DEPLOY_CHECKLIST.md)** | Pre-deploy (`pnpm run pre-deploy:verify`), deploy (`git push origin main`), post-deploy. |
+| Documento                                              | Uso                                                                                          |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| **[SETUP_DEPLOY_SIMPLE.md](./SETUP_DEPLOY_SIMPLE.md)** | Pasos mínimos: Neon, migraciones, variables en Vercel (API + Web), URLs de referencia.       |
+| **[PROD.md](./PROD.md)**                               | Producción: checklist pre-deploy, variables de entorno, demo sources OFF, seguridad, health. |
+| **[DEPLOY_CHECKLIST.md](./DEPLOY_CHECKLIST.md)**       | Pre-deploy (`pnpm run pre-deploy:verify`), deploy (`git push origin main`), post-deploy.     |
 
 ---
 

@@ -32,7 +32,9 @@ async function main() {
     },
     { timeout: 60_000 }
   );
-  console.log('OK: todos los usuarios y datos asociados fueron eliminados. Podés hacer login desde cero.');
+  console.log(
+    'OK: todos los usuarios y datos asociados fueron eliminados. Podés hacer login desde cero.'
+  );
 }
 
 main()

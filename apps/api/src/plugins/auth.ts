@@ -16,9 +16,12 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
     'requireRole',
     (allowedRoles: UserRole[]) =>
       async function (this: typeof fastify, request: FastifyRequest) {
-        const user = request.user as { userId?: string; email?: string; role?: UserRole } | undefined;
+        const user = request.user as
+          | { userId?: string; email?: string; role?: UserRole }
+          | undefined;
         const role = user?.role;
-        const isAdminByEmail = allowedRoles.includes('ADMIN' as UserRole) && isKitepropAdmin(user?.email);
+        const isAdminByEmail =
+          allowedRoles.includes('ADMIN' as UserRole) && isKitepropAdmin(user?.email);
         if (!isAdminByEmail && (!role || !allowedRoles.includes(role))) {
           throw this.httpErrors.forbidden('Forbidden');
         }
@@ -29,7 +32,9 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
     'requireOrgRole',
     (paramKey: string, allowedRoles: OrgRole[]) =>
       async function (this: typeof fastify, request: FastifyRequest) {
-        const user = request.user as { userId?: string; email?: string; role?: UserRole } | undefined;
+        const user = request.user as
+          | { userId?: string; email?: string; role?: UserRole }
+          | undefined;
         const userId = user?.userId;
         if (!userId) throw this.httpErrors.unauthorized('Unauthorized');
 
