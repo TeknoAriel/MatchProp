@@ -16,7 +16,7 @@ Ningún cambio llega a Vercel si alguno de estos falla. El merge a `main` debe h
 
 - Tras un push a `main`, después del job **build** se ejecuta **smoke-prod**: espera 3 minutos (deploy en Vercel) y luego comprueba:
   - `https://match-prop-web.vercel.app` → 200
-  - `https://match-prop-api-1jte.vercel.app/health` → 200
+  - `https://match-prop-admin-dsvv.vercel.app/health` → 200
 - Si falla, el run de CI queda en error (revisar Actions y/o prod).
 
 ## Smoke programado
@@ -53,4 +53,4 @@ Detalle: [URL_PRUEBAS_Y_PROYECTOS.md](./URL_PRUEBAS_Y_PROYECTOS.md).
 
 ## Corrección crítica aplicada
 
-- En `apps/web/next.config.ts` la API de producción estaba apuntando a **match-prop-admin**; se corrigió a **match-prop-api-1jte.vercel.app** para que el proxy `/api/*` hable con la API real.
+- En `apps/web/next.config.ts` la API de producción estaba apuntando a **match-prop-admin**; se corrigió a **match-prop-admin-dsvv.vercel.app** para que el proxy `/api/*` hable con la API real.

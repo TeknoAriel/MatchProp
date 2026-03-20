@@ -92,7 +92,7 @@ Después de añadir o cambiar variables:
 ## URLs de referencia
 
 - **Web:** https://match-prop-web.vercel.app
-- **API:** https://match-prop-api-1jte.vercel.app
+- **API:** https://match-prop-admin-dsvv.vercel.app
 
 ---
 
@@ -128,7 +128,7 @@ cd apps/web && vercel env pull .env.local --yes
 ## Validación rápida
 
 - **Web:** https://match-prop-web.vercel.app (debe cargar la home)
-- **API health:** https://match-prop-api-1jte.vercel.app/health (siempre 200; `status`: `ok` o `degraded`; `db: "error"` puede ser cold start de Neon)
+- **API health:** https://match-prop-admin-dsvv.vercel.app/health (siempre 200; `status`: `ok` o `degraded`; `db: "error"` puede ser cold start de Neon)
 
 **Deploy preview:** al hacer push a una rama distinta de `main`, Vercel crea un deploy de preview. Para que la API en preview tenga DB y auth, duplicar en Vercel las variables de Production en el entorno Preview (Settings → Environment Variables → cada variable → editar → marcar Preview).
 

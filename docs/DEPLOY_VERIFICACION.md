@@ -16,9 +16,9 @@ En **Settings → Environment Variables** del proyecto API:
 
 ## 2. Variables en Vercel – Proyecto **Web**
 
-| Variable         | Valor                                                                        |
-| ---------------- | ---------------------------------------------------------------------------- |
-| `API_SERVER_URL` | `https://match-prop-api-1jte.vercel.app` (o la URL real de tu API en Vercel) |
+| Variable         | Valor                                                                          |
+| ---------------- | ------------------------------------------------------------------------------ |
+| `API_SERVER_URL` | `https://match-prop-admin-dsvv.vercel.app` (o la URL real de tu API en Vercel) |
 
 ## 3. Login admin (email + contraseña)
 

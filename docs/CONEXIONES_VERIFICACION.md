@@ -6,11 +6,11 @@ Repositorio: **MatchProp** (monorepo pnpm). Apps: `apps/web`, `apps/api`, `apps/
 
 ## 1) Estructura del repo y deploys
 
-| App   | Ruta en repo | Deploy Vercel (ejemplo)         | Qué hace                                                                                                                         |
-| ----- | ------------ | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Web   | `apps/web`   | match-prop-web.vercel.app       | Next.js; login, feed, listas, búsqueda, configuraciones. Todas las llamadas al backend pasan por `/api/*` → reescritas a la API. |
-| API   | `apps/api`   | match-prop-api-1jte.vercel.app  | Fastify en serverless (`api/[[...path]].ts`). Salud, auth, feed, listas, leads, asistente, integraciones, etc.                   |
-| Admin | `apps/admin` | (opcional) otro proyecto Vercel | Next.js puerto 3002; panel interno. No es el mismo que "Configuraciones" de la web.                                              |
+| App   | Ruta en repo | Deploy Vercel (ejemplo)          | Qué hace                                                                                                                         |
+| ----- | ------------ | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Web   | `apps/web`   | match-prop-web.vercel.app        | Next.js; login, feed, listas, búsqueda, configuraciones. Todas las llamadas al backend pasan por `/api/*` → reescritas a la API. |
+| API   | `apps/api`   | match-prop-admin-dsvv.vercel.app | Fastify en serverless (`api/[[...path]].ts`). Salud, auth, feed, listas, leads, asistente, integraciones, etc.                   |
+| Admin | `apps/admin` | (opcional) otro proyecto Vercel  | Next.js puerto 3002; panel interno. No es el mismo que "Configuraciones" de la web.                                              |
 
 **Confirmación:** Un solo repo. No hay que conectar “otro repo”; todo está en este.
 
@@ -21,14 +21,14 @@ Repositorio: **MatchProp** (monorepo pnpm). Apps: `apps/web`, `apps/api`, `apps/
 - **En el navegador:** La web hace `fetch('/api/...', { credentials: 'include' })`. La URL es siempre el mismo origen (ej. `match-prop-web.vercel.app`).
 - **En el servidor Next (Vercel):** `next.config.ts` tiene un **rewrite**:  
   `source: '/api/:path*'` → `destination: '${API_SERVER_URL}/:path*'`.
-- **API_SERVER_URL** debe ser la URL pública de la API, ej. `https://match-prop-api-1jte.vercel.app`.
+- **API_SERVER_URL** debe ser la URL pública de la API, ej. `https://match-prop-admin-dsvv.vercel.app`.
 
 **Variables en el proyecto Web (Vercel):**
 
-| Variable              | Valor                                    | Obligatorio                                               |
-| --------------------- | ---------------------------------------- | --------------------------------------------------------- |
-| `API_SERVER_URL`      | `https://match-prop-api-1jte.vercel.app` | **Sí** (o la URL real de tu API)                          |
-| `NEXT_PUBLIC_API_URL` | Mismo valor                              | Opcional (solo si el cliente usa esta URL en algún sitio) |
+| Variable              | Valor                                      | Obligatorio                                               |
+| --------------------- | ------------------------------------------ | --------------------------------------------------------- |
+| `API_SERVER_URL`      | `https://match-prop-admin-dsvv.vercel.app` | **Sí** (o la URL real de tu API)                          |
+| `NEXT_PUBLIC_API_URL` | Mismo valor                                | Opcional (solo si el cliente usa esta URL en algún sitio) |
 
 Si `API_SERVER_URL` no está definida, `next.config.ts` usa un fallback cuando `VERCEL === '1'` a esa URL. Aun así, **conviene definirla** en el dashboard de Vercel (proyecto Web) para no depender del fallback y poder cambiarla sin rebuild.
 
@@ -56,7 +56,7 @@ Todas dependen de que **el rewrite Web → API funcione** y de que la **API** te
 
 ## 4) API (proyecto match-prop-api-1jte)
 
-- **Entrada:** Cualquier request a `https://match-prop-api-1jte.vercel.app/XXX` se reescribe a ` /api/XXX` y lo atiende `api/[[...path]].ts`.
+- **Entrada:** Cualquier request a `https://match-prop-admin-dsvv.vercel.app/XXX` se reescribe a ` /api/XXX` y lo atiende `api/[[...path]].ts`.
 - **Dentro del handler:** Se construye el path para Fastify (sin el prefijo `/api`) y se hace `app.inject({ method, url: path, headers, payload })`. Las rutas de Fastify están registradas **sin** prefijo `/api` (ej. `GET /me/profile`, `POST /assistant/search`).
 - **Autenticación:** Cookie `access_token` o header `Authorization: Bearer <token>`. Si el request viene de la web por rewrite, Next/Vercel reenvía las cookies.
 
@@ -64,16 +64,16 @@ Todas dependen de que **el rewrite Web → API funcione** y de que la **API** te
 
 ```bash
 # Sin auth (debe dar 401 en rutas protegidas)
-curl -s -o /dev/null -w "%{http_code}" https://match-prop-api-1jte.vercel.app/me/profile
+curl -s -o /dev/null -w "%{http_code}" https://match-prop-admin-dsvv.vercel.app/me/profile
 # Esperado: 401
 
 # Con login
-curl -s -c cookies.txt -X POST https://match-prop-api-1jte.vercel.app/login \
+curl -s -c cookies.txt -X POST https://match-prop-admin-dsvv.vercel.app/login \
   -H 'Content-Type: application/json' \
   -d '{"email":"ariel@kiteprop.com","password":"KiteProp123"}'
 # Esperado: 200 y body con token
 
-curl -s -b cookies.txt https://match-prop-api-1jte.vercel.app/me/profile
+curl -s -b cookies.txt https://match-prop-admin-dsvv.vercel.app/me/profile
 # Esperado: 200 y body con role, email, etc.
 ```
 
@@ -86,7 +86,7 @@ Si esto da 200 con cookies y desde la web da 404, el fallo está en la **conexi�
 ## 5) Checklist punto por punto
 
 - [ ] **Repo:** Es este (MatchProp). Una sola codebase.
-- [ ] **Vercel – Proyecto Web:** Root = `apps/web`. Variable `API_SERVER_URL` = `https://match-prop-api-1jte.vercel.app` (o la URL real de la API).
+- [ ] **Vercel – Proyecto Web:** Root = `apps/web`. Variable `API_SERVER_URL` = `https://match-prop-admin-dsvv.vercel.app` (o la URL real de la API).
 - [ ] **Vercel – Proyecto API:** Root = `apps/api`. Build correcto (Prisma generate + build). Sin variables que rompan el build.
 - [ ] **Navegador:** Al usar la web, las peticiones en la pestaña Red son a `match-prop-web.vercel.app/api/...` y las respuestas no son 404 (p. ej. 200, 401, 403).
 - [ ] **Menú Configuraciones:** Si `/api/me/profile` falla, la página puede mostrar el menú igual (cambio en código) para que los admin vean las opciones; el backend seguirá devolviendo 403 a no-admin en cada integración.
