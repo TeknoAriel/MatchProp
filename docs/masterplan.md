@@ -161,7 +161,8 @@ MatchProp es una plataforma de búsqueda inmobiliaria que conecta compradores co
 
 ## Estado actual (alineación)
 
-Estado de implementación y UX actual: **[ALINEACION_MASTERPLAN.md](./ALINEACION_MASTERPLAN.md)** (Epics, Settings, importadores Yumblin/iCasas, producción, tests).
+Estado de implementación y UX actual: **[ALINEACION_MASTERPLAN.md](./ALINEACION_MASTERPLAN.md)** (Epics, Settings, importadores Yumblin/iCasas, producción, tests).  
+Prioridades de trimestre: **[FOCO_2026.md](./FOCO_2026.md)**.
 
 ---
 

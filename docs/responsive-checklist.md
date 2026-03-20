@@ -2,7 +2,7 @@
 
 **Objetivo:** Revisar que las vistas clave funcionen en viewports móvil (320px y 375px) sin overflow horizontal ni regresiones en desktop.
 
-**Referencia:** [revision-responsive-sprint-siguiente.md](./revision-responsive-sprint-siguiente.md) (análisis previo).
+**Referencia:** [revision-responsive-sprint-siguiente.md](./archive/revision-responsive-sprint-siguiente.md) (análisis previo, archivo).
 
 ---
 

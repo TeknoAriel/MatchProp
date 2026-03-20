@@ -65,4 +65,4 @@ Ver `docs/kiteprop-listing-example.json` para payload de ejemplo.
 
 ---
 
-_Documentación alineada con plan-completamiento-100 Fase 1.5._
+_Documentación alineada con [plan-completamiento-100 (archivo)](./archive/plan-completamiento-100.md) Fase 1.5._

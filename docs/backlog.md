@@ -2,6 +2,8 @@
 
 **Priorizado según Masterplan v3.0**
 
+> **Nota:** Las tablas por Epic pueden quedar **desfasadas** frente al código. Estado “hoy”: [ALINEACION_MASTERPLAN.md](./ALINEACION_MASTERPLAN.md). Prioridades del trimestre: [FOCO_2026.md](./FOCO_2026.md). Cola corta de trabajo: [TAREAS_Y_MEJORAS.md](./TAREAS_Y_MEJORAS.md).
+
 ---
 
 ## Epics (E1–E8)
@@ -26,15 +28,15 @@
 
 | Objetivo                      | Tickets                              | Definition of Done                                                               |
 | ----------------------------- | ------------------------------------ | -------------------------------------------------------------------------------- |
-| Chat solo ACTIVE, bloqueo PII | MVP: NOT STARTED                     | Modelo Message, GET/POST /leads/:id/messages, filtro anti-PII, tests integración |
-|                               | Next: UI chat                        | —                                                                                |
+| Chat solo ACTIVE, bloqueo PII | MVP: DONE (ver alineación)           | Modelo Message, GET/POST /leads/:id/messages, filtro anti-PII, tests integración |
+|                               | Next: UI chat                        | Pulido UX / notificaciones                                                       |
 |                               | Later: notificaciones en tiempo real | —                                                                                |
 
 ### E4 — Agenda de visitas
 
 | Objetivo                 | Tickets                    | Definition of Done                                                  |
 | ------------------------ | -------------------------- | ------------------------------------------------------------------- |
-| Slots visita solo ACTIVE | MVP: NOT STARTED           | Modelo Visit, POST/GET /leads/:id/visits, scheduledAt futuro, tests |
+| Slots visita solo ACTIVE | MVP: DONE (ver alineación) | Modelo Visit, POST/GET /leads/:id/visits, scheduledAt futuro, tests |
 |                          | Next: UI agenda            | —                                                                   |
 |                          | Later: calendario avanzado | —                                                                   |
 

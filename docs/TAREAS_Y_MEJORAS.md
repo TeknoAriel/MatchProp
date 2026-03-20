@@ -2,6 +2,16 @@
 
 Documento vivo: próximas tareas priorizadas y mejoras técnicas. Alineado a [masterplan.md](./masterplan.md) y [ALINEACION_MASTERPLAN.md](./ALINEACION_MASTERPLAN.md).
 
+## Cómo se reparte con el backlog
+
+| Documento                                | Uso                                                                                                        |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Este archivo (`TAREAS_Y_MEJORAS.md`)** | Cola **operativa** (próximas semanas): mejoras concretas, estado “hecho / parcial / pendiente”.            |
+| **[backlog.md](./backlog.md)**           | Vista por **Epic** (E1–E8), ideas Next/Later y **deuda técnica** (DT-xxx); puede incluir filas históricas. |
+| **[FOCO_2026.md](./FOCO_2026.md)**       | Prioridades de producto del trimestre (north star, en foco / fuera de foco).                               |
+
+Regla: **no duplicar** la misma tarea en detalle en ambos; en `backlog` va la épica/ticket; aquí el seguimiento cercano.
+
 ---
 
 ## Estado de referencia
@@ -62,4 +72,4 @@ Documento vivo: próximas tareas priorizadas y mejoras técnicas. Alineado a [ma
 
 ---
 
-_Última actualización: alineado a estado actual post-deploy y ALINEACION_MASTERPLAN._
+_Última actualización: 2026-03-20 — alineado a FOCO_2026, CI y ALINEACION_MASTERPLAN._

@@ -19,4 +19,5 @@ MatchProp es una plataforma de búsqueda inmobiliaria que conecta compradores co
 ## Modo demo y gates
 
 - **Modo demo:** `DEMO_MODE=1` habilita dataset demo (500+ listings), endpoints de status/listings-count y rutas debug/admin en condiciones controladas.
-- **Gates:** Lint, format:check, typecheck, tests API (`pnpm audit:verify`). Smoke/demo completo: `pnpm demo:up`.
+- **CI (GitHub):** typecheck, lint + `format:check`, tests unitarios API (rápidos, sin DB), integration con Postgres + `pnpm --filter api test:all`, y gate de build (`pre-deploy:verify`). Ver `/.github/workflows/ci.yml`.
+- **Local / auditoría:** `pnpm audit:verify` (equivale a lint + format + typecheck + `test:all`; **requiere Postgres** y `pnpm --filter api exec prisma generate` si hace falta). Demo completo: `pnpm demo:up`.

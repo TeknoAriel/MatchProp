@@ -79,7 +79,7 @@
 - [x] **3.5.1** Smoke ya filtra errores benignos (ChunkLoadError, ResizeObserver, 401, key prop) y falla si hay errores críticos de runtime.
 - [x] **3.5.2** Test `/status` ya verifica API OK y LISTINGS COUNT.
 
-**Entregable Fase 3:** PROD.md con "Demo sources OFF" explícito y referencia a flags; smoke con paso feed con búsqueda activa; checklist responsive en [docs/responsive-checklist.md](./responsive-checklist.md). Revisión manual 320/375px (3.4.1) queda como tarea de QA.
+**Entregable Fase 3:** PROD.md con "Demo sources OFF" explícito y referencia a flags; smoke con paso feed con búsqueda activa; checklist responsive en [responsive-checklist.md](../responsive-checklist.md). Revisión manual 320/375px (3.4.1) queda como tarea de QA.
 
 ---
 

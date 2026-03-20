@@ -23,7 +23,7 @@ packages/
   shared/     → Tipos y utilidades compartidas
 ```
 
-Documentación: [ARCHITECTURE.md](docs/ARCHITECTURE.md) | [DEPLOY.md](docs/DEPLOY.md) | [SCALABILITY.md](docs/SCALABILITY.md)
+Documentación: [docs/index.md](docs/index.md) | [FOCO 2026](docs/FOCO_2026.md) | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | [DEPLOY.md](docs/DEPLOY.md)
 
 ## Requisitos
 

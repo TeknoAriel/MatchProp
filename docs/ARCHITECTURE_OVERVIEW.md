@@ -1,5 +1,8 @@
 # MatchProp — Architecture Overview
 
+> **Documento principal de arquitectura:** [ARCHITECTURE.md](./ARCHITECTURE.md) (diagramas, módulos, flujos).  
+> Esta página es un **resumen de una pantalla** para onboarding rápido.
+
 ## Monorepo
 
 - apps/api: Fastify, Prisma, PostgreSQL (puerto 3001)
