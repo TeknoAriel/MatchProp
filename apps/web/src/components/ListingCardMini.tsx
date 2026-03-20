@@ -10,6 +10,7 @@ export interface ListingCardMiniData {
   currency?: string | null;
   locationText?: string | null;
   heroImageUrl?: string | null;
+  media?: { url: string; sortOrder: number }[];
   bedrooms?: number | null;
   bathrooms?: number | null;
   areaTotal?: number | null;
@@ -83,6 +84,17 @@ export default function ListingCardMini({
   onAddToList,
 }: ListingCardMiniProps) {
   const [imgError, setImgError] = useState(false);
+  const [imageIndex, setImageIndex] = useState(0);
+  const images: { url: string }[] =
+    listing.media?.length
+      ? [...listing.media].sort((a, b) => a.sortOrder - b.sortOrder)
+      : listing.heroImageUrl
+        ? [{ url: listing.heroImageUrl }]
+        : [];
+  const currentImage = images[imageIndex];
+  const hasMultiple = images.length > 1;
+  const showImage = !!currentImage && !imgError;
+
   const title = displayTitle(listing);
   const priceText =
     listing.price != null
@@ -93,7 +105,6 @@ export default function ListingCardMini({
   const inLists = status?.inLists ?? [];
   const inFavorite = status?.inFavorite ?? false;
   const inLike = status?.inLike ?? false;
-  const showImage = listing.heroImageUrl && !imgError;
 
   return (
     <div
@@ -113,12 +124,12 @@ export default function ListingCardMini({
         </div>
       )}
       <Link href={href} className="block flex-1">
-        <div className="aspect-video bg-slate-200 relative overflow-hidden">
+        <div className="aspect-video bg-slate-200 relative overflow-hidden group">
           {showImage ? (
             <img
-              src={listing.heroImageUrl!}
+              src={currentImage!.url}
               alt={title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-opacity duration-200"
               loading="lazy"
               onError={() => setImgError(true)}
             />
@@ -127,6 +138,53 @@ export default function ListingCardMini({
               <span className="text-4xl mb-2">🏠</span>
               <span className="text-xs">Sin imagen</span>
             </div>
+          )}
+          {hasMultiple && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setImageIndex((i) => (i <= 0 ? images.length - 1 : i - 1));
+                }}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label="Imagen anterior"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setImageIndex((i) => (i >= images.length - 1 ? 0 : i + 1));
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label="Siguiente imagen"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                {images.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setImageIndex(idx);
+                    }}
+                    className={`w-2 h-2 rounded-full transition-all ${idx === imageIndex ? 'bg-white scale-125' : 'bg-white/60 hover:bg-white/80'}`}
+                    aria-label={`Ir a imagen ${idx + 1}`}
+                  />
+                ))}
+              </div>
+              <span className="absolute top-2 right-2 text-xs bg-black/60 text-white px-2 py-1 rounded-full font-medium">
+                📷 {imageIndex + 1}/{images.length}
+              </span>
+            </>
           )}
           {badges && (listing.operationType || listing.propertyType) && (
             <div className="absolute top-2 left-2 flex gap-1 flex-wrap">

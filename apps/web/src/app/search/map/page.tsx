@@ -9,7 +9,8 @@ import 'leaflet/dist/leaflet.css';
 
 const API_BASE = '/api';
 
-type MapListingCard = ListingCard & { lat: number; lng: number };
+type MapMedia = { url: string; sortOrder: number };
+type MapListingCard = ListingCard & { lat: number; lng: number; media?: MapMedia[] };
 type Bounds = { minLat: number; maxLat: number; minLng: number; maxLng: number };
 
 const DEFAULT_CENTER = { lat: -32.9468, lng: -60.6393 }; // Rosario
@@ -21,6 +22,20 @@ function normalizeCard(raw: unknown): MapListingCard | null {
   const lat = typeof c.lat === 'number' ? c.lat : null;
   const lng = typeof c.lng === 'number' ? c.lng : null;
   if (!id || lat == null || lng == null) return null;
+
+  const media: MapMedia[] | undefined = Array.isArray(c.media)
+    ? c.media
+        .map((m) => {
+          if (!m || typeof m !== 'object') return null;
+          const mm = m as Record<string, unknown>;
+          const url = typeof mm.url === 'string' && mm.url ? mm.url : null;
+          const sortOrder = typeof mm.sortOrder === 'number' ? mm.sortOrder : null;
+          if (!url || sortOrder == null) return null;
+          return { url, sortOrder };
+        })
+        .filter((x): x is MapMedia => x !== null)
+    : undefined;
+
   return {
     id,
     lat,
@@ -32,7 +47,11 @@ function normalizeCard(raw: unknown): MapListingCard | null {
     bathrooms: typeof c.bathrooms === 'number' ? c.bathrooms : null,
     areaTotal: typeof c.areaTotal === 'number' ? c.areaTotal : null,
     locationText: typeof c.locationText === 'string' ? c.locationText : null,
-    heroImageUrl: typeof c.heroImageUrl === 'string' && c.heroImageUrl ? c.heroImageUrl : null,
+    heroImageUrl:
+      typeof c.heroImageUrl === 'string' && c.heroImageUrl
+        ? c.heroImageUrl
+        : media?.[0]?.url ?? null,
+    media,
     publisherRef: typeof c.publisherRef === 'string' ? c.publisherRef : null,
     source: typeof c.source === 'string' ? c.source : 'KITEPROP_EXTERNALSITE',
     operationType: typeof c.operationType === 'string' ? c.operationType : null,
@@ -58,6 +77,8 @@ export default function SearchMapPage() {
   const [items, setItems] = useState<MapListingCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [selectedImgError, setSelectedImgError] = useState(false);
   const [center, setCenter] = useState(DEFAULT_CENTER);
   const [showList, setShowList] = useState(true);
 
@@ -112,6 +133,21 @@ export default function SearchMapPage() {
   }, [items, center]);
 
   const selectedItem = items.find((i) => i.id === selectedId);
+
+  useEffect(() => {
+    setSelectedImageIndex(0);
+    setSelectedImgError(false);
+  }, [selectedId]);
+
+  const selectedImages: { url: string; sortOrder: number }[] =
+    selectedItem?.media?.length
+      ? [...selectedItem.media].sort((a, b) => a.sortOrder - b.sortOrder)
+      : selectedItem?.heroImageUrl
+        ? [{ url: selectedItem.heroImageUrl, sortOrder: 0 }]
+        : [];
+
+  const selectedCurrentImage = selectedImages[selectedImageIndex];
+  const selectedHasMultiple = selectedImages.length > 1;
 
   if (loading) {
     return (
@@ -209,15 +245,90 @@ export default function SearchMapPage() {
         <div className="md:hidden fixed bottom-20 left-4 right-4 z-20">
           <div className="bg-[var(--mp-card)] rounded-2xl shadow-lg border border-[var(--mp-border)] overflow-hidden">
             <div className="flex">
-              {selectedItem.heroImageUrl && (
-                <div className="w-24 h-24 shrink-0">
+              <div className="w-24 h-24 shrink-0 relative overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
+                {selectedCurrentImage?.url && !selectedImgError ? (
                   <img
-                    src={selectedItem.heroImageUrl}
+                    src={selectedCurrentImage.url}
                     alt=""
                     className="w-full h-full object-cover"
+                    onError={() => setSelectedImgError(true)}
                   />
-                </div>
-              )}
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                    <span className="text-2xl mb-1">🏠</span>
+                    <span className="text-xs">Sin imagen</span>
+                  </div>
+                )}
+
+                {selectedHasMultiple && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedImgError(false);
+                        setSelectedImageIndex((i) => (i <= 0 ? selectedImages.length - 1 : i - 1));
+                      }}
+                      className="absolute left-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md cursor-pointer"
+                      aria-label="Imagen anterior"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedImgError(false);
+                        setSelectedImageIndex((i) =>
+                          i >= selectedImages.length - 1 ? 0 : i + 1
+                        );
+                      }}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md cursor-pointer"
+                      aria-label="Siguiente imagen"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+
+                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
+                      {selectedImages.map((_, idx) => (
+                        <div
+                          key={`selected-dot-${idx}`}
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setSelectedImgError(false);
+                            setSelectedImageIndex(idx);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key !== 'Enter' && e.key !== ' ') return;
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setSelectedImgError(false);
+                            setSelectedImageIndex(idx);
+                          }}
+                          className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
+                            idx === selectedImageIndex ? 'bg-white scale-125' : 'bg-white/60 hover:bg-white/80'
+                          }`}
+                          aria-label={`Ir a imagen ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+
+                    <span className="absolute top-1 right-1 text-[10px] bg-black/60 text-white px-2 py-1 rounded-full font-medium">
+                      📷 {selectedImageIndex + 1}/{selectedImages.length}
+                    </span>
+                  </>
+                )}
+              </div>
               <div className="flex-1 p-3 min-w-0">
                 <h3 className="font-medium text-sm truncate text-[var(--mp-foreground)]">
                   {selectedItem.title || 'Propiedad'}
@@ -257,6 +368,21 @@ function PropertyCardHorizontal({
   onClick: () => void;
 }) {
   const [imgError, setImgError] = useState(false);
+  const [imageIndex, setImageIndex] = useState(0);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [imageIndex]);
+
+  const images: { url: string; sortOrder: number }[] =
+    card.media?.length
+      ? [...card.media].sort((a, b) => a.sortOrder - b.sortOrder)
+      : card.heroImageUrl
+        ? [{ url: card.heroImageUrl, sortOrder: 0 }]
+        : [];
+
+  const currentImage = images[imageIndex];
+  const hasMultiple = images.length > 1;
 
   return (
     <button
@@ -267,10 +393,10 @@ function PropertyCardHorizontal({
           : 'border-[var(--mp-border)] hover:border-sky-300 hover:shadow-md'
       }`}
     >
-      <div className="h-28 bg-gradient-to-br from-slate-100 to-slate-200 relative overflow-hidden">
-        {card.heroImageUrl && !imgError ? (
+      <div className="h-28 bg-gradient-to-br from-slate-100 to-slate-200 relative overflow-hidden group">
+        {currentImage?.url && !imgError ? (
           <img
-            src={card.heroImageUrl}
+            src={currentImage.url}
             alt=""
             className="w-full h-full object-cover"
             loading="lazy"
@@ -282,6 +408,90 @@ function PropertyCardHorizontal({
             <span className="text-xs">Sin imagen</span>
           </div>
         )}
+
+        {hasMultiple && (
+          <>
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setImgError(false);
+                setImageIndex((i) => (i <= 0 ? images.length - 1 : i - 1));
+              }}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                e.stopPropagation();
+                setImgError(false);
+                setImageIndex((i) => (i <= 0 ? images.length - 1 : i - 1));
+              }}
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              aria-label="Imagen anterior"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </div>
+
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setImgError(false);
+                setImageIndex((i) => (i >= images.length - 1 ? 0 : i + 1));
+              }}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                e.stopPropagation();
+                setImgError(false);
+                setImageIndex((i) => (i >= images.length - 1 ? 0 : i + 1));
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              aria-label="Siguiente imagen"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+              {images.map((_, idx) => (
+                <div
+                  key={`${card.id}-dot-${idx}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setImgError(false);
+                    setImageIndex(idx);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setImgError(false);
+                    setImageIndex(idx);
+                  }}
+                  className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
+                    idx === imageIndex ? 'bg-white scale-125' : 'bg-white/60 hover:bg-white/80'
+                  }`}
+                  aria-label={`Ir a imagen ${idx + 1}`}
+                />
+              ))}
+            </div>
+
+            <span className="absolute top-2 right-2 text-xs bg-black/60 text-white px-2 py-1 rounded-full font-medium">
+              📷 {imageIndex + 1}/{images.length}
+            </span>
+          </>
+        )}
+
         {card.operationType && (
           <span className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 text-white text-xs rounded-full font-medium">
             {card.operationType === 'SALE' ? 'Venta' : 'Alquiler'}
@@ -316,6 +526,21 @@ function PropertyCardVertical({
   onClick: () => void;
 }) {
   const [imgError, setImgError] = useState(false);
+  const [imageIndex, setImageIndex] = useState(0);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [imageIndex]);
+
+  const images: { url: string; sortOrder: number }[] =
+    card.media?.length
+      ? [...card.media].sort((a, b) => a.sortOrder - b.sortOrder)
+      : card.heroImageUrl
+        ? [{ url: card.heroImageUrl, sortOrder: 0 }]
+        : [];
+
+  const currentImage = images[imageIndex];
+  const hasMultiple = images.length > 1;
 
   return (
     <Link
@@ -331,10 +556,10 @@ function PropertyCardVertical({
       }`}
     >
       <div className="flex">
-        <div className="w-32 h-28 shrink-0 bg-gradient-to-br from-slate-100 to-slate-200 relative overflow-hidden">
-          {card.heroImageUrl && !imgError ? (
+        <div className="w-32 h-28 shrink-0 bg-gradient-to-br from-slate-100 to-slate-200 relative overflow-hidden group">
+          {currentImage?.url && !imgError ? (
             <img
-              src={card.heroImageUrl}
+              src={currentImage.url}
               alt=""
               className="w-full h-full object-cover"
               loading="lazy"
@@ -346,6 +571,90 @@ function PropertyCardVertical({
               <span className="text-xs">Sin imagen</span>
             </div>
           )}
+
+          {hasMultiple && (
+            <>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setImgError(false);
+                  setImageIndex((i) => (i <= 0 ? images.length - 1 : i - 1));
+                }}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter' && e.key !== ' ') return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setImgError(false);
+                  setImageIndex((i) => (i <= 0 ? images.length - 1 : i - 1));
+                }}
+                className="absolute left-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                aria-label="Imagen anterior"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </div>
+
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setImgError(false);
+                  setImageIndex((i) => (i >= images.length - 1 ? 0 : i + 1));
+                }}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter' && e.key !== ' ') return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setImgError(false);
+                  setImageIndex((i) => (i >= images.length - 1 ? 0 : i + 1));
+                }}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                aria-label="Siguiente imagen"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                {images.map((_, idx) => (
+                  <div
+                    key={`${card.id}-v-dot-${idx}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setImgError(false);
+                      setImageIndex(idx);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== 'Enter' && e.key !== ' ') return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setImgError(false);
+                      setImageIndex(idx);
+                    }}
+                    className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
+                      idx === imageIndex ? 'bg-white scale-125' : 'bg-white/60 hover:bg-white/80'
+                    }`}
+                    aria-label={`Ir a imagen ${idx + 1}`}
+                  />
+                ))}
+              </div>
+
+              <span className="absolute top-1.5 right-1.5 text-[10px] bg-black/60 text-white px-2 py-1 rounded-full font-medium">
+                📷 {imageIndex + 1}/{images.length}
+              </span>
+            </>
+          )}
+
           {card.operationType && (
             <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-black/60 text-white text-xs rounded-full font-medium">
               {card.operationType === 'SALE' ? 'Venta' : 'Alq'}

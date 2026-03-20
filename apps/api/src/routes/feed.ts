@@ -625,6 +625,11 @@ export async function feedRoutes(fastify: FastifyInstance) {
             source: true,
             operationType: true,
             lastSeenAt: true,
+            media: {
+              orderBy: { sortOrder: 'asc' },
+              take: 1,
+              select: { url: true },
+            },
           },
         });
 
@@ -639,7 +644,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
             bathrooms: l.bathrooms,
             areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
             locationText: l.locationText,
-            heroImageUrl: l.heroImageUrl,
+            heroImageUrl: l.heroImageUrl ?? l.media?.[0]?.url ?? null,
             publisherRef: l.publisherRef,
             source: l.source,
             operationType: l.operationType,
@@ -686,6 +691,11 @@ export async function feedRoutes(fastify: FastifyInstance) {
               source: true,
               operationType: true,
               lastSeenAt: true,
+              media: {
+                orderBy: { sortOrder: 'asc' },
+                take: 1,
+                select: { url: true },
+              },
             },
           });
           const fbHasMore = fallbackRaw.length > limit;
@@ -699,7 +709,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
               bathrooms: l.bathrooms,
               areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
               locationText: l.locationText,
-              heroImageUrl: l.heroImageUrl,
+              heroImageUrl: l.heroImageUrl ?? l.media?.[0]?.url ?? null,
               publisherRef: l.publisherRef,
               source: l.source,
               operationType: l.operationType,
@@ -782,6 +792,17 @@ export async function feedRoutes(fastify: FastifyInstance) {
                     title: { type: ['string', 'null'] },
                     price: { type: ['number', 'null'] },
                     locationText: { type: ['string', 'null'] },
+                            media: {
+                              type: 'array',
+                              items: {
+                                type: 'object',
+                                properties: {
+                                  url: { type: 'string' },
+                                  sortOrder: { type: 'integer' },
+                                },
+                                required: ['url', 'sortOrder'],
+                              },
+                            },
                   },
                 },
               },
@@ -824,6 +845,12 @@ export async function feedRoutes(fastify: FastifyInstance) {
           operationType: true,
           source: true,
           publisherRef: true,
+          media: {
+            orderBy: { sortOrder: 'asc' },
+            // Traemos pocas fotos para que el carrusel en el mapa sea liviano.
+            take: 3,
+            select: { url: true, sortOrder: true },
+          },
         },
       });
 
@@ -836,7 +863,10 @@ export async function feedRoutes(fastify: FastifyInstance) {
           title: l.title,
           price: l.price ? Math.round(l.price) : null,
           locationText: l.locationText,
-          heroImageUrl: l.heroImageUrl ?? null,
+          heroImageUrl: l.heroImageUrl ?? l.media?.[0]?.url ?? null,
+          media: Array.isArray(l.media)
+            ? l.media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }))
+            : undefined,
           bedrooms: l.bedrooms ?? null,
           bathrooms: l.bathrooms ?? null,
           currency: l.currency ?? null,

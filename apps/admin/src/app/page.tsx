@@ -1,5 +1,6 @@
 import { formatDate } from '@matchprop/shared';
 import AdminHomeClient from './AdminHomeClient';
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -9,15 +10,21 @@ export default function Home() {
       <p className="mt-2 text-sm text-slate-500">Hoy: {formatDate(new Date())}</p>
       <AdminHomeClient />
       <nav className="mt-6 flex gap-4 text-sm flex-wrap justify-center">
-        <a href="/crm-push" className="text-blue-600 hover:underline">
+        <Link href="/users" className="text-blue-600 hover:underline">
+          Usuarios
+        </Link>
+        <Link href="/stats" className="text-blue-600 hover:underline">
+          Estadísticas
+        </Link>
+        <Link href="/crm-push" className="text-blue-600 hover:underline">
           CRM Push Outbox
-        </a>
-        <a href="/match-events" className="text-blue-600 hover:underline">
+        </Link>
+        <Link href="/match-events" className="text-blue-600 hover:underline">
           Match Events
-        </a>
-        <a href="/visits" className="text-blue-600 hover:underline">
+        </Link>
+        <Link href="/visits" className="text-blue-600 hover:underline">
           Visitas
-        </a>
+        </Link>
       </nav>
     </main>
   );

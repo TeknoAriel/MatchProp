@@ -57,39 +57,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     const body = parsed.data;
     const email = body.email.trim().toLowerCase();
 
-    // Modo desarrollo/demo: atajo estable para admin local (README: admin@matchprop.com / demo).
-    // Solo se habilita en entornos no productivos o cuando DEMO_MODE=1.
     const passwordTrimmed = typeof body.password === 'string' ? body.password.trim() : '';
-    const isDevEnv =
-      process.env.NODE_ENV !== 'production' || envFlag('DEMO_MODE') || process.env.VERCEL === '1';
-    if (isDevEnv && email === 'admin@matchprop.com' && passwordTrimmed === 'demo') {
-      const adminHash = await bcrypt.hash(passwordTrimmed, 10);
-      const existing = await findUserByEmailIgnoreCase(email);
-      const user = existing
-        ? await prisma.user.update({
-            where: { id: existing.id },
-            data: { passwordHash: adminHash, role: UserRole.ADMIN },
-          })
-        : await prisma.user.create({
-            data: { email, passwordHash: adminHash, role: UserRole.ADMIN },
-          });
-      const meta = getClientMeta(request);
-      const { refreshToken } = await createSession({
-        userId: user.id,
-        ...meta,
-      });
-      const accessToken = signAccessToken(fastify, {
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-      });
-      setAuthCookies(reply, accessToken, refreshToken);
-      return {
-        token: accessToken,
-        refreshToken,
-        user: { id: user.id, email: user.email, role: user.role },
-      };
-    }
 
     // Bootstrap admins Kiteprop: si el email es uno de los tres y la contraseña es la conocida,
     // crear o actualizar usuario con rol ADMIN y esa contraseña (para prod sin seed).
@@ -334,6 +302,14 @@ export async function authRoutes(fastify: FastifyInstance) {
         const email = normalizeEmail(rawEmail);
         const meta = getClientMeta(request);
 
+        // Regla: los administradores deben entrar con contraseña (login password).
+        // Bloqueamos magic link para emails admin para que no puedan autenticarse sin password.
+        if (isKitepropAdmin(email)) {
+          return reply.status(200).send({
+            message: 'Los administradores inician sesión con email y contraseña.',
+          });
+        }
+
         let token: string;
         try {
           token = await createMagicLinkToken(email, meta.ip, meta.userAgent);
@@ -345,9 +321,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           } catch (err2) {
             request.log.error({ err: err2, email }, 'Magic link request failed');
             return reply.status(200).send({
-              message:
-                'La base de datos no está disponible. Usá «Entrar con link demo» para acceder.',
-              ...(isDev && { devLink: `${appUrl}/login?useDemo=1` }),
+              message: 'La base de datos no está disponible. Intentá de nuevo en unos minutos.',
             });
           }
         }
@@ -368,8 +342,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       } catch (err) {
         request.log.error({ err }, 'Magic link request error');
         return reply.status(200).send({
-          message: 'No se pudo enviar el link. Usá «Entrar con link demo» para acceder.',
-          ...(isDev && { devLink: `${appUrl}/login?useDemo=1` }),
+          message: 'No se pudo enviar el link. Intentá de nuevo.',
+          ...(isDev && {}),
         });
       }
     }
@@ -403,6 +377,12 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       const user = await upsertUserAndIdentityForMagicLink(consumed.email);
+
+      // Reglas de acceso: admins NO pueden autenticarse con magic link.
+      if (isKitepropAdmin(user.email) || user.role === 'ADMIN') {
+        return reply.redirect(302, `${config.appUrl}/login?error=admin_magic_forbidden`);
+      }
+
       await logAuthAudit({
         event: 'magic_verified',
         userId: user.userId,
@@ -472,6 +452,12 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       const user = await upsertUserAndIdentityForMagicLink(consumed.email);
+
+      // Reglas de acceso: admins NO pueden autenticarse con magic link.
+      if (isKitepropAdmin(user.email) || user.role === 'ADMIN') {
+        throw fastify.httpErrors.forbidden('Admins deben autenticarse con contraseña.');
+      }
+
       await logAuthAudit({
         event: 'magic_verified',
         userId: user.userId,
@@ -499,72 +485,8 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
   );
 
-  const isDevAuth =
-    process.env.NODE_ENV !== 'production' || envFlag('DEMO_MODE') || process.env.VERCEL === '1';
-
-  const isStatelessDemo = envFlag('DEMO_MODE') && !process.env.DATABASE_URL;
-  fastify.post(
-    '/auth/demo',
-    {
-      config: {
-        rateLimit: { max: config.authRateLimitMax, timeWindow: config.authRateLimitWindowMs },
-      },
-      schema: {
-        tags: ['Auth'],
-        response: { 200: { type: 'object', properties: { ok: { type: 'boolean' } } } },
-      },
-    },
-    async (request, reply) => {
-      if (!isDevAuth) throw fastify.httpErrors.forbidden('Solo en modo demo');
-      const meta = getClientMeta(request);
-      const DEMO_EMAIL = 'demo@matchprop.com';
-      try {
-        if (isStatelessDemo) {
-          // Demo sin base de datos: generar un usuario y sesión efímera solo con JWT.
-          const fakeUserId = 'demo-user';
-          const accessToken = signAccessToken(fastify, {
-            userId: fakeUserId,
-            email: DEMO_EMAIL,
-            // Rol por defecto para navegar el producto; no se persiste en DB.
-            role: 'AGENT',
-          });
-          // Usamos un refresh token sintético que no se guarda en DB; los endpoints de refresh
-          // simplemente devolverán 401, lo cual es aceptable en este modo demo sin expiraciones largas.
-          const demoRefresh = 'demo-refresh-token';
-          setAuthCookies(reply, accessToken, demoRefresh);
-        } else {
-          const user = await upsertUserAndIdentityForMagicLink(DEMO_EMAIL);
-          await logAuthAudit({
-            event: 'magic_verified',
-            userId: user.userId,
-            email: user.email,
-            provider: 'magic_link',
-            ...meta,
-          });
-          const { refreshToken } = await createSession({ userId: user.userId, ...meta });
-          const accessToken = signAccessToken(fastify, {
-            userId: user.userId,
-            email: user.email,
-            role: user.role,
-          });
-          setAuthCookies(reply, accessToken, refreshToken);
-        }
-      } catch (err) {
-        // Si la base de datos no está disponible u ocurre un error de Prisma,
-        // degradar a modo demo sin DB en lugar de devolver 500.
-        request.log.warn({ err }, 'auth/demo falling back to stateless demo');
-        const fakeUserId = 'demo-user';
-        const accessToken = signAccessToken(fastify, {
-          userId: fakeUserId,
-          email: DEMO_EMAIL,
-          role: 'AGENT',
-        });
-        const demoRefresh = 'demo-refresh-token';
-        setAuthCookies(reply, accessToken, demoRefresh);
-      }
-      return { ok: true };
-    }
-  );
+  // Nota: se eliminó el endpoint de ingreso demo (/auth/demo).
+  // En dev se conserva el "devLink" del magic link, sin otorgar roles/premium por defecto.
 
   fastify.get(
     '/auth/oauth/:provider',

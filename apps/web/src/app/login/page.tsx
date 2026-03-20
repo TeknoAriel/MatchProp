@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 const API_BASE = '/api';
@@ -9,9 +9,8 @@ function LoginPageContent() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle');
   const [devLink, setDevLink] = useState<string | null>(null);
+  const [magicMessage, setMagicMessage] = useState<string | null>(null);
   const [oauthError, setOauthError] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
-  const [demoError, setDemoError] = useState(false);
   const [password, setPassword] = useState('');
   const [pwdLoading, setPwdLoading] = useState(false);
   const [pwdError, setPwdError] = useState(false);
@@ -23,18 +22,11 @@ function LoginPageContent() {
     if (searchParams.get('error') === 'oauth') setOauthError(true);
   }, [searchParams]);
 
-  const useDemoTriggered = useRef(false);
-  useEffect(() => {
-    if (searchParams?.get('useDemo') === '1' && !useDemoTriggered.current) {
-      useDemoTriggered.current = true;
-      handleDemoLink();
-    }
-  }, [searchParams]);
-
   async function handleMagicLink(e: React.FormEvent) {
     e.preventDefault();
     setStatus('loading');
     setDevLink(null);
+    setMagicMessage(null);
     try {
       const res = await fetch(`${API_BASE}/auth/magic/request`, {
         method: 'POST',
@@ -42,35 +34,16 @@ function LoginPageContent() {
         credentials: 'include',
         body: JSON.stringify({ email: email.trim() }),
       });
-      const data = res.ok ? await res.json() : null;
+      const data = await res.json().catch(() => null);
       if (res.ok) {
         setStatus('sent');
+        setMagicMessage(data?.message ?? null);
         if (data?.devLink) setDevLink(data.devLink);
       } else {
         setStatus('error');
       }
     } catch {
       setStatus('error');
-    }
-  }
-
-  async function handleDemoLink() {
-    setDemoError(false);
-    setDemoLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/auth/demo`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      if (res.ok) {
-        window.location.href = '/feed';
-        return;
-      }
-      setDemoError(true);
-    } catch {
-      setDemoError(true);
-    } finally {
-      setDemoLoading(false);
     }
   }
 
@@ -158,9 +131,11 @@ function LoginPageContent() {
 
         {status === 'sent' && (
           <div className="text-sm text-center space-y-2">
-            {devLink ? (
+            {magicMessage ? (
+              <p className="text-[var(--mp-muted)]">{magicMessage}</p>
+            ) : devLink ? (
               <>
-                <p className="text-green-600">En modo demo: usá el link de abajo para entrar.</p>
+                <p className="text-green-600">En dev: usá el link de abajo para entrar.</p>
                 <a
                   href={devLink}
                   className="block w-full py-3 mt-2 bg-green-100 text-green-800 rounded font-medium hover:bg-green-200"
@@ -181,8 +156,14 @@ function LoginPageContent() {
           <div className="text-sm text-red-600 text-center space-y-1">
             <p>Error. Intentá de nuevo.</p>
             <p className="text-[var(--mp-muted)] text-xs">
-              Para ingresar rápido, usá <strong>Entrar con link demo</strong>.
+              Si estás en dev, podés usar el link dev que aparece cuando el mail no llega.
             </p>
+          </div>
+        )}
+
+        {searchParams.get('error') === 'admin_magic_forbidden' && (
+          <div className="text-sm text-red-600 text-center space-y-1">
+            <p>Los administradores deben ingresar con email y contraseña.</p>
           </div>
         )}
 
@@ -214,22 +195,7 @@ function LoginPageContent() {
           )}
         </form>
 
-        <div className="space-y-1">
-          <button
-            type="button"
-            onClick={handleDemoLink}
-            disabled={demoLoading}
-            className="w-full py-2 text-sm font-medium rounded-lg border border-green-600 text-green-700 hover:bg-green-50 disabled:opacity-50 transition-colors"
-          >
-            {demoLoading ? 'Entrando...' : 'Entrar con link demo'}
-          </button>
-          {demoError && (
-            <p className="text-xs text-red-600 text-center">
-              No se pudo conectar con la API. Dejá la terminal abierta con{' '}
-              <code className="bg-black/10 px-1 rounded">pnpm run dev-local</code>.
-            </p>
-          )}
-        </div>
+        {/* Se quitó el ingreso demo: en dev se mantiene el devLink del magic link para pruebas. */}
 
         <p className="text-sm text-amber-600 text-center">
           Google/Apple/Facebook requieren configuración. Usá Magic Link o Passkey.
