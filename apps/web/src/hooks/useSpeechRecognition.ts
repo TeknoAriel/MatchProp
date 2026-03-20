@@ -200,7 +200,7 @@ export function useSpeechRecognition(lang = 'es-AR') {
     try {
       recognition.start();
       resetSilenceTimeout();
-    } catch (_e) {
+    } catch {
       setError('No se pudo iniciar el reconocimiento de voz.');
       setIsListening(false);
     }

@@ -31,6 +31,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build:shared
+      - run: pnpm --filter api exec prisma generate
       - run: pnpm -r run typecheck
       - run: pnpm --filter api run typecheck:vercel
 
@@ -70,6 +71,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build:shared
+      - run: pnpm --filter api exec prisma generate
       - run: pnpm -r run test
 
   integration-tests:
@@ -104,6 +106,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build:shared
+      - run: pnpm --filter api exec prisma generate
 
       - name: Setup DB
         run: |
