@@ -25,8 +25,8 @@ jobs:
           CRON_INGEST_INTERVAL_HOURS: ${{ vars.CRON_INGEST_INTERVAL_HOURS || 240 }}
         run: |
           if [ -z "$CRON_SECRET" ]; then
-            echo "CRON_SECRET secret not configured. Failing safely."
-            exit 1
+            echo "CRON_SECRET not configured. Skipping ingest (configure in repo secrets for prod cron)."
+            exit 0
           fi
 
           echo "Checking lastRun from: $STATUS_URL"
