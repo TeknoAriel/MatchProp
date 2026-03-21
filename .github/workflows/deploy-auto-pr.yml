@@ -10,8 +10,10 @@ on:
       - master
       - gh-pages
 
+# issues: write → crear etiqueta "automerge" (sin esto gh pr create --label falla con 403)
 permissions:
   contents: read
+  issues: write
   pull-requests: write
 
 jobs:
@@ -22,20 +24,20 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh label create automerge --color "0E8A16" --description "Auto-merge when CI passes" 2>/dev/null || true
+          gh label create automerge --color "0E8A16" --description "Auto-merge when CI passes" || \
+            echo "Label automerge ya existe (ok)"
 
       - name: Create PR to main (if not exists)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BRANCH="${{ github.ref_name }}"
-          # Evitar branches de bots
           if [[ "$BRANCH" == dependabot/* ]] || [[ "$BRANCH" == renovate/* ]]; then
             echo "Skipping bot branch"
             exit 0
           fi
 
-          EXISTING=$(gh pr list --head "$BRANCH" --base main --state open --json number -q '.[0].number' 2>/dev/null || true)
+          EXISTING=$(gh pr list --head "$BRANCH" --base main --state open --json number -q '.[0].number' 2>/dev/null || echo "")
 
           if [[ -z "$EXISTING" || "$EXISTING" == "null" ]]; then
             echo "Creating PR from $BRANCH to main"
@@ -45,5 +47,5 @@ jobs:
               --label automerge
           else
             echo "PR #$EXISTING already exists, adding automerge label"
-            gh pr edit "$EXISTING" --add-label automerge 2>/dev/null || true
+            gh pr edit "$EXISTING" --add-label automerge || true
           fi
