@@ -7,10 +7,7 @@ const OPEN_FIXTURE = join(
   process.cwd(),
   'src/services/ingest/fixtures/zonaprop-opennavent-sample.xml'
 );
-const LEGACY_FIXTURE = join(
-  process.cwd(),
-  'src/services/ingest/fixtures/zonaprop-sample.xml'
-);
+const LEGACY_FIXTURE = join(process.cwd(), 'src/services/ingest/fixtures/zonaprop-sample.xml');
 
 describe('parseZonapropXmlDocument (OpenNavent)', () => {
   it('parsea 3 Avisos del fixture opennavent', () => {

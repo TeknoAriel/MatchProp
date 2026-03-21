@@ -53,50 +53,62 @@ export async function adminStatsRoutes(fastify: FastifyInstance) {
       rangeStart.setDate(rangeStart.getDate() - days);
       const rangeEnd = now;
 
-      const [usersTotal, usersPremiumActive, usersByRole, leadsCreated, leadsByStatus, leadsByActivationReason] =
-        await Promise.all([
-          prisma.user.count(),
-          prisma.user.count({ where: { premiumUntil: { gt: now } } }),
-          prisma.user.groupBy({ by: ['role'], _count: { id: true } }).then((rows) => {
-            const m: Record<string, number> = {};
-            for (const r of rows) m[r.role] = r._count.id;
-            return m;
-          }),
-          prisma.lead.count({ where: { createdAt: { gte: rangeStart, lte: rangeEnd } } }),
-          prisma.lead.groupBy({
+      const [
+        usersTotal,
+        usersPremiumActive,
+        usersByRole,
+        leadsCreated,
+        leadsByStatus,
+        leadsByActivationReason,
+      ] = await Promise.all([
+        prisma.user.count(),
+        prisma.user.count({ where: { premiumUntil: { gt: now } } }),
+        prisma.user.groupBy({ by: ['role'], _count: { id: true } }).then((rows) => {
+          const m: Record<string, number> = {};
+          for (const r of rows) m[r.role] = r._count.id;
+          return m;
+        }),
+        prisma.lead.count({ where: { createdAt: { gte: rangeStart, lte: rangeEnd } } }),
+        prisma.lead
+          .groupBy({
             by: ['status'],
             where: { createdAt: { gte: rangeStart, lte: rangeEnd } },
             _count: { id: true },
-          }).then((rows) => {
+          })
+          .then((rows) => {
             const m: Record<string, number> = {};
             for (const r of rows) m[r.status] = r._count.id;
             return m;
           }),
-          prisma.lead.groupBy({
+        prisma.lead
+          .groupBy({
             by: ['activationReason'],
             where: { createdAt: { gte: rangeStart, lte: rangeEnd } },
             _count: { id: true },
-          }).then((rows) => {
+          })
+          .then((rows) => {
             const m: Record<string, number> = {};
             for (const r of rows) m[r.activationReason ?? 'NULL'] = r._count.id;
             return m;
           }),
-        ]);
+      ]);
 
       const [manualPlanGrantsByPlan, visitsUpcoming, visitsScheduledInRange] = await Promise.all([
-        prisma.subscription.groupBy({
-          by: ['plan'],
-          where: {
-            provider: 'MANUAL',
-            status: 'ACTIVE',
-            createdAt: { gte: rangeStart, lte: rangeEnd },
-          },
-          _count: { id: true },
-        }).then((rows) => {
-          const m: Record<string, number> = {};
-          for (const r of rows) m[r.plan] = r._count.id;
-          return m;
-        }),
+        prisma.subscription
+          .groupBy({
+            by: ['plan'],
+            where: {
+              provider: 'MANUAL',
+              status: 'ACTIVE',
+              createdAt: { gte: rangeStart, lte: rangeEnd },
+            },
+            _count: { id: true },
+          })
+          .then((rows) => {
+            const m: Record<string, number> = {};
+            for (const r of rows) m[r.plan] = r._count.id;
+            return m;
+          }),
         prisma.visit.count({
           where: { scheduledAt: { gt: now }, status: 'SCHEDULED' },
         }),
@@ -176,7 +188,10 @@ export async function adminStatsRoutes(fastify: FastifyInstance) {
 
       const statusRaw = typeof q.status === 'string' ? q.status : null;
       const allowedStatuses: LeadStatus[] = ['PENDING', 'ACTIVE', 'CLOSED'];
-      const status = statusRaw && allowedStatuses.includes(statusRaw as LeadStatus) ? (statusRaw as LeadStatus) : null;
+      const status =
+        statusRaw && allowedStatuses.includes(statusRaw as LeadStatus)
+          ? (statusRaw as LeadStatus)
+          : null;
 
       const leads = await prisma.lead.findMany({
         where: {
@@ -270,9 +285,7 @@ export async function adminStatsRoutes(fastify: FastifyInstance) {
 
       const visits = await prisma.visit.findMany({
         where: {
-          scheduledAt: upcoming
-            ? { gt: now }
-            : { gte: rangeStart, lte: now },
+          scheduledAt: upcoming ? { gt: now } : { gte: rangeStart, lte: now },
           status: 'SCHEDULED',
         },
         orderBy: { scheduledAt: 'asc' },
@@ -306,4 +319,3 @@ export async function adminStatsRoutes(fastify: FastifyInstance) {
     }
   );
 }
-

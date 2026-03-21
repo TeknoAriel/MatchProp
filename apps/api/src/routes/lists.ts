@@ -261,14 +261,12 @@ export async function listsRoutes(fastify: FastifyInstance) {
         items: list.items.map((i) => {
           const listing = i.listing;
           const heroImageUrl = listing
-            ? listing.heroImageUrl ?? listing.media?.[0]?.url ?? null
+            ? (listing.heroImageUrl ?? listing.media?.[0]?.url ?? null)
             : null;
           return {
             id: i.id,
             listingId: i.listingId,
-            listing: listing
-              ? { ...listing, heroImageUrl, media: listing.media }
-              : null,
+            listing: listing ? { ...listing, heroImageUrl, media: listing.media } : null,
           };
         }),
       };

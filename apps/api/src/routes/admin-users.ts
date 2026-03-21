@@ -126,7 +126,8 @@ export async function adminUsersRoutes(fastify: FastifyInstance) {
       });
 
       // Guardamos un payment para auditoría (no es checkout real).
-      const basePrice = billingCycle === 'yearly' ? PLANS[plan].priceYearly : PLANS[plan].priceMonthly;
+      const basePrice =
+        billingCycle === 'yearly' ? PLANS[plan].priceYearly : PLANS[plan].priceMonthly;
       const hasOrgDiscount = (plan === 'AGENT' || plan === 'REALTOR') && !!dbUser.organizationId;
       const amount = hasOrgDiscount ? Math.round(basePrice * (1 - ORG_DISCOUNT)) : basePrice;
       await prisma.payment.create({
@@ -325,7 +326,10 @@ export async function adminUsersRoutes(fastify: FastifyInstance) {
       const premiumUntil = user.premiumUntil?.toISOString() ?? null;
       const isPremium = !!(user.premiumUntil && user.premiumUntil > now);
       const daysRemaining = isPremium
-        ? Math.max(0, Math.ceil((user.premiumUntil!.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+        ? Math.max(
+            0,
+            Math.ceil((user.premiumUntil!.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+          )
         : 0;
 
       return {
@@ -499,4 +503,3 @@ export async function adminUsersRoutes(fastify: FastifyInstance) {
     }
   );
 }
-

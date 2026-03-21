@@ -30,11 +30,11 @@ Intervalo entre corridas: variable opcional **`CRON_INGEST_INTERVAL_HOURS`** en 
 
 Reduce builds cuando no cambian archivos de esa app:
 
-| App | Comando sugerido |
-|-----|------------------|
-| Web | `bash scripts/vercel-should-build-web.sh` |
+| App   | Comando sugerido                            |
+| ----- | ------------------------------------------- |
+| Web   | `bash scripts/vercel-should-build-web.sh`   |
 | Admin | `bash scripts/vercel-should-build-admin.sh` |
-| API | `bash scripts/vercel-should-build-api.sh` |
+| API   | `bash scripts/vercel-should-build-api.sh`   |
 
 (En Vercel → proyecto → Settings → Ignored Build Step.)
 
@@ -66,11 +66,11 @@ Esperado: **200** y JSON con `ok`, no **404**.
 
 ## 5. Verificación rápida
 
-| Qué | Qué revisar |
-|-----|-------------|
-| Web | Carga home y login |
-| API `/health` | **200**; `status` `ok` o `degraded` según DB |
-| Login | Email/contraseña, magic link u OAuth según lo habilitado (**no** hay flujo “demo” en producción) |
+| Qué           | Qué revisar                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------------ |
+| Web           | Carga home y login                                                                               |
+| API `/health` | **200**; `status` `ok` o `degraded` según DB                                                     |
+| Login         | Email/contraseña, magic link u OAuth según lo habilitado (**no** hay flujo “demo” en producción) |
 
 Smoke (solo si tenés el monorepo y red):
 
@@ -82,10 +82,10 @@ pnpm smoke:prod
 
 ## Resumen de URLs útiles
 
-| Recurso | URL |
-|---------|-----|
-| GitHub secrets | https://github.com/TeknoAriel/MatchProp/settings/secrets/actions |
-| Vercel (proyectos) | dashboard del team → web, admin, api |
+| Recurso            | URL                                                              |
+| ------------------ | ---------------------------------------------------------------- |
+| GitHub secrets     | https://github.com/TeknoAriel/MatchProp/settings/secrets/actions |
+| Vercel (proyectos) | dashboard del team → web, admin, api                             |
 
 ---
 

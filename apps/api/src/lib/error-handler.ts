@@ -27,76 +27,72 @@ function statusName(code: number): string {
 export function registerProductionErrorHandler(fastify: FastifyInstance): void {
   const prod = isProductionRuntime();
 
-  fastify.setErrorHandler(
-    (error: FastifyError, request: FastifyRequest, reply: FastifyReply) => {
-      const requestId = (request as { requestId?: string }).requestId;
+  fastify.setErrorHandler((error: FastifyError, request: FastifyRequest, reply: FastifyReply) => {
+    const requestId = (request as { requestId?: string }).requestId;
 
-      if (reply.sent) {
-        request.log.warn({ err: error, requestId }, 'Error tras respuesta ya enviada');
-        return;
-      }
+    if (reply.sent) {
+      request.log.warn({ err: error, requestId }, 'Error tras respuesta ya enviada');
+      return;
+    }
 
-      // Validación AJV / Fastify schema
-      if (error.validation) {
-        request.log.warn(
-          { err: error, validation: error.validation, requestId },
-          'Validación de request fallida'
-        );
-        const body: Record<string, unknown> = {
-          statusCode: 400,
-          error: 'Bad Request',
-          message: 'Solicitud inválida',
-          requestId,
-        };
-        if (!prod && error.message) {
-          body.detail = error.message;
-        }
-        return reply.status(400).send(body);
-      }
-
-      const statusCode =
-        typeof error.statusCode === 'number' && error.statusCode >= 400
-          ? error.statusCode
-          : 500;
-
-      if (statusCode >= 400 && statusCode < 500) {
-        request.log.info(
-          {
-            statusCode,
-            message: error.message,
-            requestId,
-            route: `${request.method} ${request.url}`,
-          },
-          'Error de cliente'
-        );
-        return reply.status(statusCode).send({
-          statusCode,
-          error: statusName(statusCode),
-          message: error.message || 'Solicitud inválida',
-          requestId,
-        });
-      }
-
-      request.log.error(
-        {
-          err: error,
-          requestId,
-          route: `${request.method} ${request.url}`,
-        },
-        'Error de servidor no manejado'
+    // Validación AJV / Fastify schema
+    if (error.validation) {
+      request.log.warn(
+        { err: error, validation: error.validation, requestId },
+        'Validación de request fallida'
       );
-
       const body: Record<string, unknown> = {
-        statusCode: 500,
-        error: 'Internal Server Error',
-        message: 'Error interno del servidor.',
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'Solicitud inválida',
         requestId,
       };
       if (!prod && error.message) {
         body.detail = error.message;
       }
-
-      return reply.status(500).send(body);
+      return reply.status(400).send(body);
     }
-  );
+
+    const statusCode =
+      typeof error.statusCode === 'number' && error.statusCode >= 400 ? error.statusCode : 500;
+
+    if (statusCode >= 400 && statusCode < 500) {
+      request.log.info(
+        {
+          statusCode,
+          message: error.message,
+          requestId,
+          route: `${request.method} ${request.url}`,
+        },
+        'Error de cliente'
+      );
+      return reply.status(statusCode).send({
+        statusCode,
+        error: statusName(statusCode),
+        message: error.message || 'Solicitud inválida',
+        requestId,
+      });
+    }
+
+    request.log.error(
+      {
+        err: error,
+        requestId,
+        route: `${request.method} ${request.url}`,
+      },
+      'Error de servidor no manejado'
+    );
+
+    const body: Record<string, unknown> = {
+      statusCode: 500,
+      error: 'Internal Server Error',
+      message: 'Error interno del servidor.',
+      requestId,
+    };
+    if (!prod && error.message) {
+      body.detail = error.message;
+    }
+
+    return reply.status(500).send(body);
+  });
 }

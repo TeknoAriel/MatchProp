@@ -124,7 +124,10 @@ export default function UsersPage() {
             </div>
           </div>
           <div className="mt-2 text-gray-700">
-            Roles: {Object.entries(summary.roleCounts).map(([k, v]) => `${k}:${v}`).join(' | ')}
+            Roles:{' '}
+            {Object.entries(summary.roleCounts)
+              .map(([k, v]) => `${k}:${v}`)
+              .join(' | ')}
           </div>
         </div>
       )}
@@ -153,7 +156,9 @@ export default function UsersPage() {
                       <span className="font-mono text-xs">{u.email}</span>
                     </td>
                     <td className="p-2 border">{u.role}</td>
-                    <td className="p-2 border">{u.premiumUntil ? new Date(u.premiumUntil).toLocaleDateString() : '—'}</td>
+                    <td className="p-2 border">
+                      {u.premiumUntil ? new Date(u.premiumUntil).toLocaleDateString() : '—'}
+                    </td>
                     <td className="p-2 border">{daysRemainingFromIso(u.premiumUntil)}</td>
                     <td className="p-2 border">
                       <Link href={`/users/${u.id}`} className="text-blue-600 hover:underline">
@@ -182,7 +187,11 @@ export default function UsersPage() {
             >
               ← Anterior
             </button>
-            <button type="button" onClick={() => setOffset((o) => o + limit)} className="rounded bg-gray-100 px-3 py-2 text-sm hover:bg-gray-200">
+            <button
+              type="button"
+              onClick={() => setOffset((o) => o + limit)}
+              className="rounded bg-gray-100 px-3 py-2 text-sm hover:bg-gray-200"
+            >
               Siguiente →
             </button>
           </div>
@@ -191,4 +200,3 @@ export default function UsersPage() {
     </main>
   );
 }
-

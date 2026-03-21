@@ -67,12 +67,14 @@ export default function StatsPage() {
     setError(null);
 
     Promise.all([
-      fetch(`${API_BASE}/admin/stats/overview?days=${days}`, { cache: 'no-store', credentials: 'include' })
-        .then((r) => (r.ok ? r.json() : null)),
-      fetch(
-        `${API_BASE}/admin/stats/leads?${qs}&limit=50`,
-        { cache: 'no-store', credentials: 'include' }
-      ).then((r) => (r.ok ? r.json() : null)),
+      fetch(`${API_BASE}/admin/stats/overview?days=${days}`, {
+        cache: 'no-store',
+        credentials: 'include',
+      }).then((r) => (r.ok ? r.json() : null)),
+      fetch(`${API_BASE}/admin/stats/leads?${qs}&limit=50`, {
+        cache: 'no-store',
+        credentials: 'include',
+      }).then((r) => (r.ok ? r.json() : null)),
       fetch(
         `${API_BASE}/admin/stats/visits?days=${days}&limit=50&upcoming=${upcomingOnly ? 'true' : 'false'}`,
         { cache: 'no-store', credentials: 'include' }
@@ -121,7 +123,11 @@ export default function StatsPage() {
       <div className="mt-4 flex gap-3 flex-wrap items-end">
         <div>
           <label className="text-xs text-gray-600 block">Días</label>
-          <select className="border rounded px-3 py-2 text-sm" value={days} onChange={(e) => setDays(Number(e.target.value))}>
+          <select
+            className="border rounded px-3 py-2 text-sm"
+            value={days}
+            onChange={(e) => setDays(Number(e.target.value))}
+          >
             <option value={7}>7 días</option>
             <option value={30}>30 días</option>
             <option value={90}>90 días</option>
@@ -141,7 +147,11 @@ export default function StatsPage() {
           </select>
         </div>
         <label className="flex items-center gap-2 text-sm text-gray-700">
-          <input type="checkbox" checked={upcomingOnly} onChange={(e) => setUpcomingOnly(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={upcomingOnly}
+            onChange={(e) => setUpcomingOnly(e.target.checked)}
+          />
           Solo próximas visitas
         </label>
       </div>
@@ -175,7 +185,9 @@ export default function StatsPage() {
                 <span className="font-semibold">{count}</span>
               </div>
             ))}
-            {Object.keys(overview.usersByRole).length === 0 && <div className="text-gray-500">—</div>}
+            {Object.keys(overview.usersByRole).length === 0 && (
+              <div className="text-gray-500">—</div>
+            )}
           </div>
         </div>
 
@@ -266,9 +278,7 @@ export default function StatsPage() {
                       <td className="p-2 border">{l.userRole ?? '—'}</td>
                       <td className="p-2 border">{l.status}</td>
                       <td className="p-2 border">{l.activationReason ?? '—'}</td>
-                      <td className="p-2 border">
-                        {l.listingTitle ?? l.listingId.slice(0, 8)}
-                      </td>
+                      <td className="p-2 border">{l.listingTitle ?? l.listingId.slice(0, 8)}</td>
                     </tr>
                   ))
                 )}
@@ -316,4 +326,3 @@ export default function StatsPage() {
     </main>
   );
 }
-

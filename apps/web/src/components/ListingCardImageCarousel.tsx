@@ -29,12 +29,11 @@ export default function ListingCardImageCarousel({
   const [imgError, setImgError] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
 
-  const images: { url: string }[] =
-    media?.length
-      ? [...media].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-      : heroImageUrl
-        ? [{ url: heroImageUrl }]
-        : [];
+  const images: { url: string }[] = media?.length
+    ? [...media].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+    : heroImageUrl
+      ? [{ url: heroImageUrl }]
+      : [];
 
   const currentImage = images[imageIndex];
   const hasMultiple = images.length > 1;
@@ -79,7 +78,12 @@ export default function ListingCardImageCarousel({
             aria-label="Imagen anterior"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
           <button

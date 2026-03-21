@@ -332,7 +332,13 @@ export default function UserDetailPage() {
               tab === t ? 'bg-slate-900 text-white' : 'bg-white hover:bg-gray-50'
             }`}
           >
-            {t === 'ficha' ? 'Ficha' : t === 'plan' ? 'Plan y gracia' : t === 'perfil' ? 'Perfil' : 'Organización'}
+            {t === 'ficha'
+              ? 'Ficha'
+              : t === 'plan'
+                ? 'Plan y gracia'
+                : t === 'perfil'
+                  ? 'Perfil'
+                  : 'Organización'}
           </button>
         ))}
       </div>
@@ -402,7 +408,9 @@ export default function UserDetailPage() {
                         <td className="p-2 border">{s.plan}</td>
                         <td className="p-2 border">{s.status}</td>
                         <td className="p-2 border">{s.provider}</td>
-                        <td className="p-2 border">{new Date(s.currentPeriodEnd).toLocaleDateString()}</td>
+                        <td className="p-2 border">
+                          {new Date(s.currentPeriodEnd).toLocaleDateString()}
+                        </td>
                       </tr>
                     ))
                   )}
@@ -417,7 +425,8 @@ export default function UserDetailPage() {
         <div className="mt-4 border rounded p-4">
           {isAdminUser ? (
             <p className="text-gray-700">
-              Este usuario tiene rol <span className="font-semibold">{data.user.role}</span>. No se aplica plan.
+              Este usuario tiene rol <span className="font-semibold">{data.user.role}</span>. No se
+              aplica plan.
             </p>
           ) : (
             <>
@@ -478,7 +487,8 @@ export default function UserDetailPage() {
                 </button>
               </div>
               <p className="mt-3 text-xs text-gray-600">
-                La vigencia se calcula como: período (mensual/anual) + <span className="font-semibold">{graceDays}</span> días de gracia.
+                La vigencia se calcula como: período (mensual/anual) +{' '}
+                <span className="font-semibold">{graceDays}</span> días de gracia.
               </p>
             </>
           )}
@@ -550,4 +560,3 @@ export default function UserDetailPage() {
     </main>
   );
 }
-

@@ -10,12 +10,12 @@ function extractDetailsFromRaw(
   raw: Record<string, unknown> | null | undefined,
   norm: NormalizedListing
 ): ListingDetailsFromIngest | null {
-  if (norm.details != null && typeof norm.details === 'object') return norm.details as ListingDetailsFromIngest;
+  if (norm.details != null && typeof norm.details === 'object')
+    return norm.details as ListingDetailsFromIngest;
   if (!raw || typeof raw !== 'object') return null;
 
   const details: ListingDetailsFromIngest = {};
-  const toBool = (v: unknown) =>
-    v === true || v === 'true' || v === 'si' || v === 'Si' || v === 1;
+  const toBool = (v: unknown) => v === true || v === 'true' || v === 'si' || v === 'Si' || v === 1;
   const toArr = (v: unknown): string[] =>
     Array.isArray(v) ? v.filter((x) => typeof x === 'string').map(String) : [];
 
@@ -27,14 +27,23 @@ function extractDetailsFromRaw(
   if (raw.cochera != null || raw.cocheras != null)
     details.cochera = toBool(raw.cochera ?? raw.cocheras);
   if (raw.garage != null) details.cochera = details.cochera ?? toBool(raw.garage);
-  if (raw.jardin != null || raw.jardín != null)
-    details.jardin = toBool(raw.jardin ?? raw.jardín);
+  if (raw.jardin != null || raw.jardín != null) details.jardin = toBool(raw.jardin ?? raw.jardín);
   if (raw.parrilla != null) details.parrilla = toBool(raw.parrilla);
   if (raw.gimnasio != null) details.gimnasio = toBool(raw.gimnasio);
 
   const amenityKeys = [
-    'pileta', 'piscina', 'cochera', 'cocheras', 'garage', 'jardin', 'parrilla',
-    'quincho', 'gimnasio', 'aire_acondicionado', 'calefaccion', 'ascensor',
+    'pileta',
+    'piscina',
+    'cochera',
+    'cocheras',
+    'garage',
+    'jardin',
+    'parrilla',
+    'quincho',
+    'gimnasio',
+    'aire_acondicionado',
+    'calefaccion',
+    'ascensor',
   ];
   const foundAmenities = new Set<string>();
   for (const key of amenityKeys) {

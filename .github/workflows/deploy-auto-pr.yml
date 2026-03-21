@@ -23,6 +23,7 @@ jobs:
       - name: Ensure automerge label exists
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           gh label create automerge --color "0E8A16" --description "Auto-merge when CI passes" || \
             echo "Label automerge ya existe (ok)"
@@ -30,23 +31,37 @@ jobs:
       - name: Create PR to main (if not exists)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           BRANCH="${{ github.ref_name }}"
+          OWNER="${{ github.repository_owner }}"
+          # GitHub API / gh --head requieren owner:rama (solo el nombre de rama suele no matchear → lista vacía → create duplicado falla)
+          HEAD_REF="${OWNER}:${BRANCH}"
+
           if [[ "$BRANCH" == dependabot/* ]] || [[ "$BRANCH" == renovate/* ]]; then
             echo "Skipping bot branch"
             exit 0
           fi
 
-          # jq: si no hay PRs, .[0].number es null → no intentar crear duplicado
-          EXISTING=$(gh pr list --head "$BRANCH" --base main --state open --json number -q 'if length > 0 then .[0].number else empty end' 2>/dev/null || true)
+          EXISTING=$(gh pr list --head "$HEAD_REF" --base main --state open --json number -q 'if length > 0 then .[0].number else empty end')
 
           if [[ -z "$EXISTING" ]]; then
-            echo "Creating PR from $BRANCH to main"
-            gh pr create --base main --head "$BRANCH" \
+            echo "Creating PR from $BRANCH to main (listado por head=$HEAD_REF)"
+            # create en mismo repo: --head solo nombre de rama (no owner:rama)
+            if ! gh pr create --base main --head "$BRANCH" \
               --title "Deploy: $BRANCH → main" \
               --body "PR automático. Merge cuando CI pase (etiqueta automerge)." \
-              --label automerge
-          else
-            echo "PR #$EXISTING already exists, adding automerge label"
+              --label automerge; then
+              echo "create falló (p. ej. PR ya existía); reintentando detección por head"
+              EXISTING=$(gh pr list --head "$HEAD_REF" --base main --state open --json number -q 'if length > 0 then .[0].number else empty end')
+              if [[ -z "$EXISTING" ]]; then
+                echo "::error::No se pudo crear ni encontrar PR para $HEAD_REF"
+                exit 1
+              fi
+            fi
+          fi
+
+          if [[ -n "$EXISTING" ]]; then
+            echo "PR #$EXISTING: asegurando etiqueta automerge"
             gh pr edit "$EXISTING" --add-label automerge || true
           fi

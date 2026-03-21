@@ -141,7 +141,10 @@ const AMENITY_PATTERNS: { pattern: RegExp; key: string }[] = [
   { pattern: /\b(parrilla|parrillas|asador|asadores)\b/i, key: 'parrilla' },
   { pattern: /\b(quincho|quinchos)\b/i, key: 'quincho' },
   { pattern: /\b(gimnasio|gimnasios)\b/i, key: 'gimnasio' },
-  { pattern: /\b(apto\s*cr[eé]dito|apto\s*credito|cr[eé]dito\s*hipotecario)\b/i, key: 'apto crédito' },
+  {
+    pattern: /\b(apto\s*cr[eé]dito|apto\s*credito|cr[eé]dito\s*hipotecario)\b/i,
+    key: 'apto crédito',
+  },
   { pattern: /\b(amueblad[oa]|amoblad[oa]|muebles)\b/i, key: 'amoblado' },
   { pattern: /\b(aire\s*acondicionado|aa|ac)\b/i, key: 'aire acondicionado' },
   { pattern: /\b(calefacci[oó]n|calefaccion)\b/i, key: 'calefacción' },
@@ -166,8 +169,7 @@ function parseAmenities(text: string): string[] {
 }
 
 function parseAptoCredito(text: string): boolean | undefined {
-  if (/\bapto\s*cr[eé]dito|\bapto\s*credito|\bcr[eé]dito\s*hipotecario\b/i.test(text))
-    return true;
+  if (/\bapto\s*cr[eé]dito|\bapto\s*credito|\bcr[eé]dito\s*hipotecario\b/i.test(text)) return true;
   return undefined;
 }
 

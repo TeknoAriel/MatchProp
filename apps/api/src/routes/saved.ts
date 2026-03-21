@@ -138,7 +138,8 @@ export async function savedRoutes(fastify: FastifyInstance) {
       return {
         items: items.map((s) => {
           const listing = s.listing;
-          if (!listing) return { id: s.id, listingId: s.listingId, listType: s.listType, listing: null };
+          if (!listing)
+            return { id: s.id, listingId: s.listingId, listType: s.listType, listing: null };
           const heroImageUrl = listing.heroImageUrl ?? listing.media?.[0]?.url ?? null;
           return {
             id: s.id,

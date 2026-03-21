@@ -4,12 +4,12 @@ Objetivo: respuestas predecibles para el cliente, **sin fugas** de implementaci�
 
 ## 1. Respuesta HTTP
 
-| Situación | Código | Cuerpo al cliente |
-|-----------|--------|-------------------|
-| Validación de schema / query inválida | **400** | `message` genérico; `requestId` si aplica. Sin stack. |
-| Auth / permisos / recurso no encontrado | **401 / 403 / 404** | Mensaje ya curado en la ruta (`httpErrors.*`). |
-| Conflicto de negocio | **409** | Mensaje curado. |
-| Fallo inesperado (DB, bug, dependencia) | **500** | Solo mensaje genérico (**“Error interno del servidor.”**). |
+| Situación                               | Código              | Cuerpo al cliente                                          |
+| --------------------------------------- | ------------------- | ---------------------------------------------------------- |
+| Validación de schema / query inválida   | **400**             | `message` genérico; `requestId` si aplica. Sin stack.      |
+| Auth / permisos / recurso no encontrado | **401 / 403 / 404** | Mensaje ya curado en la ruta (`httpErrors.*`).             |
+| Conflicto de negocio                    | **409**             | Mensaje curado.                                            |
+| Fallo inesperado (DB, bug, dependencia) | **500**             | Solo mensaje genérico (**“Error interno del servidor.”**). |
 
 ## 2. Prohibido en producción (`NODE_ENV=production` o `VERCEL=1`)
 

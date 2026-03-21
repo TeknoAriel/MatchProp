@@ -58,7 +58,7 @@ export default function SwipeCard({ card, onClick, showInvestorLink }: SwipeCard
         <h2 className="font-semibold text-lg truncate text-[var(--mp-foreground)]">
           {card.title ?? 'Sin título'}
         </h2>
-        {(!card.heroImageUrl && !card.media?.length) && (
+        {!card.heroImageUrl && !card.media?.length && (
           <p className="text-sm text-[var(--mp-muted)] truncate mt-0.5">
             {priceText} · {zoneText}
           </p>

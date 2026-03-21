@@ -582,11 +582,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
         sortBy === 'price_asc'
           ? [{ price: 'asc' as const }, { lastSeenAt: 'desc' as const }, { id: 'desc' as const }]
           : sortBy === 'price_desc'
-            ? [
-                { price: 'desc' as const },
-                { lastSeenAt: 'desc' as const },
-                { id: 'desc' as const },
-              ]
+            ? [{ price: 'desc' as const }, { lastSeenAt: 'desc' as const }, { id: 'desc' as const }]
             : sortBy === 'area_desc'
               ? [
                   { areaTotal: 'desc' as const },
@@ -721,9 +717,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
           }))
           .filter((i) => i.id != null && i.id !== '');
         const fbLast = fbItems[fbItems.length - 1];
-        const fbLastRaw = fbHasMore
-          ? fallbackRaw[limit - 1]
-          : fallbackRaw[fallbackRaw.length - 1];
+        const fbLastRaw = fbHasMore ? fallbackRaw[limit - 1] : fallbackRaw[fallbackRaw.length - 1];
         const fbNextCursor =
           fbHasMore && fbLastRaw && fbLast
             ? encodeListingCursor({ lastSeenAt: fbLastRaw.lastSeenAt, id: fbLast.id })
@@ -778,17 +772,17 @@ export async function feedRoutes(fastify: FastifyInstance) {
                     title: { type: ['string', 'null'] },
                     price: { type: ['number', 'null'] },
                     locationText: { type: ['string', 'null'] },
-                            media: {
-                              type: 'array',
-                              items: {
-                                type: 'object',
-                                properties: {
-                                  url: { type: 'string' },
-                                  sortOrder: { type: 'integer' },
-                                },
-                                required: ['url', 'sortOrder'],
-                              },
-                            },
+                    media: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          url: { type: 'string' },
+                          sortOrder: { type: 'integer' },
+                        },
+                        required: ['url', 'sortOrder'],
+                      },
+                    },
                   },
                 },
               },

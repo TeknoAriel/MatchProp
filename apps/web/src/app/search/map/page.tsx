@@ -50,7 +50,7 @@ function normalizeCard(raw: unknown): MapListingCard | null {
     heroImageUrl:
       typeof c.heroImageUrl === 'string' && c.heroImageUrl
         ? c.heroImageUrl
-        : media?.[0]?.url ?? null,
+        : (media?.[0]?.url ?? null),
     media,
     publisherRef: typeof c.publisherRef === 'string' ? c.publisherRef : null,
     source: typeof c.source === 'string' ? c.source : 'KITEPROP_EXTERNALSITE',
@@ -139,12 +139,11 @@ export default function SearchMapPage() {
     setSelectedImgError(false);
   }, [selectedId]);
 
-  const selectedImages: { url: string; sortOrder: number }[] =
-    selectedItem?.media?.length
-      ? [...selectedItem.media].sort((a, b) => a.sortOrder - b.sortOrder)
-      : selectedItem?.heroImageUrl
-        ? [{ url: selectedItem.heroImageUrl, sortOrder: 0 }]
-        : [];
+  const selectedImages: { url: string; sortOrder: number }[] = selectedItem?.media?.length
+    ? [...selectedItem.media].sort((a, b) => a.sortOrder - b.sortOrder)
+    : selectedItem?.heroImageUrl
+      ? [{ url: selectedItem.heroImageUrl, sortOrder: 0 }]
+      : [];
 
   const selectedCurrentImage = selectedImages[selectedImageIndex];
   const selectedHasMultiple = selectedImages.length > 1;
@@ -273,8 +272,18 @@ export default function SearchMapPage() {
                       className="absolute left-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md cursor-pointer"
                       aria-label="Imagen anterior"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 19l-7-7 7-7"
+                        />
                       </svg>
                     </button>
 
@@ -284,15 +293,23 @@ export default function SearchMapPage() {
                         e.preventDefault();
                         e.stopPropagation();
                         setSelectedImgError(false);
-                        setSelectedImageIndex((i) =>
-                          i >= selectedImages.length - 1 ? 0 : i + 1
-                        );
+                        setSelectedImageIndex((i) => (i >= selectedImages.length - 1 ? 0 : i + 1));
                       }}
                       className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md cursor-pointer"
                       aria-label="Siguiente imagen"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
                       </svg>
                     </button>
 
@@ -316,7 +333,9 @@ export default function SearchMapPage() {
                             setSelectedImageIndex(idx);
                           }}
                           className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
-                            idx === selectedImageIndex ? 'bg-white scale-125' : 'bg-white/60 hover:bg-white/80'
+                            idx === selectedImageIndex
+                              ? 'bg-white scale-125'
+                              : 'bg-white/60 hover:bg-white/80'
                           }`}
                           aria-label={`Ir a imagen ${idx + 1}`}
                         />
@@ -374,12 +393,11 @@ function PropertyCardHorizontal({
     setImgError(false);
   }, [imageIndex]);
 
-  const images: { url: string; sortOrder: number }[] =
-    card.media?.length
-      ? [...card.media].sort((a, b) => a.sortOrder - b.sortOrder)
-      : card.heroImageUrl
-        ? [{ url: card.heroImageUrl, sortOrder: 0 }]
-        : [];
+  const images: { url: string; sortOrder: number }[] = card.media?.length
+    ? [...card.media].sort((a, b) => a.sortOrder - b.sortOrder)
+    : card.heroImageUrl
+      ? [{ url: card.heroImageUrl, sortOrder: 0 }]
+      : [];
 
   const currentImage = images[imageIndex];
   const hasMultiple = images.length > 1;
@@ -431,7 +449,12 @@ function PropertyCardHorizontal({
               aria-label="Imagen anterior"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
             </div>
 
@@ -455,7 +478,12 @@ function PropertyCardHorizontal({
               aria-label="Siguiente imagen"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </div>
 
@@ -532,12 +560,11 @@ function PropertyCardVertical({
     setImgError(false);
   }, [imageIndex]);
 
-  const images: { url: string; sortOrder: number }[] =
-    card.media?.length
-      ? [...card.media].sort((a, b) => a.sortOrder - b.sortOrder)
-      : card.heroImageUrl
-        ? [{ url: card.heroImageUrl, sortOrder: 0 }]
-        : [];
+  const images: { url: string; sortOrder: number }[] = card.media?.length
+    ? [...card.media].sort((a, b) => a.sortOrder - b.sortOrder)
+    : card.heroImageUrl
+      ? [{ url: card.heroImageUrl, sortOrder: 0 }]
+      : [];
 
   const currentImage = images[imageIndex];
   const hasMultiple = images.length > 1;
@@ -594,7 +621,12 @@ function PropertyCardVertical({
                 aria-label="Imagen anterior"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
               </div>
 
@@ -618,7 +650,12 @@ function PropertyCardVertical({
                 aria-label="Siguiente imagen"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </div>
 

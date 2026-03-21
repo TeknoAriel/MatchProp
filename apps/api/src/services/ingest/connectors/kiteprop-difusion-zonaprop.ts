@@ -300,8 +300,7 @@ function parseCaracteristicasOpenNavent(block: string): {
 
 function collectImagenesOpenNavent(block: string): { url: string; order: number }[] {
   const multimedia = block.match(/<multimedia>[\s\S]*?<\/multimedia>/i)?.[0] ?? block;
-  const imagenesSec =
-    multimedia.match(/<imagenes>[\s\S]*?<\/imagenes>/i)?.[0] ?? multimedia;
+  const imagenesSec = multimedia.match(/<imagenes>[\s\S]*?<\/imagenes>/i)?.[0] ?? multimedia;
   const imgBlocks = imagenesSec.match(/<imagen>[\s\S]*?<\/imagen>/gi) || [];
   const out: { url: string; order: number }[] = [];
   let order = 0;
@@ -418,8 +417,7 @@ export function createKitepropDifusionZonapropConnector(): SourceConnector {
       const items = parseZonapropXmlDocument(xml);
       const start = cursor ? parseInt(cursor, 10) || 0 : 0;
       const slice = items.slice(start, start + limit);
-      const nextCursor =
-        start + slice.length < items.length ? String(start + slice.length) : null;
+      const nextCursor = start + slice.length < items.length ? String(start + slice.length) : null;
       return { items: slice, nextCursor };
     },
     normalize: (raw) => {

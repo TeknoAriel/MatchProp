@@ -342,7 +342,8 @@ export async function listingRoutes(fastify: FastifyInstance) {
         [profile?.firstName, profile?.lastName].filter(Boolean).join(' ') ||
         email.split('@')[0] ||
         'Usuario';
-      const body = lead.message ?? `Consulta desde MatchProp sobre ${lead.listing?.title ?? 'propiedad'}`;
+      const body =
+        lead.message ?? `Consulta desde MatchProp sobre ${lead.listing?.title ?? 'propiedad'}`;
 
       const payload = {
         name,

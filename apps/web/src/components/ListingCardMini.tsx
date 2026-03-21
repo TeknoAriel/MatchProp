@@ -85,12 +85,11 @@ export default function ListingCardMini({
 }: ListingCardMiniProps) {
   const [imgError, setImgError] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
-  const images: { url: string }[] =
-    listing.media?.length
-      ? [...listing.media].sort((a, b) => a.sortOrder - b.sortOrder)
-      : listing.heroImageUrl
-        ? [{ url: listing.heroImageUrl }]
-        : [];
+  const images: { url: string }[] = listing.media?.length
+    ? [...listing.media].sort((a, b) => a.sortOrder - b.sortOrder)
+    : listing.heroImageUrl
+      ? [{ url: listing.heroImageUrl }]
+      : [];
   const currentImage = images[imageIndex];
   const hasMultiple = images.length > 1;
   const showImage = !!currentImage && !imgError;
@@ -151,7 +150,12 @@ export default function ListingCardMini({
                 aria-label="Imagen anterior"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
               </button>
               <button
@@ -164,7 +168,12 @@ export default function ListingCardMini({
                 aria-label="Siguiente imagen"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </button>
               <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
