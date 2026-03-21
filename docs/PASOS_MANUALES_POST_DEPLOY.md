@@ -40,10 +40,10 @@ Reduce builds cuando no cambian archivos de esa app:
 
 ---
 
-## 3. Merge automático del PR (opcional)
+## 3. Merge automático del PR (obligatorio para deploy sin intervención)
 
-- En GitHub: **Enable auto-merge** en el PR cuando los checks estén verdes, **o**
-- Etiqueta **`automerge`** si está habilitado el workflow `pr-automerge-label.yml` (y permisos/token; ver `docs/DEPLOY_AUTOMATICO.md`).
+- Crear secret **`AUTOMERGE_TOKEN`** (PAT con scope `repo`) — ver **`docs/CONFIGURAR_DEPLOY_AUTOMATICO.md`**
+- Branch protection en `main`: 0 aprobaciones requeridas (o el bot no puede mergear)
 
 ---
 

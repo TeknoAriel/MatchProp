@@ -45,5 +45,6 @@ Opciones (elegir una política en el equipo):
 
 ## Referencias
 
+- **Permisos para que funcione el auto-merge**: `docs/CONFIGURAR_DEPLOY_AUTOMATICO.md`
 - Reglas de errores en API: `docs/PRODUCTION_ERROR_HANDLING.md`
 - Pasos puntuales (secretos, URLs): `docs/PASOS_MANUALES_POST_DEPLOY.md`
