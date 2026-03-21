@@ -37,9 +37,10 @@ jobs:
             exit 0
           fi
 
-          EXISTING=$(gh pr list --head "$BRANCH" --base main --state open --json number -q '.[0].number' 2>/dev/null || echo "")
+          # jq: si no hay PRs, .[0].number es null → no intentar crear duplicado
+          EXISTING=$(gh pr list --head "$BRANCH" --base main --state open --json number -q 'if length > 0 then .[0].number else empty end' 2>/dev/null || true)
 
-          if [[ -z "$EXISTING" || "$EXISTING" == "null" ]]; then
+          if [[ -z "$EXISTING" ]]; then
             echo "Creating PR from $BRANCH to main"
             gh pr create --base main --head "$BRANCH" \
               --title "Deploy: $BRANCH → main" \
