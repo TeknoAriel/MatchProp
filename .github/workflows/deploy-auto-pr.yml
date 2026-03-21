@@ -31,29 +31,37 @@ jobs:
       - name: Create PR to main (if not exists)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: |
           BRANCH="${{ github.ref_name }}"
           OWNER="${{ github.repository_owner }}"
-          # GitHub API / gh --head requieren owner:rama (solo el nombre de rama suele no matchear → lista vacía → create duplicado falla)
           HEAD_REF="${OWNER}:${BRANCH}"
+          REPO="${{ github.repository }}"
 
           if [[ "$BRANCH" == dependabot/* ]] || [[ "$BRANCH" == renovate/* ]]; then
             echo "Skipping bot branch"
             exit 0
           fi
 
-          EXISTING=$(gh pr list --head "$HEAD_REF" --base main --state open --json number -q 'if length > 0 then .[0].number else empty end')
+          # gh pr list a veces devuelve vacío cuando el PR existe; fallback REST API
+          EXISTING=$(gh pr list --head "$HEAD_REF" --base main --state open --json number -q 'if length > 0 then .[0].number else empty end' 2>/dev/null || true)
+          if [[ -z "$EXISTING" ]]; then
+            EXISTING=$(curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" \
+              "https://api.github.com/repos/${REPO}/pulls?head=${HEAD_REF}&state=open" \
+              | jq -r 'if length > 0 then .[0].number | tostring else empty end')
+          fi
 
           if [[ -z "$EXISTING" ]]; then
-            echo "Creating PR from $BRANCH to main (listado por head=$HEAD_REF)"
-            # create en mismo repo: --head solo nombre de rama (no owner:rama)
+            echo "Creating PR from $BRANCH to main"
             if ! gh pr create --base main --head "$BRANCH" \
               --title "Deploy: $BRANCH → main" \
               --body "PR automático. Merge cuando CI pase (etiqueta automerge)." \
               --label automerge; then
-              echo "create falló (p. ej. PR ya existía); reintentando detección por head"
-              EXISTING=$(gh pr list --head "$HEAD_REF" --base main --state open --json number -q 'if length > 0 then .[0].number else empty end')
+              echo "create falló (p. ej. PR ya existía); fallback REST API"
+              EXISTING=$(curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" \
+                "https://api.github.com/repos/${REPO}/pulls?head=${HEAD_REF}&state=open" \
+                | jq -r 'if length > 0 then .[0].number | tostring else empty end')
               if [[ -z "$EXISTING" ]]; then
                 echo "::error::No se pudo crear ni encontrar PR para $HEAD_REF"
                 exit 1
