@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
+import { trackEvent } from '../lib/analytics.js';
 
 export async function listingRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', fastify.authenticate);
@@ -60,6 +61,14 @@ export async function listingRoutes(fastify: FastifyInstance) {
         },
       });
       if (!listing) throw fastify.httpErrors.notFound('Listing no encontrado');
+
+      const user = request.user as { userId: string } | undefined;
+      if (user?.userId) {
+        trackEvent('listing_viewed', {
+          userId: user.userId,
+          payload: { listingId: listing.id },
+        }).catch(() => {});
+      }
 
       const mediaList = listing.media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }));
       const photosCount = mediaList.length || (listing.heroImageUrl ? 1 : 0);

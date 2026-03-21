@@ -1,5 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
+import { trackEvent } from '../lib/analytics.js';
+
 export async function alertsRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', fastify.authenticate);
 
@@ -74,6 +76,10 @@ export async function alertsRoutes(fastify: FastifyInstance) {
           where: { id: existing.id },
           data: { isEnabled: true, filtersJson },
         });
+        trackEvent('alert_activated', {
+          userId: user.userId,
+          payload: { subscriptionId: updated.id, type: typeVal },
+        }).catch(() => {});
         return reply.status(201).send({
           id: updated.id,
           savedSearchId: updated.savedSearchId,

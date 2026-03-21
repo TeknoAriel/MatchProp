@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { executeFeed } from '../lib/feed-engine.js';
 import { createSavedSearchRequestSchema, normalizeFilters } from '../schemas/search.js';
+import { trackEvent } from '../lib/analytics.js';
 
 const FEED_LIMIT_DEFAULT = 20;
 const FEED_LIMIT_MAX = 50;
@@ -99,6 +100,11 @@ export async function searchesRoutes(fastify: FastifyInstance) {
         where: { id: user.userId },
         data: { activeSearchId: created.id },
       });
+
+      trackEvent('search_saved', {
+        userId: user.userId,
+        payload: { searchId: created.id },
+      }).catch(() => {});
 
       return reply.status(201).send(toSavedSearchDTO(created));
     }

@@ -51,6 +51,23 @@ Así no se puede mergear sin que CI pase.
 Siempre probar la app en: **https://match-prop-web.vercel.app/**  
 Detalle: [URL_PRUEBAS_Y_PROYECTOS.md](./URL_PRUEBAS_Y_PROYECTOS.md).
 
+## Runbook: Smoke prod falla
+
+Si **smoke-prod** o **Smoke prod (schedule)** falla en GitHub Actions:
+
+1. **Verificar URLs de prod:** `https://match-prop-web.vercel.app` y `https://match-prop-admin-dsvv.vercel.app/health` deben devolver 200.
+2. **Verificar Vercel:** Revisar en Vercel Dashboard que los últimos deploys de `main` terminaron correctamente.
+3. **Verificar base de datos:** Si la API devuelve 503, revisar `DATABASE_URL` y conexión a PostgreSQL (Neon, etc.).
+4. **Re-ejecutar workflow:** En GitHub Actions → re-run failed jobs; a veces es timeout transitorio.
+
+## Runbook: Rollback rápido
+
+Si un deploy introduce errores críticos:
+
+1. **Revert en GitHub:** Crear PR revertiendo el commit problemático y mergear.
+2. **Vercel:** Vercel redeploya automáticamente con el nuevo commit en `main`.
+3. **Migraciones:** Si el problema es una migración, ejecutar manualmente una migración de rollback (crear nueva migración que revierta cambios) y aplicarla contra prod con `pnpm --filter api exec prisma migrate deploy`.
+
 ## Corrección crítica aplicada
 
 - En `apps/web/next.config.ts` la API de producción estaba apuntando a **match-prop-admin**; se corrigió a **match-prop-admin-dsvv.vercel.app** para que el proxy `/api/*` hable con la API real.

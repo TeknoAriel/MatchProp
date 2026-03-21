@@ -164,11 +164,48 @@ jobs:
           DATABASE_URL: postgresql://matchprop:matchprop@localhost:5432/matchprop
         run: pnpm run pre-deploy:verify
 
+  smoke-ux:
+    name: Smoke UX (E2E)
+    runs-on: ubuntu-latest
+    needs: [build]
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: matchprop
+          POSTGRES_PASSWORD: matchprop
+          POSTGRES_DB: matchprop
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:shared
+      - run: pnpm --filter api exec prisma generate
+      - run: pnpm --filter web build
+      - name: Smoke UX (API + Web + Playwright)
+        env:
+          DATABASE_URL: postgresql://matchprop:matchprop@localhost:5432/matchprop
+        run: bash scripts/smoke-ux-ci.sh
+
   smoke-prod:
     name: Smoke prod (post-merge)
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: [build]
+    needs: [build, smoke-ux]
     steps:
       - uses: actions/checkout@v4
       - name: Wait for Vercel deploy
