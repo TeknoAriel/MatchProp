@@ -1,11 +1,11 @@
-# Opcional: merge automático cuando el PR tiene la etiqueta "automerge" y CI pasó.
-# Requisitos en GitHub: el token del workflow debe poder mergear (branch protection / bypass).
-# Si falla por permisos, usar "Enable auto-merge" en la UI del PR o un PAT en AUTOMERGE_TOKEN.
+# Merge automático cuando el PR tiene la etiqueta "automerge" y CI pasó.
+# Se ejecuta al agregar la etiqueta O al sincronizar (push) para re-asegurar auto-merge.
+# Requisitos: token con permiso merge; si falla, usar AUTOMERGE_TOKEN (PAT) o "Enable auto-merge" en la UI.
 name: PR auto-merge (etiqueta automerge)
 
 on:
   pull_request:
-    types: [labeled]
+    types: [labeled, synchronize]
 
 permissions:
   contents: write
@@ -13,11 +13,19 @@ permissions:
 
 jobs:
   enable-auto-merge:
-    if: github.event.label.name == 'automerge'
+    if: github.event.action == 'synchronize' || (github.event.action == 'labeled' && github.event.label.name == 'automerge')
     runs-on: ubuntu-latest
     steps:
-      - name: Habilitar auto-merge (squash)
+      - uses: actions/checkout@v4
+      - name: Check automerge label and enable merge
         env:
           GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          gh pr merge "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --squash --auto
+          PR="${{ github.event.pull_request.number }}"
+          LABELS=$(gh pr view "$PR" --json labels -q '.labels[].name')
+          if echo "$LABELS" | grep -qx "automerge"; then
+            gh pr merge "$PR" --repo "${{ github.repository }}" --squash --auto
+            echo "Auto-merge habilitado para PR #$PR (merge cuando CI pase)"
+          else
+            echo "PR sin etiqueta automerge, skip"
+          fi
