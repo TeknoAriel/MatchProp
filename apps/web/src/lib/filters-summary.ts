@@ -47,5 +47,13 @@ export function filtersToHumanSummary(f: SearchFilters | null | undefined): stri
     parts.push(`desde ${f.areaMin} m²`);
   }
 
+  if (f.amenities?.length) {
+    parts.push(`con ${f.amenities.join(', ')}`);
+  }
+
+  if (f.aptoCredito === true) {
+    parts.push('apto crédito');
+  }
+
   return parts.length ? parts.join(' · ') : 'Sin filtros específicos';
 }

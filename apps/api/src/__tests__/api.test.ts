@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { buildApp } from '../app.js';
 import type { FastifyInstance } from 'fastify';
+import { prisma } from '../lib/prisma.js';
+import bcrypt from 'bcryptjs';
 import { runIngest } from '../services/ingest/index.js';
+
+const TEST_USER_EMAIL = 'admin@matchprop.com';
 
 describe('API', () => {
   let app: FastifyInstance;
@@ -9,12 +13,21 @@ describe('API', () => {
 
   beforeAll(async () => {
     app = await buildApp({ logger: false });
+
+    // Crear usuario (CI no ejecuta seed; otros tests hacen upsert)
+    const passwordHash = await bcrypt.hash('demo', 10);
+    await prisma.user.upsert({
+      where: { email: TEST_USER_EMAIL },
+      create: { email: TEST_USER_EMAIL, passwordHash, role: 'ADMIN' },
+      update: { passwordHash },
+    });
+
     await runIngest({ source: 'KITEPROP_EXTERNALSITE', limit: 200 });
     await runIngest({ source: 'API_PARTNER_1', limit: 200 });
     const res = await app.inject({
       method: 'POST',
       url: '/auth/login',
-      payload: { email: 'admin@matchprop.com', password: 'demo' },
+      payload: { email: TEST_USER_EMAIL, password: 'demo' },
       headers: { 'content-type': 'application/json' },
     });
     if (res.statusCode === 200) token = res.json().token;
@@ -28,7 +41,7 @@ describe('API', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/auth/login',
-      payload: { email: 'admin@matchprop.com', password: 'demo' },
+      payload: { email: TEST_USER_EMAIL, password: 'demo' },
       headers: { 'content-type': 'application/json' },
     });
     expect(res.statusCode).toBe(200);

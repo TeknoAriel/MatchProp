@@ -12,17 +12,33 @@ import InquiryModal from '../../../components/InquiryModal';
 import PlanErrorBlock from '../../../components/PlanErrorBlock';
 import BetaPremiumBanner from '../../../components/BetaPremiumBanner';
 import ShareModal from '../../../components/ShareModal';
-import ListingImage from '../../../components/ListingImage';
+import ListingCardImageCarousel from '../../../components/ListingCardImageCarousel';
 
 const API_BASE = '/api';
 const PRODUCT_NAME = process.env.NEXT_PUBLIC_PRODUCT_NAME || 'MatchProp';
 
+type ListingCardWithMedia = ListingCard & {
+  media?: { url: string; sortOrder: number }[];
+};
+
 /** Normaliza un item del feed para evitar undefined/null que rompan la UI (listados). */
-function normalizeCard(raw: unknown): ListingCard | null {
+function normalizeCard(raw: unknown): ListingCardWithMedia | null {
   if (!raw || typeof raw !== 'object') return null;
   const c = raw as Record<string, unknown>;
   const id = typeof c.id === 'string' ? c.id : null;
   if (!id) return null;
+  const media: { url: string; sortOrder: number }[] | undefined = Array.isArray(c.media)
+    ? c.media
+        .map((m) => {
+          if (!m || typeof m !== 'object') return null;
+          const mm = m as Record<string, unknown>;
+          const url = typeof mm.url === 'string' && mm.url ? mm.url : null;
+          const sortOrder = typeof mm.sortOrder === 'number' ? mm.sortOrder : 0;
+          if (!url) return null;
+          return { url, sortOrder };
+        })
+        .filter((x): x is { url: string; sortOrder: number } => x !== null)
+    : undefined;
   return {
     id,
     title: typeof c.title === 'string' ? c.title : null,
@@ -33,6 +49,7 @@ function normalizeCard(raw: unknown): ListingCard | null {
     areaTotal: typeof c.areaTotal === 'number' ? c.areaTotal : null,
     locationText: typeof c.locationText === 'string' ? c.locationText : null,
     heroImageUrl: typeof c.heroImageUrl === 'string' && c.heroImageUrl ? c.heroImageUrl : null,
+    media: media?.length ? media.sort((a, b) => a.sortOrder - b.sortOrder) : undefined,
     publisherRef: typeof c.publisherRef === 'string' ? c.publisherRef : null,
     source: typeof c.source === 'string' ? c.source : 'API_PARTNER_1',
     operationType: typeof c.operationType === 'string' ? c.operationType : null,
@@ -712,7 +729,7 @@ function FeedListPageContent() {
                   const inLists = listingsStatus[card.id]?.inLists ?? [];
                   const CardContent = (
                     <>
-                      <div className="aspect-[16/10] bg-gray-200 relative">
+                      <div className="aspect-[16/10] bg-gray-200 relative overflow-hidden group">
                         {inLists.length > 0 && (
                           <div className="absolute top-2 right-2 flex flex-wrap gap-1 justify-end max-w-[70%] z-10">
                             {inLists.map((l) => (
@@ -737,7 +754,11 @@ function FeedListPageContent() {
                             ))}
                           </div>
                         )}
-                        <ListingImage src={card.heroImageUrl} alt={card.title ?? ''} />
+                        <ListingCardImageCarousel
+                          heroImageUrl={card.heroImageUrl}
+                          media={(card as ListingCardWithMedia).media}
+                          alt={card.title ?? ''}
+                        />
                       </div>
                       <div className="p-3">
                         <h2 className="font-semibold truncate">{card.title ?? 'Sin título'}</h2>
@@ -993,7 +1014,7 @@ function FeedListPageContent() {
                 const inLists = listingsStatus[card.id]?.inLists ?? [];
                 const CardContent = (
                   <>
-                    <div className="aspect-[16/10] bg-gray-200 relative">
+                    <div className="aspect-[16/10] bg-gray-200 relative overflow-hidden group">
                       {inLists.length > 0 && (
                         <div className="absolute top-2 right-2 flex flex-wrap gap-1 justify-end max-w-[70%] z-10">
                           {inLists.map((l) => (
@@ -1018,7 +1039,11 @@ function FeedListPageContent() {
                           ))}
                         </div>
                       )}
-                      <ListingImage src={card.heroImageUrl} alt={card.title ?? ''} />
+                      <ListingCardImageCarousel
+                        heroImageUrl={card.heroImageUrl}
+                        media={(card as ListingCardWithMedia).media}
+                        alt={card.title ?? ''}
+                      />
                     </div>
                     <div className="p-3">
                       <h2 className="font-semibold truncate">{card.title ?? 'Sin título'}</h2>

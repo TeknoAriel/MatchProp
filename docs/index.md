@@ -31,16 +31,17 @@
 
 ## Operación y referencias técnicas
 
-| Documento                                                  | Descripción                                                  |
-| ---------------------------------------------------------- | ------------------------------------------------------------ |
-| [repo-map.md](./repo-map.md)                               | Mapa del repo — scripts, puertos, modelos, endpoints, tests  |
-| [AUDIT_README.md](./AUDIT_README.md)                       | Cómo correr `pnpm audit:verify` (gates locales)              |
-| [archive/AUDIT_MATCHPROP.md](./archive/AUDIT_MATCHPROP.md) | Auditoría técnica histórica (archivo)                        |
-| [DEV.md](./DEV.md)                                         | Desarrollo local — requisitos, comandos, troubleshooting     |
-| [PROD.md](./PROD.md)                                       | Producción — variables de entorno, observabilidad, seguridad |
-| [SETUP_DEPLOY_SIMPLE.md](./SETUP_DEPLOY_SIMPLE.md)         | Deploy simple — Neon + Vercel, variables, URLs               |
-| [DEPLOY_CHECKLIST.md](./DEPLOY_CHECKLIST.md)               | Checklist pre-deploy, deploy, post-deploy                    |
-| [demo.md](./demo.md)                                       | Prueba real solo con navegador — escenario demo 1-click      |
+| Documento                                                      | Descripción                                                                           |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| [repo-map.md](./repo-map.md)                                   | Mapa del repo — scripts, puertos, modelos, endpoints, tests                           |
+| [ZONAPROP_XML_FICHA_CAMPOS.md](./ZONAPROP_XML_FICHA_CAMPOS.md) | XML Zonaprop/KiteProp (OpenNavent): tags, `caracteristicas` y mapeo a ficha/amenities |
+| [AUDIT_README.md](./AUDIT_README.md)                           | Cómo correr `pnpm audit:verify` (gates locales)                                       |
+| [archive/AUDIT_MATCHPROP.md](./archive/AUDIT_MATCHPROP.md)     | Auditoría técnica histórica (archivo)                                                 |
+| [DEV.md](./DEV.md)                                             | Desarrollo local — requisitos, comandos, troubleshooting                              |
+| [PROD.md](./PROD.md)                                           | Producción — variables de entorno, observabilidad, seguridad                          |
+| [SETUP_DEPLOY_SIMPLE.md](./SETUP_DEPLOY_SIMPLE.md)             | Deploy simple — Neon + Vercel, variables, URLs                                        |
+| [DEPLOY_CHECKLIST.md](./DEPLOY_CHECKLIST.md)                   | Checklist pre-deploy, deploy, post-deploy                                             |
+| [demo.md](./demo.md)                                           | Prueba real solo con navegador — escenario demo 1-click                               |
 
 ---
 

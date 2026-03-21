@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from './ThemeProvider';
@@ -35,6 +35,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const { theme, toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [masOpen, setMasOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/me/profile', { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((d) => d?.role && setUserRole(d.role))
+      .catch(() => {});
+  }, []);
 
   const isPublic =
     pathname?.startsWith('/login') ||
@@ -89,13 +97,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
         <div className="p-2 border-t border-[var(--mp-border)] space-y-0.5 shrink-0">
-          <Link
-            href="/me/settings"
-            className={`${NAV_LINK_CLASS} min-w-0 text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]`}
-          >
-            <span className="text-lg shrink-0">⚙️</span>
-            {sidebarOpen && <span className="truncate">Configuración</span>}
-          </Link>
+          {userRole === 'ADMIN' && (
+            <Link
+              href="/me/settings"
+              className={`${NAV_LINK_CLASS} min-w-0 text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]`}
+            >
+              <span className="text-lg shrink-0">⚙️</span>
+              {sidebarOpen && <span className="truncate">Configuración</span>}
+            </Link>
+          )}
           <Link
             href="/me/premium"
             className={`${NAV_LINK_CLASS} min-w-0 bg-[var(--mp-premium)] text-slate-900 hover:opacity-90`}

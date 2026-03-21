@@ -1,0 +1,46 @@
+---
+description: Deploy 100% automático — el agente ejecuta todo, el usuario no hace nada
+alwaysApply: true
+---
+
+# Deploy automático
+
+## Responsabilidad del agente
+
+**Es responsabilidad del agente que todo funcione en automático y se deploye cada vez que se termine un sprint** para probar en producción.
+
+Cuando el usuario pida **deploy**, **deployar**, **subir a producción**, **terminar sprint** o similar:
+
+1. **Verificar** antes de push:
+   - `pnpm build:shared`
+   - `pnpm -r run typecheck`
+   - Si falla: corregir errores, no pedir al usuario que haga nada.
+
+2. **Commit y push**:
+   - `git add -A` (archivos modificados relevantes)
+   - `git commit -m "..."` con mensaje descriptivo
+   - `git push origin <branch-actual>`
+
+3. **No pedir nada al usuario**:
+   - NO pedir que ejecute comandos.
+   - NO pedir que cree el PR.
+   - NO pedir que haga merge.
+
+4. **Verificar que la pipeline esté verde** (CI, deploy-auto, cron-ingest) y que el PR se mergee automáticamente. Si algo falla, corregir.
+
+## Automatización en GitHub
+
+Tras el push, el workflow `.github/workflows/deploy-auto-pr.yml`:
+
+- Crea un PR a `main` (si no existe)
+- Agrega la etiqueta `automerge`
+- En cada push al PR, `pr-automerge-label` re-habilita auto-merge (merge cuando CI pase)
+- Vercel despliega; luego corre smoke-prod
+
+## Excepción (solo primera vez en GitHub)
+
+Si el merge automático nunca funcionó, el usuario configura **una vez** permisos y secretos: ver **`docs/SETUP_UNA_VEZ_SIN_INTERVENCION.md`** (URLs exactas). Después no interviene.
+
+## Regla de oro
+
+**El usuario no ejecuta ni verifica nada** en el día a día. El agente hace commit, push, verificaciones y asegura que la pipeline despliegue automáticamente al terminar cada sprint.

@@ -561,56 +561,120 @@ export async function feedRoutes(fastify: FastifyInstance) {
         });
       }
 
-      try {
-        const baseWhere: Record<string, unknown> = {
-          status: 'ACTIVE',
-          swipeDecisions: { none: { userId: user.userId } },
-          ...filtersToWhere(filters),
-        };
+      const baseWhere: Record<string, unknown> = {
+        status: 'ACTIVE',
+        swipeDecisions: { none: { userId: user.userId } },
+        ...filtersToWhere(filters),
+      };
 
-        const findWhere = { ...baseWhere } as Record<string, unknown>;
-        if (cursorData) {
-          findWhere.OR = [
-            { lastSeenAt: { lt: cursorData.lastSeenAt } },
-            { lastSeenAt: cursorData.lastSeenAt, id: { lt: cursorData.id } },
-          ];
-        }
+      const findWhere = { ...baseWhere } as Record<string, unknown>;
+      if (cursorData) {
+        findWhere.OR = [
+          { lastSeenAt: { lt: cursorData.lastSeenAt } },
+          { lastSeenAt: cursorData.lastSeenAt, id: { lt: cursorData.id } },
+        ];
+      }
 
-        const includeTotal = parseIntParam(q.includeTotal) === 1;
-        const hasCursor = !!cursorData;
-        const sortBy = filters.sortBy ?? 'date_desc';
-        const orderBy =
-          sortBy === 'price_asc'
-            ? [{ price: 'asc' as const }, { lastSeenAt: 'desc' as const }, { id: 'desc' as const }]
-            : sortBy === 'price_desc'
+      const includeTotal = parseIntParam(q.includeTotal) === 1;
+      const hasCursor = !!cursorData;
+      const sortBy = filters.sortBy ?? 'date_desc';
+      const orderBy =
+        sortBy === 'price_asc'
+          ? [{ price: 'asc' as const }, { lastSeenAt: 'desc' as const }, { id: 'desc' as const }]
+          : sortBy === 'price_desc'
+            ? [{ price: 'desc' as const }, { lastSeenAt: 'desc' as const }, { id: 'desc' as const }]
+            : sortBy === 'area_desc'
               ? [
-                  { price: 'desc' as const },
+                  { areaTotal: 'desc' as const },
                   { lastSeenAt: 'desc' as const },
                   { id: 'desc' as const },
                 ]
-              : sortBy === 'area_desc'
-                ? [
-                    { areaTotal: 'desc' as const },
-                    { lastSeenAt: 'desc' as const },
-                    { id: 'desc' as const },
-                  ]
-                : [{ lastSeenAt: 'desc' as const }, { id: 'desc' as const }];
+              : [{ lastSeenAt: 'desc' as const }, { id: 'desc' as const }];
 
-        let total: number | null = null;
-        if (hasCursor) {
-          total = getCachedTotal(user.userId, filters as Record<string, unknown>) ?? null;
-        } else if (includeTotal) {
-          const count = await prisma.listing.count({ where: baseWhere });
-          total = count;
-          setCachedTotal(user.userId, filters as Record<string, unknown>, count);
-        } else {
-          total = getCachedTotal(user.userId, filters as Record<string, unknown>) ?? null;
-        }
+      let total: number | null = null;
+      if (hasCursor) {
+        total = getCachedTotal(user.userId, filters as Record<string, unknown>) ?? null;
+      } else if (includeTotal) {
+        const count = await prisma.listing.count({ where: baseWhere });
+        total = count;
+        setCachedTotal(user.userId, filters as Record<string, unknown>, count);
+      } else {
+        total = getCachedTotal(user.userId, filters as Record<string, unknown>) ?? null;
+      }
 
-        const itemsRaw = await prisma.listing.findMany({
-          where: findWhere,
+      const itemsRaw = await prisma.listing.findMany({
+        where: findWhere,
+        take: limit + 1,
+        orderBy,
+        select: {
+          id: true,
+          title: true,
+          price: true,
+          currency: true,
+          bedrooms: true,
+          bathrooms: true,
+          areaTotal: true,
+          locationText: true,
+          heroImageUrl: true,
+          publisherRef: true,
+          source: true,
+          operationType: true,
+          lastSeenAt: true,
+          media: {
+            orderBy: { sortOrder: 'asc' },
+            take: 6,
+            select: { url: true, sortOrder: true },
+          },
+        },
+      });
+
+      const hasMore = itemsRaw.length > limit;
+      const items = (hasMore ? itemsRaw.slice(0, limit) : itemsRaw)
+        .map((l) => ({
+          id: l.id,
+          title: l.title,
+          price: l.price ? Math.round(l.price) : null,
+          currency: l.currency,
+          bedrooms: l.bedrooms,
+          bathrooms: l.bathrooms,
+          areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
+          locationText: l.locationText,
+          heroImageUrl: l.heroImageUrl ?? l.media?.[0]?.url ?? null,
+          media: Array.isArray(l.media)
+            ? l.media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }))
+            : undefined,
+          publisherRef: l.publisherRef,
+          source: l.source,
+          operationType: l.operationType,
+        }))
+        .filter((i) => i.id != null && i.id !== '');
+      const last = items[items.length - 1];
+      const lastRaw = hasMore ? itemsRaw[limit - 1] : itemsRaw[itemsRaw.length - 1];
+      const nextCursor =
+        hasMore && lastRaw
+          ? encodeListingCursor({ lastSeenAt: lastRaw.lastSeenAt, id: last!.id })
+          : null;
+
+      const fallbackUsed = false;
+      const hasRestrictiveFilters =
+        filters.operationType != null ||
+        (filters.propertyTypes?.length ?? 0) > 0 ||
+        filters.priceMin != null ||
+        filters.priceMax != null ||
+        filters.bedrooms != null ||
+        filters.bathrooms != null ||
+        filters.areaMin != null ||
+        (filters.locationText != null && filters.locationText !== '');
+
+      if (items.length === 0 && !hasCursor && !feedAll && hasRestrictiveFilters) {
+        const fallbackWhere = {
+          status: 'ACTIVE' as const,
+          swipeDecisions: { none: { userId: user.userId } },
+        };
+        const fallbackRaw = await prisma.listing.findMany({
+          where: fallbackWhere,
           take: limit + 1,
-          orderBy,
+          orderBy: [{ lastSeenAt: 'desc' }, { id: 'desc' }],
           select: {
             id: true,
             title: true,
@@ -625,11 +689,15 @@ export async function feedRoutes(fastify: FastifyInstance) {
             source: true,
             operationType: true,
             lastSeenAt: true,
+            media: {
+              orderBy: { sortOrder: 'asc' },
+              take: 6,
+              select: { url: true, sortOrder: true },
+            },
           },
         });
-
-        const hasMore = itemsRaw.length > limit;
-        const items = (hasMore ? itemsRaw.slice(0, limit) : itemsRaw)
+        const fbHasMore = fallbackRaw.length > limit;
+        const fbItems = (fbHasMore ? fallbackRaw.slice(0, limit) : fallbackRaw)
           .map((l) => ({
             id: l.id,
             title: l.title,
@@ -639,115 +707,37 @@ export async function feedRoutes(fastify: FastifyInstance) {
             bathrooms: l.bathrooms,
             areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
             locationText: l.locationText,
-            heroImageUrl: l.heroImageUrl,
+            heroImageUrl: l.heroImageUrl ?? l.media?.[0]?.url ?? null,
+            media: Array.isArray(l.media)
+              ? l.media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }))
+              : undefined,
             publisherRef: l.publisherRef,
             source: l.source,
             operationType: l.operationType,
           }))
           .filter((i) => i.id != null && i.id !== '');
-        const last = items[items.length - 1];
-        const lastRaw = hasMore ? itemsRaw[limit - 1] : itemsRaw[itemsRaw.length - 1];
-        const nextCursor =
-          hasMore && lastRaw
-            ? encodeListingCursor({ lastSeenAt: lastRaw.lastSeenAt, id: last!.id })
+        const fbLast = fbItems[fbItems.length - 1];
+        const fbLastRaw = fbHasMore ? fallbackRaw[limit - 1] : fallbackRaw[fallbackRaw.length - 1];
+        const fbNextCursor =
+          fbHasMore && fbLastRaw && fbLast
+            ? encodeListingCursor({ lastSeenAt: fbLastRaw.lastSeenAt, id: fbLast.id })
             : null;
-
-        const fallbackUsed = false;
-        const hasRestrictiveFilters =
-          filters.operationType != null ||
-          (filters.propertyTypes?.length ?? 0) > 0 ||
-          filters.priceMin != null ||
-          filters.priceMax != null ||
-          filters.bedrooms != null ||
-          filters.bathrooms != null ||
-          filters.areaMin != null ||
-          (filters.locationText != null && filters.locationText !== '');
-
-        if (items.length === 0 && !hasCursor && !feedAll && hasRestrictiveFilters) {
-          const fallbackWhere = {
-            status: 'ACTIVE' as const,
-            swipeDecisions: { none: { userId: user.userId } },
-          };
-          const fallbackRaw = await prisma.listing.findMany({
-            where: fallbackWhere,
-            take: limit + 1,
-            orderBy: [{ lastSeenAt: 'desc' }, { id: 'desc' }],
-            select: {
-              id: true,
-              title: true,
-              price: true,
-              currency: true,
-              bedrooms: true,
-              bathrooms: true,
-              areaTotal: true,
-              locationText: true,
-              heroImageUrl: true,
-              publisherRef: true,
-              source: true,
-              operationType: true,
-              lastSeenAt: true,
-            },
-          });
-          const fbHasMore = fallbackRaw.length > limit;
-          const fbItems = (fbHasMore ? fallbackRaw.slice(0, limit) : fallbackRaw)
-            .map((l) => ({
-              id: l.id,
-              title: l.title,
-              price: l.price ? Math.round(l.price) : null,
-              currency: l.currency,
-              bedrooms: l.bedrooms,
-              bathrooms: l.bathrooms,
-              areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
-              locationText: l.locationText,
-              heroImageUrl: l.heroImageUrl,
-              publisherRef: l.publisherRef,
-              source: l.source,
-              operationType: l.operationType,
-            }))
-            .filter((i) => i.id != null && i.id !== '');
-          const fbLast = fbItems[fbItems.length - 1];
-          const fbLastRaw = fbHasMore
-            ? fallbackRaw[limit - 1]
-            : fallbackRaw[fallbackRaw.length - 1];
-          const fbNextCursor =
-            fbHasMore && fbLastRaw && fbLast
-              ? encodeListingCursor({ lastSeenAt: fbLastRaw.lastSeenAt, id: fbLast.id })
-              : null;
-          return {
-            items: fbItems,
-            total: null,
-            limit,
-            nextCursor: fbNextCursor,
-            fallbackUsed: true,
-            emptyCatalog: fbItems.length === 0,
-          };
-        }
-
-        const emptyCatalog = items.length === 0 && !hasCursor;
-        return { items, total, limit, nextCursor, fallbackUsed, emptyCatalog };
-      } catch (err) {
-        request.log.error(err, 'Feed error');
-        const limit = Math.min(
-          FEED_LIMIT_MAX,
-          Math.max(
-            1,
-            Math.floor(Number((request.query as Record<string, unknown>).limit)) ||
-              FEED_LIMIT_DEFAULT
-          )
-        );
         return {
-          items: [],
-          total: 0,
+          items: fbItems,
+          total: null,
           limit,
-          nextCursor: null,
-          fallbackUsed: false,
-          emptyCatalog: true,
+          nextCursor: fbNextCursor,
+          fallbackUsed: true,
+          emptyCatalog: fbItems.length === 0,
         };
       }
+
+      const emptyCatalog = items.length === 0 && !hasCursor;
+      return { items, total, limit, nextCursor, fallbackUsed, emptyCatalog };
     }
   );
 
-  // GET /feed/map — listings con lat/lng para vista mapa (mismos filtros que feed)
+  // GET /feed/map — listings con lat/lng para vista mapa (mismos filtros que feed principal)
   fastify.get(
     '/feed/map',
     {
@@ -782,6 +772,17 @@ export async function feedRoutes(fastify: FastifyInstance) {
                     title: { type: ['string', 'null'] },
                     price: { type: ['number', 'null'] },
                     locationText: { type: ['string', 'null'] },
+                    media: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          url: { type: 'string' },
+                          sortOrder: { type: 'integer' },
+                        },
+                        required: ['url', 'sortOrder'],
+                      },
+                    },
                   },
                 },
               },
@@ -795,8 +796,80 @@ export async function feedRoutes(fastify: FastifyInstance) {
       const q = request.query as Record<string, unknown>;
       const limit = Math.min(Math.floor(Number(q.limit) || 200), 300);
 
+      const querySearchId =
+        typeof q.searchId === 'string' && q.searchId.trim() ? q.searchId.trim() : null;
+      let pref: {
+        operation?: string | null;
+        minPrice?: number | null;
+        maxPrice?: number | null;
+        currency?: string | null;
+        propertyTypes?: unknown;
+        bedroomsMin?: number | null;
+        bedroomsMax?: number | null;
+        bathroomsMin?: number | null;
+        bathroomsMax?: number | null;
+        areaMin?: number | null;
+        areaMax?: number | null;
+        locationText?: string | null;
+        addressText?: string | null;
+        titleContains?: string | null;
+        sortBy?: string | null;
+        source?: string | null;
+        amenities?: string[] | null;
+        photosCountMin?: number | null;
+        listingAgeDays?: number | null;
+      } | null = null;
+
+      const searchIdToUse =
+        querySearchId ??
+        (
+          await prisma.user.findUnique({
+            where: { id: user.userId },
+            select: { activeSearchId: true },
+          })
+        )?.activeSearchId ??
+        null;
+
+      if (searchIdToUse) {
+        const savedSearch = await prisma.savedSearch.findFirst({
+          where: { id: searchIdToUse, userId: user.userId },
+        });
+        if (savedSearch?.filtersJson && typeof savedSearch.filtersJson === 'object') {
+          const f = savedSearch.filtersJson as Record<string, unknown>;
+          pref = {
+            operation: (f.operationType as string) ?? null,
+            minPrice: typeof f.priceMin === 'number' ? f.priceMin : null,
+            maxPrice: typeof f.priceMax === 'number' ? f.priceMax : null,
+            currency: (f.currency as string) ?? null,
+            propertyTypes: Array.isArray(f.propertyType)
+              ? f.propertyType
+              : ((f.propertyTypes as unknown) ?? null),
+            bedroomsMin: typeof f.bedroomsMin === 'number' ? f.bedroomsMin : null,
+            bedroomsMax: typeof f.bedroomsMax === 'number' ? f.bedroomsMax : null,
+            bathroomsMin: typeof f.bathroomsMin === 'number' ? f.bathroomsMin : null,
+            bathroomsMax: typeof f.bathroomsMax === 'number' ? f.bathroomsMax : null,
+            areaMin: typeof f.areaMin === 'number' ? f.areaMin : null,
+            areaMax: typeof f.areaMax === 'number' ? f.areaMax : null,
+            locationText: (f.locationText as string) ?? null,
+            addressText: (f.addressText as string) ?? null,
+            titleContains: (f.titleContains as string) ?? null,
+            sortBy: (f.sortBy as string) ?? null,
+            source: (f.source as string) ?? null,
+            amenities: Array.isArray(f.amenities) ? f.amenities : null,
+            photosCountMin: typeof f.photosCountMin === 'number' ? f.photosCountMin : null,
+            listingAgeDays: typeof f.listingAgeDays === 'number' ? f.listingAgeDays : null,
+          };
+        }
+      }
+
+      if (!pref) {
+        pref = await prisma.preference.findUnique({
+          where: { userId: user.userId },
+        });
+      }
+
       const overrides = parseFeedQuery(q);
-      const filters = mergeFilters(null, overrides);
+      const filters = mergeFilters(pref, overrides);
       const fw = filtersToWhere(filters);
       const baseWhere: Record<string, unknown> = {
         status: 'ACTIVE',
@@ -818,12 +891,18 @@ export async function feedRoutes(fastify: FastifyInstance) {
           price: true,
           locationText: true,
           heroImageUrl: true,
+          areaTotal: true,
           bedrooms: true,
           bathrooms: true,
           currency: true,
           operationType: true,
           source: true,
           publisherRef: true,
+          media: {
+            orderBy: { sortOrder: 'asc' },
+            take: 6,
+            select: { url: true, sortOrder: true },
+          },
         },
       });
 
@@ -836,7 +915,11 @@ export async function feedRoutes(fastify: FastifyInstance) {
           title: l.title,
           price: l.price ? Math.round(l.price) : null,
           locationText: l.locationText,
-          heroImageUrl: l.heroImageUrl ?? null,
+          heroImageUrl: l.heroImageUrl ?? l.media?.[0]?.url ?? null,
+          media: Array.isArray(l.media)
+            ? l.media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }))
+            : undefined,
+          areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
           bedrooms: l.bedrooms ?? null,
           bathrooms: l.bathrooms ?? null,
           currency: l.currency ?? null,

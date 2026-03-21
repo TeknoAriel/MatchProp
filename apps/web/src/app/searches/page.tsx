@@ -13,6 +13,7 @@ export default function SearchesPage() {
   const [loading, setLoading] = useState(true);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [apiDown, setApiDown] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`${API_BASE}/searches`, { credentials: 'include' })
@@ -97,30 +98,52 @@ export default function SearchesPage() {
 
         <div className="space-y-3">
           {items.map((s) => (
-            <Link
+            <div
               key={s.id}
-              href={`/searches/${s.id}`}
-              className="block p-4 rounded-xl bg-white shadow-sm border border-slate-100 hover:shadow-md hover:border-slate-200 transition-all"
+              className="block p-4 rounded-xl bg-[var(--mp-card)] shadow-sm border border-[var(--mp-border)] hover:border-sky-200 transition-all"
             >
-              <h2 className="font-medium text-slate-900">{s.name || 'Búsqueda sin nombre'}</h2>
-              {s.filters && Object.keys(s.filters).length > 0 && (
-                <p
-                  className="text-sm text-slate-600 mt-1 truncate"
-                  title={filtersToHumanSummary(s.filters)}
-                >
-                  {filtersToHumanSummary(s.filters)}
+              <Link href={`/searches/${s.id}`} className="block">
+                <h2 className="font-medium text-[var(--mp-foreground)]">
+                  {s.name || 'Búsqueda sin nombre'}
+                </h2>
+                <p className="text-sm text-[var(--mp-foreground)] mt-1 break-words">
+                  {s.queryText || filtersToHumanSummary(s.filters) || 'Sin criterios'}
                 </p>
+                <p className="text-xs text-[var(--mp-muted)] mt-2" suppressHydrationWarning>
+                  {typeof s.updatedAt === 'string'
+                    ? new Date(s.updatedAt).toLocaleDateString('es-AR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                      })
+                    : ''}
+                </p>
+              </Link>
+              {s.filters && Object.keys(s.filters).length > 0 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setExpandedId(expandedId === s.id ? null : s.id);
+                    }}
+                    className="mt-2 text-sm text-sky-600 hover:underline"
+                  >
+                    {expandedId === s.id ? 'Ocultar selección' : 'Ver selección'}
+                  </button>
+                  {expandedId === s.id && (
+                    <div className="mt-2 p-3 rounded-lg bg-[var(--mp-bg)] text-sm text-[var(--mp-muted)]">
+                      {filtersToHumanSummary(s.filters)}
+                      {Object.entries(s.filters).length > 0 && (
+                        <pre className="mt-2 text-xs overflow-auto max-h-32">
+                          {JSON.stringify(s.filters, null, 2)}
+                        </pre>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
-              <p className="text-xs text-slate-500 mt-2" suppressHydrationWarning>
-                {typeof s.updatedAt === 'string'
-                  ? new Date(s.updatedAt).toLocaleDateString('es-AR', {
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit',
-                    })
-                  : ''}
-              </p>
-            </Link>
+            </div>
           ))}
         </div>
 

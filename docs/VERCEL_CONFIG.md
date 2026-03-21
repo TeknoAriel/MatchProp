@@ -49,11 +49,11 @@ MatchProp/
 
 ### Settings → Environment Variables
 
-| Variable                           | Valor                                    |
-| ---------------------------------- | ---------------------------------------- |
-| `NEXT_PUBLIC_API_URL`              | `https://match-prop-api-1jte.vercel.app` |
-| `NEXT_PUBLIC_PRODUCT_NAME`         | `MatchProp`                              |
-| `NEXT_PUBLIC_PREMIUM_GRACE_PERIOD` | `1`                                      |
+| Variable                           | Valor                                      |
+| ---------------------------------- | ------------------------------------------ |
+| `NEXT_PUBLIC_API_URL`              | `https://match-prop-admin-dsvv.vercel.app` |
+| `NEXT_PUBLIC_PRODUCT_NAME`         | `MatchProp`                                |
+| `NEXT_PUBLIC_PREMIUM_GRACE_PERIOD` | `1`                                        |
 
 ### Settings → Git → Ignored Build Step
 
@@ -88,9 +88,9 @@ bash scripts/vercel-should-build-web.sh
 
 ### Settings → Environment Variables
 
-| Variable              | Valor                                    |
-| --------------------- | ---------------------------------------- |
-| `NEXT_PUBLIC_API_URL` | `https://match-prop-api-1jte.vercel.app` |
+| Variable              | Valor                                      |
+| --------------------- | ------------------------------------------ |
+| `NEXT_PUBLIC_API_URL` | `https://match-prop-admin-dsvv.vercel.app` |
 
 ### Settings → Git → Ignored Build Step
 
@@ -216,11 +216,11 @@ O desde Vercel UI:
 
 ## URLs de Producción
 
-| Proyecto | URL                                    |
-| -------- | -------------------------------------- |
-| Web      | https://match-prop-web.vercel.app      |
-| Admin    | https://match-prop-admin.vercel.app    |
-| API      | https://match-prop-api-1jte.vercel.app |
+| Proyecto | URL                                      |
+| -------- | ---------------------------------------- |
+| Web      | https://match-prop-web.vercel.app        |
+| Admin    | https://match-prop-admin.vercel.app      |
+| API      | https://match-prop-admin-dsvv.vercel.app |
 
 ---
 

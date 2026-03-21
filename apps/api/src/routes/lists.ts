@@ -15,7 +15,11 @@ const listingSelect = {
   areaTotal: true,
   propertyType: true,
   operationType: true,
-};
+  media: {
+    orderBy: { sortOrder: 'asc' },
+    select: { url: true, sortOrder: true },
+  },
+} as const;
 
 export async function listsRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', fastify.authenticate);
@@ -254,11 +258,17 @@ export async function listsRoutes(fastify: FastifyInstance) {
 
       return {
         list: { id: list.id, name: list.name },
-        items: list.items.map((i) => ({
-          id: i.id,
-          listingId: i.listingId,
-          listing: i.listing,
-        })),
+        items: list.items.map((i) => {
+          const listing = i.listing;
+          const heroImageUrl = listing
+            ? (listing.heroImageUrl ?? listing.media?.[0]?.url ?? null)
+            : null;
+          return {
+            id: i.id,
+            listingId: i.listingId,
+            listing: listing ? { ...listing, heroImageUrl, media: listing.media } : null,
+          };
+        }),
       };
     }
   );

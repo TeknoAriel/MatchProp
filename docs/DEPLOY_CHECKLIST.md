@@ -18,5 +18,5 @@ Vercel despliega API y Web automáticamente.
 ## Post-deploy
 
 - [ ] Verificar https://match-prop-web.vercel.app/login
-- [ ] Verificar https://match-prop-api-1jte.vercel.app/health
+- [ ] Verificar https://match-prop-admin-dsvv.vercel.app/health
 - [ ] Probar «Entrar con link demo» en login

@@ -1,8 +1,14 @@
 name: Cron ingest (GitHub Actions)
 
+concurrency:
+  group: cron-ingest
+  cancel-in-progress: false
+
 on:
   schedule:
-    - cron: '0 */6 * * *'
+    # Frecuencia alta para poder "desenganchar" rápido a producción.
+    # El propio job decide si dispara o hace skip según `CRON_INGEST_INTERVAL_HOURS`.
+    - cron: '0 * * * *' # cada hora
   workflow_dispatch:
 
 jobs:
@@ -12,13 +18,60 @@ jobs:
       - name: Trigger ingest cron
         env:
           API_URL: https://match-prop-admin-dsvv.vercel.app/cron/ingest
+          STATUS_URL: https://match-prop-admin-dsvv.vercel.app/cron/status
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          # Período de prueba: 10 días => 240 horas.
+          # Cuando termine la prueba, seteá esta variable (repo variable) a `1` para volver a 1/h.
+          CRON_INGEST_INTERVAL_HOURS: ${{ vars.CRON_INGEST_INTERVAL_HOURS || 240 }}
         run: |
           if [ -z "$CRON_SECRET" ]; then
-            echo "CRON_SECRET secret not configured. Failing safely."
-            exit 1
+            echo "CRON_SECRET not configured. Skipping ingest (configure in repo secrets for prod cron)."
+            exit 0
           fi
-          echo "Calling: $API_URL"
+
+          echo "Checking lastRun from: $STATUS_URL"
+          STATUS_JSON="$(curl -sS "$STATUS_URL" || true)"
+          export STATUS_JSON
+          LAST_RUN="$(python3 - <<'PY'
+import json, os
+s = os.environ.get("STATUS_JSON") or "{}"
+try:
+  data = json.loads(s)
+except Exception:
+  data = {}
+v = data.get("lastRun")
+print(v if v is not None else "")
+PY
+)"
+
+          INTERVAL_HOURS="$CRON_INGEST_INTERVAL_HOURS"
+          INTERVAL_SECONDS=$((INTERVAL_HOURS * 3600))
+
+          export LAST_RUN INTERVAL_SECONDS
+          RESULT="$(python3 - <<'PY'
+import os
+from datetime import datetime, timezone
+
+last = (os.environ.get("LAST_RUN") or "").strip()
+interval_seconds = int(os.environ.get("INTERVAL_SECONDS"))
+
+if not last:
+    print("run")
+else:
+    # lastRun llega como ISO (ej: 2026-03-17T10:00:00.000Z)
+    last_dt = datetime.fromisoformat(last.replace("Z", "+00:00"))
+    now = datetime.now(timezone.utc)
+    diff = (now - last_dt).total_seconds()
+    print("skip" if diff < interval_seconds else "run")
+PY
+)"
+
+          if [ "$RESULT" = "skip" ]; then
+            echo "Skipping ingest: lastRun=$LAST_RUN < ${INTERVAL_HOURS}h ago."
+            exit 0
+          fi
+
+          echo "Calling ingest: $API_URL"
           curl -sS -X POST "$API_URL" \
             -H "Authorization: Bearer $CRON_SECRET" \
             -H "Content-Type: application/json" \

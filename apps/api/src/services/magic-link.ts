@@ -1,7 +1,6 @@
 import { randomBytes, createHash } from 'crypto';
 import { prisma } from '../lib/prisma.js';
-import type { IdentityProvider, UserRole } from '@prisma/client';
-import { isKitepropAdmin } from '../lib/kiteprop-admins.js';
+import type { IdentityProvider } from '@prisma/client';
 
 const TOKEN_BYTES = 32;
 const TOKEN_EXPIRY_MIN = 15;
@@ -75,14 +74,16 @@ export async function upsertUserAndIdentityForMagicLink(email: string): Promise<
 }> {
   const normalized = normalizeEmail(email);
 
-  const role: UserRole = isKitepropAdmin(normalized) ? 'ADMIN' : 'BUYER';
   const user = await prisma.user.upsert({
     where: { email: normalized },
     create: {
       email: normalized,
-      role,
+      // El Magic Link valida el mail, pero NO otorga roles admin por sí solo.
+      // Los roles "premium/admin" se asignan por contraseña o por panel admin.
+      role: 'BUYER',
     },
-    update: { role },
+    // Si el usuario ya existe, preservamos su rol y vigencias para no pisar historial.
+    update: {},
   });
 
   await prisma.userIdentity.upsert({

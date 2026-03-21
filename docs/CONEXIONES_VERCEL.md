@@ -2,12 +2,12 @@
 
 ## URLs de producción
 
-| Servicio   | URL                                           |
-| ---------- | --------------------------------------------- |
-| Web        | https://match-prop-web.vercel.app             |
-| API        | https://match-prop-api-1jte.vercel.app        |
-| Login      | https://match-prop-web.vercel.app/login       |
-| API Health | https://match-prop-api-1jte.vercel.app/health |
+| Servicio   | URL                                             |
+| ---------- | ----------------------------------------------- |
+| Web        | https://match-prop-web.vercel.app               |
+| API        | https://match-prop-admin-dsvv.vercel.app        |
+| Login      | https://match-prop-web.vercel.app/login         |
+| API Health | https://match-prop-admin-dsvv.vercel.app/health |
 
 ## Flujo de conexión
 
@@ -15,12 +15,12 @@
    El usuario abre la Web en `match-prop-web.vercel.app`. La Web se construye con `next build` (root `apps/web`).
 
 2. **Web → API (server-side)**  
-   Las peticiones desde el servidor Next (fetch a `/api/*`) se reescriben a `API_SERVER_URL` (o fallback `match-prop-api-1jte.vercel.app`).  
-   Variable en **Web (Vercel):** `API_SERVER_URL=https://match-prop-api-1jte.vercel.app`
+   Las peticiones desde el servidor Next (fetch a `/api/*`) se reescriben a `API_SERVER_URL` (o fallback `match-prop-admin-dsvv.vercel.app`).  
+   Variable en **Web (Vercel):** `API_SERVER_URL=https://match-prop-admin-dsvv.vercel.app`
 
 3. **Navegador → API**  
    El cliente puede llamar a `/api/*` (proxy de la Web) o, si se usa `NEXT_PUBLIC_API_URL`, a la API directa.  
-   Variable en **Web:** `NEXT_PUBLIC_API_URL=https://match-prop-api-1jte.vercel.app` (opcional; el proxy usa `API_SERVER_URL`).
+   Variable en **Web:** `NEXT_PUBLIC_API_URL=https://match-prop-admin-dsvv.vercel.app` (opcional; el proxy usa `API_SERVER_URL`).
 
 4. **API → DB**  
    La API usa `DATABASE_URL` (Neon) en el proyecto **API** en Vercel.
@@ -30,7 +30,7 @@
    Variables en **API (Vercel):**
    - `CORS_ORIGINS=https://match-prop-web.vercel.app`
    - `APP_URL=https://match-prop-web.vercel.app`
-   - `API_PUBLIC_URL=https://match-prop-api-1jte.vercel.app`
+   - `API_PUBLIC_URL=https://match-prop-admin-dsvv.vercel.app`
 
 ## Checklist variables (Vercel Dashboard)
 
@@ -40,7 +40,7 @@
 - [ ] `JWT_SECRET`
 - [ ] `AUTH_REFRESH_SECRET`
 - [ ] `APP_URL` = `https://match-prop-web.vercel.app`
-- [ ] `API_PUBLIC_URL` = `https://match-prop-api-1jte.vercel.app`
+- [ ] `API_PUBLIC_URL` = `https://match-prop-admin-dsvv.vercel.app`
 - [ ] `CORS_ORIGINS` = `https://match-prop-web.vercel.app`
 - [ ] `COOKIE_SECURE` = `true`
 - [ ] `DEMO_MODE` = `0` (o `1` para demo)
@@ -48,13 +48,13 @@
 
 ### Proyecto Web (Root: `apps/web`)
 
-- [ ] `API_SERVER_URL` = `https://match-prop-api-1jte.vercel.app`
-- [ ] `NEXT_PUBLIC_API_URL` = `https://match-prop-api-1jte.vercel.app` (opcional; hay fallback en `next.config.ts`)
+- [ ] `API_SERVER_URL` = `https://match-prop-admin-dsvv.vercel.app`
+- [ ] `NEXT_PUBLIC_API_URL` = `https://match-prop-admin-dsvv.vercel.app` (opcional; hay fallback en `next.config.ts`)
 
 ## Verificación rápida post-deploy
 
 1. **API responde**  
-   `curl -s https://match-prop-api-1jte.vercel.app/health` → 200 y JSON con `status`.
+   `curl -s https://match-prop-admin-dsvv.vercel.app/health` → 200 y JSON con `status`.
 
 2. **Web carga**  
    Abrir https://match-prop-web.vercel.app → página de inicio o login.

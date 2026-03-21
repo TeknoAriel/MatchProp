@@ -31,6 +31,7 @@ interface SavedItemRaw {
     currency?: string | null;
     locationText?: string | null;
     heroImageUrl?: string | null;
+    media?: { url: string; sortOrder: number }[];
     source?: string;
     bedrooms?: number | null;
     bathrooms?: number | null;
@@ -51,6 +52,7 @@ function toListingCardMini(item: SavedItemRaw): ListingCardMiniData | null {
     currency: listing?.currency ?? null,
     locationText: listing?.locationText ?? null,
     heroImageUrl: listing?.heroImageUrl ?? null,
+    media: listing?.media ?? undefined,
     bedrooms: listing?.bedrooms ?? null,
     bathrooms: listing?.bathrooms ?? null,
     areaTotal: listing?.areaTotal ?? null,

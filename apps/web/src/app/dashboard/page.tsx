@@ -11,9 +11,27 @@ import { useToast } from '../../components/FunToast';
 
 const API_BASE = '/api';
 
+type AlertSubscription = {
+  id: string;
+  savedSearchId: string | null;
+  savedSearchName: string | null;
+  savedSearchQueryText?: string | null;
+  type: string;
+  isEnabled: boolean;
+  lastRunAt: string | null;
+  createdAt: string;
+};
+
+const ALERT_TYPE_LABELS: Record<string, { label: string; icon: string }> = {
+  NEW_LISTING: { label: 'Nuevas publicaciones', icon: '🏠' },
+  PRICE_DROP: { label: 'Bajó el precio', icon: '📉' },
+  BACK_ON_MARKET: { label: 'Volvió al mercado', icon: '🔄' },
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const [searches, setSearches] = useState<SavedSearchDTO[]>([]);
+  const [alerts, setAlerts] = useState<AlertSubscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [searching, setSearching] = useState(false);
@@ -46,17 +64,27 @@ export default function DashboardPage() {
   }, [isListening, transcript, interimTranscript]);
 
   useEffect(() => {
-    fetch(`${API_BASE}/searches`, { credentials: 'include' })
-      .then(async (res) => {
+    Promise.all([
+      fetch(`${API_BASE}/searches`, { credentials: 'include' }).then(async (res) => {
         if (res.status === 401) {
           router.replace('/login');
-          return;
+          return [];
         }
         if (res.ok) {
           const raw = await res.json();
-          const list = Array.isArray(raw) ? raw : (raw?.searches ?? []);
-          setSearches(list);
+          return Array.isArray(raw) ? raw : (raw?.searches ?? []);
         }
+        return [];
+      }),
+      fetch(`${API_BASE}/alerts/subscriptions`, { credentials: 'include' }).then(async (res) => {
+        if (res.status === 401) return [];
+        if (res.ok) return res.json();
+        return [];
+      }),
+    ])
+      .then(([searchesList, alertsList]) => {
+        setSearches(searchesList);
+        setAlerts(alertsList ?? []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -281,8 +309,50 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Mis alertas */}
+      {alerts.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">Mis alertas</h2>
+            <Link href="/alerts" className="text-sm text-sky-600 hover:underline">
+              Ver todas
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {alerts.slice(0, 5).map((alert) => {
+              const typeInfo = ALERT_TYPE_LABELS[alert.type] ?? {
+                label: alert.type,
+                icon: '🔔',
+              };
+              return (
+                <Link
+                  key={alert.id}
+                  href="/alerts"
+                  className="block p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] hover:border-sky-300 hover:shadow-sm transition-all"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <span className="text-xs font-medium text-sky-600">
+                        {typeInfo.icon} {typeInfo.label}
+                      </span>
+                      <p className="text-sm text-[var(--mp-foreground)] truncate mt-0.5">
+                        {alert.savedSearchQueryText || alert.savedSearchName || 'Búsqueda guardada'}
+                      </p>
+                      <p className="text-xs text-[var(--mp-muted)] mt-0.5">
+                        {alert.isEnabled ? '✓ Activa' : '⏸ Pausada'}
+                      </p>
+                    </div>
+                    <span className="ml-3 text-sky-500">→</span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Empty state + Motivational */}
-      {searches.length === 0 && (
+      {searches.length === 0 && alerts.length === 0 && (
         <div className="text-center py-8">
           <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center">
             <span className="text-4xl animate-float">🏠</span>
@@ -297,7 +367,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Accesos rápidos */}
+      {/* Accesos rápidos: Match, Búsquedas, Alertas, etc. */}
       <div className="mt-8 pt-6 border-t border-[var(--mp-border)]">
         <div className="grid grid-cols-2 gap-3">
           <Link
@@ -306,6 +376,20 @@ export default function DashboardPage() {
           >
             <span className="text-2xl block mb-1">🔥</span>
             <span className="text-sm font-medium text-[var(--mp-foreground)]">Match</span>
+          </Link>
+          <Link
+            href="/searches"
+            className="p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] hover:border-sky-300 transition-colors text-center"
+          >
+            <span className="text-2xl block mb-1">📁</span>
+            <span className="text-sm font-medium text-[var(--mp-foreground)]">Búsquedas</span>
+          </Link>
+          <Link
+            href="/alerts"
+            className="p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] hover:border-sky-300 transition-colors text-center"
+          >
+            <span className="text-2xl block mb-1">🔔</span>
+            <span className="text-sm font-medium text-[var(--mp-foreground)]">Alertas</span>
           </Link>
           <Link
             href="/feed/list"

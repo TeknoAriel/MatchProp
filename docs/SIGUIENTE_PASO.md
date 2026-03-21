@@ -23,4 +23,4 @@ El código está en **https://github.com/TeknoAriel/MatchProp**. Para tener la a
 4. **Conectar:** `APP_URL` y `CORS_ORIGINS` en API con URL de la Web; redeploy si cambias variables.
 5. **Subir cambios:** `git push origin main` → Vercel despliega automáticamente.
 
-Validación: [match-prop-web.vercel.app](https://match-prop-web.vercel.app), [API /health](https://match-prop-api-1jte.vercel.app/health). Opcional: `pnpm smoke:prod`.
+Validación: [match-prop-web.vercel.app](https://match-prop-web.vercel.app), [API /health](https://match-prop-admin-dsvv.vercel.app/health). Opcional: `pnpm smoke:prod`.

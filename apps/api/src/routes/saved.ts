@@ -125,6 +125,10 @@ export async function savedRoutes(fastify: FastifyInstance) {
               areaTotal: true,
               propertyType: true,
               operationType: true,
+              media: {
+                orderBy: { sortOrder: 'asc' },
+                select: { url: true, sortOrder: true },
+              },
             },
           },
         },
@@ -132,12 +136,22 @@ export async function savedRoutes(fastify: FastifyInstance) {
       });
 
       return {
-        items: items.map((s) => ({
-          id: s.id,
-          listingId: s.listingId,
-          listType: s.listType,
-          listing: s.listing,
-        })),
+        items: items.map((s) => {
+          const listing = s.listing;
+          if (!listing)
+            return { id: s.id, listingId: s.listingId, listType: s.listType, listing: null };
+          const heroImageUrl = listing.heroImageUrl ?? listing.media?.[0]?.url ?? null;
+          return {
+            id: s.id,
+            listingId: s.listingId,
+            listType: s.listType,
+            listing: {
+              ...listing,
+              heroImageUrl,
+              media: listing.media,
+            },
+          };
+        }),
       };
     }
   );

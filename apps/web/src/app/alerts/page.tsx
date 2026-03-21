@@ -20,6 +20,7 @@ type Subscription = {
   id: string;
   savedSearchId: string | null;
   savedSearchName: string | null;
+  savedSearchQueryText?: string | null;
   type: string;
   isEnabled: boolean;
   lastRunAt: string | null;
@@ -189,6 +190,11 @@ export default function AlertsPage() {
                     <h3 className="font-medium text-[var(--mp-foreground)] truncate">
                       {sub.savedSearchName ?? 'Búsqueda guardada'}
                     </h3>
+                    {(sub.savedSearchQueryText ?? '').trim() && (
+                      <p className="text-sm text-[var(--mp-muted)] mt-0.5 line-clamp-2">
+                        {sub.savedSearchQueryText}
+                      </p>
+                    )}
 
                     <p className="text-xs text-[var(--mp-muted)] mt-1">
                       {sub.isEnabled ? '✓ Activa' : '⏸ Pausada'}

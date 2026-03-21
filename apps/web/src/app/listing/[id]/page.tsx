@@ -81,6 +81,7 @@ export default function ListingDetailPage() {
   const [isPremium, setIsPremium] = useState<boolean | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showGraceToast, setShowGraceToast] = useState(false);
+  const [pushKpLoading, setPushKpLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -197,6 +198,29 @@ export default function ListingDetailPage() {
         s && list ? { ...s, inLists: [...s.inLists, { id: listId, name: list.name }] } : s
       );
       setAddToListOpen(false);
+    }
+  }
+
+  async function handlePushToKP() {
+    if (pushKpLoading || !myStatus?.lead) return;
+    setPushKpLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/listings/${id}/push-kiteprop`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data?.ok) {
+        setToast('Lead enviado a Kiteprop');
+      } else {
+        setToast(data?.message ?? 'Error al enviar a Kiteprop');
+      }
+      setTimeout(() => setToast(null), 4000);
+    } catch {
+      setToast('Error al conectar');
+      setTimeout(() => setToast(null), 4000);
+    } finally {
+      setPushKpLoading(false);
     }
   }
 
@@ -653,11 +677,11 @@ export default function ListingDetailPage() {
                 </p>
               </section>
             )}
-            <div className="mt-4 flex gap-2 items-center">
+            <div className="mt-4 flex flex-wrap gap-2 items-center">
               {myStatus?.lead ? (
                 <>
                   <span
-                    className={`flex-1 py-2.5 rounded-xl font-medium text-center ${
+                    className={`flex-1 min-w-0 py-2.5 rounded-xl font-medium text-center ${
                       myStatus.lead.status === 'ACTIVE'
                         ? 'bg-emerald-600 text-white'
                         : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
@@ -666,6 +690,15 @@ export default function ListingDetailPage() {
                     ✓{' '}
                     {myStatus.lead.status === 'ACTIVE' ? 'Esperando respuesta' : 'Consulta enviada'}
                   </span>
+                  <button
+                    type="button"
+                    onClick={handlePushToKP}
+                    disabled={pushKpLoading}
+                    className="shrink-0 px-3 py-2.5 rounded-xl bg-amber-100 text-amber-800 border border-amber-300 font-medium hover:bg-amber-200 disabled:opacity-50"
+                    title="Enviar consulta a Kiteprop"
+                  >
+                    {pushKpLoading ? '…' : 'Push hacia KP'}
+                  </button>
                   <button
                     type="button"
                     onClick={() => setInquiryOpen(true)}
