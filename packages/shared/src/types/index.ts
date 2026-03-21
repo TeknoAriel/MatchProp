@@ -72,6 +72,12 @@ export interface FeedResponse {
 
 // --- Sprint 1: ListingCard + FeedResponseV1 + DTOs ---
 
+/** Media item para carrusel */
+export interface ListingCardMedia {
+  url: string;
+  sortOrder: number;
+}
+
 /** Card liviana para feed Tinder (Listing canonical) */
 export interface ListingCard {
   id: string;
@@ -83,6 +89,8 @@ export interface ListingCard {
   areaTotal: number | null;
   locationText: string | null;
   heroImageUrl: string | null;
+  /** Media para carrusel de fotos */
+  media?: ListingCardMedia[];
   publisherRef: string | null;
   source: string;
   operationType?: string | null;

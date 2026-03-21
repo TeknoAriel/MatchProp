@@ -626,8 +626,8 @@ export async function feedRoutes(fastify: FastifyInstance) {
           lastSeenAt: true,
           media: {
             orderBy: { sortOrder: 'asc' },
-            take: 1,
-            select: { url: true },
+            take: 6,
+            select: { url: true, sortOrder: true },
           },
         },
       });
@@ -644,6 +644,9 @@ export async function feedRoutes(fastify: FastifyInstance) {
           areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
           locationText: l.locationText,
           heroImageUrl: l.heroImageUrl ?? l.media?.[0]?.url ?? null,
+          media: Array.isArray(l.media)
+            ? l.media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }))
+            : undefined,
           publisherRef: l.publisherRef,
           source: l.source,
           operationType: l.operationType,
@@ -692,8 +695,8 @@ export async function feedRoutes(fastify: FastifyInstance) {
             lastSeenAt: true,
             media: {
               orderBy: { sortOrder: 'asc' },
-              take: 1,
-              select: { url: true },
+              take: 6,
+              select: { url: true, sortOrder: true },
             },
           },
         });
@@ -709,6 +712,9 @@ export async function feedRoutes(fastify: FastifyInstance) {
             areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
             locationText: l.locationText,
             heroImageUrl: l.heroImageUrl ?? l.media?.[0]?.url ?? null,
+            media: Array.isArray(l.media)
+              ? l.media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }))
+              : undefined,
             publisherRef: l.publisherRef,
             source: l.source,
             operationType: l.operationType,
@@ -891,6 +897,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
           price: true,
           locationText: true,
           heroImageUrl: true,
+          areaTotal: true,
           bedrooms: true,
           bathrooms: true,
           currency: true,
@@ -899,8 +906,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
           publisherRef: true,
           media: {
             orderBy: { sortOrder: 'asc' },
-            // Traemos pocas fotos para que el carrusel en el mapa sea liviano.
-            take: 3,
+            take: 6,
             select: { url: true, sortOrder: true },
           },
         },
@@ -919,6 +925,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
           media: Array.isArray(l.media)
             ? l.media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }))
             : undefined,
+          areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
           bedrooms: l.bedrooms ?? null,
           bathrooms: l.bathrooms ?? null,
           currency: l.currency ?? null,
