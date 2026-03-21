@@ -132,13 +132,14 @@ export async function alertsRoutes(fastify: FastifyInstance) {
       const user = request.user as { userId: string };
       const list = await prisma.alertSubscription.findMany({
         where: { userId: user.userId },
-        include: { savedSearch: { select: { name: true } } },
+        include: { savedSearch: { select: { name: true, queryText: true } } },
         orderBy: { createdAt: 'desc' },
       });
       return list.map((s) => ({
         id: s.id,
         savedSearchId: s.savedSearchId,
         savedSearchName: s.savedSearch?.name ?? null,
+        savedSearchQueryText: s.savedSearch?.queryText ?? null,
         type: s.type,
         isEnabled: s.isEnabled,
         lastRunAt: s.lastRunAt?.toISOString() ?? null,

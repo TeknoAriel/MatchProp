@@ -151,10 +151,17 @@ module.exports = async function handler(req, res) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[MatchProp handler error]', { path, method, message: msg });
-    sendJson(res, 500, {
+    const prod = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+    const body = {
+      statusCode: 500,
+      error: 'Internal Server Error',
       message: 'Error interno del servidor.',
       code: 'HANDLER_ERROR',
-      debug: { path, method, error: msg },
-    });
+    };
+    // En producción nunca enviar detalles internos al cliente (solo logs server-side).
+    if (!prod) {
+      body.detail = { path, method, error: msg };
+    }
+    sendJson(res, 500, body);
   }
 };

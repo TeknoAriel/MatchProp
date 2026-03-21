@@ -34,6 +34,7 @@
 | Documento                                                  | Descripción                                                  |
 | ---------------------------------------------------------- | ------------------------------------------------------------ |
 | [repo-map.md](./repo-map.md)                               | Mapa del repo — scripts, puertos, modelos, endpoints, tests  |
+| [ZONAPROP_XML_FICHA_CAMPOS.md](./ZONAPROP_XML_FICHA_CAMPOS.md) | XML Zonaprop/KiteProp (OpenNavent): tags, `caracteristicas` y mapeo a ficha/amenities |
 | [AUDIT_README.md](./AUDIT_README.md)                       | Cómo correr `pnpm audit:verify` (gates locales)              |
 | [archive/AUDIT_MATCHPROP.md](./archive/AUDIT_MATCHPROP.md) | Auditoría técnica histórica (archivo)                        |
 | [DEV.md](./DEV.md)                                         | Desarrollo local — requisitos, comandos, troubleshooting     |

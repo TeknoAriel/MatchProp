@@ -1,106 +1,78 @@
-# Pasos manuales (lo que debés hacer vos)
+# Configuración puntual (GitHub / Vercel)
 
-Cosas que requieren acceso a GitHub o Vercel. Las URLs son directas para copiar/pegar.
+**Deploy de código:** automático al merge/push a `main` (Vercel + CI). Ver **`docs/DEPLOY_AUTOMATICO.md`**.
+
+**QA:** probás preview o producción en el navegador; no hace falta correr deploy desde tu máquina.
+
+Esta guía solo lista **secretos y ajustes** que un admin configura **una vez** (o al cambiar proveedores).
 
 ---
 
-## 1. CRON_SECRET (para el ingest automático cada 6 h)
+## 1. CRON_SECRET (ingest automático vía GitHub Actions)
 
-Valor: ver conversación anterior o generar con `openssl rand -hex 32`. Mismo valor en **dos lugares**:
+Valor: generar con `openssl rand -hex 32` (quien tenga acceso admin). **Mismo valor** en:
 
-### 1a. GitHub (para que el workflow pueda llamar a la API)
+### 1a. GitHub Actions
 
-1. Ir a: **https://github.com/TeknoAriel/MatchProp/settings/secrets/actions**
-2. Clic en **"New repository secret"**
-3. Nombre: `CRON_SECRET`
-4. Valor: pegar el string que generaste
-5. Clic en **"Add secret"**
+1. **https://github.com/TeknoAriel/MatchProp/settings/secrets/actions**
+2. **New repository secret** → nombre `CRON_SECRET` → pegar valor.
 
-### 1b. Vercel – API (para que la API valide el token)
+### 1b. Vercel – API
 
-1. Ir a: **https://vercel.com/teknoariels-projects/match-prop-api-1jte/settings/environment-variables**
-   - (Si el proyecto tiene otro nombre, buscá el que deploya `apps/api`)
-2. Agregar variable:
-   - **Name:** `CRON_SECRET`
-   - **Value:** el mismo string que pusiste en GitHub
-   - **Environment:** Production (y Preview si querés)
-3. Guardar. Si hacés deploy, esperá a que termine.
+1. Proyecto que deploya `apps/api` → **Environment Variables**
+2. `CRON_SECRET` = mismo string → **Production** (y Preview si aplica).
+
+Intervalo entre corridas: variable opcional **`CRON_INGEST_INTERVAL_HOURS`** en el workflow (ver `.github/workflows/cron-ingest.yml`).
 
 ---
 
 ## 2. Ignored Build Step en Vercel (opcional)
 
-Evita deploys innecesarios cuando no cambian archivos del proyecto.
+Reduce builds cuando no cambian archivos de esa app:
 
-### 2a. Web
+| App | Comando sugerido |
+|-----|------------------|
+| Web | `bash scripts/vercel-should-build-web.sh` |
+| Admin | `bash scripts/vercel-should-build-admin.sh` |
+| API | `bash scripts/vercel-should-build-api.sh` |
 
-1. Ir a: **https://vercel.com/teknoariels-projects/match-prop-web/settings/general**
-2. Buscar **"Ignored Build Step"** (o "Build Command" / configuración de build)
-3. En el campo de "Ignored Build Step Command", poner:
-
-   ```bash
-   bash scripts/vercel-should-build-web.sh
-   ```
-
-   (O el path relativo correcto si tu repo tiene otra estructura.)
-
-### 2b. Admin
-
-1. Ir a: **https://vercel.com/teknoariels-projects/match-prop-admin/settings/general**
-2. En "Ignored Build Step Command":
-
-   ```bash
-   bash scripts/vercel-should-build-admin.sh
-   ```
-
-### 2c. API
-
-1. Ir a: **https://vercel.com/teknoariels-projects/match-prop-api-1jte/settings/general**
-2. En "Ignored Build Step Command":
-
-   ```bash
-   bash scripts/vercel-should-build-api.sh
-   ```
+(En Vercel → proyecto → Settings → Ignored Build Step.)
 
 ---
 
-## 3. PR #1 (ruleset verify)
+## 3. Merge automático del PR (opcional)
 
-Si el PR era solo para validar el ruleset:
-
-1. Ir a: **https://github.com/TeknoAriel/MatchProp/pull/1**
-2. Si los checks pasaron, hacer **"Merge pull request"**
-3. Si era solo de prueba y no querés mergear, **"Close pull request"**
+- En GitHub: **Enable auto-merge** en el PR cuando los checks estén verdes, **o**
+- Etiqueta **`automerge`** si está habilitado el workflow `pr-automerge-label.yml` (y permisos/token; ver `docs/DEPLOY_AUTOMATICO.md`).
 
 ---
 
-## 4. Redeploy de la API (si `/cron/ingest` devuelve 404)
+## 4. Redeploy de la API (solo si ves 404 en `/cron/ingest` con código viejo)
 
-La ruta `/cron/ingest` existe en el código pero puede que el deploy actual de la API sea anterior. Si al probar el cron ves 404:
+1. **Deployments** del proyecto API en Vercel → **Redeploy** del último, **o**
+2. Push a `main` que toque `apps/api`.
 
-1. Ir a: **https://vercel.com/teknoariels-projects/match-prop-api-1jte/deployments**
-2. Clic en los tres puntos del último deployment → **"Redeploy"**
-3. O hacer push a `main` tocando `apps/api` para forzar un nuevo deploy
-
-Verificar después:
+Probar (reemplazar URL y secret):
 
 ```bash
-curl -s -X POST "https://match-prop-admin-dsvv.vercel.app/cron/ingest" -H "Authorization: Bearer TU_CRON_SECRET" -H "Content-Type: application/json"
+curl -s -X POST "https://TU-API.vercel.app/cron/ingest" \
+  -H "Authorization: Bearer TU_CRON_SECRET" \
+  -H "Content-Type: application/json"
 ```
 
-Debe devolver 200 y JSON con `ok`, no 404.
+Esperado: **200** y JSON con `ok`, no **404**.
 
 ---
 
-## 5. Verificar que todo funciona
+## 5. Verificación rápida
 
-| Qué        | URL                                             | Qué revisar                     |
-| ---------- | ----------------------------------------------- | ------------------------------- |
-| Web        | https://match-prop-web.vercel.app               | Carga la home                   |
-| API health | https://match-prop-admin-dsvv.vercel.app/health | 200 y `{"status":"ok",...}`     |
-| Login      | https://match-prop-web.vercel.app/login         | "Entrar con link demo" funciona |
+| Qué | Qué revisar |
+|-----|-------------|
+| Web | Carga home y login |
+| API `/health` | **200**; `status` `ok` o `degraded` según DB |
+| Login | Email/contraseña, magic link u OAuth según lo habilitado (**no** hay flujo “demo” en producción) |
 
-Smoke desde tu máquina:
+Smoke (solo si tenés el monorepo y red):
 
 ```bash
 pnpm smoke:prod
@@ -108,13 +80,15 @@ pnpm smoke:prod
 
 ---
 
-## Resumen de URLs clave
+## Resumen de URLs útiles
 
-| Recurso                | URL                                                                                        |
-| ---------------------- | ------------------------------------------------------------------------------------------ |
-| GitHub secrets         | https://github.com/TeknoAriel/MatchProp/settings/secrets/actions                           |
-| Vercel API env         | https://vercel.com/teknoariels-projects/match-prop-api-1jte/settings/environment-variables |
-| Vercel Web             | https://vercel.com/teknoariels-projects/match-prop-web                                     |
-| Vercel Admin           | https://vercel.com/teknoariels-projects/match-prop-admin                                   |
-| PR #1                  | https://github.com/TeknoAriel/MatchProp/pull/1                                             |
-| Vercel API deployments | https://vercel.com/teknoariels-projects/match-prop-api-1jte/deployments                    |
+| Recurso | URL |
+|---------|-----|
+| GitHub secrets | https://github.com/TeknoAriel/MatchProp/settings/secrets/actions |
+| Vercel (proyectos) | dashboard del team → web, admin, api |
+
+---
+
+## Manejo de errores (desarrollo / review)
+
+Reglas estrictas para la API: **`docs/PRODUCTION_ERROR_HANDLING.md`**.

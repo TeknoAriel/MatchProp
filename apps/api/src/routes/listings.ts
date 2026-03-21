@@ -301,4 +301,80 @@ export async function listingRoutes(fastify: FastifyInstance) {
       return { items };
     }
   );
+
+  /** Push manual del lead a Kiteprop (callback yumblin). Por ahora property_id fijo "34". */
+  fastify.post(
+    '/listings/:id/push-kiteprop',
+    {
+      schema: {
+        tags: ['Listings'],
+        security: [{ bearerAuth: [] }],
+        params: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+        response: {
+          200: {
+            type: 'object',
+            properties: { ok: { type: 'boolean' }, message: { type: 'string' } },
+          },
+          502: {
+            type: 'object',
+            properties: { ok: { type: 'boolean' }, message: { type: 'string' } },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const user = request.user as { userId: string };
+      const { id: listingId } = request.params as { id: string };
+
+      const lead = await prisma.lead.findFirst({
+        where: { userId: user.userId, listingId },
+        include: {
+          user: { include: { profile: true } },
+          listing: { select: { title: true } },
+        },
+      });
+      if (!lead) throw fastify.httpErrors.notFound('No hay consulta enviada para esta propiedad');
+
+      const email = lead.user?.email ?? 'unknown@matchprop.com';
+      const profile = lead.user?.profile;
+      const phone = profile?.phone ?? profile?.whatsapp ?? '';
+      const name =
+        [profile?.firstName, profile?.lastName].filter(Boolean).join(' ') ||
+        email.split('@')[0] ||
+        'Usuario';
+      const body = lead.message ?? `Consulta desde MatchProp sobre ${lead.listing?.title ?? 'propiedad'}`;
+
+      const payload = {
+        name,
+        email,
+        phone: phone || '+549000000000',
+        property_id: '34',
+        body,
+      };
+
+      const url = 'https://www.kiteprop.com/difusions/messages/callback/yumblin';
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          redirect: 'follow',
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          return reply.status(502).send({
+            ok: false,
+            message: `Kiteprop respondió ${res.status}: ${text.slice(0, 200)}`,
+          });
+        }
+        return { ok: true, message: 'Lead enviado a Kiteprop' };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return reply.status(502).send({
+          ok: false,
+          message: `Error al conectar con Kiteprop: ${msg}`,
+        });
+      }
+    }
+  );
 }

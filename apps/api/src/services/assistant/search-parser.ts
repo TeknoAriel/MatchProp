@@ -65,7 +65,7 @@ function parseBedrooms(
 }
 
 function parseBathrooms(text: string): number | undefined {
-  const m = text.match(/(\d+)\s*(?:baño|baños|bath)/i);
+  const m = text.match(/(\d+)\s*(?:baño|baños|banos|bath)/i);
   return m ? parseInt(m[1]!, 10) : undefined;
 }
 
@@ -133,6 +133,44 @@ function parsePropertyType(text: string): string[] | undefined {
     : undefined;
 }
 
+/** Mapeo: término en texto → clave de amenity para filtros (busca en title/description). */
+const AMENITY_PATTERNS: { pattern: RegExp; key: string }[] = [
+  { pattern: /\b(pileta|pilta|piscina|piletas|piscinas)\b/i, key: 'pileta' },
+  { pattern: /\b(cochera|cocheras|garage|garages|estacionamiento)\b/i, key: 'cochera' },
+  { pattern: /\b(jard[ií]n|jardines|patio|patios)\b/i, key: 'jardín' },
+  { pattern: /\b(parrilla|parrillas|asador|asadores)\b/i, key: 'parrilla' },
+  { pattern: /\b(quincho|quinchos)\b/i, key: 'quincho' },
+  { pattern: /\b(gimnasio|gimnasios)\b/i, key: 'gimnasio' },
+  { pattern: /\b(apto\s*cr[eé]dito|apto\s*credito|cr[eé]dito\s*hipotecario)\b/i, key: 'apto crédito' },
+  { pattern: /\b(amueblad[oa]|amoblad[oa]|muebles)\b/i, key: 'amoblado' },
+  { pattern: /\b(aire\s*acondicionado|aa|ac)\b/i, key: 'aire acondicionado' },
+  { pattern: /\b(calefacci[oó]n|calefaccion)\b/i, key: 'calefacción' },
+  { pattern: /\b(seguridad|porter[ií]a|porteria|vigilancia)\b/i, key: 'seguridad' },
+  { pattern: /\b(ascensor|ascensores)\b/i, key: 'ascensor' },
+  { pattern: /\b(terraza|terrazas|balc[oó]n|balcon)\b/i, key: 'terraza' },
+  { pattern: /\b(lavadero|lavaderos)\b/i, key: 'lavadero' },
+  { pattern: /\b(sum|sum)\b/i, key: 'SUM' },
+  { pattern: /\b(alarma|alarmas)\b/i, key: 'alarma' },
+  { pattern: /\b(baulera|bauleras|dep[oó]sito|deposito)\b/i, key: 'baulera' },
+  { pattern: /\b(solar|paneles\s*solares|energ[ií]a\s*solar)\b/i, key: 'energía solar' },
+  { pattern: /\b(mascotas?|pet\s*friendly)\b/i, key: 'mascotas' },
+  { pattern: /\b(churrasquera|churrasqueras)\b/i, key: 'parrilla' },
+];
+
+function parseAmenities(text: string): string[] {
+  const found = new Set<string>();
+  for (const { pattern, key } of AMENITY_PATTERNS) {
+    if (pattern.test(text)) found.add(key);
+  }
+  return Array.from(found);
+}
+
+function parseAptoCredito(text: string): boolean | undefined {
+  if (/\bapto\s*cr[eé]dito|\bapto\s*credito|\bcr[eé]dito\s*hipotecario\b/i.test(text))
+    return true;
+  return undefined;
+}
+
 function hasRecognizedFilters(f: SearchFilters): boolean {
   return (
     f.operationType != null ||
@@ -144,6 +182,8 @@ function hasRecognizedFilters(f: SearchFilters): boolean {
     f.areaMin != null ||
     (f.locationText?.trim()?.length ?? 0) > 0 ||
     f.currency != null ||
+    (f.amenities?.length ?? 0) > 0 ||
+    f.aptoCredito === true ||
     (f.keywords?.length ?? 0) > 0
   );
 }
@@ -172,6 +212,8 @@ export function parseSearchText(text: string): {
   const areaMin = parseAreaMin(t);
   const locationText = parseLocation(t);
   const propertyType = parsePropertyType(t);
+  const amenities = parseAmenities(t);
+  const aptoCredito = parseAptoCredito(t);
 
   const filters: SearchFilters = {};
   if (operation) filters.operationType = operation;
@@ -182,6 +224,8 @@ export function parseSearchText(text: string): {
   if (areaMin != null) filters.areaMin = areaMin;
   if (locationText) filters.locationText = locationText;
   if (propertyType?.length) filters.propertyType = propertyType;
+  if (amenities.length) filters.amenities = amenities;
+  if (aptoCredito === true) filters.aptoCredito = true;
 
   const parts: string[] = [];
   if (operation) parts.push(operation === 'SALE' ? 'venta' : 'alquiler');
@@ -197,6 +241,8 @@ export function parseSearchText(text: string): {
   if (bedroomsResult) parts.push(`${bedroomsResult.count} ${bedroomsResult.word}`);
   if (bathrooms) parts.push(`${bathrooms} baños`);
   if (areaMin) parts.push(`${areaMin} m²`);
+  if (amenities.length) parts.push(`con ${amenities.join(', ')}`);
+  if (aptoCredito) parts.push('apto crédito');
 
   const explanation =
     parts.length > 0

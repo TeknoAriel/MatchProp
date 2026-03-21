@@ -4,6 +4,18 @@ export interface RawListing {
   [key: string]: unknown;
 }
 
+/** Campos de ficha que pueden venir del JSON Kiteprop (amenities, aptoCredito, etc.) */
+export interface ListingDetailsFromIngest {
+  amenities?: string[];
+  aptoCredito?: boolean;
+  pileta?: boolean;
+  cochera?: boolean;
+  jardin?: boolean;
+  parrilla?: boolean;
+  gimnasio?: boolean;
+  [key: string]: unknown;
+}
+
 export interface NormalizedListing {
   source: ListingSource;
   externalId: string;
@@ -25,6 +37,7 @@ export interface NormalizedListing {
   locationText?: string | null;
   updatedAtSource?: Date | null;
   mediaUrls?: { url: string; sortOrder: number }[];
+  details?: ListingDetailsFromIngest | null;
 }
 
 export interface FetchBatchResult {

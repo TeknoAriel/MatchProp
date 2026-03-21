@@ -1,9 +1,52 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
-import type { NormalizedListing } from './types.js';
+import type { NormalizedListing, ListingDetailsFromIngest } from './types.js';
 import { onListingCreated } from '../crm-push/on-listing-created.js';
 
 const LOCATION_TEXT_MAX = 200;
+
+/** Extrae details (amenities, aptoCredito, etc.) del raw JSON Kiteprop cuando el connector no los provee. */
+function extractDetailsFromRaw(
+  raw: Record<string, unknown> | null | undefined,
+  norm: NormalizedListing
+): ListingDetailsFromIngest | null {
+  if (norm.details != null && typeof norm.details === 'object') return norm.details as ListingDetailsFromIngest;
+  if (!raw || typeof raw !== 'object') return null;
+
+  const details: ListingDetailsFromIngest = {};
+  const toBool = (v: unknown) =>
+    v === true || v === 'true' || v === 'si' || v === 'Si' || v === 1;
+  const toArr = (v: unknown): string[] =>
+    Array.isArray(v) ? v.filter((x) => typeof x === 'string').map(String) : [];
+
+  if (raw.amenities != null) details.amenities = toArr(raw.amenities);
+  if (raw.apto_credito != null) details.aptoCredito = toBool(raw.apto_credito);
+  if (raw.aptoCredito != null) details.aptoCredito = toBool(raw.aptoCredito);
+  if (raw.pileta != null) details.pileta = toBool(raw.pileta);
+  if (raw.piscina != null) details.pileta = details.pileta ?? toBool(raw.piscina);
+  if (raw.cochera != null || raw.cocheras != null)
+    details.cochera = toBool(raw.cochera ?? raw.cocheras);
+  if (raw.garage != null) details.cochera = details.cochera ?? toBool(raw.garage);
+  if (raw.jardin != null || raw.jardín != null)
+    details.jardin = toBool(raw.jardin ?? raw.jardín);
+  if (raw.parrilla != null) details.parrilla = toBool(raw.parrilla);
+  if (raw.gimnasio != null) details.gimnasio = toBool(raw.gimnasio);
+
+  const amenityKeys = [
+    'pileta', 'piscina', 'cochera', 'cocheras', 'garage', 'jardin', 'parrilla',
+    'quincho', 'gimnasio', 'aire_acondicionado', 'calefaccion', 'ascensor',
+  ];
+  const foundAmenities = new Set<string>();
+  for (const key of amenityKeys) {
+    const v = raw[key];
+    if (toBool(v)) foundAmenities.add(key.replace(/_/g, ' '));
+  }
+  if (foundAmenities.size > 0) {
+    details.amenities = [...(details.amenities ?? []), ...foundAmenities];
+  }
+
+  return Object.keys(details).length > 0 ? details : null;
+}
 
 function truncateLocation(s: string | null | undefined): string | null {
   if (!s || typeof s !== 'string') return null;
@@ -16,6 +59,7 @@ export async function upsertListing(
 ): Promise<string> {
   const now = new Date();
   const locationText = truncateLocation(norm.locationText ?? norm.addressText);
+  const details = extractDetailsFromRaw(rawJson ?? null, norm);
 
   const existing = await prisma.listing.findUnique({
     where: {
@@ -56,6 +100,7 @@ export async function upsertListing(
       lastSyncedAt: now,
       lastSeenAt: now,
       rawJson: (rawJson as Prisma.InputJsonValue) ?? undefined,
+      details: (details as Prisma.InputJsonValue) ?? undefined,
     },
     update: {
       publisherRef: norm.publisherRef ?? undefined,
@@ -80,6 +125,7 @@ export async function upsertListing(
       lastSyncedAt: now,
       lastSeenAt: now,
       rawJson: (rawJson as Prisma.InputJsonValue) ?? undefined,
+      details: (details as Prisma.InputJsonValue) ?? undefined,
     },
   });
 

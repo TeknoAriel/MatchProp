@@ -39,6 +39,7 @@ import { paymentRoutes } from './routes/payments.js';
 import { adminUsersRoutes } from './routes/admin-users.js';
 import { adminStatsRoutes } from './routes/admin-stats.js';
 import { prisma } from './lib/prisma.js';
+import { registerProductionErrorHandler } from './lib/error-handler.js';
 
 export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInstance> {
   const fastify = Fastify({ logger: opts?.logger ?? true });
@@ -59,6 +60,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   }
 
   await fastify.register(sensible);
+  registerProductionErrorHandler(fastify);
   await fastify.register(cors, {
     origin: config.corsOrigins,
     credentials: true,
