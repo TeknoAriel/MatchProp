@@ -1,5 +1,15 @@
 # Deploy automático (sin pasos manuales en tu máquina)
 
+## Flujo completo (el usuario no ejecuta nada)
+
+1. **Agente** hace commit + push a tu branch.
+2. **Workflow `deploy-auto-pr`** crea PR a `main` y agrega etiqueta `automerge`.
+3. **CI** corre typecheck, lint, tests, build.
+4. **`pr-automerge-label`** hace merge automático cuando CI pasa.
+5. **Vercel** despliega; **Smoke prod** verifica.
+
+El agente sigue `.cursor/rules/deploy-automatico.mdc`: no te pide que ejecutes nada.
+
 ## Qué ya es automático
 
 1. **Push o merge a `main`**  

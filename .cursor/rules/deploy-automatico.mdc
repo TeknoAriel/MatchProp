@@ -1,0 +1,38 @@
+---
+description: Deploy 100% automático — el agente ejecuta todo, el usuario no hace nada
+alwaysApply: true
+---
+
+# Deploy automático
+
+## Responsabilidad del agente
+
+Cuando el usuario pida **deploy**, **deployar**, **subir a producción** o similar:
+
+1. **Verificar** antes de push:
+   - `pnpm build:shared`
+   - `pnpm -r run typecheck`
+   - Si falla: corregir errores, no pedir al usuario que haga nada.
+
+2. **Commit y push**:
+   - `git add -A` (archivos modificados relevantes)
+   - `git commit -m "..."` con mensaje descriptivo
+   - `git push origin <branch-actual>`
+
+3. **No pedir nada al usuario**:
+   - NO pedir que ejecute comandos.
+   - NO pedir que cree el PR.
+   - NO pedir que haga merge.
+
+## Automatización en GitHub
+
+Tras el push, el workflow `.github/workflows/deploy-auto-pr.yml`:
+
+- Crea un PR a `main` (si no existe)
+- Agrega la etiqueta `automerge`
+- Cuando CI pase, el workflow `pr-automerge-label` hace merge automático
+- Vercel despliega; luego corre smoke-prod
+
+## Regla de oro
+
+**El usuario no ejecuta ni verifica nada.** El agente hace commit, push y verificaciones. La pipeline hace el resto.
