@@ -1,6 +1,5 @@
 # Merge automático cuando el PR tiene la etiqueta "automerge" y CI pasó.
-# Se ejecuta al agregar la etiqueta O al sincronizar (push) para re-asegurar auto-merge.
-# Requisitos: token con permiso merge; si falla, usar AUTOMERGE_TOKEN (PAT) o "Enable auto-merge" en la UI.
+# Usa GITHUB_TOKEN (sin secrets extra). Requiere: sin protección en main o 0 aprobaciones.
 name: PR auto-merge (etiqueta automerge)
 
 on:
@@ -19,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check automerge label and enable merge
         env:
-          GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PR="${{ github.event.pull_request.number }}"
           LABELS=$(gh pr view "$PR" --json labels -q '.labels[].name')
