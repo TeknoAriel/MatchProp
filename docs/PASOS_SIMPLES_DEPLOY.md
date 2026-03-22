@@ -31,7 +31,9 @@ No tocamos Neon, Vercel ni claves compartidas. Solo esto:
 
 ## Flujo después de esto
 
-1. Push a tu rama → se crea/actualiza el PR
-2. CI corre
-3. Cuando CI pasa → merge automático con GITHUB_TOKEN
-4. Vercel despliega
+1. **Commit + push** a tu rama (no hace falta correr format ni lint)
+2. El workflow **auto-formatea y auto-lintea** → si hay cambios, hace push automático
+3. Se crea/actualiza el PR con etiqueta automerge
+4. CI corre (typecheck, lint, tests, build)
+5. Cuando CI pasa → merge automático con GITHUB_TOKEN
+6. Vercel despliega

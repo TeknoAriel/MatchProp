@@ -16,17 +16,46 @@ on:
         required: true
         default: 'docs-url-canon-20260320'
 
-# issues: write → crear etiqueta "automerge" (sin esto gh pr create --label falla con 403)
+# contents: write → push automático de format/lint; issues/pr → etiqueta y PR
 permissions:
-  contents: read
+  contents: write
   issues: write
   pull-requests: write
+
+env:
+  PNPM_VERSION: '9.0.0'
 
 jobs:
   create-or-update-pr:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Auto-format and lint fix
+        run: |
+          pnpm format
+          pnpm lint:fix
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "style: auto-format and lint"
+            git push
+          fi
 
       - name: Ensure automerge label exists
         env:

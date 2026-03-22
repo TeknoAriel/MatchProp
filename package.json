@@ -18,6 +18,7 @@
     "build:mobile": "pnpm --filter mobile build",
     "build:shared": "pnpm --filter shared build",
     "lint": "eslint \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\"",
+    "lint:fix": "eslint --fix \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\"",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "smoke:ux": "bash scripts/smoke-ux.sh",
