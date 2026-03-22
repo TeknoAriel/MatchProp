@@ -12,8 +12,6 @@ function LoginPageContent() {
   const [devLink, setDevLink] = useState<string | null>(null);
   const [magicMessage, setMagicMessage] = useState<string | null>(null);
   const [oauthError, setOauthError] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
-  const [demoError, setDemoError] = useState(false);
   const [password, setPassword] = useState('');
   const [pwdLoading, setPwdLoading] = useState(false);
   const [pwdError, setPwdError] = useState(false);
