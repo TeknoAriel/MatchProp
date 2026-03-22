@@ -132,8 +132,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
     done();
   });
 
-  const apiVersion =
-    process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.APP_VERSION ?? 'local';
+  const apiVersion = process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.APP_VERSION ?? 'local';
 
   fastify.get('/health', async (request, reply) => {
     let dbOk = false;

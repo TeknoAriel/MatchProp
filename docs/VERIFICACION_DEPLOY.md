@@ -20,11 +20,11 @@ Con tu rama (para ver commits sin mergear):
 
 ## Qué compara el script
 
-| Fuente         | Cómo obtiene el commit            | Cómo obtiene migración        |
-|----------------|-----------------------------------|-------------------------------|
-| **Web**        | GET /version (Vercel inyecta SHA) | —                             |
-| **API**        | GET /version o /health            | Tabla `_prisma_migrations` en Neon |
-| **main (git)** | `git rev-parse origin/main`       | —                             |
+| Fuente         | Cómo obtiene el commit            | Cómo obtiene migración                |
+| -------------- | --------------------------------- | ------------------------------------- |
+| **Web**        | GET /version (Vercel inyecta SHA) | —                                     |
+| **API**        | GET /version o /health            | Tabla `_prisma_migrations` en Neon    |
+| **main (git)** | `git rev-parse origin/main`       | —                                     |
 | **Repo**       | —                                 | Última carpeta en `prisma/migrations` |
 
 ---
@@ -47,11 +47,11 @@ Con tu rama (para ver commits sin mergear):
 
 ## Si hay desajuste
 
-| Desajuste     | Qué hacer                                                  |
-|---------------|------------------------------------------------------------|
-| Web ≠ API     | En Vercel → Deployments: revisar que Web y API estén en Ready. Redeploy el que falle. |
-| main no en prod | Esperar 2–3 min tras el merge. Si pasó más, revisar Vercel. |
-| Neon atrasado | `DATABASE_URL="..." bash scripts/prod-migrate.sh`          |
+| Desajuste       | Qué hacer                                                                             |
+| --------------- | ------------------------------------------------------------------------------------- |
+| Web ≠ API       | En Vercel → Deployments: revisar que Web y API estén en Ready. Redeploy el que falle. |
+| main no en prod | Esperar 2–3 min tras el merge. Si pasó más, revisar Vercel.                           |
+| Neon atrasado   | `DATABASE_URL="..." bash scripts/prod-migrate.sh`                                     |
 
 ---
 
