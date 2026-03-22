@@ -20,6 +20,9 @@ type Overview = {
   leadsByActivationReason: Record<string, number>;
   visitsUpcoming: number;
   visitsScheduledInRange: number;
+  alertsActive: number;
+  matchesInRange: number;
+  analyticsByEvent: Record<string, number>;
 };
 
 type LeadRow = {
@@ -43,6 +46,14 @@ type VisitRow = {
   listingTitle: string | null;
 };
 
+type MatchRow = {
+  id: string;
+  listingId: string;
+  matchesCount: number;
+  source: string;
+  createdAt: string;
+};
+
 export default function StatsPage() {
   const [days, setDays] = useState<number>(30);
   const [leadStatus, setLeadStatus] = useState<string>(''); // '' => todos
@@ -51,6 +62,7 @@ export default function StatsPage() {
   const [overview, setOverview] = useState<Overview | null>(null);
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [visits, setVisits] = useState<VisitRow[]>([]);
+  const [matches, setMatches] = useState<MatchRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,13 +91,18 @@ export default function StatsPage() {
         `${API_BASE}/admin/stats/visits?days=${days}&limit=50&upcoming=${upcomingOnly ? 'true' : 'false'}`,
         { cache: 'no-store', credentials: 'include' }
       ).then((r) => (r.ok ? r.json() : null)),
+      fetch(`${API_BASE}/admin/stats/matches?limit=20`, {
+        cache: 'no-store',
+        credentials: 'include',
+      }).then((r) => (r.ok ? r.json() : null)),
     ])
-      .then(([ov, leadsRes, visitsRes]) => {
+      .then(([ov, leadsRes, visitsRes, matchesRes]) => {
         if (!mounted) return;
         if (!ov) throw new Error('No se pudo cargar el resumen.');
         setOverview(ov as Overview);
         setLeads((leadsRes?.leads as LeadRow[]) ?? []);
         setVisits((visitsRes?.visits as VisitRow[]) ?? []);
+        setMatches((matchesRes?.matches as MatchRow[]) ?? []);
       })
       .catch((e) => {
         if (!mounted) return;
@@ -156,7 +173,7 @@ export default function StatsPage() {
         </label>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
         <div className="border rounded p-3 text-sm">
           <div className="text-gray-600">Usuarios</div>
           <div className="font-semibold">{overview.usersTotal}</div>
@@ -172,6 +189,29 @@ export default function StatsPage() {
         <div className="border rounded p-3 text-sm">
           <div className="text-gray-600">Visitas próximas</div>
           <div className="font-semibold">{overview.visitsUpcoming}</div>
+        </div>
+        <div className="border rounded p-3 text-sm">
+          <div className="text-gray-600">Alertas activas</div>
+          <div className="font-semibold">{overview.alertsActive ?? 0}</div>
+        </div>
+        <div className="border rounded p-3 text-sm">
+          <div className="text-gray-600">Matches (período)</div>
+          <div className="font-semibold">{overview.matchesInRange ?? 0}</div>
+        </div>
+        <div className="border rounded p-3 text-sm">
+          <div className="text-gray-600">Analytics</div>
+          <div className="text-xs mt-1 space-y-0.5">
+            {overview.analyticsByEvent && Object.keys(overview.analyticsByEvent).length > 0 ? (
+              Object.entries(overview.analyticsByEvent).map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-2">
+                  <span className="text-gray-500 truncate">{k}</span>
+                  <span className="font-medium">{v}</span>
+                </div>
+              ))
+            ) : (
+              <span className="text-gray-500">—</span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -248,7 +288,7 @@ export default function StatsPage() {
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="border rounded p-4 text-sm">
           <div className="font-semibold">Tabla de leads (últimos {days} días)</div>
           <div className="mt-3 overflow-x-auto">
@@ -315,6 +355,40 @@ export default function StatsPage() {
                       <td className="p-2 border">{v.status}</td>
                       <td className="p-2 border font-mono">{v.leadId.slice(0, 10)}…</td>
                       <td className="p-2 border">{v.listingTitle ?? v.listingId.slice(0, 8)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="border rounded p-4 text-sm">
+          <div className="font-semibold">Matches recientes</div>
+          <div className="mt-3 overflow-x-auto">
+            <table className="min-w-full text-xs border">
+              <thead>
+                <tr className="bg-gray-100 border-b">
+                  <th className="p-2 text-left border">Fecha</th>
+                  <th className="p-2 text-left border">Listing</th>
+                  <th className="p-2 text-left border">Matches</th>
+                  <th className="p-2 text-left border">Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                {matches.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="p-2 text-gray-500">
+                      —
+                    </td>
+                  </tr>
+                ) : (
+                  matches.map((m) => (
+                    <tr key={m.id} className="border-b">
+                      <td className="p-2 border">{new Date(m.createdAt).toLocaleString()}</td>
+                      <td className="p-2 border font-mono">{m.listingId.slice(0, 12)}…</td>
+                      <td className="p-2 border">{m.matchesCount}</td>
+                      <td className="p-2 border">{m.source}</td>
                     </tr>
                   ))
                 )}

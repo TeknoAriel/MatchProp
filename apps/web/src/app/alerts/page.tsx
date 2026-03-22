@@ -27,24 +27,47 @@ type Subscription = {
   createdAt: string;
 };
 
+type AlertDelivery = {
+  id: string;
+  listingId: string;
+  type: string;
+  createdAt: string;
+  listingTitle: string | null;
+  listingPrice: number | null;
+  listingCurrency: string | null;
+  savedSearchName: string | null;
+};
+
 export default function AlertsPage() {
   const router = useRouter();
   const [items, setItems] = useState<Subscription[]>([]);
+  const [deliveries, setDeliveries] = useState<AlertDelivery[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/alerts/subscriptions`, { credentials: 'include' })
-      .then((res) => {
-        if (res.status === 401) {
+    Promise.all([
+      fetch(`${API_BASE}/alerts/subscriptions`, { credentials: 'include' }),
+      fetch(`${API_BASE}/alerts/deliveries?limit=30`, { credentials: 'include' }),
+    ])
+      .then(async ([resSubs, resDeliveries]) => {
+        if (resSubs.status === 401 || resDeliveries.status === 401) {
           router.replace('/login');
-          return [];
+          return { items: [], deliveries: [] };
         }
-        if (!res.ok) throw new Error('Error al cargar alertas');
-        return res.json();
+        if (!resSubs.ok) throw new Error('Error al cargar alertas');
+        const itemsData = await resSubs.json();
+        const delData = resDeliveries.ok ? await resDeliveries.json() : { deliveries: [] };
+        return {
+          items: Array.isArray(itemsData) ? itemsData : [],
+          deliveries: Array.isArray(delData?.deliveries) ? delData.deliveries : [],
+        };
       })
-      .then(setItems)
+      .then(({ items: i, deliveries: d }) => {
+        setItems(i);
+        setDeliveries(d);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [router]);
@@ -66,6 +89,11 @@ export default function AlertsPage() {
         setItems((prev) =>
           prev.map((s) => (s.id === sub.id ? { ...s, isEnabled: !s.isEnabled } : s))
         );
+        // Refrescar deliveries por si cambió qué está activo
+        fetch(`${API_BASE}/alerts/deliveries?limit=30`, { credentials: 'include' })
+          .then((r) => (r.ok ? r.json() : { deliveries: [] }))
+          .then((d) => setDeliveries(Array.isArray(d?.deliveries) ? d.deliveries : []))
+          .catch(() => {});
       }
     } finally {
       setTogglingId(null);
@@ -126,6 +154,66 @@ export default function AlertsPage() {
           + Nueva
         </Link>
       </div>
+
+      {/* Resultado unificado de alertas */}
+      {deliveries.length > 0 && (
+        <div className="mb-6 p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)]">
+          <h2 className="text-lg font-semibold text-[var(--mp-foreground)] mb-3">
+            Resultado de alertas
+          </h2>
+          <p className="text-sm text-[var(--mp-muted)] mb-3">
+            Propiedades que dispararon tus alertas activas
+          </p>
+          <ul className="space-y-2 mb-4">
+            {deliveries.map((d) => {
+              const typeInfo = TYPE_LABELS[d.type] ?? {
+                label: d.type,
+                icon: '🔔',
+                color: 'bg-gray-100 text-gray-800',
+              };
+              return (
+                <li
+                  key={d.id}
+                  className="flex items-center justify-between gap-2 py-2 border-b border-[var(--mp-border)] last:border-0"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-[var(--mp-foreground)] truncate">
+                      {d.listingTitle ?? d.listingId}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className={`px-1.5 py-0.5 rounded text-xs ${typeInfo.color}`}>
+                        {typeInfo.icon} {typeInfo.label}
+                      </span>
+                      {d.savedSearchName && (
+                        <span className="text-xs text-[var(--mp-muted)] truncate">
+                          {d.savedSearchName}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-sm text-[var(--mp-muted)] shrink-0">
+                    {d.listingPrice != null
+                      ? `${d.listingCurrency ?? 'USD'} ${d.listingPrice.toLocaleString()}`
+                      : ''}
+                  </span>
+                  <span
+                    className="text-xs text-[var(--mp-muted)] shrink-0"
+                    suppressHydrationWarning
+                  >
+                    {new Date(d.createdAt).toLocaleDateString('es-AR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                    })}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          <Link href="/me/match" className="text-sm font-medium text-sky-600 hover:underline">
+            Ver en Mis match →
+          </Link>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <div className="text-center py-12">

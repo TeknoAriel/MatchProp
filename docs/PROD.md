@@ -6,7 +6,7 @@ Guía operativa para entorno producción.
 
 ## Checklist pre-deploy
 
-- [ ] `DEMO_MODE=0` en API (obligatorio)
+- [ ] **DEMO_MODE=0** en API (obligatorio en prod; feature flag principal)
 - [ ] `COOKIE_SECURE=true` en API
 - [ ] `CORS_ORIGINS` con dominios reales (separados por coma)
 - [ ] `JWT_SECRET` y `AUTH_REFRESH_SECRET` generados (no valores dev)
@@ -162,6 +162,17 @@ Usar para healthcheck (Vercel, Kubernetes, etc.).
 - **DEMO_MODE=0** — Demo sources y demo data desactivados.
 - **KITEPROP_EXTERNALSITE_MODE** — No usar `fixture`; el flag solo actúa si DEMO_MODE=1.
 - **API_PARTNER_1** — Fuente de datos demo; desactivada si DEMO_MODE=0.
+
+---
+
+## Runbook mínimo
+
+| Situación              | Acción                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------- |
+| Smoke prod falla       | Ver [ESTABILIDAD_Y_RELEASE.md](./ESTABILIDAD_Y_RELEASE.md) → Runbook Smoke prod falla |
+| API 503 (health check) | Revisar DATABASE_URL, pool de conexiones; reiniciar API en Vercel                     |
+| Rollback urgente       | Revert commit en main vía PR; Vercel redeploya automáticamente                        |
+| Migración fallida      | Backups; crear migración de rollback; `prisma migrate deploy` contra prod             |
 
 ---
 

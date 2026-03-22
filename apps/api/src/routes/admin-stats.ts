@@ -40,6 +40,9 @@ export async function adminStatsRoutes(fastify: FastifyInstance) {
               leadsByActivationReason: { type: 'object' },
               visitsUpcoming: { type: 'integer' },
               visitsScheduledInRange: { type: 'integer' },
+              alertsActive: { type: 'integer' },
+              matchesInRange: { type: 'integer' },
+              analyticsByEvent: { type: 'object' },
             },
           },
         },
@@ -93,7 +96,14 @@ export async function adminStatsRoutes(fastify: FastifyInstance) {
           }),
       ]);
 
-      const [manualPlanGrantsByPlan, visitsUpcoming, visitsScheduledInRange] = await Promise.all([
+      const [
+        manualPlanGrantsByPlan,
+        visitsUpcoming,
+        visitsScheduledInRange,
+        alertsActive,
+        matchesInRange,
+        analyticsByEvent,
+      ] = await Promise.all([
         prisma.subscription
           .groupBy({
             by: ['plan'],
@@ -118,6 +128,24 @@ export async function adminStatsRoutes(fastify: FastifyInstance) {
             status: 'SCHEDULED',
           },
         }),
+        prisma.alertSubscription.count({ where: { isEnabled: true } }),
+        prisma.matchEvent.count({
+          where: { createdAt: { gte: rangeStart, lte: rangeEnd } },
+        }),
+        prisma.analyticsEvent
+          .groupBy({
+            by: ['eventName'],
+            where: {
+              createdAt: { gte: rangeStart, lte: rangeEnd },
+              eventName: { in: ['listing_viewed', 'search_saved', 'alert_activated'] },
+            },
+            _count: { id: true },
+          })
+          .then((rows) => {
+            const m: Record<string, number> = {};
+            for (const r of rows) m[r.eventName] = r._count.id;
+            return m;
+          }),
       ]);
 
       return {
@@ -132,6 +160,9 @@ export async function adminStatsRoutes(fastify: FastifyInstance) {
         leadsByActivationReason,
         visitsUpcoming,
         visitsScheduledInRange,
+        alertsActive,
+        matchesInRange,
+        analyticsByEvent,
       };
     }
   );
@@ -314,6 +345,64 @@ export async function adminStatsRoutes(fastify: FastifyInstance) {
           userEmail: v.lead.user?.email ?? null,
           listingId: v.lead.listingId,
           listingTitle: v.lead.listing?.title ?? null,
+        })),
+      };
+    }
+  );
+
+  fastify.get(
+    '/admin/stats/matches',
+    {
+      schema: {
+        tags: ['Admin'],
+        security: [{ bearerAuth: [] }],
+        querystring: {
+          type: 'object',
+          properties: {
+            limit: { type: 'integer', default: 20, minimum: 1, maximum: 100 },
+          },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              matches: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    listingId: { type: 'string' },
+                    matchesCount: { type: 'integer' },
+                    source: { type: 'string' },
+                    createdAt: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      preHandler: [fastify.requireRole([UserRole.ADMIN])],
+    },
+    async (request) => {
+      const q = request.query as Record<string, unknown>;
+      const limitRaw = Number(q.limit ?? 20);
+      const limit = Math.max(1, Math.min(100, Math.floor(limitRaw)));
+
+      const rows = await prisma.matchEvent.findMany({
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, listingId: true, matchesCount: true, source: true, createdAt: true },
+      });
+
+      return {
+        matches: rows.map((r) => ({
+          id: r.id,
+          listingId: r.listingId,
+          matchesCount: r.matchesCount,
+          source: r.source,
+          createdAt: r.createdAt.toISOString(),
         })),
       };
     }

@@ -1,0 +1,257 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import type { ListingCard } from '@matchprop/shared';
+import ListingCardImageCarousel from '../../../components/ListingCardImageCarousel';
+import InquiryModal from '../../../components/InquiryModal';
+
+const API_BASE = '/api';
+
+type ListingStatus = {
+  inFavorite: boolean;
+  inLike: boolean;
+  inLists: { id: string; name: string }[];
+  lead: { status: string } | null;
+};
+
+function normalizeCard(raw: unknown): ListingCard | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const c = raw as Record<string, unknown>;
+  const id = typeof c.id === 'string' ? c.id : null;
+  if (!id) return null;
+  return {
+    id,
+    title: typeof c.title === 'string' ? c.title : null,
+    price: typeof c.price === 'number' ? c.price : null,
+    currency: typeof c.currency === 'string' ? c.currency : null,
+    bedrooms: typeof c.bedrooms === 'number' ? c.bedrooms : null,
+    bathrooms: typeof c.bathrooms === 'number' ? c.bathrooms : null,
+    areaTotal: typeof c.areaTotal === 'number' ? c.areaTotal : null,
+    locationText: typeof c.locationText === 'string' ? c.locationText : null,
+    heroImageUrl: typeof c.heroImageUrl === 'string' ? c.heroImageUrl : null,
+    publisherRef: typeof c.publisherRef === 'string' ? c.publisherRef : null,
+    source: typeof c.source === 'string' ? c.source : 'API_PARTNER_1',
+    operationType: typeof c.operationType === 'string' ? c.operationType : null,
+  };
+}
+
+export default function MyMatchPage() {
+  const router = useRouter();
+  const [items, setItems] = useState<ListingCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [listingsStatus, setListingsStatus] = useState<Record<string, ListingStatus>>({});
+  const [inquiryListingId, setInquiryListingId] = useState<string | null>(null);
+
+  const fetchFeed = useCallback(async () => {
+    const res = await fetch(`${API_BASE}/feed?limit=100&includeTotal=1`, {
+      credentials: 'include',
+    });
+    if (res.status === 401) {
+      router.replace('/login');
+      return [];
+    }
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.items ?? [])
+      .map(normalizeCard)
+      .filter((c: ListingCard | null): c is ListingCard => c !== null);
+  }, [router]);
+
+  useEffect(() => {
+    fetchFeed().then((raw) => {
+      const ids = raw.map((c: ListingCard) => c.id).filter(Boolean);
+      if (ids.length === 0) {
+        setItems([]);
+        setLoading(false);
+        return;
+      }
+      fetch(`${API_BASE}/listings/my-status-bulk?ids=${ids.join(',')}`, {
+        credentials: 'include',
+      })
+        .then((r) => (r.ok ? r.json() : { items: {} }))
+        .then((data: { items?: Record<string, ListingStatus> }) => {
+          const status = data.items ?? {};
+          const sorted = [...raw].sort((a, b) => {
+            const sa = status[a.id];
+            const sb = status[b.id];
+            const scoreA = sa?.inLike ? 0 : sa?.inFavorite ? 1 : 2;
+            const scoreB = sb?.inLike ? 0 : sb?.inFavorite ? 1 : 2;
+            return scoreA - scoreB;
+          });
+          setItems(sorted);
+          setListingsStatus(status);
+        })
+        .catch(() => setItems(raw))
+        .finally(() => setLoading(false));
+    });
+  }, [fetchFeed]);
+
+  async function handleToggleLike(listingId: string) {
+    const inLike = listingsStatus[listingId]?.inLike ?? false;
+    const url = inLike ? `${API_BASE}/me/saved/${listingId}?listType=LATER` : `${API_BASE}/saved`;
+    const opts = inLike
+      ? { method: 'DELETE' as const, credentials: 'include' as RequestCredentials }
+      : {
+          method: 'POST' as const,
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include' as RequestCredentials,
+          body: JSON.stringify({ listingId, listType: 'LATER' }),
+        };
+    const res = await fetch(url, opts);
+    if (res.ok) {
+      setListingsStatus((prev) => ({
+        ...prev,
+        [listingId]: {
+          ...(prev[listingId] ?? { inFavorite: false, inLike: false, inLists: [], lead: null }),
+          inLike: !inLike,
+        },
+      }));
+    }
+  }
+
+  async function handleToggleFavorite(listingId: string) {
+    const inFav = listingsStatus[listingId]?.inFavorite ?? false;
+    const url = inFav ? `${API_BASE}/me/saved/${listingId}?listType=FAVORITE` : `${API_BASE}/saved`;
+    const opts = inFav
+      ? { method: 'DELETE' as const, credentials: 'include' as RequestCredentials }
+      : {
+          method: 'POST' as const,
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include' as RequestCredentials,
+          body: JSON.stringify({ listingId, listType: 'FAVORITE' }),
+        };
+    const res = await fetch(url, opts);
+    if (res.ok) {
+      setListingsStatus((prev) => ({
+        ...prev,
+        [listingId]: {
+          ...(prev[listingId] ?? { inFavorite: false, inLike: false, inLists: [], lead: null }),
+          inFavorite: !inFav,
+        },
+      }));
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-[var(--mp-muted)] mt-3">Cargando tus matches...</p>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen p-4 bg-[var(--mp-bg)]">
+      <div className="max-w-lg mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-[var(--mp-foreground)]">Mis match</h1>
+            <p className="text-sm text-[var(--mp-muted)] mt-0.5">
+              Propiedades de tus búsquedas activas. Primero like 👍, luego favoritos ★.
+            </p>
+          </div>
+          <Link href="/dashboard" className="text-sm text-sky-600 hover:underline">
+            ← Inicio
+          </Link>
+        </div>
+
+        {items.length === 0 ? (
+          <div className="text-center py-12 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)]">
+            <span className="text-4xl block mb-3">🔥</span>
+            <p className="text-[var(--mp-foreground)] font-medium">Sin matches todavía</p>
+            <p className="text-sm text-[var(--mp-muted)] mt-2">
+              Creá una búsqueda y activala para ver propiedades que matchean.
+            </p>
+            <Link
+              href="/assistant"
+              className="inline-block mt-4 px-4 py-2 bg-sky-500 text-white rounded-xl font-medium hover:bg-sky-600"
+            >
+              Ir a Buscar
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {items.map((card) => (
+              <div
+                key={card.id}
+                className="rounded-xl overflow-hidden bg-[var(--mp-card)] border border-[var(--mp-border)] shadow-sm"
+              >
+                <Link href={`/listing/${card.id}`} className="block">
+                  <div className="aspect-[16/10] bg-gray-100 relative overflow-hidden">
+                    <ListingCardImageCarousel
+                      heroImageUrl={card.heroImageUrl}
+                      media={(card as { media?: { url: string; sortOrder: number }[] }).media}
+                      alt={card.title ?? ''}
+                    />
+                  </div>
+                  <div className="p-3">
+                    <h2 className="font-medium truncate">{card.title ?? 'Sin título'}</h2>
+                    <p className="text-sm text-[var(--mp-muted)]">
+                      {card.price != null
+                        ? `${card.currency ?? 'USD'} ${card.price.toLocaleString()}`
+                        : 'Consultar'}
+                    </p>
+                    {card.locationText && (
+                      <p className="text-xs text-[var(--mp-muted)] truncate">{card.locationText}</p>
+                    )}
+                  </div>
+                </Link>
+                <div className="px-3 pb-3 flex gap-2 items-center">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleLike(card.id)}
+                    className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-lg ${
+                      listingsStatus[card.id]?.inLike
+                        ? 'bg-green-600 text-white'
+                        : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                    }`}
+                    title={listingsStatus[card.id]?.inLike ? 'En like' : 'Agregar a like'}
+                  >
+                    👍
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleFavorite(card.id)}
+                    className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-lg ${
+                      listingsStatus[card.id]?.inFavorite
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                    }`}
+                    title={
+                      listingsStatus[card.id]?.inFavorite ? 'En favoritos' : 'Agregar a favoritos'
+                    }
+                  >
+                    ★
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setInquiryListingId(card.id);
+                    }}
+                    className="flex-1 py-2 bg-sky-500 text-white text-sm rounded-lg font-medium hover:bg-sky-600"
+                  >
+                    Quiero que me contacten
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {inquiryListingId && (
+        <InquiryModal
+          open={!!inquiryListingId}
+          onClose={() => setInquiryListingId(null)}
+          listingId={inquiryListingId}
+          source="LIST"
+          onSent={() => setInquiryListingId(null)}
+        />
+      )}
+    </main>
+  );
+}

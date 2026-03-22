@@ -39,7 +39,7 @@ Tras el push, el workflow `.github/workflows/deploy-auto-pr.yml`:
 
 ## Excepción (solo primera vez en GitHub)
 
-Si el merge automático nunca funcionó, el usuario configura **una vez** permisos y secretos: ver **`docs/SETUP_UNA_VEZ_SIN_INTERVENCION.md`** (URLs exactas). Después no interviene.
+Si el merge automático nunca funcionó, el usuario configura **una vez** permisos y secretos: ver **`docs/CONFIG_PARA_DEPLOY_AUTOMATICO.md`** (checklist) y **`docs/SETUP_UNA_VEZ_SIN_INTERVENCION.md`** (pasos detallados). Después no interviene.
 
 ## Regla de oro
 

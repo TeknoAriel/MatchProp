@@ -269,9 +269,14 @@ export default function LeadVisitsPage() {
 
         <h2 className="font-semibold text-[var(--mp-foreground)] mb-3">Visitas agendadas</h2>
         {visits.length === 0 ? (
-          <p className="text-[var(--mp-muted)] py-4">
-            Sin visitas agendadas. Elegí un horario arriba.
-          </p>
+          <div className="rounded-xl border border-dashed border-[var(--mp-border)] bg-[var(--mp-bg)]/50 py-8 px-4 text-center">
+            <span className="text-3xl block mb-2">📅</span>
+            <p className="text-[var(--mp-muted)] font-medium">Sin visitas agendadas</p>
+            <p className="text-sm text-[var(--mp-muted)] mt-1">
+              Elegí un horario sugerido arriba o ingresá fecha y hora para coordinar con la
+              inmobiliaria.
+            </p>
+          </div>
         ) : (
           <ul className="space-y-2">
             {visits.map((v) => (

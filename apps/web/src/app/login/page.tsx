@@ -1,6 +1,7 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 const API_BASE = '/api';
@@ -11,16 +12,46 @@ function LoginPageContent() {
   const [devLink, setDevLink] = useState<string | null>(null);
   const [magicMessage, setMagicMessage] = useState<string | null>(null);
   const [oauthError, setOauthError] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [demoError, setDemoError] = useState(false);
   const [password, setPassword] = useState('');
   const [pwdLoading, setPwdLoading] = useState(false);
   const [pwdError, setPwdError] = useState(false);
   const [pwdMessage, setPwdMessage] = useState<string>('');
   const router = useRouter();
   const searchParams = useSearchParams();
+  const useDemoTriggered = useRef(false);
 
   useEffect(() => {
     if (searchParams.get('error') === 'oauth') setOauthError(true);
   }, [searchParams]);
+
+  const handleDemoLink = useCallback(async () => {
+    setDemoError(false);
+    setDemoLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/auth/demo`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        window.location.href = '/feed';
+        return;
+      }
+      setDemoError(true);
+    } catch {
+      setDemoError(true);
+    } finally {
+      setDemoLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (searchParams?.get('useDemo') === '1' && !useDemoTriggered.current) {
+      useDemoTriggered.current = true;
+      handleDemoLink();
+    }
+  }, [searchParams, handleDemoLink]);
 
   async function handleMagicLink(e: React.FormEvent) {
     e.preventDefault();
@@ -45,6 +76,12 @@ function LoginPageContent() {
     } catch {
       setStatus('error');
     }
+  }
+
+  function handleVolver() {
+    setStatus('idle');
+    setDevLink(null);
+    setMagicMessage(null);
   }
 
   async function handlePasswordLogin(e: React.FormEvent) {
@@ -131,32 +168,34 @@ function LoginPageContent() {
 
         {status === 'sent' && (
           <div className="text-sm text-center space-y-2">
-            {magicMessage ? (
-              <p className="text-[var(--mp-muted)]">{magicMessage}</p>
-            ) : devLink ? (
-              <>
-                <p className="text-green-600">En dev: usá el link de abajo para entrar.</p>
-                <a
-                  href={devLink}
-                  className="block w-full py-3 mt-2 bg-green-100 text-green-800 rounded font-medium hover:bg-green-200"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Abrir link de acceso (dev)
-                </a>
-              </>
-            ) : (
-              <p className="text-green-600">
-                Revisá tu correo. Si existe, recibirás un link para iniciar sesión.
-              </p>
+            <p className="text-green-600">
+              {magicMessage ??
+                'Revisá tu correo. Si existe, recibirás un link para iniciar sesión.'}
+            </p>
+            {devLink && (
+              <a
+                href={devLink}
+                className="block w-full py-3 mt-2 bg-green-100 text-green-800 rounded-xl font-medium hover:bg-green-200"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Abrir link de acceso (dev)
+              </a>
             )}
+            <button
+              type="button"
+              onClick={handleVolver}
+              className="block w-full py-2 mt-2 text-sm text-[var(--mp-muted)] hover:text-[var(--mp-foreground)] border border-[var(--mp-border)] rounded-xl hover:bg-[var(--mp-card)]"
+            >
+              Volver
+            </button>
           </div>
         )}
         {status === 'error' && (
           <div className="text-sm text-red-600 text-center space-y-1">
             <p>Error. Intentá de nuevo.</p>
             <p className="text-[var(--mp-muted)] text-xs">
-              Si estás en dev, podés usar el link dev que aparece cuando el mail no llega.
+              Para ingresar rápido, usá <strong>Entrar como demo</strong>.
             </p>
           </div>
         )}
@@ -195,7 +234,22 @@ function LoginPageContent() {
           )}
         </form>
 
-        {/* Se quitó el ingreso demo: en dev se mantiene el devLink del magic link para pruebas. */}
+        <div className="space-y-1">
+          <button
+            type="button"
+            onClick={handleDemoLink}
+            disabled={demoLoading}
+            className="w-full py-2 text-sm font-medium rounded-lg border border-green-600 text-green-700 hover:bg-green-50 disabled:opacity-50 transition-colors"
+          >
+            {demoLoading ? 'Entrando...' : 'Entrar como demo'}
+          </button>
+          {demoError && (
+            <p className="text-xs text-red-600 text-center">
+              No se pudo conectar con la API. Dejá la terminal abierta con{' '}
+              <code className="bg-black/10 px-1 rounded">pnpm run dev-local</code>.
+            </p>
+          )}
+        </div>
 
         <p className="text-sm text-amber-600 text-center">
           Google/Apple/Facebook requieren configuración. Usá Magic Link o Passkey.
@@ -256,6 +310,12 @@ function LoginPageContent() {
         </div>
 
         <p className="text-center text-xs text-[var(--mp-muted)] pt-4 border-t border-[var(--mp-border)]">
+          ¿No tenés cuenta?{' '}
+          <Link href="/register" className="text-sky-600 hover:underline">
+            Registrarse
+          </Link>
+        </p>
+        <p className="text-center text-xs text-[var(--mp-muted)]">
           Si te redirige al feed al entrar, hay sesión activa.{' '}
           <button type="button" onClick={handleLogout} className="underline hover:no-underline">
             Cerrar sesión y limpiar

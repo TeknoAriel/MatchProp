@@ -2,7 +2,7 @@
 
 Documento de referencia: **[masterplan.md](./masterplan.md)** (Frozen v3.0).
 
-**Última revisión:** 2026-03-20 (re-enfoque doc + alineación con CI y canon).  
+**Última revisión:** 2026-03-21 (Sprints 1–6 completados: virtualización, SEO, monetización).  
 **Foco trimestre:** [FOCO_2026.md](./FOCO_2026.md).
 
 ---

@@ -7,7 +7,8 @@ import { useTheme } from './ThemeProvider';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Inicio', icon: '🏠' },
-  { href: '/feed', label: 'Match', icon: '🔥' },
+  { href: '/me/match', label: 'Mis match', icon: '🔥' },
+  { href: '/feed', label: 'Match', icon: '🎯' },
   { href: '/feed/list', label: 'Lista', icon: '📋' },
   { href: '/search/map', label: 'Mapa', icon: '🗺️' },
   { href: '/me/saved', label: 'Favoritos', icon: '⭐' },

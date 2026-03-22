@@ -1,5 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
+import { trackEvent } from '../lib/analytics.js';
+
 export async function alertsRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', fastify.authenticate);
 
@@ -74,6 +76,10 @@ export async function alertsRoutes(fastify: FastifyInstance) {
           where: { id: existing.id },
           data: { isEnabled: true, filtersJson },
         });
+        trackEvent('alert_activated', {
+          userId: user.userId,
+          payload: { subscriptionId: updated.id, type: typeVal },
+        }).catch(() => {});
         return reply.status(201).send({
           id: updated.id,
           savedSearchId: updated.savedSearchId,
@@ -213,6 +219,171 @@ export async function alertsRoutes(fastify: FastifyInstance) {
 
       await prisma.alertSubscription.delete({ where: { id } });
       return reply.status(204).send();
+    }
+  );
+
+  /** AlertDelivery unificados de todas las suscripciones activas — para /alerts */
+  fastify.get(
+    '/deliveries',
+    {
+      schema: {
+        tags: ['Alerts'],
+        security: [{ bearerAuth: [] }],
+        querystring: {
+          type: 'object',
+          properties: { limit: { type: 'integer', default: 50 } },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              deliveries: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    listingId: { type: 'string' },
+                    type: { type: 'string' },
+                    createdAt: { type: 'string' },
+                    listingTitle: { type: ['string', 'null'] },
+                    listingPrice: { type: ['number', 'null'] },
+                    listingCurrency: { type: ['string', 'null'] },
+                    savedSearchName: { type: ['string', 'null'] },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const user = request.user as { userId: string };
+      const limit = Math.min(
+        100,
+        Math.max(1, Number((request.query as { limit?: number }).limit) || 50)
+      );
+
+      const activeSubs = await prisma.alertSubscription.findMany({
+        where: { userId: user.userId, isEnabled: true },
+        select: { id: true, savedSearch: { select: { name: true } } },
+      });
+      const subIds = activeSubs.map((s) => s.id);
+      const subById = new Map(activeSubs.map((s) => [s.id, s]));
+
+      if (subIds.length === 0) return { deliveries: [] };
+
+      const deliveries = await prisma.alertDelivery.findMany({
+        where: { subscriptionId: { in: subIds } },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        include: {
+          listing: {
+            select: { id: true, title: true, price: true, currency: true },
+          },
+        },
+      });
+
+      return {
+        deliveries: deliveries.map((d) => {
+          const sub = subById.get(d.subscriptionId);
+          return {
+            id: d.id,
+            listingId: d.listingId,
+            type: d.type,
+            createdAt: d.createdAt.toISOString(),
+            listingTitle: d.listing?.title ?? null,
+            listingPrice: d.listing?.price ?? null,
+            listingCurrency: d.listing?.currency ?? null,
+            savedSearchName: sub?.savedSearch?.name ?? null,
+          };
+        }),
+      };
+    }
+  );
+
+  /** AlertDelivery por savedSearchId — para "Resultado de alertas para esta búsqueda" */
+  fastify.get(
+    '/deliveries/by-search/:savedSearchId',
+    {
+      schema: {
+        tags: ['Alerts'],
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: 'object',
+          properties: { savedSearchId: { type: 'string' } },
+        },
+        querystring: {
+          type: 'object',
+          properties: { limit: { type: 'integer', default: 20 } },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              deliveries: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    listingId: { type: 'string' },
+                    type: { type: 'string' },
+                    createdAt: { type: 'string' },
+                    listingTitle: { type: ['string', 'null'] },
+                    listingPrice: { type: ['number', 'null'] },
+                    listingCurrency: { type: ['string', 'null'] },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const user = request.user as { userId: string };
+      const { savedSearchId } = request.params as { savedSearchId: string };
+      const limit = Math.min(
+        50,
+        Math.max(1, Number((request.query as { limit?: number }).limit) || 20)
+      );
+
+      const search = await prisma.savedSearch.findFirst({
+        where: { id: savedSearchId, userId: user.userId },
+      });
+      if (!search) return { deliveries: [] };
+
+      const subs = await prisma.alertSubscription.findMany({
+        where: { userId: user.userId, savedSearchId },
+        select: { id: true },
+      });
+      const subIds = subs.map((s) => s.id);
+      if (subIds.length === 0) return { deliveries: [] };
+
+      const deliveries = await prisma.alertDelivery.findMany({
+        where: { subscriptionId: { in: subIds } },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        include: {
+          listing: {
+            select: { id: true, title: true, price: true, currency: true },
+          },
+        },
+      });
+
+      return {
+        deliveries: deliveries.map((d) => ({
+          id: d.id,
+          listingId: d.listingId,
+          type: d.type,
+          createdAt: d.createdAt.toISOString(),
+          listingTitle: d.listing?.title ?? null,
+          listingPrice: d.listing?.price ?? null,
+          listingCurrency: d.listing?.currency ?? null,
+        })),
+      };
     }
   );
 }

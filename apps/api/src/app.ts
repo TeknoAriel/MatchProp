@@ -132,20 +132,48 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
     done();
   });
 
+  const apiVersion = process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.APP_VERSION ?? 'local';
+
   fastify.get('/health', async (request, reply) => {
     let dbOk = false;
+    let lastMigration: string | null = null;
     try {
       await prisma.$queryRaw`SELECT 1`;
       dbOk = true;
     } catch {
       request.log.warn('Health: DB check failed');
     }
+    if (dbOk) {
+      try {
+        const rows = await prisma.$queryRaw<
+          { migration_name: string }[]
+        >`SELECT migration_name FROM _prisma_migrations ORDER BY finished_at DESC LIMIT 1`;
+        lastMigration = rows[0]?.migration_name ?? null;
+      } catch {
+        // ignorar
+      }
+    }
     // Siempre 200; body indica ok vs degraded para que probes no bajen la instancia por DB temporal
     return reply.status(200).send({
       status: dbOk ? 'ok' : 'degraded',
       timestamp: formatDate(new Date()),
       db: dbOk ? 'ok' : 'error',
+      version: apiVersion,
+      migration: lastMigration,
     });
+  });
+
+  fastify.get('/version', async () => {
+    let migration: string | null = null;
+    try {
+      const rows = await prisma.$queryRaw<
+        { migration_name: string }[]
+      >`SELECT migration_name FROM _prisma_migrations ORDER BY finished_at DESC LIMIT 1`;
+      migration = rows[0]?.migration_name ?? null;
+    } catch {
+      // DB no disponible
+    }
+    return { version: apiVersion, commit: apiVersion, migration };
   });
   /** Diagnóstico: confirma que la ruta llegó bien (para depurar 404 Web→API en prod). */
   fastify.get('/status/connect', async (request) => ({

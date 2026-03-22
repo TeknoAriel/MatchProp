@@ -706,10 +706,10 @@ function FeedListPageContent() {
               </>
             )}
           </div>
-        ) : items.length > 50 ? (
+        ) : items.length > 30 ? (
           <>
             <div className="mb-4 text-sm text-slate-500">
-              {items.length} propiedades — lista virtualizada para mejor rendimiento
+              {items.length} propiedades — scroll fluido (virtualización)
             </div>
             <div className="rounded-xl overflow-hidden" style={{ height: 600 }}>
               <List

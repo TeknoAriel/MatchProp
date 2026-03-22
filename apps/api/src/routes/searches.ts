@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { executeFeed } from '../lib/feed-engine.js';
 import { createSavedSearchRequestSchema, normalizeFilters } from '../schemas/search.js';
+import { trackEvent } from '../lib/analytics.js';
 
 const FEED_LIMIT_DEFAULT = 20;
 const FEED_LIMIT_MAX = 50;
@@ -99,6 +100,11 @@ export async function searchesRoutes(fastify: FastifyInstance) {
         where: { id: user.userId },
         data: { activeSearchId: created.id },
       });
+
+      trackEvent('search_saved', {
+        userId: user.userId,
+        payload: { searchId: created.id },
+      }).catch(() => {});
 
       return reply.status(201).send(toSavedSearchDTO(created));
     }
@@ -274,6 +280,103 @@ export async function searchesRoutes(fastify: FastifyInstance) {
           nextCursor: null,
         };
       }
+    }
+  );
+
+  fastify.put(
+    '/searches/:id',
+    {
+      schema: {
+        tags: ['Searches'],
+        security: [{ bearerAuth: [] }],
+        params: { type: 'object', properties: { id: { type: 'string' } } },
+        body: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', maxLength: 100 },
+            text: { type: 'string', maxLength: 500 },
+            filters: { type: 'object' },
+          },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              name: { type: 'string' },
+              queryText: { type: ['string', 'null'] },
+              filters: { type: 'object' },
+              createdAt: { type: 'string' },
+              updatedAt: { type: 'string' },
+            },
+          },
+          400: {
+            type: 'object',
+            properties: { message: { type: 'string' }, code: { type: 'string' } },
+          },
+          404: { type: 'object', properties: { message: { type: 'string' } } },
+        },
+      },
+    },
+    async (request, reply) => {
+      const user = request.user as { userId: string };
+      const { id } = request.params as { id: string };
+      const body = request.body as { name?: string; text?: string; filters?: unknown };
+
+      const row = await prisma.savedSearch.findFirst({
+        where: { id, userId: user.userId },
+      });
+      if (!row) return reply.status(404).send({ message: 'SavedSearch no encontrado' }) as never;
+
+      const updates: { name?: string; queryText?: string | null; filtersJson?: object } = {};
+      if (body.name !== undefined) updates.name = body.name.slice(0, 100);
+      if (body.text !== undefined) updates.queryText = body.text?.trim() || null;
+      if (body.filters !== undefined) {
+        updates.filtersJson = normalizeFilters(body.filters) as object;
+      }
+
+      const updated = await prisma.savedSearch.update({
+        where: { id },
+        data: { ...updates, updatedAt: new Date() },
+      });
+      return toSavedSearchDTO(updated);
+    }
+  );
+
+  fastify.delete(
+    '/searches/:id',
+    {
+      schema: {
+        tags: ['Searches'],
+        security: [{ bearerAuth: [] }],
+        params: { type: 'object', properties: { id: { type: 'string' } } },
+        response: {
+          204: { type: 'null' },
+          404: { type: 'object', properties: { message: { type: 'string' } } },
+        },
+      },
+    },
+    async (request, reply) => {
+      const user = request.user as { userId: string };
+      const { id } = request.params as { id: string };
+
+      const row = await prisma.savedSearch.findFirst({
+        where: { id, userId: user.userId },
+      });
+      if (!row) return reply.status(404).send({ message: 'SavedSearch no encontrado' }) as never;
+
+      const u = await prisma.user.findUnique({
+        where: { id: user.userId },
+        select: { activeSearchId: true },
+      });
+      if (u?.activeSearchId === id) {
+        await prisma.user.update({
+          where: { id: user.userId },
+          data: { activeSearchId: null },
+        });
+      }
+      await prisma.savedSearch.delete({ where: { id } });
+      return reply.status(204).send();
     }
   );
 }

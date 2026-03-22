@@ -485,8 +485,66 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // Nota: se eliminó el endpoint de ingreso demo (/auth/demo).
-  // En dev se conserva el "devLink" del magic link, sin otorgar roles/premium por defecto.
+  const isDevAuth =
+    process.env.NODE_ENV !== 'production' || envFlag('DEMO_MODE') || process.env.VERCEL === '1';
+  const isStatelessDemo = envFlag('DEMO_MODE') && !process.env.DATABASE_URL;
+
+  fastify.post(
+    '/auth/demo',
+    {
+      config: {
+        rateLimit: { max: config.authRateLimitMax, timeWindow: config.authRateLimitWindowMs },
+      },
+      schema: {
+        tags: ['Auth'],
+        response: { 200: { type: 'object', properties: { ok: { type: 'boolean' } } } },
+      },
+    },
+    async (request, reply) => {
+      if (!isDevAuth) throw fastify.httpErrors.forbidden('Solo en modo demo');
+      const meta = getClientMeta(request);
+      const DEMO_EMAIL = 'demo@matchprop.com';
+      try {
+        if (isStatelessDemo) {
+          const fakeUserId = 'demo-user';
+          const accessToken = signAccessToken(fastify, {
+            userId: fakeUserId,
+            email: DEMO_EMAIL,
+            role: 'AGENT',
+          });
+          const demoRefresh = 'demo-refresh-token';
+          setAuthCookies(reply, accessToken, demoRefresh);
+        } else {
+          const user = await upsertUserAndIdentityForMagicLink(DEMO_EMAIL);
+          await logAuthAudit({
+            event: 'magic_verified',
+            userId: user.userId,
+            email: user.email,
+            provider: 'magic_link',
+            ...meta,
+          });
+          const { refreshToken } = await createSession({ userId: user.userId, ...meta });
+          const accessToken = signAccessToken(fastify, {
+            userId: user.userId,
+            email: user.email,
+            role: user.role,
+          });
+          setAuthCookies(reply, accessToken, refreshToken);
+        }
+      } catch (err) {
+        request.log.warn({ err }, 'auth/demo falling back to stateless demo');
+        const fakeUserId = 'demo-user';
+        const accessToken = signAccessToken(fastify, {
+          userId: fakeUserId,
+          email: DEMO_EMAIL,
+          role: 'AGENT',
+        });
+        const demoRefresh = 'demo-refresh-token';
+        setAuthCookies(reply, accessToken, demoRefresh);
+      }
+      return { ok: true };
+    }
+  );
 
   fastify.get(
     '/auth/oauth/:provider',
