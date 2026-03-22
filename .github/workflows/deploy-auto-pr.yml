@@ -9,6 +9,12 @@ on:
       - main
       - master
       - gh-pages
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to create/update PR from'
+        required: true
+        default: 'docs-url-canon-20260320'
 
 # issues: write → crear etiqueta "automerge" (sin esto gh pr create --label falla con 403)
 permissions:
@@ -34,7 +40,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: |
-          BRANCH="${{ github.ref_name }}"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            BRANCH="${{ github.event.inputs.branch }}"
+          else
+            BRANCH="${{ github.ref_name }}"
+          fi
           OWNER="${{ github.repository_owner }}"
           HEAD_REF="${OWNER}:${BRANCH}"
           REPO="${{ github.repository }}"
