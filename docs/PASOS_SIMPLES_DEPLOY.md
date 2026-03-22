@@ -37,3 +37,7 @@ No tocamos Neon, Vercel ni claves compartidas. Solo esto:
 4. CI corre (typecheck, lint, tests, build)
 5. Cuando CI pasa → merge automático con GITHUB_TOKEN
 6. Vercel despliega
+7. **Aviso automático** cuando el deploy está listo:
+   - Resumen en la ejecución de GitHub Actions (Summary del job smoke-prod)
+   - Comentario en el PR con el link de prueba
+   - Opcional: webhook (Slack/Discord) si configurás el secreto `DEPLOY_WEBHOOK_URL`

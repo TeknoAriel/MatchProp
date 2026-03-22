@@ -1,51 +1,72 @@
-# Verificación: atrasos de deploy y local vs producción
+# Verificación: ¿está todo deployado? (Git · Web · API · Neon)
 
-**Estado:** 2026-03-22
-
----
-
-## Diferencia actual
-
-| Entorno        | Rama                    | Commits                                                   |
-| -------------- | ----------------------- | --------------------------------------------------------- |
-| **Local**      | docs-url-canon-20260320 | f0ef737, ee2d542, 70f7d93 (+ SPEC, login, registro, etc.) |
-| **Producción** | main                    | f9f29ce (sin esos 3 commits)                              |
-
-**Producción está 3 commits atrás.** Los cambios (SPEC búsquedas/match/alertas, login restaurado, registro, etc.) solo están en la rama, no en main.
+Comprobación de que **todos** los commits y migraciones están alineados entre Git, Vercel (Web + API) y Neon. Sirve para detectar deploys a mitad de camino o desajustes históricos.
 
 ---
 
-## Cómo sincronizar
+## Verificación rápida
 
-**Mergear PR #3** para que main = docs-url-canon y producción se actualice:
+```bash
+./scripts/verificar-deploy.sh
+```
 
-1. **Opción A (manual):** [Abrir PR #3](https://github.com/TeknoAriel/MatchProp/pull/3) → **Merge pull request**
+Con tu rama (para ver commits sin mergear):
 
-2. **Opción B (automático):** Configurar `AUTOMERGE_TOKEN` (ver `docs/CONFIG_PARA_DEPLOY_AUTOMATICO.md`) para que el PR se mergee solo cuando CI pase.
-
----
-
-## Workflows
-
-| Workflow                     | Estado      | Nota                                                       |
-| ---------------------------- | ----------- | ---------------------------------------------------------- |
-| Deploy auto (PR)             | OK          | Crea/actualiza PR con etiqueta automerge                   |
-| CI (typecheck, tests, build) | Corre en PR | Requerido para merge                                       |
-| cron-ingest                  | Corregido   | Ya no falla cuando la API retorna error (cold start, etc.) |
-| Smoke prod                   | OK          | Solo tras merge a main                                     |
+```bash
+./scripts/verificar-deploy.sh docs-url-canon-20260320
+```
 
 ---
 
-## Tras el merge
+## Qué compara el script
 
-1. Vercel despliega main (web, api, admin).
-2. Smoke prod verifica las URLs de producción.
-3. Local y producción quedan alineados.
+| Fuente         | Cómo obtiene el commit            | Cómo obtiene migración        |
+|----------------|-----------------------------------|-------------------------------|
+| **Web**        | GET /version (Vercel inyecta SHA) | —                             |
+| **API**        | GET /version o /health            | Tabla `_prisma_migrations` en Neon |
+| **main (git)** | `git rev-parse origin/main`       | —                             |
+| **Repo**       | —                                 | Última carpeta en `prisma/migrations` |
 
 ---
 
-## Checklist de alineación
+## Desajustes que detecta
 
-- [ ] PR #3 mergeado a main
-- [ ] Vercel deploy completado
-- [ ] Probar en https://match-prop-web.vercel.app (login, registro, Mis match, alertas)
+1. **Web ≠ API**: Commits distintos → un deploy de Vercel falló a mitad.
+2. **main ≠ Web/API**: Hay commits en main que aún no están en prod.
+3. **Neon ≠ Repo**: La última migración en Neon no coincide con la última en el repo → faltan migraciones.
+
+---
+
+## Endpoints de versión
+
+- **Web:** `GET https://match-prop-web.vercel.app/version` → `{ version, commit }`
+- **API:** `GET https://match-prop-admin-dsvv.vercel.app/version` → `{ version, commit, migration }`
+- **API /health:** también incluye `version` y `migration`
+
+---
+
+## Si hay desajuste
+
+| Desajuste     | Qué hacer                                                  |
+|---------------|------------------------------------------------------------|
+| Web ≠ API     | En Vercel → Deployments: revisar que Web y API estén en Ready. Redeploy el que falle. |
+| main no en prod | Esperar 2–3 min tras el merge. Si pasó más, revisar Vercel. |
+| Neon atrasado | `DATABASE_URL="..." bash scripts/prod-migrate.sh`          |
+
+---
+
+## Flujo de deploy
+
+1. Push → PR creado/actualizado
+2. CI pasa → merge a main
+3. Vercel despliega Web + API
+4. Migraciones: se aplican manualmente o en un step de build (según tu config)
+5. `./scripts/verificar-deploy.sh` confirma alineación
+
+---
+
+## Checklist post-merge
+
+- [ ] `./scripts/verificar-deploy.sh` sin desajustes
+- [ ] Probar https://match-prop-web.vercel.app/login
+- [ ] Probar /status y verificar versión

@@ -206,6 +206,9 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: [build, smoke-ux]
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - name: Wait for Vercel deploy
@@ -213,3 +216,27 @@ jobs:
       - name: Smoke prod URLs
         run: |
           WEB_URL="https://match-prop-web.vercel.app" API_URL="https://match-prop-admin-dsvv.vercel.app" bash scripts/smoke-prod.sh
+      - name: Aviso deploy listo
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          WEB="https://match-prop-web.vercel.app"
+          API="https://match-prop-admin-dsvv.vercel.app"
+          echo "## ✅ Deploy listo en producción" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| URL | Estado |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| [Web - Login](${WEB}/login) | ✓ |" >> $GITHUB_STEP_SUMMARY
+          echo "| [API health](${API}/health) | ✓ |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**URL de prueba:** $WEB/login" >> $GITHUB_STEP_SUMMARY
+          PR_NUM=$(echo "${{ github.event.head_commit.message }}" | sed -n 's/.*Merge pull request #\([0-9]*\).*/\1/p')
+          if [ -n "$PR_NUM" ]; then
+            gh pr comment "$PR_NUM" --body "✅ **Deploy listo.** Podés verificar en: $WEB/login" || true
+          fi
+          if [ -n "${{ secrets.DEPLOY_WEBHOOK_URL }}" ]; then
+            curl -sS -X POST "${{ secrets.DEPLOY_WEBHOOK_URL }}" \
+              -H "Content-Type: application/json" \
+              -d "{\"text\":\"✅ MatchProp deploy listo: $WEB/login\"}" || true
+          fi
