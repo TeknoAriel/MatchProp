@@ -168,24 +168,19 @@ function LoginPageContent() {
 
         {status === 'sent' && (
           <div className="text-sm text-center space-y-2">
-            {magicMessage && !devLink ? (
-              <p className="text-[var(--mp-muted)]">{magicMessage}</p>
-            ) : devLink ? (
-              <>
-                <p className="text-green-600">En modo dev: usá el link de abajo para entrar.</p>
-                <a
-                  href={devLink}
-                  className="block w-full py-3 mt-2 bg-green-100 text-green-800 rounded-xl font-medium hover:bg-green-200"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Abrir link de acceso (dev)
-                </a>
-              </>
-            ) : (
-              <p className="text-green-600">
-                Revisá tu correo. Si existe, recibirás un link para iniciar sesión.
-              </p>
+            <p className="text-green-600">
+              {magicMessage ??
+                'Revisá tu correo. Si existe, recibirás un link para iniciar sesión.'}
+            </p>
+            {devLink && (
+              <a
+                href={devLink}
+                className="block w-full py-3 mt-2 bg-green-100 text-green-800 rounded-xl font-medium hover:bg-green-200"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Abrir link de acceso (dev)
+              </a>
             )}
             <button
               type="button"
