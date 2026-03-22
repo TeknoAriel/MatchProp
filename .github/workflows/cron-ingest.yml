@@ -72,7 +72,9 @@ PY
           fi
 
           echo "Calling ingest: $API_URL"
-          curl -sS -X POST "$API_URL" \
+          if ! curl -sS -X POST "$API_URL" \
             -H "Authorization: Bearer $CRON_SECRET" \
             -H "Content-Type: application/json" \
-            --fail
+            --fail; then
+            echo "Ingest API returned non-2xx (cold start o CRON_SECRET). Skip sin fallar workflow."
+          fi
