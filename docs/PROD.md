@@ -167,12 +167,12 @@ Usar para healthcheck (Vercel, Kubernetes, etc.).
 
 ## Runbook mínimo
 
-| Situación | Acción |
-|-----------|--------|
-| Smoke prod falla | Ver [ESTABILIDAD_Y_RELEASE.md](./ESTABILIDAD_Y_RELEASE.md) → Runbook Smoke prod falla |
-| API 503 (health check) | Revisar DATABASE_URL, pool de conexiones; reiniciar API en Vercel |
-| Rollback urgente | Revert commit en main vía PR; Vercel redeploya automáticamente |
-| Migración fallida | Backups; crear migración de rollback; `prisma migrate deploy` contra prod |
+| Situación              | Acción                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------- |
+| Smoke prod falla       | Ver [ESTABILIDAD_Y_RELEASE.md](./ESTABILIDAD_Y_RELEASE.md) → Runbook Smoke prod falla |
+| API 503 (health check) | Revisar DATABASE_URL, pool de conexiones; reiniciar API en Vercel                     |
+| Rollback urgente       | Revert commit en main vía PR; Vercel redeploya automáticamente                        |
+| Migración fallida      | Backups; crear migración de rollback; `prisma migrate deploy` contra prod             |
 
 ---
 

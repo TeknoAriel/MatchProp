@@ -181,9 +181,7 @@ export default function AlertsPage() {
                       {d.listingTitle ?? d.listingId}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span
-                        className={`px-1.5 py-0.5 rounded text-xs ${typeInfo.color}`}
-                      >
+                      <span className={`px-1.5 py-0.5 rounded text-xs ${typeInfo.color}`}>
                         {typeInfo.icon} {typeInfo.label}
                       </span>
                       {d.savedSearchName && (
@@ -198,7 +196,10 @@ export default function AlertsPage() {
                       ? `${d.listingCurrency ?? 'USD'} ${d.listingPrice.toLocaleString()}`
                       : ''}
                   </span>
-                  <span className="text-xs text-[var(--mp-muted)] shrink-0" suppressHydrationWarning>
+                  <span
+                    className="text-xs text-[var(--mp-muted)] shrink-0"
+                    suppressHydrationWarning
+                  >
                     {new Date(d.createdAt).toLocaleDateString('es-AR', {
                       day: '2-digit',
                       month: '2-digit',
@@ -208,10 +209,7 @@ export default function AlertsPage() {
               );
             })}
           </ul>
-          <Link
-            href="/me/match"
-            className="text-sm font-medium text-sky-600 hover:underline"
-          >
+          <Link href="/me/match" className="text-sm font-medium text-sky-600 hover:underline">
             Ver en Mis match →
           </Link>
         </div>

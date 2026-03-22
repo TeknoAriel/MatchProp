@@ -260,7 +260,10 @@ export async function alertsRoutes(fastify: FastifyInstance) {
     },
     async (request) => {
       const user = request.user as { userId: string };
-      const limit = Math.min(100, Math.max(1, Number((request.query as { limit?: number }).limit) || 50));
+      const limit = Math.min(
+        100,
+        Math.max(1, Number((request.query as { limit?: number }).limit) || 50)
+      );
 
       const activeSubs = await prisma.alertSubscription.findMany({
         where: { userId: user.userId, isEnabled: true },
@@ -342,7 +345,10 @@ export async function alertsRoutes(fastify: FastifyInstance) {
     async (request) => {
       const user = request.user as { userId: string };
       const { savedSearchId } = request.params as { savedSearchId: string };
-      const limit = Math.min(50, Math.max(1, Number((request.query as { limit?: number }).limit) || 20));
+      const limit = Math.min(
+        50,
+        Math.max(1, Number((request.query as { limit?: number }).limit) || 20)
+      );
 
       const search = await prisma.savedSearch.findFirst({
         where: { id: savedSearchId, userId: user.userId },

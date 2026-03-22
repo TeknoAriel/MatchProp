@@ -177,7 +177,8 @@ export default function LeadChatPage() {
               <span className="text-4xl mb-3">💬</span>
               <p className="text-[var(--mp-foreground)] font-medium">Sin mensajes todavía</p>
               <p className="text-sm text-[var(--mp-muted)] mt-1 max-w-[240px]">
-                Escribí abajo para coordinar con la inmobiliaria. No compartas email, teléfono ni URLs.
+                Escribí abajo para coordinar con la inmobiliaria. No compartas email, teléfono ni
+                URLs.
               </p>
             </div>
           ) : (

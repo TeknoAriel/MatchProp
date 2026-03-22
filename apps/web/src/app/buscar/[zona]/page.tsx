@@ -51,8 +51,8 @@ export default async function BuscarZonaPage({ params }: Props) {
             Propiedades en {zonaTitle}
           </h1>
           <p className="text-slate-600 mb-8">
-            Encontrá tu próximo hogar en {zonaTitle}. Decí qué buscás y te matcheamos con las mejores
-            opciones.
+            Encontrá tu próximo hogar en {zonaTitle}. Decí qué buscás y te matcheamos con las
+            mejores opciones.
           </p>
           <div className="space-y-3">
             <Link
@@ -61,10 +61,7 @@ export default async function BuscarZonaPage({ params }: Props) {
             >
               Buscar en {zonaTitle}
             </Link>
-            <Link
-              href="/feed"
-              className="block text-sm text-slate-500 hover:text-sky-600"
-            >
+            <Link href="/feed" className="block text-sm text-slate-500 hover:text-sky-600">
               ¿Ya tenés cuenta? Ver feed
             </Link>
           </div>

@@ -6,10 +6,10 @@
 
 ## Diferencia actual
 
-| Entorno   | Rama                     | Commits                                      |
-|-----------|--------------------------|----------------------------------------------|
-| **Local** | docs-url-canon-20260320  | f0ef737, ee2d542, 70f7d93 (+ SPEC, login, registro, etc.) |
-| **Producción** | main               | f9f29ce (sin esos 3 commits)                 |
+| Entorno        | Rama                    | Commits                                                   |
+| -------------- | ----------------------- | --------------------------------------------------------- |
+| **Local**      | docs-url-canon-20260320 | f0ef737, ee2d542, 70f7d93 (+ SPEC, login, registro, etc.) |
+| **Producción** | main                    | f9f29ce (sin esos 3 commits)                              |
 
 **Producción está 3 commits atrás.** Los cambios (SPEC búsquedas/match/alertas, login restaurado, registro, etc.) solo están en la rama, no en main.
 
@@ -27,12 +27,12 @@
 
 ## Workflows
 
-| Workflow               | Estado  | Nota                                                   |
-|------------------------|---------|--------------------------------------------------------|
-| Deploy auto (PR)       | OK      | Crea/actualiza PR con etiqueta automerge               |
-| CI (typecheck, tests, build) | Corre en PR | Requerido para merge                      |
-| cron-ingest            | Corregido | Ya no falla cuando la API retorna error (cold start, etc.) |
-| Smoke prod             | OK      | Solo tras merge a main                                 |
+| Workflow                     | Estado      | Nota                                                       |
+| ---------------------------- | ----------- | ---------------------------------------------------------- |
+| Deploy auto (PR)             | OK          | Crea/actualiza PR con etiqueta automerge                   |
+| CI (typecheck, tests, build) | Corre en PR | Requerido para merge                                       |
+| cron-ingest                  | Corregido   | Ya no falla cuando la API retorna error (cold start, etc.) |
+| Smoke prod                   | OK          | Solo tras merge a main                                     |
 
 ---
 

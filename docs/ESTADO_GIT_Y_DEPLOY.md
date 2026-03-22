@@ -8,12 +8,12 @@
 
 ## Estado actual
 
-| Rama | Commit | Estado |
-|------|--------|--------|
-| **docs-url-canon-20260320** | `70f7d93` | ✅ Pushado a origin. Rama de trabajo. |
-| **origin/docs-url-canon-20260320** | `70f7d93` | Sincronizado |
-| **main** (local) | `f9f29ce` | Igual que origin/main |
-| **origin/main** | `f9f29ce` | Protegido: requiere PR |
+| Rama                               | Commit    | Estado                                |
+| ---------------------------------- | --------- | ------------------------------------- |
+| **docs-url-canon-20260320**        | `70f7d93` | ✅ Pushado a origin. Rama de trabajo. |
+| **origin/docs-url-canon-20260320** | `70f7d93` | Sincronizado                          |
+| **main** (local)                   | `f9f29ce` | Igual que origin/main                 |
+| **origin/main**                    | `f9f29ce` | Protegido: requiere PR                |
 
 ---
 

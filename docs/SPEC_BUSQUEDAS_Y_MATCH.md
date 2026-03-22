@@ -12,12 +12,12 @@ Especificación para reorganizar la UX de búsquedas, match y alertas. **Priorid
 
 Cada card de búsqueda guardada debe incluir:
 
-| Acción | Comportamiento | Ubicación en card |
-|--------|----------------|-------------------|
-| **Editar** | Abre modal/página para cambiar filtros o texto; al guardar, vuelve a buscar con los nuevos criterios | Botón "Editar" |
-| **Eliminar** | Borra la búsqueda (con confirmación) | Botón "Eliminar" |
+| Acción              | Comportamiento                                                                                                        | Ubicación en card |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| **Editar**          | Abre modal/página para cambiar filtros o texto; al guardar, vuelve a buscar con los nuevos criterios                  | Botón "Editar"    |
+| **Eliminar**        | Borra la búsqueda (con confirmación)                                                                                  | Botón "Eliminar"  |
 | **Activa/Inactiva** | Toggle: marca si esta búsqueda participa en "Mis match" (ver §3). Si inactiva, no aporta propiedades al feed agregado | Toggle en la card |
-| **Match** | Setea esta búsqueda como activa, hace fetch de resultados y redirige a `/feed` en modo swipe | Botón "Match" |
+| **Match**           | Setea esta búsqueda como activa, hace fetch de resultados y redirige a `/feed` en modo swipe                          | Botón "Match"     |
 
 ### 1.2 Menú "Activar alertas"
 
@@ -118,21 +118,21 @@ Deduplicar por `listingId` (una propiedad no se repite).
 
 ## 5. Cambios de API necesarios
 
-| Endpoint | Cambio | Notas |
-|----------|--------|-------|
-| `PUT /searches/:id` | Crear si no existe | Editar nombre, queryText, filters |
-| `DELETE /searches/:id` | Ya puede existir | Eliminar búsqueda |
-| `PATCH /searches/:id` | Opcional: `isActiveForMatch` | Toggle activa/inactiva para Mis match |
-| `GET /me/match` | Nuevo | Feed agregado de búsquedas activas, orden like > favoritos > resto |
-| `GET /alerts/deliveries` o similar | Nuevo o extender | Listado de AlertDelivery para el usuario (por suscripción o global) |
-| `GET /searches/:id/alert-deliveries` | Nuevo | AlertDelivery de las suscripciones de esa búsqueda |
+| Endpoint                             | Cambio                       | Notas                                                               |
+| ------------------------------------ | ---------------------------- | ------------------------------------------------------------------- |
+| `PUT /searches/:id`                  | Crear si no existe           | Editar nombre, queryText, filters                                   |
+| `DELETE /searches/:id`               | Ya puede existir             | Eliminar búsqueda                                                   |
+| `PATCH /searches/:id`                | Opcional: `isActiveForMatch` | Toggle activa/inactiva para Mis match                               |
+| `GET /me/match`                      | Nuevo                        | Feed agregado de búsquedas activas, orden like > favoritos > resto  |
+| `GET /alerts/deliveries` o similar   | Nuevo o extender             | Listado de AlertDelivery para el usuario (por suscripción o global) |
+| `GET /searches/:id/alert-deliveries` | Nuevo                        | AlertDelivery de las suscripciones de esa búsqueda                  |
 
 ---
 
 ## 6. Cambios de modelo (opcional)
 
-| Modelo | Campo | Tipo | Descripción |
-|--------|-------|------|-------------|
+| Modelo      | Campo            | Tipo                  | Descripción                                           |
+| ----------- | ---------------- | --------------------- | ----------------------------------------------------- |
 | SavedSearch | isActiveForMatch | Boolean, default true | Si true, esta búsqueda aporta propiedades a Mis match |
 
 Si no se quiere cambiar el schema, "activas" = todas las SavedSearch del usuario (o solo la activeSearchId).

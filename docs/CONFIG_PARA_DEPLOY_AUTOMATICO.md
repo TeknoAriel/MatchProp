@@ -6,12 +6,12 @@
 
 ## Checklist (orden recomendado)
 
-| # | Qué hacer | Dónde | Estado |
-|---|-----------|-------|--------|
-| 1 | Activar **Allow auto-merge** en Pull Requests | [Settings → General → Pull Requests](https://github.com/TeknoAriel/MatchProp/settings) | [ ] |
-| 2 | Workflow permissions: **Read and write** | [Settings → Actions](https://github.com/TeknoAriel/MatchProp/settings/actions) | [ ] |
-| 3 | Crear secret **AUTOMERGE_TOKEN** (PAT con scope `repo`) | [Settings → Secrets → Actions](https://github.com/TeknoAriel/MatchProp/settings/secrets/actions) | [ ] |
-| 4 | Branch protection `main`: **0 aprobaciones**, **sin** "conversation resolution" | [Branch protection](https://github.com/TeknoAriel/MatchProp/settings/branches) | [ ] |
+| #   | Qué hacer                                                                       | Dónde                                                                                            | Estado |
+| --- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------ |
+| 1   | Activar **Allow auto-merge** en Pull Requests                                   | [Settings → General → Pull Requests](https://github.com/TeknoAriel/MatchProp/settings)           | [ ]    |
+| 2   | Workflow permissions: **Read and write**                                        | [Settings → Actions](https://github.com/TeknoAriel/MatchProp/settings/actions)                   | [ ]    |
+| 3   | Crear secret **AUTOMERGE_TOKEN** (PAT con scope `repo`)                         | [Settings → Secrets → Actions](https://github.com/TeknoAriel/MatchProp/settings/secrets/actions) | [ ]    |
+| 4   | Branch protection `main`: **0 aprobaciones**, **sin** "conversation resolution" | [Branch protection](https://github.com/TeknoAriel/MatchProp/settings/branches)                   | [ ]    |
 
 ---
 
@@ -35,8 +35,8 @@ Ver **`docs/SETUP_UNA_VEZ_SIN_INTERVENCION.md`** para instrucciones paso a paso 
 
 ## Si algo falla
 
-| Problema | Solución |
-|----------|----------|
-| PR no se mergea solo | Verificar AUTOMERGE_TOKEN y branch protection (0 aprobaciones) |
-| CI falla | El agente corrige y vuelve a pushear |
-| PR no se crea | Ejecutar manualmente: Actions → Deploy auto (PR + automerge) → Run workflow |
+| Problema             | Solución                                                                    |
+| -------------------- | --------------------------------------------------------------------------- |
+| PR no se mergea solo | Verificar AUTOMERGE_TOKEN y branch protection (0 aprobaciones)              |
+| CI falla             | El agente corrige y vuelve a pushear                                        |
+| PR no se crea        | Ejecutar manualmente: Actions → Deploy auto (PR + automerge) → Run workflow |

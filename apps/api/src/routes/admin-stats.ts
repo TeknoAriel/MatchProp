@@ -96,7 +96,14 @@ export async function adminStatsRoutes(fastify: FastifyInstance) {
           }),
       ]);
 
-      const [manualPlanGrantsByPlan, visitsUpcoming, visitsScheduledInRange, alertsActive, matchesInRange, analyticsByEvent] = await Promise.all([
+      const [
+        manualPlanGrantsByPlan,
+        visitsUpcoming,
+        visitsScheduledInRange,
+        alertsActive,
+        matchesInRange,
+        analyticsByEvent,
+      ] = await Promise.all([
         prisma.subscription
           .groupBy({
             by: ['plan'],

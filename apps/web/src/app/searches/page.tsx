@@ -136,7 +136,9 @@ export default function SearchesPage() {
     if (!editingId || editSaving) return;
     setEditSaving(true);
     try {
-      let body: { name?: string; text?: string; filters?: unknown } = { name: editName.trim() || undefined };
+      let body: { name?: string; text?: string; filters?: unknown } = {
+        name: editName.trim() || undefined,
+      };
       if (editText.trim().length >= 3) {
         const parseRes = await fetch(`${API_BASE}/assistant/search`, {
           method: 'POST',
@@ -189,11 +191,20 @@ export default function SearchesPage() {
       });
       if (res.ok) {
         setSubsBySearch((prev) => {
-          const base = prev[searchId] ?? { NEW_LISTING: null, PRICE_DROP: null, BACK_ON_MARKET: null };
+          const base = prev[searchId] ?? {
+            NEW_LISTING: null,
+            PRICE_DROP: null,
+            BACK_ON_MARKET: null,
+          };
           const updated: Record<AlertType, SubState> = {
-            NEW_LISTING: type === 'NEW_LISTING' ? { ...sub, isEnabled: enable } : (base.NEW_LISTING ?? null),
-            PRICE_DROP: type === 'PRICE_DROP' ? { ...sub, isEnabled: enable } : (base.PRICE_DROP ?? null),
-            BACK_ON_MARKET: type === 'BACK_ON_MARKET' ? { ...sub, isEnabled: enable } : (base.BACK_ON_MARKET ?? null),
+            NEW_LISTING:
+              type === 'NEW_LISTING' ? { ...sub, isEnabled: enable } : (base.NEW_LISTING ?? null),
+            PRICE_DROP:
+              type === 'PRICE_DROP' ? { ...sub, isEnabled: enable } : (base.PRICE_DROP ?? null),
+            BACK_ON_MARKET:
+              type === 'BACK_ON_MARKET'
+                ? { ...sub, isEnabled: enable }
+                : (base.BACK_ON_MARKET ?? null),
           };
           return { ...prev, [searchId]: updated };
         });
@@ -208,11 +219,22 @@ export default function SearchesPage() {
       if (res.ok) {
         const data = await res.json();
         setSubsBySearch((prev) => {
-          const base = prev[searchId] ?? { NEW_LISTING: null, PRICE_DROP: null, BACK_ON_MARKET: null };
+          const base = prev[searchId] ?? {
+            NEW_LISTING: null,
+            PRICE_DROP: null,
+            BACK_ON_MARKET: null,
+          };
           const updated: Record<AlertType, SubState> = {
-            NEW_LISTING: type === 'NEW_LISTING' ? { id: data.id, isEnabled: true } : (base.NEW_LISTING ?? null),
-            PRICE_DROP: type === 'PRICE_DROP' ? { id: data.id, isEnabled: true } : (base.PRICE_DROP ?? null),
-            BACK_ON_MARKET: type === 'BACK_ON_MARKET' ? { id: data.id, isEnabled: true } : (base.BACK_ON_MARKET ?? null),
+            NEW_LISTING:
+              type === 'NEW_LISTING'
+                ? { id: data.id, isEnabled: true }
+                : (base.NEW_LISTING ?? null),
+            PRICE_DROP:
+              type === 'PRICE_DROP' ? { id: data.id, isEnabled: true } : (base.PRICE_DROP ?? null),
+            BACK_ON_MARKET:
+              type === 'BACK_ON_MARKET'
+                ? { id: data.id, isEnabled: true }
+                : (base.BACK_ON_MARKET ?? null),
           };
           return { ...prev, [searchId]: updated };
         });

@@ -201,14 +201,16 @@ export default function StatsPage() {
         <div className="border rounded p-3 text-sm">
           <div className="text-gray-600">Analytics</div>
           <div className="text-xs mt-1 space-y-0.5">
-            {overview.analyticsByEvent && Object.keys(overview.analyticsByEvent).length > 0
-              ? Object.entries(overview.analyticsByEvent).map(([k, v]) => (
-                  <div key={k} className="flex justify-between gap-2">
-                    <span className="text-gray-500 truncate">{k}</span>
-                    <span className="font-medium">{v}</span>
-                  </div>
-                ))
-              : <span className="text-gray-500">—</span>}
+            {overview.analyticsByEvent && Object.keys(overview.analyticsByEvent).length > 0 ? (
+              Object.entries(overview.analyticsByEvent).map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-2">
+                  <span className="text-gray-500 truncate">{k}</span>
+                  <span className="font-medium">{v}</span>
+                </div>
+              ))
+            ) : (
+              <span className="text-gray-500">—</span>
+            )}
           </div>
         </div>
       </div>

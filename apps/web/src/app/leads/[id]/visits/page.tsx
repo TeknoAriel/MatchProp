@@ -273,7 +273,8 @@ export default function LeadVisitsPage() {
             <span className="text-3xl block mb-2">📅</span>
             <p className="text-[var(--mp-muted)] font-medium">Sin visitas agendadas</p>
             <p className="text-sm text-[var(--mp-muted)] mt-1">
-              Elegí un horario sugerido arriba o ingresá fecha y hora para coordinar con la inmobiliaria.
+              Elegí un horario sugerido arriba o ingresá fecha y hora para coordinar con la
+              inmobiliaria.
             </p>
           </div>
         ) : (

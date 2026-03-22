@@ -254,38 +254,36 @@ export default function DashboardPage() {
       </div>
 
       {/* Mis match y Mis alertas — destacados */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-          <Link
-            href="/me/match"
-            className="block p-4 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/25 hover:shadow-xl transition-shadow"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium opacity-90">Mis match</p>
-                <p className="text-xs opacity-75 mt-0.5">
-                  Propiedades de tus búsquedas, ordenadas por like y favoritos
-                </p>
-              </div>
-              <span className="text-3xl">🔥</span>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+        <Link
+          href="/me/match"
+          className="block p-4 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/25 hover:shadow-xl transition-shadow"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium opacity-90">Mis match</p>
+              <p className="text-xs opacity-75 mt-0.5">
+                Propiedades de tus búsquedas, ordenadas por like y favoritos
+              </p>
             </div>
-          </Link>
-          <Link
-            href="/alerts"
-            className="block p-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25 hover:shadow-xl transition-shadow"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium opacity-90">Mis alertas</p>
-                <p className="text-xs opacity-75 mt-0.5">
-                  Resultado de todas las alertas activas
-                </p>
-              </div>
-              <span className="text-3xl">🔔</span>
+            <span className="text-3xl">🔥</span>
+          </div>
+        </Link>
+        <Link
+          href="/alerts"
+          className="block p-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25 hover:shadow-xl transition-shadow"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium opacity-90">Mis alertas</p>
+              <p className="text-xs opacity-75 mt-0.5">Resultado de todas las alertas activas</p>
             </div>
-          </Link>
-        </div>
+            <span className="text-3xl">🔔</span>
+          </div>
+        </Link>
+      </div>
 
-        {/* Stats rápidos */}
+      {/* Stats rápidos */}
       {recentMatches > 0 && (
         <Link
           href="/feed"
@@ -294,7 +292,9 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-[var(--mp-muted)]">Propiedades disponibles</p>
-              <p className="text-2xl font-bold text-[var(--mp-foreground)]">{recentMatches.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-[var(--mp-foreground)]">
+                {recentMatches.toLocaleString()}
+              </p>
             </div>
             <span className="text-3xl">🏠</span>
           </div>

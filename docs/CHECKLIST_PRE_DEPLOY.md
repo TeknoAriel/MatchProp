@@ -12,6 +12,7 @@ pnpm run pre-deploy:verify
 ```
 
 Esto ejecuta:
+
 - Build shared
 - Typecheck (todos los paquetes)
 - Build api + web + admin
@@ -25,11 +26,11 @@ Esto ejecuta:
 
 Los cambios actuales incluyen:
 
-| Área | Archivos |
-|------|----------|
-| **API** | `alerts.ts`, `auth.ts`, `searches.ts` |
-| **Web** | `login`, `register`, `alerts`, `dashboard`, `searches`, `me/match`, `AppShell`, etc. |
-| **Nuevos** | `me/match/`, `register/` |
+| Área       | Archivos                                                                             |
+| ---------- | ------------------------------------------------------------------------------------ |
+| **API**    | `alerts.ts`, `auth.ts`, `searches.ts`                                                |
+| **Web**    | `login`, `register`, `alerts`, `dashboard`, `searches`, `me/match`, `AppShell`, etc. |
+| **Nuevos** | `me/match/`, `register/`                                                             |
 
 ---
 
@@ -106,6 +107,7 @@ Esto ejecuta `prisma generate` y `prisma migrate deploy`.
 ## 6. Variables de entorno en producción
 
 Ver [PROD.md](./PROD.md) para:
+
 - `DEMO_MODE=0` en prod
 - `COOKIE_SECURE=true`
 - `CORS_ORIGINS`, `JWT_SECRET`, `DATABASE_URL`

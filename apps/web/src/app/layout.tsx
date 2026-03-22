@@ -12,14 +12,24 @@ export const metadata: Metadata = {
   title: { default: PRODUCT_NAME, template: `%s | ${PRODUCT_NAME}` },
   description:
     'Buscá y encontrá tu próximo inmueble. Match tipo Tinder, listas, alertas y consultas directas con inmobiliarias.',
-  keywords: ['inmuebles', 'propiedades', 'alquiler', 'venta', 'búsqueda inmobiliaria', 'Palermo', 'Rosario', 'CABA'],
+  keywords: [
+    'inmuebles',
+    'propiedades',
+    'alquiler',
+    'venta',
+    'búsqueda inmobiliaria',
+    'Palermo',
+    'Rosario',
+    'CABA',
+  ],
   openGraph: {
     type: 'website',
     locale: 'es_AR',
     siteName: PRODUCT_NAME,
     url: APP_URL,
     title: PRODUCT_NAME,
-    description: 'Encontrá tu próximo hogar. Match tipo Tinder, alertas y consultas con inmobiliarias.',
+    description:
+      'Encontrá tu próximo hogar. Match tipo Tinder, alertas y consultas con inmobiliarias.',
   },
   twitter: { card: 'summary_large_image' },
   alternates: { canonical: APP_URL },

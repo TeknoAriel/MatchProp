@@ -54,7 +54,9 @@ export default function MyMatchPage() {
     }
     if (!res.ok) return [];
     const data = await res.json();
-    return (data.items ?? []).map(normalizeCard).filter((c: ListingCard | null): c is ListingCard => c !== null);
+    return (data.items ?? [])
+      .map(normalizeCard)
+      .filter((c: ListingCard | null): c is ListingCard => c !== null);
   }, [router]);
 
   useEffect(() => {
@@ -74,8 +76,8 @@ export default function MyMatchPage() {
           const sorted = [...raw].sort((a, b) => {
             const sa = status[a.id];
             const sb = status[b.id];
-            const scoreA = (sa?.inLike ? 0 : sa?.inFavorite ? 1 : 2);
-            const scoreB = (sb?.inLike ? 0 : sb?.inFavorite ? 1 : 2);
+            const scoreA = sa?.inLike ? 0 : sa?.inFavorite ? 1 : 2;
+            const scoreB = sb?.inLike ? 0 : sb?.inFavorite ? 1 : 2;
             return scoreA - scoreB;
           });
           setItems(sorted);
@@ -151,10 +153,7 @@ export default function MyMatchPage() {
               Propiedades de tus búsquedas activas. Primero like 👍, luego favoritos ★.
             </p>
           </div>
-          <Link
-            href="/dashboard"
-            className="text-sm text-sky-600 hover:underline"
-          >
+          <Link href="/dashboard" className="text-sm text-sky-600 hover:underline">
             ← Inicio
           </Link>
         </div>
@@ -221,7 +220,9 @@ export default function MyMatchPage() {
                         ? 'bg-amber-500 text-white'
                         : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
                     }`}
-                    title={listingsStatus[card.id]?.inFavorite ? 'En favoritos' : 'Agregar a favoritos'}
+                    title={
+                      listingsStatus[card.id]?.inFavorite ? 'En favoritos' : 'Agregar a favoritos'
+                    }
                   >
                     ★
                   </button>

@@ -35,4 +35,3 @@ No tocamos Neon, Vercel ni claves compartidas. Solo esto:
 2. CI corre
 3. Cuando CI pasa → merge automático con GITHUB_TOKEN
 4. Vercel despliega
-

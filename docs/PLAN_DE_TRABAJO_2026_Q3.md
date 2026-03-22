@@ -23,11 +23,11 @@ Plan posterior a Sprints 1–6. Alineado a [masterplan.md](./masterplan.md), [FO
 
 ## Hitos Q3
 
-| Hito | Objetivo | Sprints | Fecha aprox. |
-|------|----------|---------|--------------|
-| **H4** | Crecimiento y conversión | Sprint 7, 8 | Julio 2026 |
-| **H5** | Operación y escalabilidad | Sprint 9, 10 | Agosto 2026 |
-| **H6** | Producto avanzado | Sprint 11, 12 | Septiembre 2026 |
+| Hito   | Objetivo                  | Sprints       | Fecha aprox.    |
+| ------ | ------------------------- | ------------- | --------------- |
+| **H4** | Crecimiento y conversión  | Sprint 7, 8   | Julio 2026      |
+| **H5** | Operación y escalabilidad | Sprint 9, 10  | Agosto 2026     |
+| **H6** | Producto avanzado         | Sprint 11, 12 | Septiembre 2026 |
 
 ---
 
@@ -36,11 +36,11 @@ Plan posterior a Sprints 1–6. Alineado a [masterplan.md](./masterplan.md), [FO
 **Duración:** 2 semanas  
 **Objetivo:** Nuevos usuarios entienden el valor y completan primera acción (guardar búsqueda o like).
 
-| # | Tarea | DoD | Estado |
-|---|-------|-----|--------|
-| 7.1 | Tour inicial (opcional) | Tooltip o modal en primera visita: “Buscá qué querés → te matcheamos” | Pendiente |
+| #   | Tarea                     | DoD                                                                      | Estado    |
+| --- | ------------------------- | ------------------------------------------------------------------------ | --------- |
+| 7.1 | Tour inicial (opcional)   | Tooltip o modal en primera visita: “Buscá qué querés → te matcheamos”    | Pendiente |
 | 7.2 | Empty state feed mejorado | Si no hay búsqueda activa: CTA claro a /assistant con mensaje orientador | Pendiente |
-| 7.3 | Métricas funnel | trackEvent: `signup_completed`, `first_search_saved`, `first_like` | Pendiente |
+| 7.3 | Métricas funnel           | trackEvent: `signup_completed`, `first_search_saved`, `first_like`       | Pendiente |
 
 **Gates:** Usuario nuevo llega a guardar búsqueda o like en < 2 min desde signup.
 
@@ -51,11 +51,11 @@ Plan posterior a Sprints 1–6. Alineado a [masterplan.md](./masterplan.md), [FO
 **Duración:** 2 semanas  
 **Objetivo:** Usuario vuelve cuando hay novedades (alertas, matches, respuestas).
 
-| # | Tarea | DoD | Estado |
-|---|-------|-----|--------|
-| 8.1 | Badge de notificaciones no leídas | Indicador en navbar; GET /me/notifications con unread count | Pendiente |
-| 8.2 | Email alertas (SendGrid) | Si SendGrid configurado: envío al crear AlertDelivery | Pendiente |
-| 8.3 | Landing alertas | CTA en /alerts si no hay suscripciones: “Activá alertas para no perderte nada” | Pendiente |
+| #   | Tarea                             | DoD                                                                            | Estado    |
+| --- | --------------------------------- | ------------------------------------------------------------------------------ | --------- |
+| 8.1 | Badge de notificaciones no leídas | Indicador en navbar; GET /me/notifications con unread count                    | Pendiente |
+| 8.2 | Email alertas (SendGrid)          | Si SendGrid configurado: envío al crear AlertDelivery                          | Pendiente |
+| 8.3 | Landing alertas                   | CTA en /alerts si no hay suscripciones: “Activá alertas para no perderte nada” | Pendiente |
 
 **Gates:** Usuario con alerta activa recibe aviso de nueva propiedad (in-app o email).
 
@@ -66,10 +66,10 @@ Plan posterior a Sprints 1–6. Alineado a [masterplan.md](./masterplan.md), [FO
 **Duración:** 2 semanas  
 **Objetivo:** Visibilidad de errores, latencias y estado de integraciones.
 
-| # | Tarea | DoD | Estado |
-|---|-------|-----|--------|
-| 9.1 | Health extendido | GET /health incluye: DB, cron lastRun, outbox PENDING count | Pendiente |
-| 9.2 | Admin dashboard operativa | Sección en /stats: CrmPushOutbox (PENDING/FAILED), cron status | Pendiente |
+| #   | Tarea                            | DoD                                                             | Estado    |
+| --- | -------------------------------- | --------------------------------------------------------------- | --------- |
+| 9.1 | Health extendido                 | GET /health incluye: DB, cron lastRun, outbox PENDING count     | Pendiente |
+| 9.2 | Admin dashboard operativa        | Sección en /stats: CrmPushOutbox (PENDING/FAILED), cron status  | Pendiente |
 | 9.3 | Alertas Slack/Discord (opcional) | Webhook en smoke-prod fail; documentar en ESTABILIDAD_Y_RELEASE | Pendiente |
 
 **Gates:** Admin puede diagnosticar fallas sin acceder a logs raw.
@@ -81,11 +81,11 @@ Plan posterior a Sprints 1–6. Alineado a [masterplan.md](./masterplan.md), [FO
 **Duración:** 2 semanas  
 **Objetivo:** Base lista para mayor volumen; resolver warnings.
 
-| # | Tarea | DoD | Estado |
-|---|-------|-----|--------|
-| 10.1 | Punycode userland | Sustituir `punycode` por `tr46` o similar; tests verdes | Pendiente |
+| #    | Tarea               | DoD                                                                                 | Estado    |
+| ---- | ------------------- | ----------------------------------------------------------------------------------- | --------- |
+| 10.1 | Punycode userland   | Sustituir `punycode` por `tr46` o similar; tests verdes                             | Pendiente |
 | 10.2 | Índices DB críticos | Revisar explain de queries lentos; índices para feed/listings por status+lastSeenAt | Pendiente |
-| 10.3 | Lighthouse score | Landing y /buscar/[zona]: Performance > 80, SEO > 90 | Pendiente |
+| 10.3 | Lighthouse score    | Landing y /buscar/[zona]: Performance > 80, SEO > 90                                | Pendiente |
 
 **Gates:** Sin warnings punycode; feed con 500+ items fluido.
 
@@ -96,11 +96,11 @@ Plan posterior a Sprints 1–6. Alineado a [masterplan.md](./masterplan.md), [FO
 **Duración:** 2 semanas  
 **Objetivo:** Inmobiliarias ven valor de “interesados” y flujo de pago B2B claro.
 
-| # | Tarea | DoD | Estado |
-|---|-------|-----|--------|
+| #    | Tarea                 | DoD                                                                                       | Estado    |
+| ---- | --------------------- | ----------------------------------------------------------------------------------------- | --------- |
 | 11.1 | Inbox matches (admin) | UI unificada: lista de MatchEvent con filtro por listing/source; link a “Ver interesados” | Pendiente |
-| 11.2 | Wallet UI (admin/org) | Si org tiene wallet: mostrar balance, historial, CTA recarga | Pendiente |
-| 11.3 | Lead PENDING → débito | Documentar flujo: activación lead descontando wallet B2B | Pendiente |
+| 11.2 | Wallet UI (admin/org) | Si org tiene wallet: mostrar balance, historial, CTA recarga                              | Pendiente |
+| 11.3 | Lead PENDING → débito | Documentar flujo: activación lead descontando wallet B2B                                  | Pendiente |
 
 **Gates:** Inmobiliaria con wallet puede activar lead y ver débito.
 
@@ -111,11 +111,11 @@ Plan posterior a Sprints 1–6. Alineado a [masterplan.md](./masterplan.md), [FO
 **Duración:** 2 semanas  
 **Objetivo:** Funcionalidades diferenciales; trimestre cerrado.
 
-| # | Tarea | DoD | Estado |
-|---|-------|-----|--------|
-| 12.1 | Búsqueda por voz (asistente) | Botón micrófono ya existe; validar flujo E2E y documentar | Pendiente |
-| 12.2 | Frecuencia alertas | Opción en AlertSubscription: diaria / cada 6h (default) | Pendiente |
-| 12.3 | Cierre Q3 | ALINEACION_MASTERPLAN, FOCO_2026, PLAN_DE_TRABAJO actualizados; smoke prod verde | Pendiente |
+| #    | Tarea                        | DoD                                                                              | Estado    |
+| ---- | ---------------------------- | -------------------------------------------------------------------------------- | --------- |
+| 12.1 | Búsqueda por voz (asistente) | Botón micrófono ya existe; validar flujo E2E y documentar                        | Pendiente |
+| 12.2 | Frecuencia alertas           | Opción en AlertSubscription: diaria / cada 6h (default)                          | Pendiente |
+| 12.3 | Cierre Q3                    | ALINEACION_MASTERPLAN, FOCO_2026, PLAN_DE_TRABAJO actualizados; smoke prod verde | Pendiente |
 
 **Gates:** Docs al día; features opcionales documentados.
 
