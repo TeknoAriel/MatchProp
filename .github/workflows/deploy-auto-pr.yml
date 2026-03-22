@@ -1,6 +1,6 @@
 # Crea PR a main y agrega etiqueta automerge en cada push a un branch.
-# Flujo: push → PR creado/actualizado → etiqueta automerge → CI pasa → merge automático → Vercel deploy.
-# El usuario/agente solo hace: commit + push. Nada más.
+# Flujo: push → format/lint → verificar build → PR → CI pasa → merge → Vercel deploy.
+# Opción 2: 3 proyectos Vercel (web, admin, api) con mayor estabilidad.
 name: Deploy auto (PR + automerge)
 
 on:
@@ -24,6 +24,10 @@ permissions:
 
 env:
   PNPM_VERSION: '9.0.0'
+
+concurrency:
+  group: deploy-auto-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   create-or-update-pr:
@@ -49,6 +53,16 @@ jobs:
         run: |
           pnpm format
           pnpm lint:fix
+
+      - name: Verificar build antes de push
+        run: |
+          pnpm build:shared
+          pnpm --filter api exec prisma generate
+          pnpm -r run typecheck
+          pnpm --filter web build
+
+      - name: Push format/lint si hay cambios
+        run: |
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"

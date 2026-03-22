@@ -3,13 +3,17 @@
 > Última actualización: 2026-03-18
 > Estado: ✅ **OPERATIVO**
 
-## Resumen de Proyectos
+## Resumen de Proyectos (Opción 2: 3 proyectos, mayor estabilidad)
+
+Mantenemos 3 proyectos Vercel separados para deploys independientes. El workflow verifica build antes de push para evitar errores.
 
 | Proyecto                | URL Producción                             | Root Directory | Framework | Estado |
 | ----------------------- | ------------------------------------------ | -------------- | --------- | ------ |
 | **match-prop-api-1jte** | `https://match-prop-admin-dsvv.vercel.app` | `apps/api`     | Other     | ✅ OK  |
 | **match-prop-web**      | `https://match-prop-web.vercel.app`        | `apps/web`     | Next.js   | ✅ OK  |
 | **match-prop-admin**    | `https://match-prop-admin.vercel.app`      | `apps/admin`   | Next.js   | ✅ OK  |
+
+**Estabilidad:** El workflow Deploy auto ejecuta typecheck + build web antes de hacer push de format/lint.
 
 ## Repositorio GitHub
 
