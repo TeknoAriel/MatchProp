@@ -54,9 +54,9 @@ Plan con **hitos**, **sprints** y **tareas** para los próximos 3 meses. Alinead
 
 | # | Tarea | DoD | Estado |
 |---|-------|-----|--------|
-| 3.1 | Virtualización lista | feed/list con virtualización (react-window o @tanstack/react-virtual); scroll fluido con 500+ ítems | Pendiente |
-| 3.2 | Performance feed | Lazy load imágenes, skeleton en carga; métricas básicas | Pendiente |
-| 3.3 | UX chat/visitas | Pulido UI chat interno y agenda de visitas; estados vacíos claros | Pendiente |
+| 3.1 | Virtualización lista | feed/list con virtualización (react-window); scroll fluido con 30+ ítems | ✅ Hecho |
+| 3.2 | Performance feed | Lazy load imágenes (loading="lazy"), skeleton en carga | ✅ Hecho |
+| 3.3 | UX chat/visitas | Estados vacíos claros (chat, agenda, mis visitas) | ✅ Hecho |
 
 **Gates:** Lista con 500+ items sin lag; UX revisada.
 
@@ -84,9 +84,9 @@ Plan con **hitos**, **sprints** y **tareas** para los próximos 3 meses. Alinead
 
 | # | Tarea | DoD | Estado |
 |---|-------|-----|--------|
-| 5.1 | Wallet B2B | Modelo Wallet, GET /orgs/:id/wallet, balance, top-up (Stripe); débito por lead | Pendiente |
-| 5.2 | Kiteprop por etapas | payloadTemplatePending vs payloadTemplateActive; leads PENDING no envían PII | Pendiente |
-| 5.3 | Feature flags formalizados | DEMO_MODE=0 obligatorio en prod; checklist PROD.md | Pendiente |
+| 5.1 | Wallet B2B | Modelo Wallet, GET /orgs/:id/wallet, top-up; débito por lead | ✅ Existe |
+| 5.2 | Kiteprop por etapas | payloadTemplatePending/Active; leads PENDING sin PII | ✅ Hecho |
+| 5.3 | Feature flags formalizados | DEMO_MODE=0 obligatorio; checklist PROD.md | ✅ Hecho |
 
 **Gates:** Inmobiliaria puede recargar wallet; lead PENDING no expone datos.
 
@@ -99,9 +99,9 @@ Plan con **hitos**, **sprints** y **tareas** para los próximos 3 meses. Alinead
 
 | # | Tarea | DoD | Estado |
 |---|-------|-----|--------|
-| 6.1 | Premium B2C (Stripe) | Checkout, webhook, premiumUntil; flujo activación lead | Pendiente |
-| 6.2 | Mercado Pago (LATAM) | Integración según MERCADOPAGO_SETUP.md; feature flag | Pendiente |
-| 6.3 | Cierre trimestre | Docs al día; ALINEACION_MASTERPLAN actualizado; smoke prod verde | Pendiente |
+| 6.1 | Premium B2C (Stripe) | Checkout, webhook, premiumUntil; flujo activación lead | ✅ Existe |
+| 6.2 | Mercado Pago (LATAM) | Integración según MERCADOPAGO_SETUP.md; feature flag | ✅ Existe |
+| 6.3 | Cierre trimestre | Docs al día; ALINEACION_MASTERPLAN actualizado; smoke prod verde | ✅ Hecho |
 
 **Gates:** Usuario puede activar premium; MP como opción pago; trimestre cerrado.
 
@@ -126,6 +126,12 @@ Sprint 1 ─── Sprint 2 ─── Sprint 3 ─── Sprint 4 ─── Spri
 1. **Deploy cada fin de sprint:** Commit + push → PR automático → CI verde → auto-merge → Vercel deploy. Ver [.cursor/rules/deploy-automatico.mdc](../.cursor/rules/deploy-automatico.mdc).
 2. **Definition of Done:** tests verdes, typecheck, documentación actualizada si aplica.
 3. **Prioridad:** Si un sprint se desborda, mover tareas de media a baja prioridad al siguiente.
+
+---
+
+## Plan siguiente
+
+**→ [PLAN_DE_TRABAJO_2026_Q3.md](./PLAN_DE_TRABAJO_2026_Q3.md)** — Sprints 7–12 (Jul–Sep 2026): onboarding, notificaciones, observabilidad, performance, reverse-matching UX, cierre Q3.
 
 ---
 

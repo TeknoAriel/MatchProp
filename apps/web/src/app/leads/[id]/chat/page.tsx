@@ -173,10 +173,11 @@ export default function LeadChatPage() {
 
         <div className="flex-1 overflow-y-auto rounded-2xl border border-[var(--mp-border)] bg-[var(--mp-card)] p-4 min-h-[240px] max-h-[50vh] space-y-3">
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <p className="text-[var(--mp-muted)] text-sm">Sin mensajes todavía</p>
-              <p className="text-xs text-[var(--mp-muted)] mt-1">
-                Escribí un mensaje para coordinar con la inmobiliaria.
+            <div className="flex flex-col items-center justify-center py-12 text-center min-h-[180px]">
+              <span className="text-4xl mb-3">💬</span>
+              <p className="text-[var(--mp-foreground)] font-medium">Sin mensajes todavía</p>
+              <p className="text-sm text-[var(--mp-muted)] mt-1 max-w-[240px]">
+                Escribí abajo para coordinar con la inmobiliaria. No compartas email, teléfono ni URLs.
               </p>
             </div>
           ) : (

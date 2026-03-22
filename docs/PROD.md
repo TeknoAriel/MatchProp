@@ -6,7 +6,7 @@ Guía operativa para entorno producción.
 
 ## Checklist pre-deploy
 
-- [ ] `DEMO_MODE=0` en API (obligatorio)
+- [ ] **DEMO_MODE=0** en API (obligatorio en prod; feature flag principal)
 - [ ] `COOKIE_SECURE=true` en API
 - [ ] `CORS_ORIGINS` con dominios reales (separados por coma)
 - [ ] `JWT_SECRET` y `AUTH_REFRESH_SECRET` generados (no valores dev)

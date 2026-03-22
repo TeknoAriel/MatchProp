@@ -9,6 +9,7 @@ Documento vivo: próximas tareas priorizadas y mejoras técnicas. Alineado a [ma
 | **Este archivo (`TAREAS_Y_MEJORAS.md`)** | Cola **operativa** (próximas semanas): mejoras concretas, estado “hecho / parcial / pendiente”.            |
 | **[backlog.md](./backlog.md)**           | Vista por **Epic** (E1–E8), ideas Next/Later y **deuda técnica** (DT-xxx); puede incluir filas históricas. |
 | **[FOCO_2026.md](./FOCO_2026.md)**       | Prioridades de producto del trimestre (north star, en foco / fuera de foco).                               |
+| **[PLAN_DE_TRABAJO.md](./PLAN_DE_TRABAJO.md)** | Plan con hitos, sprints (1–6) y tareas por sprint — roadmap 3 meses.                    |
 
 Regla: **no duplicar** la misma tarea en detalle en ambos; en `backlog` va la épica/ticket; aquí el seguimiento cercano.
 

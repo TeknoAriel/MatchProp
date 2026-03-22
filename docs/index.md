@@ -25,6 +25,9 @@
 | [TAREAS_Y_MEJORAS.md](./TAREAS_Y_MEJORAS.md)           | Próximas tareas priorizadas y mejoras técnicas                           |
 | [alignment-checklist.md](./alignment-checklist.md)     | Checklist alineación Masterplan ↔ repo (estado DONE/PARTIAL/NOT STARTED) |
 | [backlog.md](./backlog.md)                             | Backlog maestro — Epics, tickets MVP/Next/Later, sprints 8–9             |
+| [PLAN_DE_TRABAJO.md](./PLAN_DE_TRABAJO.md)             | Plan Sprints 1–6 (completado) — hitos, tareas, referencias               |
+| [PLAN_DE_TRABAJO_2026_Q3.md](./PLAN_DE_TRABAJO_2026_Q3.md) | Plan Q3 2026 (Sprints 7–12) — onboarding, notificaciones, operación    |
+| [SPEC_BUSQUEDAS_Y_MATCH.md](./SPEC_BUSQUEDAS_Y_MATCH.md) | Spec: Búsquedas guardadas, Mis match, Mis alertas (prioridad pre-Sprint 7) |
 | [gap-check.md](./gap-check.md)                         | Auditoría de brechas — gaps funcionales, técnicos, riesgos               |
 
 ---
