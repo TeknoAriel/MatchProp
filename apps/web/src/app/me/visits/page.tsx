@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import VisitsMonthCalendar from '../../../components/VisitsMonthCalendar';
 
 const API_BASE = '/api';
 
@@ -51,12 +52,12 @@ export default function MyVisitsPage() {
     <main className="min-h-screen p-4">
       <div className="max-w-lg mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-slate-900">Mis visitas</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Visitas agendadas</h1>
           <Link
             href="/leads"
             className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
           >
-            Consultas
+            Consultas y visitas
           </Link>
         </div>
 
@@ -110,7 +111,9 @@ export default function MyVisitsPage() {
             </div>
           </div>
         ) : (
-          <ul className="space-y-3">
+          <>
+            <VisitsMonthCalendar visits={visits} />
+            <ul className="space-y-3">
             {visits.map((v) => (
               <li
                 key={v.id}
@@ -135,6 +138,7 @@ export default function MyVisitsPage() {
               </li>
             ))}
           </ul>
+          </>
         )}
       </div>
     </main>

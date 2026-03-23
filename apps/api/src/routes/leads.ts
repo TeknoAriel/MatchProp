@@ -14,6 +14,11 @@ import {
   processLeadActivatedEvent,
 } from '../services/lead-delivery/processor.js';
 import { kitepropUserMessage } from '../services/kiteprop/error-messages.js';
+import {
+  appendMatchpropLeadRef,
+  postYumblinCallback,
+  YUMBLIN_TEST_PROPERTY_ID,
+} from '../services/kiteprop/yumblin-callback-push.js';
 import { trackEvent } from '../lib/analytics.js';
 import { filterPii } from '../lib/anti-pii.js';
 
@@ -148,12 +153,18 @@ export async function leadRoutes(fastify: FastifyInstance) {
               price: true,
               currency: true,
               locationText: true,
+              propertyType: true,
               heroImageUrl: true,
               media: {
                 orderBy: { sortOrder: 'asc' },
                 select: { url: true, sortOrder: true },
               },
             },
+          },
+          messages: {
+            where: { senderType: MessageSenderType.PUBLISHER },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
           },
           deliveryAttempts: {
             orderBy: { createdAt: 'desc' },
@@ -188,14 +199,23 @@ export async function leadRoutes(fastify: FastifyInstance) {
             }
           : listing;
 
+        const publisherReply = l.messages[0]
+          ? {
+              body: l.messages[0].body,
+              createdAt: l.messages[0].createdAt.toISOString(),
+            }
+          : null;
+
         return {
           id: l.id,
           listingId: l.listingId,
           status: l.status,
           source: l.source,
+          message: l.message,
           createdAt: l.createdAt.toISOString(),
           listing: listingOut,
           lastDelivery,
+          publisherReply,
         };
       });
     }
@@ -386,6 +406,108 @@ export async function leadRoutes(fastify: FastifyInstance) {
       }
 
       return reply.status(201).send({ id: message.id });
+    }
+  );
+
+  /**
+   * Push de prueba a Kiteprop Yumblin (property_id fijo de evaluación).
+   * Solo si ENABLE_YUMBLIN_TEST_PUSH=1. Temporal para QA.
+   */
+  fastify.post(
+    '/leads/:id/push-yumblin-test',
+    {
+      schema: {
+        tags: ['Leads'],
+        security: [{ bearerAuth: [] }],
+        params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              ok: { type: 'boolean' },
+              httpStatus: { type: 'number' },
+              detail: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      if (!envFlag('ENABLE_YUMBLIN_TEST_PUSH')) {
+        throw fastify.httpErrors.notFound();
+      }
+      const user = request.user as { userId: string };
+      const { id: leadId } = request.params as { id: string };
+
+      const lead = await prisma.lead.findFirst({
+        where: { id: leadId, userId: user.userId },
+        include: {
+          user: {
+            select: {
+              email: true,
+              profile: {
+                select: { firstName: true, lastName: true, phone: true, whatsapp: true },
+              },
+            },
+          },
+        },
+      });
+      if (!lead) throw fastify.httpErrors.notFound('Lead no encontrado');
+
+      const p = lead.user?.profile;
+      const nameParts = [p?.firstName, p?.lastName].filter(Boolean);
+      const name =
+        nameParts.length > 0 ? nameParts.join(' ').trim() : (lead.user?.email?.split('@')[0] ?? 'Usuario');
+      const email = lead.user?.email ?? 'sin-email@matchprop.local';
+      const phone =
+        (p?.phone && p.phone.trim()) ||
+        (p?.whatsapp && p.whatsapp.trim()) ||
+        '+5490000000000';
+      const baseMessage =
+        lead.message?.trim() || 'Consulta desde MatchProp (mensaje estándar).';
+      const body = appendMatchpropLeadRef(baseMessage, lead.id);
+
+      const result = await postYumblinCallback({
+        name,
+        email,
+        phone,
+        property_id: YUMBLIN_TEST_PROPERTY_ID,
+        body,
+      });
+
+      if (result.ok) {
+        await prisma.lead.update({
+          where: { id: lead.id },
+          data: {
+            status: LeadStatus.ACTIVE,
+            activationReason: ActivationReason.MANUAL_ADMIN,
+            activatedAt: new Date(),
+          },
+        });
+      }
+
+      await prisma.leadEvent.create({
+        data: {
+          leadId: lead.id,
+          type: 'YUMBLIN_TEST_CALLBACK_PUSH',
+          payloadJson: {
+            httpStatus: result.httpStatus,
+            ok: result.ok,
+            propertyId: YUMBLIN_TEST_PROPERTY_ID,
+          },
+        },
+      });
+
+      await trackEvent('yumblin_test_callback_push', {
+        userId: user.userId,
+        payload: { leadId: lead.id, httpStatus: result.httpStatus, ok: result.ok },
+      });
+
+      return reply.send({
+        ok: result.ok,
+        httpStatus: result.httpStatus,
+        detail: result.text,
+      });
     }
   );
 

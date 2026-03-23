@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { formatListingPrice } from '../lib/format-price';
 import type { SavedSearchDTO } from '@matchprop/shared';
 import { filtersToHumanSummary } from '../lib/filters-summary';
 
@@ -183,7 +184,7 @@ export default function SavedSearchCard({
                     <span className="truncate">{d.listingTitle ?? d.listingId}</span>
                     <span className="text-[var(--mp-muted)] shrink-0">
                       {d.listingPrice != null
-                        ? `${d.listingCurrency ?? 'USD'} ${d.listingPrice.toLocaleString()}`
+                        ? formatListingPrice(d.listingPrice, d.listingCurrency)
                         : ''}
                     </span>
                   </li>

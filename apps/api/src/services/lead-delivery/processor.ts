@@ -53,9 +53,28 @@ export async function processLeadCreatedEvent(
     return { processed: true, error: 'Lead not found' };
   }
 
-  // PENDING: enviar template PENDING (sin PII) vía Kiteprop
+  // PENDING: enviar template PENDING vía Kiteprop (p. ej. SendGrid/inmobiliaria). Si el envío OK → ACTIVE.
   if (lead.status === LeadStatus.PENDING) {
-    await deliverToKiteprop(lead, { stage: 'PENDING' });
+    const result = await deliverToKiteprop(lead, { stage: 'PENDING' });
+    if (result.ok) {
+      await prisma.lead.update({
+        where: { id: leadId },
+        data: { status: LeadStatus.ACTIVE },
+      });
+      if (lead.userId) {
+        await prisma.notification.create({
+          data: {
+            userId: lead.userId,
+            type: NotificationType.LEAD_SENT,
+            payload: {
+              leadId: lead.id,
+              listingId: lead.listingId,
+              listingTitle: lead.listing?.title,
+            },
+          },
+        });
+      }
+    }
     await prisma.outboxEvent.update({
       where: { id: eventId },
       data: { processedAt: new Date() },

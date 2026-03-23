@@ -23,6 +23,7 @@ type Notification = {
 
 const TYPE_LABEL: Record<string, string> = {
   LEAD_SENT: 'Consulta enviada',
+  LEAD_REPLY: 'Respuesta a tu consulta',
   ALERT_NEW_LISTING: 'Nueva publicación',
   ALERT_PRICE_DROP: 'Bajó el precio',
   ALERT_BACK_ON_MARKET: 'Volvió al mercado',

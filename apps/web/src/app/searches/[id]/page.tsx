@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { ListingCard } from '@matchprop/shared';
 import FilterChips from '../../../components/FilterChips';
 import InquiryModal from '../../../components/InquiryModal';
+import { formatListingPrice } from '../../../lib/format-price';
 import ListingCardImageCarousel from '../../../components/ListingCardImageCarousel';
 
 type ListingStatus = {
@@ -553,7 +554,7 @@ export default function SearchResultsPage() {
                     <h2 className="font-medium truncate">{card.title ?? 'Sin título'}</h2>
                     <p className="text-sm text-gray-600">
                       {card.price != null
-                        ? `${card.currency ?? 'USD'} ${card.price.toLocaleString()}`
+                        ? formatListingPrice(card.price, card.currency)
                         : 'Consultar'}
                     </p>
                     <p className="text-xs text-gray-500 truncate">{card.locationText ?? ''}</p>

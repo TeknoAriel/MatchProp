@@ -21,6 +21,7 @@
     "load:mixed": "k6 run loadtest/mixed.js",
     "load:bigdata": "k6 run loadtest/bigdata.js",
     "ingest:run": "tsx src/scripts/ingest-run.ts",
+    "ingest:yumblin:full": "tsx src/scripts/ingest-yumblin-full.ts",
     "ingest:cron": "tsx src/scripts/ingest-cron.ts",
     "ingest:fixture:refresh": "tsx src/scripts/ingest-fixture-refresh.ts",
     "alerts:run": "tsx src/scripts/alerts-run.ts",

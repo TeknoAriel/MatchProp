@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { formatListingPrice } from '../../../lib/format-price';
 
 const API_BASE = '/api';
 const PRODUCT_NAME = process.env.NEXT_PUBLIC_PRODUCT_NAME || 'MatchProp';
@@ -66,7 +67,7 @@ function ListasSharePageContent() {
                   <span className="font-medium block truncate">{item.title || 'Sin título'}</span>
                   {item.price != null && (
                     <span className="text-sm text-emerald-700">
-                      {item.currency ?? 'USD'} {item.price.toLocaleString()}
+                      {formatListingPrice(item.price, item.currency)}
                     </span>
                   )}
                   {item.locationText && (

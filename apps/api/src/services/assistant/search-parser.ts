@@ -1,7 +1,17 @@
 import type { SearchFilters } from '@matchprop/shared';
 
 const LOCATION_MAX = 200;
-const VALID_PROPERTY_TYPES = ['HOUSE', 'APARTMENT', 'LAND', 'OFFICE', 'OTHER'] as const;
+const VALID_PROPERTY_TYPES = [
+  'HOUSE',
+  'APARTMENT',
+  'PH',
+  'LAND',
+  'OFFICE',
+  'COMMERCIAL',
+  'GARAGE',
+  'WAREHOUSE',
+  'OTHER',
+] as const;
 
 function trunc(s: string): string {
   return s.trim().slice(0, LOCATION_MAX) || '';

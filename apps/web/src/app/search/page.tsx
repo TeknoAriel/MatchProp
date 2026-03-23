@@ -8,11 +8,34 @@ import { filtersToHumanSummary } from '../../lib/filters-summary';
 import InquiryModal from '../../components/InquiryModal';
 import ListingCardImageCarousel from '../../components/ListingCardImageCarousel';
 import { parseListingMediaFromApi } from '../../lib/listing-images';
+import { formatListingPrice } from '../../lib/format-price';
 
 const API_BASE = '/api';
-const PROPERTY_TYPES = ['APARTMENT', 'HOUSE', 'LAND', 'OFFICE', 'OTHER'] as const;
+const PROPERTY_TYPES = [
+  'APARTMENT',
+  'HOUSE',
+  'PH',
+  'LAND',
+  'OFFICE',
+  'COMMERCIAL',
+  'GARAGE',
+  'WAREHOUSE',
+  'OTHER',
+] as const;
+
+const PROPERTY_TYPE_LABEL: Record<string, string> = {
+  APARTMENT: 'Depto',
+  HOUSE: 'Casa',
+  PH: 'PH',
+  LAND: 'Terreno',
+  OFFICE: 'Oficina',
+  COMMERCIAL: 'Local comercial',
+  GARAGE: 'Cochera',
+  WAREHOUSE: 'Galpón / depósito',
+  OTHER: 'Otro',
+};
 const OPERATIONS = ['SALE', 'RENT'] as const;
-const CURRENCIES = ['USD', 'ARS'] as const;
+const CURRENCIES = ['USD', 'ARG', 'UF', 'CLP'] as const;
 const SORT_OPTIONS = [
   { value: 'date_desc', label: 'Más recientes' },
   { value: 'price_asc', label: 'Precio menor a mayor' },
@@ -87,7 +110,7 @@ export default function ManualSearchPage() {
   const [locationText, setLocationText] = useState('');
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
-  const [currency, setCurrency] = useState<'USD' | 'ARS'>('USD');
+  const [currency, setCurrency] = useState<'USD' | 'ARG' | 'UF' | 'CLP'>('USD');
   const [bedroomsMin, setBedroomsMin] = useState('');
   const [bedroomsMax] = useState('');
   const [bathroomsMin, setBathroomsMin] = useState('');
@@ -604,15 +627,7 @@ export default function ManualSearchPage() {
                         : 'bg-[var(--mp-bg)] text-[var(--mp-foreground)] hover:bg-slate-200/80'
                     }`}
                   >
-                    {t === 'APARTMENT'
-                      ? 'Depto'
-                      : t === 'HOUSE'
-                        ? 'Casa'
-                        : t === 'LAND'
-                          ? 'Terreno'
-                          : t === 'OFFICE'
-                            ? 'Oficina'
-                            : 'Otro'}
+                    {PROPERTY_TYPE_LABEL[t] ?? t}
                   </button>
                 ))}
               </div>
@@ -667,7 +682,9 @@ export default function ManualSearchPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
               <select
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value as 'USD' | 'ARS')}
+                onChange={(e) =>
+                  setCurrency(e.target.value as 'USD' | 'ARG' | 'UF' | 'CLP')
+                }
                 className="w-full p-2 border rounded-lg border-gray-300"
               >
                 {CURRENCIES.map((c) => (
@@ -985,7 +1002,7 @@ export default function ManualSearchPage() {
                         <div className="flex flex-wrap gap-2 mt-1">
                           <span className="text-sm font-medium">
                             {card.price != null
-                              ? `${card.currency ?? 'USD'} ${card.price.toLocaleString()}`
+                              ? formatListingPrice(card.price, card.currency)
                               : 'Consultar'}
                           </span>
                           {card.bedrooms != null && (

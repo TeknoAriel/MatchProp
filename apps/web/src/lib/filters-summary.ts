@@ -1,4 +1,5 @@
 import type { SearchFilters } from '@matchprop/shared';
+import { formatPriceAmount, normalizeListingCurrency } from './format-price';
 
 const PROPERTY_LABELS: Record<string, string> = {
   APARTMENT: 'departamento',
@@ -34,13 +35,13 @@ export function filtersToHumanSummary(f: SearchFilters | null | undefined): stri
   }
 
   if (f.priceMax != null) {
-    const curr = f.currency ?? 'USD';
-    parts.push(`hasta ${curr} ${f.priceMax.toLocaleString()}`);
+    const curr = normalizeListingCurrency(f.currency ?? 'USD');
+    parts.push(`hasta ${curr} ${formatPriceAmount(f.priceMax, curr)}`);
   }
 
   if (f.priceMin != null && f.priceMin > 0) {
-    const curr = f.currency ?? 'USD';
-    parts.push(`desde ${curr} ${f.priceMin.toLocaleString()}`);
+    const curr = normalizeListingCurrency(f.currency ?? 'USD');
+    parts.push(`desde ${curr} ${formatPriceAmount(f.priceMin, curr)}`);
   }
 
   if (f.areaMin != null && f.areaMin > 0) {

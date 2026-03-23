@@ -1,7 +1,10 @@
 /**
  * Conector Kiteprop Difusión Yumblin (JSON).
- * URL desde IngestSourceConfig (sourcesJson.yumblin[0].url) o env KITEPROP_DIFUSION_YUMBLIN_URL.
- * Formato JSON tipo Kiteprop externalsite (id, images, property_type, for_rent, etc.).
+ * Origen del JSON (prioridad):
+ * 1. `KITEPROP_DIFUSION_YUMBLIN_FILE` — ruta a archivo local (importación manual completa).
+ * 2. `KITEPROP_DIFUSION_YUMBLIN_URL` o IngestSourceConfig (sourcesJson.yumblin[0].url).
+ * 3. URL por defecto (demo).
+ * Formato: array JSON tipo Kiteprop externalsite (id, images, property_type, for_rent, etc.).
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -61,6 +64,8 @@ export function createKitepropDifusionYumblinConnector(): SourceConnector {
   return {
     source: 'KITEPROP_DIFUSION_YUMBLIN' as ListingSource,
     fetchBatch: async ({ cursor, limit }) => {
+      const fileFromEnv = process.env.KITEPROP_DIFUSION_YUMBLIN_FILE?.trim();
+
       if (useFixture) {
         const raw = readFileSync(FIXTURE_PATH, 'utf-8');
         const items = JSON.parse(raw) as Record<string, unknown>[];
@@ -68,6 +73,17 @@ export function createKitepropDifusionYumblinConnector(): SourceConnector {
         const slice = items.slice(start, start + limit);
         const nextCursor =
           start + slice.length < items.length ? String(start + slice.length) : null;
+        return { items: slice, nextCursor };
+      }
+
+      if (fileFromEnv) {
+        const raw = readFileSync(fileFromEnv, 'utf-8');
+        const parsed = JSON.parse(raw) as unknown;
+        const items = Array.isArray(parsed) ? parsed : [];
+        const arr = items as Record<string, unknown>[];
+        const start = cursor ? parseInt(cursor, 10) || 0 : 0;
+        const slice = arr.slice(start, start + limit);
+        const nextCursor = start + slice.length < arr.length ? String(start + slice.length) : null;
         return { items: slice, nextCursor };
       }
 

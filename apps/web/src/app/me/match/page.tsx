@@ -7,6 +7,7 @@ import type { ListingCard } from '@matchprop/shared';
 import ListingCardImageCarousel from '../../../components/ListingCardImageCarousel';
 import InquiryModal from '../../../components/InquiryModal';
 import { parseListingMediaFromApi } from '../../../lib/listing-images';
+import { formatListingPrice } from '../../../lib/format-price';
 
 const API_BASE = '/api';
 
@@ -196,7 +197,7 @@ export default function MyMatchPage() {
                     <h2 className="font-medium truncate">{card.title ?? 'Sin título'}</h2>
                     <p className="text-sm text-[var(--mp-muted)]">
                       {card.price != null
-                        ? `${card.currency ?? 'USD'} ${card.price.toLocaleString()}`
+                        ? formatListingPrice(card.price, card.currency)
                         : 'Consultar'}
                     </p>
                     {card.locationText && (

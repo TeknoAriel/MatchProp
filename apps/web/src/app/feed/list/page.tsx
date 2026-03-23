@@ -13,6 +13,7 @@ import PlanErrorBlock from '../../../components/PlanErrorBlock';
 import BetaPremiumBanner from '../../../components/BetaPremiumBanner';
 import ShareModal from '../../../components/ShareModal';
 import ListingCardImageCarousel from '../../../components/ListingCardImageCarousel';
+import { formatListingPrice } from '../../../lib/format-price';
 
 const API_BASE = '/api';
 const PRODUCT_NAME = process.env.NEXT_PUBLIC_PRODUCT_NAME || 'MatchProp';
@@ -769,7 +770,7 @@ function FeedListPageContent() {
                         <div className="flex flex-wrap gap-2 mt-2">
                           <span className="text-sm font-medium text-gray-800">
                             {card.price != null
-                              ? `${card.currency ?? 'USD'} ${card.price.toLocaleString()}`
+                              ? formatListingPrice(card.price, card.currency)
                               : 'Consultar'}
                           </span>
                           {card.bedrooms != null && (
@@ -1057,7 +1058,7 @@ function FeedListPageContent() {
                       <div className="flex flex-wrap gap-2 mt-2">
                         <span className="text-sm font-medium text-gray-800">
                           {card.price != null
-                            ? `${card.currency ?? 'USD'} ${card.price.toLocaleString()}`
+                            ? formatListingPrice(card.price, card.currency)
                             : 'Consultar'}
                         </span>
                         {card.bedrooms != null && (

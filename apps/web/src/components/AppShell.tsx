@@ -14,7 +14,7 @@ const NAV_ITEMS = [
   { href: '/me/saved', label: 'Favoritos', icon: '⭐' },
   { href: '/searches', label: 'Búsquedas', icon: '📁' },
   { href: '/alerts', label: 'Alertas', icon: '🔔' },
-  { href: '/leads', label: 'Consultas', icon: '💬' },
+  { href: '/leads', label: 'Consultas y visitas', icon: '💬' },
   { href: '/me/profile', label: 'Perfil', icon: '👤' },
 ];
 
@@ -23,7 +23,7 @@ const MAS_ITEMS = [
   { href: '/search/map', label: 'Ver en mapa', icon: '🗺️', desc: 'Propiedades con ubicación' },
   { href: '/searches', label: 'Mis búsquedas', icon: '📁', desc: 'Búsquedas guardadas' },
   { href: '/alerts', label: 'Alertas', icon: '🔔', desc: 'Avisos de nuevas propiedades' },
-  { href: '/leads', label: 'Consultas', icon: '💬', desc: 'Contactos con inmobiliarias' },
+  { href: '/leads', label: 'Consultas y visitas', icon: '💬', desc: 'Consultas y visitas agendadas' },
   { href: '/me/profile', label: 'Mi perfil', icon: '👤', desc: 'Datos y preferencias' },
 ];
 

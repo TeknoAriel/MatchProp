@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import type { ListingCard } from '@matchprop/shared';
 import ListingCardImageCarousel from './ListingCardImageCarousel';
+import { formatListingPrice } from '../lib/format-price';
 
 interface SwipeCardProps {
   card: ListingCard;
@@ -13,7 +14,7 @@ interface SwipeCardProps {
 
 export default function SwipeCard({ card, onClick, showInvestorLink }: SwipeCardProps) {
   const priceText =
-    card.price != null ? `${card.currency ?? 'USD'} ${card.price.toLocaleString()}` : 'Consultar';
+    card.price != null ? formatListingPrice(card.price, card.currency) : 'Consultar';
   const zoneText = card.locationText ?? (card.bedrooms != null ? `${card.bedrooms} amb` : '');
 
   return (

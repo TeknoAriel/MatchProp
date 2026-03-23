@@ -24,6 +24,7 @@ Configuración según documentación Kiteprop. Formato JSON:
 - **externalsite:** Token Kiteprop (KITEPROP_EXTERNALSITE). URL por defecto incluida.
 - **yumblin:** Producción.
 - **URL alternativa:** `KITEPROP_EXTERNALSITE_URL`, `KITEPROP_DIFUSION_YUMBLIN_URL` en .env.
+- **Importación manual completa Yumblin (sin tocar el cron):** `pnpm --filter api ingest:yumblin:full` (ver [INGEST_CRON_Y_ACTUALIZACIONES.md](./INGEST_CRON_Y_ACTUALIZACIONES.md)). Archivo local: `KITEPROP_DIFUSION_YUMBLIN_FILE=/ruta/yumblin.json` o `--file=...`.
 
 ---
 

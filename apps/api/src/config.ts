@@ -60,4 +60,6 @@ export const config = {
   crmWebhookSecret: process.env.CRM_WEBHOOK_SECRET || '',
   /** Sprint 9: débito por activación de lead (centavos). Default 100 = 1 ARS. */
   leadDebitCents: Number(process.env.LEAD_DEBIT_CENTS) || 100,
+  /** Secreto para POST /webhooks/inbound y /webhooks/kiteprop/reply (header o Bearer). */
+  webhookInboundSecret: (process.env.WEBHOOK_INBOUND_SECRET || '').trim(),
 };

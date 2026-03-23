@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { ListingCard } from '@matchprop/shared';
+import { formatListingPrice } from '../../../lib/format-price';
 import 'leaflet/dist/leaflet.css';
 
 const API_BASE = '/api';
@@ -85,10 +86,10 @@ export default function SearchMapPage() {
   useEffect(() => {
     fetch(`${API_BASE}/feed/map?limit=200`, { credentials: 'include' })
       .then((res) => {
-        if (res.status === 401) {
-          router.replace('/login');
-          return null;
-        }
+      if (res.status === 401) {
+        router.replace('/login');
+        return null;
+      }
         return res.ok ? res.json() : null;
       })
       .then((data) => {
@@ -97,7 +98,7 @@ export default function SearchMapPage() {
           setItems(normalized);
           const first = normalized[0];
           if (first) {
-            setCenter({ lat: first.lat, lng: first.lng });
+          setCenter({ lat: first.lat, lng: first.lng });
           }
         }
       })
@@ -186,20 +187,21 @@ export default function SearchMapPage() {
       <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
         {/* Map */}
         <div className={`relative ${showList ? 'h-[50%] md:h-full md:flex-1' : 'h-full flex-1'}`}>
-          <MapView
+            <MapView
             items={items.map((i) => ({
               id: i.id,
               lat: i.lat,
               lng: i.lng,
               title: i.title,
               price: i.price,
+              currency: i.currency ?? null,
               locationText: i.locationText,
             }))}
-            center={[center.lat, center.lng]}
-            bounds={bounds}
-            onBoundsChange={handleBoundsChange}
-          />
-        </div>
+              center={[center.lat, center.lng]}
+              bounds={bounds}
+              onBoundsChange={handleBoundsChange}
+            />
+          </div>
 
         {/* Property List - Horizontal scroll on mobile, vertical on desktop */}
         {showList && (
@@ -287,11 +289,11 @@ export default function SearchMapPage() {
                       </svg>
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
                         setSelectedImgError(false);
                         setSelectedImageIndex((i) => (i >= selectedImages.length - 1 ? 0 : i + 1));
                       }}
@@ -311,7 +313,7 @@ export default function SearchMapPage() {
                           d="M9 5l7 7-7 7"
                         />
                       </svg>
-                    </button>
+                                  </button>
 
                     <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
                       {selectedImages.map((_, idx) => (
@@ -339,22 +341,21 @@ export default function SearchMapPage() {
                           }`}
                           aria-label={`Ir a imagen ${idx + 1}`}
                         />
-                      ))}
-                    </div>
+                              ))}
+                            </div>
 
                     <span className="absolute top-1 right-1 text-[10px] bg-black/60 text-white px-2 py-1 rounded-full font-medium">
                       📷 {selectedImageIndex + 1}/{selectedImages.length}
-                    </span>
+                            </span>
                   </>
-                )}
-              </div>
+                            )}
+                          </div>
               <div className="flex-1 p-3 min-w-0">
                 <h3 className="font-medium text-sm truncate text-[var(--mp-foreground)]">
                   {selectedItem.title || 'Propiedad'}
                 </h3>
                 <p className="text-sm font-semibold text-sky-600">
-                  {selectedItem.currency || 'USD'}{' '}
-                  {selectedItem.price?.toLocaleString() || 'Consultar'}
+                  {formatListingPrice(selectedItem.price, selectedItem.currency)}
                 </p>
                 <p className="text-xs text-[var(--mp-muted)] truncate">
                   {selectedItem.locationText}
@@ -365,10 +366,10 @@ export default function SearchMapPage() {
                 >
                   Ver detalle →
                 </Link>
-              </div>
+                        </div>
               <button onClick={() => setSelectedId(null)} className="p-2 text-[var(--mp-muted)]">
                 ✕
-              </button>
+                        </button>
             </div>
           </div>
         </div>
@@ -403,7 +404,7 @@ function PropertyCardHorizontal({
   const hasMultiple = images.length > 1;
 
   return (
-    <button
+                        <button
       onClick={onClick}
       className={`shrink-0 w-52 h-full rounded-xl overflow-hidden border transition-all text-left bg-white ${
         isSelected
@@ -432,8 +433,8 @@ function PropertyCardHorizontal({
             <div
               role="button"
               tabIndex={0}
-              onClick={(e) => {
-                e.preventDefault();
+                              onClick={(e) => {
+                                e.preventDefault();
                 e.stopPropagation();
                 setImgError(false);
                 setImageIndex((i) => (i <= 0 ? images.length - 1 : i - 1));
@@ -456,13 +457,13 @@ function PropertyCardHorizontal({
                   d="M15 19l-7-7 7-7"
                 />
               </svg>
-            </div>
+                          </div>
 
             <div
               role="button"
               tabIndex={0}
-              onClick={(e) => {
-                e.preventDefault();
+                            onClick={(e) => {
+                              e.preventDefault();
                 e.stopPropagation();
                 setImgError(false);
                 setImageIndex((i) => (i >= images.length - 1 ? 0 : i + 1));
@@ -524,11 +525,11 @@ function PropertyCardHorizontal({
           <span className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 text-white text-xs rounded-full font-medium">
             {card.operationType === 'SALE' ? 'Venta' : 'Alquiler'}
           </span>
-        )}
-      </div>
+                        )}
+                      </div>
       <div className="p-2.5">
         <p className="text-sm font-bold text-sky-600 truncate">
-          {card.currency || 'USD'} {card.price?.toLocaleString() || 'Consultar'}
+          {formatListingPrice(card.price, card.currency)}
         </p>
         <p className="text-xs text-[var(--mp-foreground)] truncate font-medium mt-0.5">
           {card.title || 'Propiedad'}
@@ -537,9 +538,9 @@ function PropertyCardHorizontal({
         {card.bedrooms && (
           <p className="text-xs text-[var(--mp-muted)] mt-1">
             {card.bedrooms} amb {card.areaTotal ? `· ${card.areaTotal}m²` : ''}
-          </p>
-        )}
-      </div>
+              </p>
+            )}
+          </div>
     </button>
   );
 }
@@ -657,7 +658,7 @@ function PropertyCardVertical({
                     d="M9 5l7 7-7 7"
                   />
                 </svg>
-              </div>
+                  </div>
 
               <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
                 {images.map((_, idx) => (
@@ -697,10 +698,10 @@ function PropertyCardVertical({
               {card.operationType === 'SALE' ? 'Venta' : 'Alq'}
             </span>
           )}
-        </div>
+            </div>
         <div className="flex-1 p-3 min-w-0">
           <p className="text-sm font-bold text-sky-600">
-            {card.currency || 'USD'} {card.price?.toLocaleString() || 'Consultar'}
+            {formatListingPrice(card.price, card.currency)}
           </p>
           <p className="text-sm text-[var(--mp-foreground)] truncate font-medium mt-0.5">
             {card.title || 'Propiedad'}

@@ -43,4 +43,27 @@ El **buscador** usa el catálogo de propiedades en la base de datos. Ese catálo
 
 ---
 
-Ver también: [PROD.md](./PROD.md) (demo sources OFF), [TAREAS_Y_MEJORAS.md](./TAREAS_Y_MEJORAS.md).
+## Importación manual completa — Yumblin (Kiteprop JSON)
+
+No modifica el **cron de GitHub** (`.github/workflows/cron-ingest.yml`): ese workflow solo llama a `POST /cron/ingest`, que ejecuta **`KITEPROP_EXTERNALSITE`**, no Yumblin.
+
+Para volcar **todo** el JSON de difusión Yumblin en la base (por lotes de 200), usar:
+
+```bash
+cd apps/api
+# Opción A: JSON local (recomendado para dump completo)
+pnpm ingest:yumblin:full -- --reset --file=/ruta/absoluta/yumblin.json
+
+# Opción B: misma URL que en producción (env o IngestSourceConfig)
+pnpm ingest:yumblin:full -- --reset
+```
+
+- **`--reset`**: pone `SyncWatermark.cursor = null` para `KITEPROP_DIFUSION_YUMBLIN` y empieza desde el primer ítem del array.
+- **`KITEPROP_DIFUSION_YUMBLIN_FILE`**: el conector lee el archivo local (prioridad sobre URL).
+- **`KITEPROP_DIFUSION_YUMBLIN_URL`**: URL del JSON si no usás archivo.
+
+Un solo lote (sin bucle): `pnpm ingest:run -- --source=KITEPROP_DIFUSION_YUMBLIN --limit=200`.
+
+---
+
+Ver también: [PROD.md](./PROD.md) (demo sources OFF), [IMPORTADORES_Y_API_UNIVERSAL.md](./IMPORTADORES_Y_API_UNIVERSAL.md), [TAREAS_Y_MEJORAS.md](./TAREAS_Y_MEJORAS.md).

@@ -72,12 +72,14 @@ export default function ProfilePage() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-slate-900">{PRODUCT_NAME} — Mi perfil</h1>
           <div className="flex gap-2 flex-wrap">
-            <Link
-              href="/me/settings"
-              className="px-4 py-2 rounded-xl font-medium text-[var(--mp-foreground)] border border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
-            >
-              ⚙️ Configuraciones
-            </Link>
+            {data.role === 'ADMIN' && (
+              <Link
+                href="/me/settings"
+                className="px-4 py-2 rounded-xl font-medium text-[var(--mp-foreground)] border border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
+              >
+                ⚙️ Configuraciones
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => setModalOpen(true)}

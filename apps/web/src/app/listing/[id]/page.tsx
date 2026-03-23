@@ -7,6 +7,7 @@ import ShareModal from '../../../components/ShareModal';
 import ReverseMatchingMiniDashboard from '../../../components/ReverseMatchingMiniDashboard';
 import InquiryModal from '../../../components/InquiryModal';
 import PremiumGraceBanner from '../../../components/PremiumGraceBanner';
+import { formatListingPrice } from '../../../lib/format-price';
 
 const API_BASE = '/api';
 const GRACE_PERIOD = process.env.NEXT_PUBLIC_PREMIUM_GRACE_PERIOD === '1';
@@ -605,9 +606,7 @@ export default function ListingDetailPage() {
             </div>
             <h1 className="text-xl font-bold">{listing.title ?? 'Sin título'}</h1>
             <p className="text-lg text-gray-700 mt-1">
-              {listing.price != null
-                ? `${listing.currency ?? 'USD'} ${listing.price.toLocaleString()}`
-                : 'Consultar'}
+              {listing.price != null ? formatListingPrice(listing.price, listing.currency) : 'Consultar'}
             </p>
             {listing.addressText && (
               <p className="text-sm text-gray-600 mt-1">📍 {listing.addressText}</p>

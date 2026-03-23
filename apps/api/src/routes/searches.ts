@@ -7,7 +7,17 @@ import { trackEvent } from '../lib/analytics.js';
 const FEED_LIMIT_DEFAULT = 20;
 const FEED_LIMIT_MAX = 50;
 const VALID_OPERATIONS = ['SALE', 'RENT'] as const;
-const VALID_PROPERTY_TYPES = ['HOUSE', 'APARTMENT', 'LAND', 'OFFICE', 'OTHER'] as const;
+const VALID_PROPERTY_TYPES = [
+  'HOUSE',
+  'APARTMENT',
+  'PH',
+  'LAND',
+  'OFFICE',
+  'COMMERCIAL',
+  'GARAGE',
+  'WAREHOUSE',
+  'OTHER',
+] as const;
 
 function parseIntParam(val: unknown): number | undefined {
   if (val === undefined || val === null || val === '') return undefined;

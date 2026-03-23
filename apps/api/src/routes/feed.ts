@@ -6,8 +6,18 @@ import { getCachedTotal, setCachedTotal } from '../lib/feed-total-cache.js';
 const FEED_LIMIT_DEFAULT = 20;
 const FEED_LIMIT_MAX = 50;
 const VALID_OPERATIONS = ['SALE', 'RENT'] as const;
-const VALID_PROPERTY_TYPES = ['HOUSE', 'APARTMENT', 'LAND', 'OFFICE', 'OTHER'] as const;
-const VALID_CURRENCIES = ['USD', 'ARS'] as const;
+const VALID_PROPERTY_TYPES = [
+  'HOUSE',
+  'APARTMENT',
+  'PH',
+  'LAND',
+  'OFFICE',
+  'COMMERCIAL',
+  'GARAGE',
+  'WAREHOUSE',
+  'OTHER',
+] as const;
+const VALID_CURRENCIES = ['USD', 'ARG', 'ARS', 'UF', 'CLP'] as const;
 const LOCATION_TEXT_MAX_LEN = 200;
 
 /** Schema ListingCard (card liviana) */
@@ -392,7 +402,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
             priceMax: { type: 'integer' },
             minPrice: { type: 'integer' },
             maxPrice: { type: 'integer' },
-            currency: { type: 'string', enum: ['USD', 'ARS'] },
+            currency: { type: 'string', enum: ['USD', 'ARG', 'ARS', 'UF', 'CLP'] },
             bedrooms: { type: 'integer' },
             bedroomsMin: { type: 'integer' },
             bedroomsMax: { type: 'integer' },

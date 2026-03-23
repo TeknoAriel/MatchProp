@@ -3,8 +3,12 @@
 export const PROPERTY_TYPE_CHIPS = [
   { value: 'HOUSE', label: 'Casa' },
   { value: 'APARTMENT', label: 'Depto' },
+  { value: 'PH', label: 'PH' },
   { value: 'LAND', label: 'Terreno' },
   { value: 'OFFICE', label: 'Oficina' },
+  { value: 'COMMERCIAL', label: 'Local comercial' },
+  { value: 'GARAGE', label: 'Cochera' },
+  { value: 'WAREHOUSE', label: 'Galpón / depósito' },
   { value: 'OTHER', label: 'Otro' },
 ] as const;
 

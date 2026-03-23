@@ -7,9 +7,12 @@ import HacersePremiumButton from '../../components/HacersePremiumButton';
 import VisitScheduleModal from '../../components/VisitScheduleModal';
 import PremiumGraceBanner from '../../components/PremiumGraceBanner';
 import ListingCardImageCarousel from '../../components/ListingCardImageCarousel';
+import { formatListingPrice } from '../../lib/format-price';
 
 const API_BASE = '/api';
 const GRACE_PERIOD = process.env.NEXT_PUBLIC_PREMIUM_GRACE_PERIOD === '1';
+const YUMBLIN_TEST_PUSH =
+  process.env.NEXT_PUBLIC_ENABLE_YUMBLIN_TEST_PUSH === '1';
 
 type LastDelivery = {
   kind: string;
@@ -25,6 +28,7 @@ type Lead = {
   listingId: string;
   status: string;
   source: string | null;
+  message: string | null;
   createdAt: string;
   listing: {
     id: string;
@@ -32,10 +36,24 @@ type Lead = {
     price: number | null;
     currency: string | null;
     locationText: string | null;
+    propertyType?: string | null;
     heroImageUrl: string | null;
     media?: { url: string; sortOrder: number }[];
   };
   lastDelivery: LastDelivery | null;
+  publisherReply: { body: string; createdAt: string } | null;
+};
+
+const PROPERTY_TYPE_LABEL: Record<string, string> = {
+  APARTMENT: 'Depto',
+  HOUSE: 'Casa',
+  PH: 'PH',
+  LAND: 'Terreno',
+  OFFICE: 'Oficina',
+  COMMERCIAL: 'Local comercial',
+  GARAGE: 'Cochera',
+  WAREHOUSE: 'Galpón / depósito',
+  OTHER: 'Otro',
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -51,6 +69,10 @@ export default function LeadsPage() {
   const [activatingId, setActivatingId] = useState<string | null>(null);
   const [visitModalLeadId, setVisitModalLeadId] = useState<string | null>(null);
   const [showGraceToast, setShowGraceToast] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [pushingYumblinTestId, setPushingYumblinTestId] = useState<string | null>(null);
+  const [pushError, setPushError] = useState<string | null>(null);
+  const [pushErrorLeadId, setPushErrorLeadId] = useState<string | null>(null);
   const router = useRouter();
 
   const isPremium = premiumUntil && new Date(premiumUntil) > new Date();
@@ -64,9 +86,13 @@ export default function LeadsPage() {
       fetch(`${API_BASE}/me`, { credentials: 'include' }).then((res) =>
         res.status === 401 ? null : res.json()
       ),
-    ]).then(([leadsData, meData]) => {
+      fetch(`${API_BASE}/me/profile`, { credentials: 'include' }).then((res) =>
+        res.ok ? res.json() : null
+      ),
+    ]).then(([leadsData, meData, profileData]) => {
       if (leadsData) setLeads(leadsData);
       if (meData?.premiumUntil) setPremiumUntil(meData.premiumUntil);
+      if (profileData?.role === 'ADMIN') setIsAdmin(true);
       setLoading(false);
       if (meData === null || (meData && !meData.id)) router.replace('/login');
     });
@@ -105,6 +131,43 @@ export default function LeadsPage() {
     }
   }
 
+  async function handlePushYumblinTest(leadId: string) {
+    if (pushingYumblinTestId) return;
+    setPushError(null);
+    setPushErrorLeadId(null);
+    setPushingYumblinTestId(leadId);
+    try {
+      const res = await fetch(`${API_BASE}/leads/${leadId}/push-yumblin-test`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (res.status === 401) {
+        router.replace('/login');
+        return;
+      }
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+
+      const data: { ok?: boolean; httpStatus?: number; detail?: string } = await res.json().catch(
+        () => ({})
+      );
+
+      if (data.ok) {
+        setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, status: 'ACTIVE' } : l)));
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setPushError(msg);
+      setPushErrorLeadId(leadId);
+    } finally {
+      setPushingYumblinTestId(null);
+    }
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -130,13 +193,16 @@ export default function LeadsPage() {
           </div>
         )}
         <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-          <h1 className="text-xl font-bold text-slate-900">Mis consultas</h1>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">Consultas y visitas</h1>
+            <p className="text-xs text-slate-500 mt-0.5">Consultas enviadas y calendario de visitas</p>
+          </div>
           <div className="flex gap-2 flex-wrap">
             <Link
               href="/me/visits"
               className="px-3 py-1.5 text-sm bg-emerald-100 text-emerald-800 rounded-lg hover:bg-emerald-200 font-medium"
             >
-              Mis visitas
+              Visitas agendadas
             </Link>
             <Link
               href="/feed"
@@ -222,10 +288,15 @@ export default function LeadsPage() {
                       />
                     </div>
                     <div className="p-3 flex-1 min-w-0">
+                      {lead.listing.propertyType && (
+                        <span className="inline-block mb-1 px-2 py-0.5 text-[10px] rounded-full bg-slate-100 text-slate-600">
+                          {PROPERTY_TYPE_LABEL[lead.listing.propertyType] ?? lead.listing.propertyType}
+                        </span>
+                      )}
                       <h2 className="font-medium truncate">{lead.listing.title ?? 'Sin título'}</h2>
                       <p className="text-sm text-gray-600">
                         {lead.listing.price != null
-                          ? `${lead.listing.currency ?? 'USD'} ${lead.listing.price.toLocaleString()}`
+                          ? formatListingPrice(lead.listing.price, lead.listing.currency)
                           : 'Consultar'}
                       </p>
                       <p className="text-xs text-gray-500 truncate">{lead.listing.locationText}</p>
@@ -266,18 +337,58 @@ export default function LeadsPage() {
                                 {lead.lastDelivery.userMessage}
                               </p>
                             )}
-                            <Link
-                              href="/settings/integrations/kiteprop"
-                              className="text-xs text-blue-600 hover:underline"
-                            >
-                              Ir a integración Kiteprop
-                            </Link>
+                            {isAdmin && (
+                              <Link
+                                href="/settings/integrations/kiteprop"
+                                className="text-xs text-blue-600 hover:underline"
+                              >
+                                Ir a integración Kiteprop
+                              </Link>
+                            )}
                           </div>
                         )}
                     </div>
                   </Link>
                 </div>
+
+                <div className="px-3 py-2 border-t border-slate-100 bg-slate-50/80">
+                  <p className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide">
+                    Tu consulta
+                  </p>
+                  <p className="text-sm text-slate-800 mt-1 whitespace-pre-wrap break-words">
+                    {lead.message?.trim()
+                      ? lead.message
+                      : 'Consulta desde MatchProp (mensaje estándar).'}
+                  </p>
+                </div>
+
+                {lead.status === 'ACTIVE' && (
+                  <div className="px-3 py-2 border-t border-slate-100">
+                    <p className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide">
+                      Respuesta de la inmobiliaria
+                    </p>
+                    {lead.publisherReply ? (
+                      <div className="mt-2 rounded-lg bg-emerald-50/80 border border-emerald-100 p-3">
+                        <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">
+                          {lead.publisherReply.body}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-2">
+                          {new Date(lead.publisherReply.createdAt).toLocaleString('es-AR', {
+                            dateStyle: 'short',
+                            timeStyle: 'short',
+                          })}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-600 mt-2 italic">
+                        Aún no te han respondido. Te avisamos cuando haya novedades.
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {lead.status === 'PENDING' && (
+                  <>
                   <div className="p-3 border-t bg-amber-50/50 space-y-2">
                     {canActivate ? (
                       <>
@@ -309,6 +420,27 @@ export default function LeadsPage() {
                       </div>
                     )}
                   </div>
+                  {YUMBLIN_TEST_PUSH && isAdmin && (
+                    <div className="pt-2 space-y-1">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handlePushYumblinTest(lead.id);
+                        }}
+                        disabled={pushingYumblinTestId === lead.id}
+                        className="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                      >
+                        {pushingYumblinTestId === lead.id
+                          ? 'Enviando...'
+                          : 'Push Yumblin test (prop 34)'}
+                      </button>
+                      {pushError && pushErrorLeadId === lead.id && (
+                        <p className="text-xs text-red-700 break-words">{pushError}</p>
+                      )}
+                    </div>
+                  )}
+                  </>
                 )}
                 {lead.status === 'ACTIVE' && (
                   <div className="p-3 border-t bg-emerald-50/50 dark:bg-emerald-900/20 flex flex-wrap gap-2">

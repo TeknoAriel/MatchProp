@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { formatListingPrice } from '../../lib/format-price';
 
 const API_BASE = '/api';
 
@@ -193,7 +194,7 @@ export default function AlertsPage() {
                   </div>
                   <span className="text-sm text-[var(--mp-muted)] shrink-0">
                     {d.listingPrice != null
-                      ? `${d.listingCurrency ?? 'USD'} ${d.listingPrice.toLocaleString()}`
+                      ? formatListingPrice(d.listingPrice, d.listingCurrency)
                       : ''}
                   </span>
                   <span

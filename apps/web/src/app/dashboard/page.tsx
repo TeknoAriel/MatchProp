@@ -472,20 +472,20 @@ export default function DashboardPage() {
             {restSearches.length > 0 && (
               <>
                 {!showMoreSearches ? (
-                  <button
-                    type="button"
+                <button
+                  type="button"
                     onClick={() => setShowMoreSearches(true)}
                     className="w-full py-3 text-center text-sm text-sky-600 hover:text-sky-700 font-medium rounded-2xl border border-dashed border-[var(--mp-border)] hover:border-sky-300"
-                  >
+                >
                     Ver más ({restSearches.length})
-                  </button>
+                </button>
                 ) : (
                   <>
                     {restSearches.map((s) => (
                       <SavedSearchCard key={s.id} {...savedSearchCardProps(s)} />
                     ))}
-                    <button
-                      type="button"
+                <button
+                  type="button"
                       onClick={() => setShowMoreSearches(false)}
                       className="w-full py-2 text-center text-sm text-[var(--mp-muted)] hover:underline"
                     >
@@ -584,7 +584,7 @@ export default function DashboardPage() {
             Escribí arriba qué tipo de propiedad buscás
             <br />y te mostramos los matches perfectos
           </p>
-        </div>
+              </div>
       )}
 
       {/* Accesos rápidos — solo en mobile (web tiene sidebar) */}

@@ -7,11 +7,11 @@ import type { AssistantSearchResponse, ListingCard, SearchFilters } from '@match
 import { ASSISTANT_BUILD } from '../../lib/build-id';
 import { filtersToHumanSummary } from '../../lib/filters-summary';
 import ActiveSearchBar from '../../components/ActiveSearchBar';
-import FilterChips from '../../components/FilterChips';
 import AssistantChatInput from '../../components/AssistantChatInput';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import ListingCardImageCarousel from '../../components/ListingCardImageCarousel';
 import { parseListingMediaFromApi } from '../../lib/listing-images';
+import { formatListingPrice } from '../../lib/format-price';
 
 const API_BASE = '/api';
 
@@ -824,30 +824,6 @@ export default function AssistantPage() {
               </p>
             )}
 
-            <p className="text-sm font-semibold text-[var(--mp-muted)] mb-2">Seguí afinando</p>
-            <div className="mb-4 p-3 rounded-xl bg-[var(--mp-card)] border border-[var(--mp-border)]">
-              <FilterChips
-                operationFilter={operationFilter}
-                propertyTypeFilter={propertyTypeFilter}
-                onOperationChange={(v) => {
-                  setOperationFilter(v);
-                  handlePreview(null, fallbackMode, {
-                    propertyType: propertyTypeFilter ?? undefined,
-                    operation: v,
-                  });
-                }}
-                onPropertyTypeChange={(v) => {
-                  setPropertyTypeFilter(v);
-                  handlePreview(null, fallbackMode, {
-                    propertyType: v ?? undefined,
-                    operation: operationFilter,
-                  });
-                }}
-                disabled={loadingPreview}
-                compact
-              />
-            </div>
-
             <h2 className="text-lg font-semibold text-[var(--mp-foreground)] mb-4">Resultados</h2>
             {previewItems.length === 0 ? (
               <div className="py-6 space-y-4">
@@ -940,7 +916,7 @@ export default function AssistantPage() {
                             </p>
                             <p className="text-sm text-slate-600">
                               {card.price != null && card.currency
-                                ? `${card.price.toLocaleString()} ${card.currency}`
+                                ? formatListingPrice(card.price, card.currency)
                                 : 'Consultar'}
                               {card.locationText && ` · ${card.locationText}`}
                             </p>

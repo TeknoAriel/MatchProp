@@ -40,6 +40,7 @@ import { adminUsersRoutes } from './routes/admin-users.js';
 import { adminStatsRoutes } from './routes/admin-stats.js';
 import { prisma } from './lib/prisma.js';
 import { registerProductionErrorHandler } from './lib/error-handler.js';
+import { webhooksInboundRoutes } from './routes/webhooks-inbound.js';
 
 export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInstance> {
   const fastify = Fastify({ logger: opts?.logger ?? true });
@@ -261,6 +262,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   await fastify.register(paymentRoutes);
   await fastify.register(adminUsersRoutes);
   await fastify.register(adminStatsRoutes);
+  await fastify.register(webhooksInboundRoutes);
 
   const { demoRoutes } = await import('./routes/demo.js');
   await fastify.register(demoRoutes);

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Tooltip, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import { formatListingPrice } from '../lib/format-price';
 
 /** Key único por instancia para evitar "Map container is already initialized" al remontar */
 function useMapInstanceKey(mounted: boolean) {
@@ -19,6 +20,7 @@ type MapListing = {
   lng: number;
   title: string | null;
   price: number | null;
+  currency: string | null;
   locationText: string | null;
 };
 
@@ -106,7 +108,9 @@ export default function SearchMapView({
             <div className="text-xs">
               <div className="font-semibold">{item.title || 'Sin título'}</div>
               {item.locationText && <div>{item.locationText}</div>}
-              {item.price != null && <div>${item.price.toLocaleString()}</div>}
+              {item.price != null && (
+                <div>{formatListingPrice(item.price, item.currency)}</div>
+              )}
             </div>
           </Tooltip>
         </CircleMarker>
