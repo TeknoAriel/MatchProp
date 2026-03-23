@@ -49,7 +49,6 @@ export default function DashboardPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [subsBySearch, setSubsBySearch] = useState<Record<string, Record<AlertType, SubState>>>({});
   const [deliveriesBySearch, setDeliveriesBySearch] = useState<Record<string, AlertDelivery[]>>({});
-  const [showMoreSearches, setShowMoreSearches] = useState(false);
   const [alerts, setAlerts] = useState<AlertSubscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
@@ -351,8 +350,19 @@ export default function DashboardPage() {
     }
   }
 
-  const primarySearch = searches.find((s) => s.id === activeSearchId) ?? searches[0] ?? null;
-  const restSearches = primarySearch ? searches.filter((s) => s.id !== primarySearch.id) : [];
+  const sortedSearches = [...searches].sort((a, b) => {
+    const ta = new Date(a.updatedAt).getTime();
+    const tb = new Date(b.updatedAt).getTime();
+    return tb - ta;
+  });
+  const primarySearch = sortedSearches.find((s) => s.id === activeSearchId) ?? sortedSearches[0] ?? null;
+  const previewSearches: SavedSearchDTO[] = primarySearch
+    ? [
+        primarySearch,
+        ...sortedSearches.filter((s) => s.id !== primarySearch.id).slice(0, 1),
+      ]
+    : [];
+  const remainingSearchesCount = Math.max(0, searches.length - previewSearches.length);
 
   const savedSearchCardProps = (s: SavedSearchDTO) => ({
     s,
@@ -441,21 +451,7 @@ export default function DashboardPage() {
           </p>
         )}
 
-        <div className="mt-3 flex flex-wrap gap-2">
-          {['Casa en venta', 'Depto alquiler', 'Terreno', 'Con pileta'].map((suggestion) => (
-            <button
-              key={suggestion}
-              type="button"
-              onClick={() => {
-                setSearchText(suggestion);
-                inputRef.current?.focus();
-              }}
-              className="px-3 py-1.5 text-sm rounded-full bg-[var(--mp-bg)] text-[var(--mp-muted)] hover:bg-sky-50 hover:text-sky-600 border border-[var(--mp-border)] transition-colors"
-            >
-              {suggestion}
-            </button>
-          ))}
-        </div>
+        {/* Sugerencias removidas en la home (dashboard) */}
       </div>
 
       {/* Mis búsquedas — búsqueda activa (o la primera) + Ver más con misma UX que /searches */}
@@ -468,32 +464,13 @@ export default function DashboardPage() {
             </Link>
           </div>
           <div className="space-y-3">
-            <SavedSearchCard {...savedSearchCardProps(primarySearch)} />
-            {restSearches.length > 0 && (
-              <>
-                {!showMoreSearches ? (
-                <button
-                  type="button"
-                    onClick={() => setShowMoreSearches(true)}
-                    className="w-full py-3 text-center text-sm text-sky-600 hover:text-sky-700 font-medium rounded-2xl border border-dashed border-[var(--mp-border)] hover:border-sky-300"
-                >
-                    Ver más ({restSearches.length})
-                </button>
-                ) : (
-                  <>
-                    {restSearches.map((s) => (
-                      <SavedSearchCard key={s.id} {...savedSearchCardProps(s)} />
-                    ))}
-                <button
-                  type="button"
-                      onClick={() => setShowMoreSearches(false)}
-                      className="w-full py-2 text-center text-sm text-[var(--mp-muted)] hover:underline"
-                    >
-                      Ver menos
-                    </button>
-                  </>
-                )}
-              </>
+            {previewSearches.map((s) => (
+              <SavedSearchCard key={s.id} {...savedSearchCardProps(s)} />
+            ))}
+            {remainingSearchesCount > 0 && (
+              <p className="text-xs text-[var(--mp-muted)] mt-1">
+                Y {remainingSearchesCount} búsquedas más están disponibles en “Ver todas”.
+              </p>
             )}
           </div>
         </div>
@@ -502,7 +479,7 @@ export default function DashboardPage() {
       {/* Mis match — botón alargado: likes → favoritos → resultados búsquedas */}
       <Link
         href="/me/match"
-        className="block w-full p-4 mb-6 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/25 hover:shadow-xl transition-shadow"
+        className="block w-full p-4 mb-6 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/25 hover:shadow-xl transition-shadow md:hidden"
       >
         <div className="flex items-center justify-between">
           <div>
@@ -518,7 +495,7 @@ export default function DashboardPage() {
       {/* Mis alertas — destacado */}
       <Link
         href="/alerts"
-        className="block w-full p-4 mb-6 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25 hover:shadow-xl transition-shadow"
+        className="block w-full p-4 mb-6 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25 hover:shadow-xl transition-shadow md:hidden"
       >
         <div className="flex items-center justify-between">
           <div>
