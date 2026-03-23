@@ -147,30 +147,26 @@ export default function SavedSearchCard({
       {expanded && (
         <div className="mt-3 space-y-3 pt-3 border-t border-[var(--mp-border)]">
           <div>
-            <p className="text-sm font-medium text-[var(--mp-foreground)] mb-2">
-              Activar alertas
-            </p>
+            <p className="text-sm font-medium text-[var(--mp-foreground)] mb-2">Activar alertas</p>
             <div className="flex flex-wrap gap-2">
-              {(['NEW_LISTING', 'PRICE_DROP', 'BACK_ON_MARKET'] as AlertTypeSaved[]).map(
-                (type) => {
-                  const sub = subsBySearch[s.id]?.[type];
-                  const isOn = sub?.isEnabled ?? false;
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => onAlert(s.id, type, !isOn)}
-                      className={`px-2 py-1 text-xs rounded-full ${
-                        isOn
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
-                      }`}
-                    >
-                      {ALERT_LABELS[type]} {isOn ? '✓' : ''}
-                    </button>
-                  );
-                }
-              )}
+              {(['NEW_LISTING', 'PRICE_DROP', 'BACK_ON_MARKET'] as AlertTypeSaved[]).map((type) => {
+                const sub = subsBySearch[s.id]?.[type];
+                const isOn = sub?.isEnabled ?? false;
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => onAlert(s.id, type, !isOn)}
+                    className={`px-2 py-1 text-xs rounded-full ${
+                      isOn
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+                    }`}
+                  >
+                    {ALERT_LABELS[type]} {isOn ? '✓' : ''}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

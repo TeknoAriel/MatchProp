@@ -192,7 +192,9 @@ function LoginPageContent() {
         )}
         {status === 'error' && (
           <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300 text-center">
-            <p>Error al enviar. Intentá de nuevo o usá <strong>Entrar como demo</strong>.</p>
+            <p>
+              Error al enviar. Intentá de nuevo o usá <strong>Entrar como demo</strong>.
+            </p>
           </div>
         )}
 
@@ -213,7 +215,8 @@ function LoginPageContent() {
           </button>
           {demoError && (
             <p className="text-xs text-red-600 dark:text-red-400 text-center">
-              No se pudo conectar. En local ejecutá <code className="px-1 rounded bg-[var(--mp-card)]">pnpm run dev-local</code>.
+              No se pudo conectar. En local ejecutá{' '}
+              <code className="px-1 rounded bg-[var(--mp-card)]">pnpm run dev-local</code>.
             </p>
           )}
         </div>
@@ -262,7 +265,11 @@ function LoginPageContent() {
           </p>
           <p className="text-center text-xs text-[var(--mp-muted)]">
             Sesión activa?{' '}
-            <button type="button" onClick={handleLogout} className="text-[var(--mp-accent)] hover:underline">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="text-[var(--mp-accent)] hover:underline"
+            >
               Cerrar sesión
             </button>
           </p>

@@ -351,11 +351,8 @@ export default function DashboardPage() {
     }
   }
 
-  const primarySearch =
-    searches.find((s) => s.id === activeSearchId) ?? searches[0] ?? null;
-  const restSearches = primarySearch
-    ? searches.filter((s) => s.id !== primarySearch.id)
-    : [];
+  const primarySearch = searches.find((s) => s.id === activeSearchId) ?? searches[0] ?? null;
+  const restSearches = primarySearch ? searches.filter((s) => s.id !== primarySearch.id) : [];
 
   const savedSearchCardProps = (s: SavedSearchDTO) => ({
     s,

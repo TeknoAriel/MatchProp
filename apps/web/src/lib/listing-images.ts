@@ -23,7 +23,9 @@ export function buildListingImageSlides(
 }
 
 /** Parsea el array `media` tal como viene del API (feed, listings, saved). */
-export function parseListingMediaFromApi(raw: unknown): { url: string; sortOrder: number }[] | undefined {
+export function parseListingMediaFromApi(
+  raw: unknown
+): { url: string; sortOrder: number }[] | undefined {
   if (!Array.isArray(raw)) return undefined;
   const out: { url: string; sortOrder: number }[] = [];
   for (let i = 0; i < raw.length; i++) {

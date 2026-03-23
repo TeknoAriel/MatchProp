@@ -35,9 +35,7 @@ export default function ListingCardImageCarousel({
 
   const slideKey = useMemo(
     () =>
-      `${heroImageUrl ?? ''}|${(media ?? [])
-        .map((m) => `${m.url}:${m.sortOrder ?? 0}`)
-        .join('|')}`,
+      `${heroImageUrl ?? ''}|${(media ?? []).map((m) => `${m.url}:${m.sortOrder ?? 0}`).join('|')}`,
     [heroImageUrl, media]
   );
 
