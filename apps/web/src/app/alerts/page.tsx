@@ -16,6 +16,12 @@ const TYPE_LABELS: Record<string, { label: string; icon: string; color: string }
   },
 };
 
+const TYPE_FOOTER_TEXT: Record<string, string> = {
+  NEW_LISTING: 'Entró al mercado',
+  PRICE_DROP: 'Bajó de precio',
+  BACK_ON_MARKET: 'Volvió al mercado',
+};
+
 type Subscription = {
   id: string;
   savedSearchId: string | null;
@@ -110,7 +116,7 @@ export default function AlertsPage() {
     else if (res.ok) setItems((prev) => prev.filter((s) => s.id !== id));
   }
 
-  async function verResultados(sub: Subscription) {
+  async function verBusqueda(sub: Subscription, view: 'match' | 'list') {
     if (!sub.savedSearchId) return;
     await fetch(`${API_BASE}/me/active-search`, {
       method: 'POST',
@@ -118,7 +124,7 @@ export default function AlertsPage() {
       credentials: 'include',
       body: JSON.stringify({ searchId: sub.savedSearchId }),
     });
-    router.push('/feed/list');
+    router.push(view === 'match' ? '/feed' : '/feed/list');
   }
 
   if (loading) {
@@ -158,9 +164,7 @@ export default function AlertsPage() {
       {/* Resultado unificado de alertas */}
       {deliveries.length > 0 && (
         <div className="mb-6 p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)]">
-          <h2 className="text-lg font-semibold text-[var(--mp-foreground)] mb-3">
-            Resultado de alertas
-          </h2>
+          <h2 className="text-lg font-semibold text-[var(--mp-foreground)] mb-3">Resultado de alertas</h2>
           <p className="text-sm text-[var(--mp-muted)] mb-3">
             Propiedades que dispararon tus alertas activas
           </p>
@@ -210,7 +214,7 @@ export default function AlertsPage() {
             })}
           </ul>
           <Link href="/me/match" className="text-sm font-medium text-sky-600 hover:underline">
-            Ver en Mis match →
+            Ver como match →
           </Link>
         </div>
       )}
@@ -278,6 +282,9 @@ export default function AlertsPage() {
                     <h3 className="font-medium text-[var(--mp-foreground)] truncate">
                       {sub.savedSearchName ?? 'Búsqueda guardada'}
                     </h3>
+                    <p className="text-xs text-[var(--mp-muted)] mt-0.5">
+                      {typeInfo.icon} {TYPE_FOOTER_TEXT[sub.type] ?? typeInfo.label}
+                    </p>
                     {(sub.savedSearchQueryText ?? '').trim() && (
                       <p className="text-sm text-[var(--mp-muted)] mt-0.5 line-clamp-2">
                         {sub.savedSearchQueryText}
@@ -295,12 +302,20 @@ export default function AlertsPage() {
                   {/* Actions */}
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {sub.savedSearchId && (
-                      <button
-                        onClick={() => verResultados(sub)}
-                        className="px-3 py-2 bg-sky-100 text-sky-700 rounded-xl text-sm font-medium hover:bg-sky-200"
-                      >
-                        Ver resultados
-                      </button>
+                      <>
+                        <button
+                          onClick={() => verBusqueda(sub, 'match')}
+                          className="px-3 py-2 bg-sky-500 text-white rounded-xl text-sm font-medium hover:bg-sky-600"
+                        >
+                          Ver como match
+                        </button>
+                        <button
+                          onClick={() => verBusqueda(sub, 'list')}
+                          className="px-3 py-2 bg-sky-100 text-sky-700 rounded-xl text-sm font-medium hover:bg-sky-200"
+                        >
+                          Ver como lista
+                        </button>
+                      </>
                     )}
                     <button
                       onClick={() => deleteSub(sub.id)}
