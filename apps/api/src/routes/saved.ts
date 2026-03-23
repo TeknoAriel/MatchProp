@@ -190,10 +190,7 @@ export async function savedRoutes(fastify: FastifyInstance) {
           const fallbackMedia = mediaFromRawJson(listing.rawJson);
           const media = listing.media?.length ? listing.media : fallbackMedia;
           const heroImageUrl =
-            listing.heroImageUrl ??
-            media?.[0]?.url ??
-            heroFromRawJson(listing.rawJson) ??
-            null;
+            listing.heroImageUrl ?? media?.[0]?.url ?? heroFromRawJson(listing.rawJson) ?? null;
           return {
             id: s.id,
             listingId: s.listingId,
