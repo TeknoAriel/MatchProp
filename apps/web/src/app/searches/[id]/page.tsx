@@ -6,7 +6,7 @@ import Link from 'next/link';
 import type { ListingCard } from '@matchprop/shared';
 import FilterChips from '../../../components/FilterChips';
 import InquiryModal from '../../../components/InquiryModal';
-import ListingImage from '../../../components/ListingImage';
+import ListingCardImageCarousel from '../../../components/ListingCardImageCarousel';
 
 type ListingStatus = {
   inFavorite: boolean;
@@ -542,8 +542,12 @@ export default function SearchResultsPage() {
                   href={`/listing/${card.id}`}
                   className="block hover:bg-slate-50/50 transition-colors"
                 >
-                  <div className="aspect-video bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
-                    <ListingImage src={card.heroImageUrl} alt={card.title ?? ''} />
+                  <div className="aspect-video bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden relative group">
+                    <ListingCardImageCarousel
+                      heroImageUrl={card.heroImageUrl}
+                      media={card.media}
+                      alt={card.title ?? ''}
+                    />
                   </div>
                   <div className="p-3">
                     <h2 className="font-medium truncate">{card.title ?? 'Sin título'}</h2>

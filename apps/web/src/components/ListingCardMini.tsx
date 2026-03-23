@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { buildListingImageSlides } from '../lib/listing-images';
 
 export interface ListingCardMiniData {
   id: string;
@@ -85,11 +86,7 @@ export default function ListingCardMini({
 }: ListingCardMiniProps) {
   const [imgError, setImgError] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
-  const images: { url: string }[] = listing.media?.length
-    ? [...listing.media].sort((a, b) => a.sortOrder - b.sortOrder)
-    : listing.heroImageUrl
-      ? [{ url: listing.heroImageUrl }]
-      : [];
+  const images = buildListingImageSlides(listing.heroImageUrl, listing.media);
   const currentImage = images[imageIndex];
   const hasMultiple = images.length > 1;
   const showImage = !!currentImage && !imgError;
@@ -146,7 +143,7 @@ export default function ListingCardMini({
                   e.preventDefault();
                   setImageIndex((i) => (i <= 0 ? images.length - 1 : i - 1));
                 }}
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-[1] w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md opacity-100"
                 aria-label="Imagen anterior"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,7 +161,7 @@ export default function ListingCardMini({
                   e.preventDefault();
                   setImageIndex((i) => (i >= images.length - 1 ? 0 : i + 1));
                 }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-[1] w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md opacity-100"
                 aria-label="Siguiente imagen"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

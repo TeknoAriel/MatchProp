@@ -149,6 +149,10 @@ export async function leadRoutes(fastify: FastifyInstance) {
               currency: true,
               locationText: true,
               heroImageUrl: true,
+              media: {
+                orderBy: { sortOrder: 'asc' },
+                select: { url: true, sortOrder: true },
+              },
             },
           },
           deliveryAttempts: {
@@ -175,13 +179,22 @@ export async function leadRoutes(fastify: FastifyInstance) {
                   : undefined,
             }
           : null;
+        const listing = l.listing;
+        const listingOut = listing
+          ? {
+              ...listing,
+              heroImageUrl: listing.heroImageUrl ?? listing.media?.[0]?.url ?? null,
+              media: listing.media,
+            }
+          : listing;
+
         return {
           id: l.id,
           listingId: l.listingId,
           status: l.status,
           source: l.source,
           createdAt: l.createdAt.toISOString(),
-          listing: l.listing,
+          listing: listingOut,
           lastDelivery,
         };
       });

@@ -30,7 +30,6 @@ export default function SwipeCard({ card, onClick, showInvestorLink }: SwipeCard
           heroImageUrl={card.heroImageUrl}
           media={card.media}
           alt={card.title ?? ''}
-          carouselButtonClass="opacity-0 group-hover:opacity-100 transition-opacity"
         />
         {/* Gradiente donde vive precio y zona */}
         <div

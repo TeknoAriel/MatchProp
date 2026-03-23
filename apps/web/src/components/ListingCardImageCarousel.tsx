@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { buildListingImageSlides } from '../lib/listing-images';
 
 export interface CardMedia {
   url: string;
@@ -13,7 +14,10 @@ interface ListingCardImageCarouselProps {
   alt?: string;
   className?: string;
   fallbackClassName?: string;
-  /** Clases para los botones prev/next (por defecto visibles al hover) */
+  /**
+   * Clases para los botones prev/next.
+   * Por defecto: siempre visibles (touch móvil); en desktop más discretos hasta hover.
+   */
   carouselButtonClass?: string;
 }
 
@@ -24,16 +28,25 @@ export default function ListingCardImageCarousel({
   alt = '',
   className = 'w-full h-full object-cover',
   fallbackClassName = 'w-full h-full flex flex-col items-center justify-center text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200',
-  carouselButtonClass = 'opacity-0 group-hover:opacity-100 transition-opacity',
+  carouselButtonClass = 'opacity-100 shadow-md',
 }: ListingCardImageCarouselProps) {
   const [imgError, setImgError] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
 
-  const images: { url: string }[] = media?.length
-    ? [...media].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-    : heroImageUrl
-      ? [{ url: heroImageUrl }]
-      : [];
+  const slideKey = useMemo(
+    () =>
+      `${heroImageUrl ?? ''}|${(media ?? [])
+        .map((m) => `${m.url}:${m.sortOrder ?? 0}`)
+        .join('|')}`,
+    [heroImageUrl, media]
+  );
+
+  const images = buildListingImageSlides(heroImageUrl, media);
+
+  useEffect(() => {
+    setImageIndex(0);
+    setImgError(false);
+  }, [slideKey]);
 
   const currentImage = images[imageIndex];
   const hasMultiple = images.length > 1;
@@ -74,7 +87,7 @@ export default function ListingCardImageCarousel({
               setImgError(false);
               setImageIndex((i) => (i <= 0 ? images.length - 1 : i - 1));
             }}
-            className={`absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md ${carouselButtonClass}`}
+            className={`absolute left-2 top-1/2 z-[1] -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white ${carouselButtonClass}`}
             aria-label="Imagen anterior"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,7 +107,7 @@ export default function ListingCardImageCarousel({
               setImgError(false);
               setImageIndex((i) => (i >= images.length - 1 ? 0 : i + 1));
             }}
-            className={`absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md ${carouselButtonClass}`}
+            className={`absolute right-2 top-1/2 z-[1] -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white ${carouselButtonClass}`}
             aria-label="Siguiente imagen"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -39,6 +39,10 @@ function normalizeCard(raw: unknown): ListingCardWithMedia | null {
         })
         .filter((x): x is { url: string; sortOrder: number } => x !== null)
     : undefined;
+  const sortedMedia = media?.length ? media.sort((a, b) => a.sortOrder - b.sortOrder) : undefined;
+  const heroRaw =
+    typeof c.heroImageUrl === 'string' && c.heroImageUrl.trim() ? c.heroImageUrl.trim() : null;
+  const heroImageUrl = heroRaw ?? sortedMedia?.[0]?.url ?? null;
   return {
     id,
     title: typeof c.title === 'string' ? c.title : null,
@@ -48,8 +52,8 @@ function normalizeCard(raw: unknown): ListingCardWithMedia | null {
     bathrooms: typeof c.bathrooms === 'number' ? c.bathrooms : null,
     areaTotal: typeof c.areaTotal === 'number' ? c.areaTotal : null,
     locationText: typeof c.locationText === 'string' ? c.locationText : null,
-    heroImageUrl: typeof c.heroImageUrl === 'string' && c.heroImageUrl ? c.heroImageUrl : null,
-    media: media?.length ? media.sort((a, b) => a.sortOrder - b.sortOrder) : undefined,
+    heroImageUrl,
+    media: sortedMedia,
     publisherRef: typeof c.publisherRef === 'string' ? c.publisherRef : null,
     source: typeof c.source === 'string' ? c.source : 'API_PARTNER_1',
     operationType: typeof c.operationType === 'string' ? c.operationType : null,
@@ -729,7 +733,7 @@ function FeedListPageContent() {
                   const inLists = listingsStatus[card.id]?.inLists ?? [];
                   const CardContent = (
                     <>
-                      <div className="aspect-[16/10] bg-gray-200 relative overflow-hidden group">
+                      <div className="aspect-[16/10] bg-gray-200 relative overflow-hidden group touch-pan-y">
                         {inLists.length > 0 && (
                           <div className="absolute top-2 right-2 flex flex-wrap gap-1 justify-end max-w-[70%] z-10">
                             {inLists.map((l) => (
@@ -1014,7 +1018,7 @@ function FeedListPageContent() {
                 const inLists = listingsStatus[card.id]?.inLists ?? [];
                 const CardContent = (
                   <>
-                    <div className="aspect-[16/10] bg-gray-200 relative overflow-hidden group">
+                    <div className="aspect-[16/10] bg-gray-200 relative overflow-hidden group touch-pan-y">
                       {inLists.length > 0 && (
                         <div className="absolute top-2 right-2 flex flex-wrap gap-1 justify-end max-w-[70%] z-10">
                           {inLists.map((l) => (

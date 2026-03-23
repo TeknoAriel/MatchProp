@@ -6,7 +6,8 @@ import Link from 'next/link';
 import type { ListingCard, SearchFilters } from '@matchprop/shared';
 import { filtersToHumanSummary } from '../../lib/filters-summary';
 import InquiryModal from '../../components/InquiryModal';
-import ListingImage from '../../components/ListingImage';
+import ListingCardImageCarousel from '../../components/ListingCardImageCarousel';
+import { parseListingMediaFromApi } from '../../lib/listing-images';
 
 const API_BASE = '/api';
 const PROPERTY_TYPES = ['APARTMENT', 'HOUSE', 'LAND', 'OFFICE', 'OTHER'] as const;
@@ -58,6 +59,10 @@ function normalizeCard(raw: unknown): ListingCard | null {
   const c = raw as Record<string, unknown>;
   const id = typeof c.id === 'string' ? c.id : null;
   if (!id) return null;
+  const media = parseListingMediaFromApi(c.media);
+  const heroFromApi =
+    typeof c.heroImageUrl === 'string' && c.heroImageUrl.trim() ? c.heroImageUrl.trim() : null;
+  const heroImageUrl = heroFromApi ?? media?.[0]?.url ?? null;
   return {
     id,
     title: typeof c.title === 'string' ? c.title : null,
@@ -67,7 +72,8 @@ function normalizeCard(raw: unknown): ListingCard | null {
     bathrooms: typeof c.bathrooms === 'number' ? c.bathrooms : null,
     areaTotal: typeof c.areaTotal === 'number' ? c.areaTotal : null,
     locationText: typeof c.locationText === 'string' ? c.locationText : null,
-    heroImageUrl: typeof c.heroImageUrl === 'string' && c.heroImageUrl ? c.heroImageUrl : null,
+    heroImageUrl,
+    media,
     publisherRef: typeof c.publisherRef === 'string' ? c.publisherRef : null,
     source: typeof c.source === 'string' ? c.source : 'API_PARTNER_1',
     operationType: typeof c.operationType === 'string' ? c.operationType : null,
@@ -967,8 +973,12 @@ export default function ManualSearchPage() {
                       href={`/listing/${card.id}`}
                       className="block hover:bg-slate-50/50 transition-colors"
                     >
-                      <div className="aspect-[16/10] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
-                        <ListingImage src={card.heroImageUrl} alt={card.title ?? ''} />
+                      <div className="aspect-[16/10] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden relative group">
+                        <ListingCardImageCarousel
+                          heroImageUrl={card.heroImageUrl}
+                          media={card.media}
+                          alt={card.title ?? ''}
+                        />
                       </div>
                       <div className="p-3">
                         <h3 className="font-semibold truncate">{card.title ?? 'Sin título'}</h3>

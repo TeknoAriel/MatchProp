@@ -6,7 +6,7 @@ import Link from 'next/link';
 import HacersePremiumButton from '../../components/HacersePremiumButton';
 import VisitScheduleModal from '../../components/VisitScheduleModal';
 import PremiumGraceBanner from '../../components/PremiumGraceBanner';
-import ListingImage from '../../components/ListingImage';
+import ListingCardImageCarousel from '../../components/ListingCardImageCarousel';
 
 const API_BASE = '/api';
 const GRACE_PERIOD = process.env.NEXT_PUBLIC_PREMIUM_GRACE_PERIOD === '1';
@@ -33,6 +33,7 @@ type Lead = {
     currency: string | null;
     locationText: string | null;
     heroImageUrl: string | null;
+    media?: { url: string; sortOrder: number }[];
   };
   lastDelivery: LastDelivery | null;
 };
@@ -211,13 +212,13 @@ export default function LeadsPage() {
               >
                 <div className="flex">
                   <Link href={`/listing/${lead.listingId}`} className="flex flex-1 min-w-0">
-                    <div className="w-24 h-24 shrink-0 overflow-hidden">
-                      <ListingImage
-                        src={lead.listing.heroImageUrl}
+                    <div className="w-24 h-24 shrink-0 overflow-hidden relative group bg-gray-200">
+                      <ListingCardImageCarousel
+                        heroImageUrl={lead.listing.heroImageUrl}
+                        media={lead.listing.media}
                         alt={lead.listing.title ?? ''}
+                        className="w-full h-full object-cover"
                         fallbackClassName="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-200"
-                        fallbackIcon="🏠"
-                        fallbackText=""
                       />
                     </div>
                     <div className="p-3 flex-1 min-w-0">

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { ListingCard } from '@matchprop/shared';
 import ListingCardImageCarousel from '../../../components/ListingCardImageCarousel';
 import InquiryModal from '../../../components/InquiryModal';
+import { parseListingMediaFromApi } from '../../../lib/listing-images';
 
 const API_BASE = '/api';
 
@@ -21,6 +22,9 @@ function normalizeCard(raw: unknown): ListingCard | null {
   const c = raw as Record<string, unknown>;
   const id = typeof c.id === 'string' ? c.id : null;
   if (!id) return null;
+  const media = parseListingMediaFromApi(c.media);
+  const heroRaw = typeof c.heroImageUrl === 'string' ? c.heroImageUrl.trim() : '';
+  const heroImageUrl = heroRaw || media?.[0]?.url || null;
   return {
     id,
     title: typeof c.title === 'string' ? c.title : null,
@@ -30,7 +34,8 @@ function normalizeCard(raw: unknown): ListingCard | null {
     bathrooms: typeof c.bathrooms === 'number' ? c.bathrooms : null,
     areaTotal: typeof c.areaTotal === 'number' ? c.areaTotal : null,
     locationText: typeof c.locationText === 'string' ? c.locationText : null,
-    heroImageUrl: typeof c.heroImageUrl === 'string' ? c.heroImageUrl : null,
+    heroImageUrl,
+    media,
     publisherRef: typeof c.publisherRef === 'string' ? c.publisherRef : null,
     source: typeof c.source === 'string' ? c.source : 'API_PARTNER_1',
     operationType: typeof c.operationType === 'string' ? c.operationType : null,
@@ -180,10 +185,10 @@ export default function MyMatchPage() {
                 className="rounded-xl overflow-hidden bg-[var(--mp-card)] border border-[var(--mp-border)] shadow-sm"
               >
                 <Link href={`/listing/${card.id}`} className="block">
-                  <div className="aspect-[16/10] bg-gray-100 relative overflow-hidden">
+                  <div className="aspect-[16/10] bg-gray-100 relative overflow-hidden group">
                     <ListingCardImageCarousel
                       heroImageUrl={card.heroImageUrl}
-                      media={(card as { media?: { url: string; sortOrder: number }[] }).media}
+                      media={card.media}
                       alt={card.title ?? ''}
                     />
                   </div>

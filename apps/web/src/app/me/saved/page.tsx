@@ -45,14 +45,19 @@ function toListingCardMini(item: SavedItemRaw): ListingCardMiniData | null {
   const listing = item.listing;
   const listingId = item.listingId;
   if (!listing && !listingId) return null;
+  const media = listing?.media ?? undefined;
+  const hero =
+    listing?.heroImageUrl?.trim() ||
+    (media?.length ? media.sort((a, b) => a.sortOrder - b.sortOrder)[0]?.url : null) ||
+    null;
   return {
     id: listing?.id ?? listingId,
     title: listing?.title ?? null,
     price: listing?.price ?? null,
     currency: listing?.currency ?? null,
     locationText: listing?.locationText ?? null,
-    heroImageUrl: listing?.heroImageUrl ?? null,
-    media: listing?.media ?? undefined,
+    heroImageUrl: hero,
+    media,
     bedrooms: listing?.bedrooms ?? null,
     bathrooms: listing?.bathrooms ?? null,
     areaTotal: listing?.areaTotal ?? null,

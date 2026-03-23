@@ -1,31 +1,22 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, type ComponentProps } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { SavedSearchDTO } from '@matchprop/shared';
 import ActiveSearchBar from '../../components/ActiveSearchBar';
-import { filtersToHumanSummary } from '../../lib/filters-summary';
+import SavedSearchCard, {
+  EditSearchModal,
+  type AlertTypeSaved,
+  type SubStateSaved,
+  type AlertDeliverySaved,
+} from '../../components/SavedSearchCard';
 
 const API_BASE = '/api';
 
-type AlertType = 'NEW_LISTING' | 'PRICE_DROP' | 'BACK_ON_MARKET';
-type SubState = { id: string; isEnabled: boolean } | null;
-type AlertDelivery = {
-  id: string;
-  listingId: string;
-  type: string;
-  createdAt: string;
-  listingTitle: string | null;
-  listingPrice: number | null;
-  listingCurrency: string | null;
-};
-
-const ALERT_LABELS: Record<AlertType, string> = {
-  NEW_LISTING: 'Nuevas publicaciones',
-  PRICE_DROP: 'Bajó precio',
-  BACK_ON_MARKET: 'Volvió al mercado',
-};
+type AlertType = AlertTypeSaved;
+type SubState = SubStateSaved;
+type AlertDelivery = AlertDeliverySaved;
 
 export default function SearchesPage() {
   const router = useRouter();
@@ -126,7 +117,7 @@ export default function SearchesPage() {
     router.push('/feed');
   }
 
-  async function handleEditOpen(s: SavedSearchDTO) {
+  function handleEditOpen(s: SavedSearchDTO) {
     setEditingId(s.id);
     setEditName(s.name || '');
     setEditText(s.queryText || '');
@@ -281,6 +272,22 @@ export default function SearchesPage() {
     );
   }
 
+  const cardProps = (s: SavedSearchDTO): ComponentProps<typeof SavedSearchCard> => ({
+    s,
+    activeSearchId,
+    expandedId,
+    onToggleExpand: (id) => setExpandedId((prev) => (prev === id ? null : id)),
+    deleteConfirmId,
+    setDeleteConfirmId,
+    subsBySearch,
+    deliveriesBySearch,
+    onMatch: handleMatch,
+    onEditOpen: handleEditOpen,
+    onSetActive: handleSetActive,
+    onDelete: handleDelete,
+    onAlert: handleAlert,
+  });
+
   return (
     <main className="min-h-screen p-4">
       <ActiveSearchBar />
@@ -301,159 +308,7 @@ export default function SearchesPage() {
 
         <div className="space-y-4">
           {items.map((s) => (
-            <div
-              key={s.id}
-              className="p-4 rounded-xl bg-[var(--mp-card)] shadow-sm border border-[var(--mp-border)]"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-medium text-[var(--mp-foreground)]">
-                    {s.name || 'Búsqueda sin nombre'}
-                  </h2>
-                  <p className="text-sm text-[var(--mp-muted)] mt-0.5 break-words">
-                    {s.queryText || filtersToHumanSummary(s.filters) || 'Sin criterios'}
-                  </p>
-                  <p className="text-xs text-[var(--mp-muted)] mt-1" suppressHydrationWarning>
-                    {typeof s.updatedAt === 'string'
-                      ? new Date(s.updatedAt).toLocaleDateString('es-AR', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                        })
-                      : ''}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleMatch(s.id)}
-                    className="px-3 py-1.5 text-sm font-medium rounded-lg bg-sky-500 text-white hover:bg-sky-600"
-                    title="Buscar en modo Match"
-                  >
-                    Match
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleEditOpen(s)}
-                    className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-                    title="Editar"
-                  >
-                    ✏️
-                  </button>
-                  {activeSearchId === s.id ? (
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                      Activa
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleSetActive(s.id)}
-                      className="px-2 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    >
-                      Activar
-                    </button>
-                  )}
-                  {deleteConfirmId === s.id ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(s.id)}
-                        className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
-                      >
-                        Confirmar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeleteConfirmId(null)}
-                        className="px-2 py-1 text-xs text-slate-600 hover:underline"
-                      >
-                        Cancelar
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setDeleteConfirmId(s.id)}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                      title="Eliminar"
-                    >
-                      🗑️
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
-                className="mt-2 text-sm text-sky-600 hover:underline"
-              >
-                {expandedId === s.id ? 'Ocultar' : 'Ver'} alertas y resultados
-              </button>
-
-              {expandedId === s.id && (
-                <div className="mt-3 space-y-3 pt-3 border-t border-[var(--mp-border)]">
-                  <div>
-                    <p className="text-sm font-medium text-[var(--mp-foreground)] mb-2">
-                      Activar alertas
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {(['NEW_LISTING', 'PRICE_DROP', 'BACK_ON_MARKET'] as AlertType[]).map(
-                        (type) => {
-                          const sub = subsBySearch[s.id]?.[type];
-                          const isOn = sub?.isEnabled ?? false;
-                          return (
-                            <button
-                              key={type}
-                              type="button"
-                              onClick={() => handleAlert(s.id, type, !isOn)}
-                              className={`px-2 py-1 text-xs rounded-full ${
-                                isOn
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                              }`}
-                            >
-                              {ALERT_LABELS[type]} {isOn ? '✓' : ''}
-                            </button>
-                          );
-                        }
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-medium text-[var(--mp-foreground)] mb-2">
-                      Resultado de alertas para esta búsqueda
-                    </p>
-                    {(deliveriesBySearch[s.id] ?? []).length === 0 ? (
-                      <p className="text-sm text-[var(--mp-muted)]">
-                        Aún no hay alertas disparadas.
-                      </p>
-                    ) : (
-                      <ul className="space-y-1">
-                        {(deliveriesBySearch[s.id] ?? []).map((d) => (
-                          <li key={d.id} className="text-sm flex justify-between gap-2">
-                            <span className="truncate">{d.listingTitle ?? d.listingId}</span>
-                            <span className="text-[var(--mp-muted)] shrink-0">
-                              {d.listingPrice != null
-                                ? `${d.listingCurrency ?? 'USD'} ${d.listingPrice.toLocaleString()}`
-                                : ''}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    <Link
-                      href={`/searches/${s.id}`}
-                      className="text-xs text-sky-600 hover:underline mt-1 inline-block"
-                    >
-                      Ver resultados completos →
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
+            <SavedSearchCard key={s.id} {...cardProps(s)} />
           ))}
         </div>
 
@@ -468,54 +323,16 @@ export default function SearchesPage() {
         )}
       </div>
 
-      {editingId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-5">
-            <h3 className="font-bold text-slate-900 mb-4">Editar búsqueda</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs text-slate-600 block mb-1">Nombre</label>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl"
-                  placeholder="Ej: Casa 3 amb Funes"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-600 block mb-1">
-                  Texto de búsqueda (opcional, min 3 caracteres)
-                </label>
-                <input
-                  type="text"
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl"
-                  placeholder="Ej: casa 3 dormitorios en Funes hasta 150000 USD"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2 mt-4">
-              <button
-                type="button"
-                onClick={handleEditSave}
-                disabled={editSaving}
-                className="px-4 py-2 bg-sky-500 text-white rounded-xl hover:bg-sky-600 disabled:opacity-50"
-              >
-                {editSaving ? 'Guardando...' : 'Guardar'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setEditingId(null)}
-                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <EditSearchModal
+        open={!!editingId}
+        editName={editName}
+        editText={editText}
+        editSaving={editSaving}
+        onEditName={setEditName}
+        onEditText={setEditText}
+        onSave={handleEditSave}
+        onClose={() => setEditingId(null)}
+      />
     </main>
   );
 }
