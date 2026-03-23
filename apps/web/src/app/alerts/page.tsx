@@ -164,7 +164,9 @@ export default function AlertsPage() {
       {/* Resultado unificado de alertas */}
       {deliveries.length > 0 && (
         <div className="mb-6 p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)]">
-          <h2 className="text-lg font-semibold text-[var(--mp-foreground)] mb-3">Resultado de alertas</h2>
+          <h2 className="text-lg font-semibold text-[var(--mp-foreground)] mb-3">
+            Resultado de alertas
+          </h2>
           <p className="text-sm text-[var(--mp-muted)] mb-3">
             Propiedades que dispararon tus alertas activas
           </p>
