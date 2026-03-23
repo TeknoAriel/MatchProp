@@ -2,6 +2,52 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { SavedListType } from '@prisma/client';
 
+type ListingMediaOut = { url: string; sortOrder: number };
+
+function pickImageUrl(v: unknown): string | null {
+  if (!v) return null;
+  if (typeof v === 'string') {
+    const s = v.trim();
+    return s ? s : null;
+  }
+  if (typeof v === 'object') {
+    const o = v as Record<string, unknown>;
+    const candidates = [o.url, o.src, o.image, o.photo, o.thumbnail, o.original];
+    for (const c of candidates) {
+      if (typeof c === 'string' && c.trim()) return c.trim();
+    }
+  }
+  return null;
+}
+
+function mediaFromRawJson(rawJson: unknown): ListingMediaOut[] {
+  if (!rawJson || typeof rawJson !== 'object') return [];
+  const raw = rawJson as Record<string, unknown>;
+  const arrays = [raw.media, raw.images, raw.photos, raw.fotos];
+  const out: ListingMediaOut[] = [];
+  for (const arr of arrays) {
+    if (!Array.isArray(arr)) continue;
+    for (const item of arr) {
+      const url = pickImageUrl(item);
+      if (!url) continue;
+      out.push({ url, sortOrder: out.length });
+    }
+    if (out.length > 0) return out;
+  }
+  return out;
+}
+
+function heroFromRawJson(rawJson: unknown): string | null {
+  if (!rawJson || typeof rawJson !== 'object') return null;
+  const raw = rawJson as Record<string, unknown>;
+  const candidates = [raw.heroImageUrl, raw.image, raw.cover, raw.portada];
+  for (const c of candidates) {
+    const url = pickImageUrl(c);
+    if (url) return url;
+  }
+  return null;
+}
+
 export async function savedRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', fastify.authenticate);
 
@@ -125,6 +171,7 @@ export async function savedRoutes(fastify: FastifyInstance) {
               areaTotal: true,
               propertyType: true,
               operationType: true,
+              rawJson: true,
               media: {
                 orderBy: { sortOrder: 'asc' },
                 select: { url: true, sortOrder: true },
@@ -140,7 +187,13 @@ export async function savedRoutes(fastify: FastifyInstance) {
           const listing = s.listing;
           if (!listing)
             return { id: s.id, listingId: s.listingId, listType: s.listType, listing: null };
-          const heroImageUrl = listing.heroImageUrl ?? listing.media?.[0]?.url ?? null;
+          const fallbackMedia = mediaFromRawJson(listing.rawJson);
+          const media = listing.media?.length ? listing.media : fallbackMedia;
+          const heroImageUrl =
+            listing.heroImageUrl ??
+            media?.[0]?.url ??
+            heroFromRawJson(listing.rawJson) ??
+            null;
           return {
             id: s.id,
             listingId: s.listingId,
@@ -148,7 +201,7 @@ export async function savedRoutes(fastify: FastifyInstance) {
             listing: {
               ...listing,
               heroImageUrl,
-              media: listing.media,
+              media,
             },
           };
         }),

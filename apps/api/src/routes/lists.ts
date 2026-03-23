@@ -2,6 +2,52 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { envFlag } from '../config.js';
 
+type ListingMediaOut = { url: string; sortOrder: number };
+
+function pickImageUrl(v: unknown): string | null {
+  if (!v) return null;
+  if (typeof v === 'string') {
+    const s = v.trim();
+    return s ? s : null;
+  }
+  if (typeof v === 'object') {
+    const o = v as Record<string, unknown>;
+    const candidates = [o.url, o.src, o.image, o.photo, o.thumbnail, o.original];
+    for (const c of candidates) {
+      if (typeof c === 'string' && c.trim()) return c.trim();
+    }
+  }
+  return null;
+}
+
+function mediaFromRawJson(rawJson: unknown): ListingMediaOut[] {
+  if (!rawJson || typeof rawJson !== 'object') return [];
+  const raw = rawJson as Record<string, unknown>;
+  const arrays = [raw.media, raw.images, raw.photos, raw.fotos];
+  const out: ListingMediaOut[] = [];
+  for (const arr of arrays) {
+    if (!Array.isArray(arr)) continue;
+    for (const item of arr) {
+      const url = pickImageUrl(item);
+      if (!url) continue;
+      out.push({ url, sortOrder: out.length });
+    }
+    if (out.length > 0) return out;
+  }
+  return out;
+}
+
+function heroFromRawJson(rawJson: unknown): string | null {
+  if (!rawJson || typeof rawJson !== 'object') return null;
+  const raw = rawJson as Record<string, unknown>;
+  const candidates = [raw.heroImageUrl, raw.image, raw.cover, raw.portada];
+  for (const c of candidates) {
+    const url = pickImageUrl(c);
+    if (url) return url;
+  }
+  return null;
+}
+
 const listingSelect = {
   id: true,
   title: true,
@@ -15,6 +61,7 @@ const listingSelect = {
   areaTotal: true,
   propertyType: true,
   operationType: true,
+  rawJson: true,
   media: {
     orderBy: { sortOrder: 'asc' },
     select: { url: true, sortOrder: true },
@@ -260,13 +307,15 @@ export async function listsRoutes(fastify: FastifyInstance) {
         list: { id: list.id, name: list.name },
         items: list.items.map((i) => {
           const listing = i.listing;
+          const fallbackMedia = listing ? mediaFromRawJson(listing.rawJson) : [];
+          const media = listing ? (listing.media?.length ? listing.media : fallbackMedia) : [];
           const heroImageUrl = listing
-            ? (listing.heroImageUrl ?? listing.media?.[0]?.url ?? null)
+            ? (listing.heroImageUrl ?? media?.[0]?.url ?? heroFromRawJson(listing.rawJson) ?? null)
             : null;
           return {
             id: i.id,
             listingId: i.listingId,
-            listing: listing ? { ...listing, heroImageUrl, media: listing.media } : null,
+            listing: listing ? { ...listing, heroImageUrl, media } : null,
           };
         }),
       };
