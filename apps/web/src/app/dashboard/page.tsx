@@ -355,12 +355,10 @@ export default function DashboardPage() {
     const tb = new Date(b.updatedAt).getTime();
     return tb - ta;
   });
-  const primarySearch = sortedSearches.find((s) => s.id === activeSearchId) ?? sortedSearches[0] ?? null;
+  const primarySearch =
+    sortedSearches.find((s) => s.id === activeSearchId) ?? sortedSearches[0] ?? null;
   const previewSearches: SavedSearchDTO[] = primarySearch
-    ? [
-        primarySearch,
-        ...sortedSearches.filter((s) => s.id !== primarySearch.id).slice(0, 1),
-      ]
+    ? [primarySearch, ...sortedSearches.filter((s) => s.id !== primarySearch.id).slice(0, 1)]
     : [];
   const remainingSearchesCount = Math.max(0, searches.length - previewSearches.length);
 
@@ -561,7 +559,7 @@ export default function DashboardPage() {
             Escribí arriba qué tipo de propiedad buscás
             <br />y te mostramos los matches perfectos
           </p>
-              </div>
+        </div>
       )}
 
       {/* Accesos rápidos — solo en mobile (web tiene sidebar) */}
