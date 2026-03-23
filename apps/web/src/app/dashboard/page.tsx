@@ -1,15 +1,24 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { SavedSearchDTO } from '@matchprop/shared';
-import { filtersToHumanSummary } from '../../lib/filters-summary';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { WelcomeMessage, TipBanner } from '../../components/FunTips';
 import { useToast } from '../../components/FunToast';
+import SavedSearchCard, {
+  EditSearchModal,
+  type AlertTypeSaved,
+  type SubStateSaved,
+  type AlertDeliverySaved,
+} from '../../components/SavedSearchCard';
 
 const API_BASE = '/api';
+
+type AlertType = AlertTypeSaved;
+type SubState = SubStateSaved;
+type AlertDelivery = AlertDeliverySaved;
 
 type AlertSubscription = {
   id: string;
@@ -31,15 +40,45 @@ const ALERT_TYPE_LABELS: Record<string, { label: string; icon: string }> = {
 export default function DashboardPage() {
   const router = useRouter();
   const [searches, setSearches] = useState<SavedSearchDTO[]>([]);
+  const [activeSearchId, setActiveSearchId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editText, setEditText] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [subsBySearch, setSubsBySearch] = useState<Record<string, Record<AlertType, SubState>>>({});
+  const [deliveriesBySearch, setDeliveriesBySearch] = useState<Record<string, AlertDelivery[]>>({});
   const [alerts, setAlerts] = useState<AlertSubscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [searching, setSearching] = useState(false);
-  const [recentMatches, setRecentMatches] = useState<number>(0);
   const [userName, setUserName] = useState<string | null>(null);
   const [showTip, setShowTip] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const { showSuccess } = useToast();
+
+  const fetchSearches = useCallback(() => {
+    return Promise.all([
+      fetch(`${API_BASE}/searches`, { credentials: 'include' }),
+      fetch(`${API_BASE}/me/active-search`, { credentials: 'include' }),
+    ]).then(async ([resSearches, resActive]) => {
+      if (resSearches.status === 401) {
+        router.replace('/login');
+        setSearches([]);
+        return;
+      }
+      if (!resSearches.ok) {
+        setSearches([]);
+        return;
+      }
+      const raw = await resSearches.json();
+      const list = Array.isArray(raw) ? raw : (raw?.searches ?? []);
+      setSearches(list);
+      const activeData = resActive.ok ? await resActive.json() : {};
+      setActiveSearchId(activeData.search?.id ?? null);
+    });
+  }, [router]);
 
   const {
     isSupported: voiceSupported,
@@ -65,36 +104,18 @@ export default function DashboardPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch(`${API_BASE}/searches`, { credentials: 'include' }).then(async (res) => {
-        if (res.status === 401) {
-          router.replace('/login');
-          return [];
-        }
-        if (res.ok) {
-          const raw = await res.json();
-          return Array.isArray(raw) ? raw : (raw?.searches ?? []);
-        }
-        return [];
-      }),
+      fetchSearches(),
       fetch(`${API_BASE}/alerts/subscriptions`, { credentials: 'include' }).then(async (res) => {
         if (res.status === 401) return [];
         if (res.ok) return res.json();
         return [];
       }),
     ])
-      .then(([searchesList, alertsList]) => {
-        setSearches(searchesList);
+      .then(([, alertsList]) => {
         setAlerts(alertsList ?? []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-
-    fetch(`${API_BASE}/feed?limit=1`, { credentials: 'include' })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.total) setRecentMatches(data.total);
-      })
-      .catch(() => {});
 
     // Obtener nombre del usuario
     fetch(`${API_BASE}/me/profile`, { credentials: 'include' })
@@ -105,7 +126,47 @@ export default function DashboardPage() {
         }
       })
       .catch(() => {});
-  }, [router]);
+  }, [router, fetchSearches]);
+
+  useEffect(() => {
+    if (searches.length === 0) return;
+    const ids = searches.map((s) => s.id);
+    Promise.all([
+      fetch(`${API_BASE}/alerts/subscriptions`, { credentials: 'include' }).then((r) =>
+        r.ok ? r.json() : []
+      ),
+      ...ids.map((id) =>
+        fetch(`${API_BASE}/alerts/deliveries/by-search/${id}?limit=5`, {
+          credentials: 'include',
+        }).then((r) => (r.ok ? r.json() : { deliveries: [] }))
+      ),
+    ]).then(([subsList, ...deliveryResults]) => {
+      const subsMap: Record<string, Record<AlertType, SubState>> = {};
+      ids.forEach((id) => {
+        subsMap[id] = {
+          NEW_LISTING: null,
+          PRICE_DROP: null,
+          BACK_ON_MARKET: null,
+        };
+      });
+      for (const s of subsList ?? []) {
+        if (s.savedSearchId && ids.includes(s.savedSearchId)) {
+          const t = s.type as AlertType;
+          if (t in subsMap[s.savedSearchId]!) {
+            subsMap[s.savedSearchId]![t] = { id: s.id, isEnabled: s.isEnabled };
+          }
+        }
+      }
+      setSubsBySearch(subsMap);
+
+      const delMap: Record<string, AlertDelivery[]> = {};
+      ids.forEach((id, i) => {
+        const d = deliveryResults[i] as { deliveries?: AlertDelivery[] };
+        delMap[id] = d?.deliveries ?? [];
+      });
+      setDeliveriesBySearch(delMap);
+    });
+  }, [searches]);
 
   async function handleSearch(text?: string) {
     const query = (text ?? searchText).trim();
@@ -154,16 +215,168 @@ export default function DashboardPage() {
     }
   }
 
-  async function activateSearch(searchId: string) {
-    await fetch(`${API_BASE}/me/active-search`, {
+  async function handleSetActive(searchId: string) {
+    const res = await fetch(`${API_BASE}/me/active-search`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ searchId }),
     });
-    showSuccess('¡Búsqueda activada! Buscando matches...', '🔍');
+    if (res.status === 401) router.replace('/login');
+    else if (res.ok) {
+      setActiveSearchId(searchId);
+      showSuccess('Búsqueda activada', '🔍');
+    }
+  }
+
+  async function handleMatch(searchId: string) {
+    await handleSetActive(searchId);
     router.push('/feed');
   }
+
+  function handleEditOpen(s: SavedSearchDTO) {
+    setEditingId(s.id);
+    setEditName(s.name || '');
+    setEditText(s.queryText || '');
+  }
+
+  async function handleEditSave() {
+    if (!editingId || editSaving) return;
+    setEditSaving(true);
+    try {
+      let body: { name?: string; text?: string; filters?: unknown } = {
+        name: editName.trim() || undefined,
+      };
+      if (editText.trim().length >= 3) {
+        const parseRes = await fetch(`${API_BASE}/assistant/search`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ text: editText.trim() }),
+        });
+        if (parseRes.ok) {
+          const parsed = await parseRes.json();
+          body = { ...body, text: editText.trim(), filters: parsed.filters };
+        }
+      }
+      const res = await fetch(`${API_BASE}/searches/${editingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body),
+      });
+      if (res.status === 401) router.replace('/login');
+      else if (res.ok) {
+        await fetchSearches();
+        setEditingId(null);
+      }
+    } finally {
+      setEditSaving(false);
+    }
+  }
+
+  async function handleDelete(searchId: string) {
+    const res = await fetch(`${API_BASE}/searches/${searchId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    if (res.status === 401) router.replace('/login');
+    else if (res.ok) {
+      setSearches((prev) => prev.filter((s) => s.id !== searchId));
+      setDeleteConfirmId(null);
+      if (activeSearchId === searchId) setActiveSearchId(null);
+    }
+  }
+
+  async function handleAlert(searchId: string, type: AlertType, enable: boolean) {
+    const sub = subsBySearch[searchId]?.[type];
+    if (sub) {
+      const res = await fetch(`${API_BASE}/alerts/subscriptions/${sub.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ isEnabled: enable }),
+      });
+      if (res.ok) {
+        setSubsBySearch((prev) => {
+          const base = prev[searchId] ?? {
+            NEW_LISTING: null,
+            PRICE_DROP: null,
+            BACK_ON_MARKET: null,
+          };
+          const updated: Record<AlertType, SubState> = {
+            NEW_LISTING:
+              type === 'NEW_LISTING' ? { ...sub, isEnabled: enable } : (base.NEW_LISTING ?? null),
+            PRICE_DROP:
+              type === 'PRICE_DROP' ? { ...sub, isEnabled: enable } : (base.PRICE_DROP ?? null),
+            BACK_ON_MARKET:
+              type === 'BACK_ON_MARKET'
+                ? { ...sub, isEnabled: enable }
+                : (base.BACK_ON_MARKET ?? null),
+          };
+          return { ...prev, [searchId]: updated };
+        });
+      }
+    } else if (enable) {
+      const res = await fetch(`${API_BASE}/alerts/subscriptions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ savedSearchId: searchId, type }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSubsBySearch((prev) => {
+          const base = prev[searchId] ?? {
+            NEW_LISTING: null,
+            PRICE_DROP: null,
+            BACK_ON_MARKET: null,
+          };
+          const updated: Record<AlertType, SubState> = {
+            NEW_LISTING:
+              type === 'NEW_LISTING'
+                ? { id: data.id, isEnabled: true }
+                : (base.NEW_LISTING ?? null),
+            PRICE_DROP:
+              type === 'PRICE_DROP' ? { id: data.id, isEnabled: true } : (base.PRICE_DROP ?? null),
+            BACK_ON_MARKET:
+              type === 'BACK_ON_MARKET'
+                ? { id: data.id, isEnabled: true }
+                : (base.BACK_ON_MARKET ?? null),
+          };
+          return { ...prev, [searchId]: updated };
+        });
+      }
+    }
+  }
+
+  const sortedSearches = [...searches].sort((a, b) => {
+    const ta = new Date(a.updatedAt).getTime();
+    const tb = new Date(b.updatedAt).getTime();
+    return tb - ta;
+  });
+  const primarySearch =
+    sortedSearches.find((s) => s.id === activeSearchId) ?? sortedSearches[0] ?? null;
+  const previewSearches: SavedSearchDTO[] = primarySearch
+    ? [primarySearch, ...sortedSearches.filter((s) => s.id !== primarySearch.id).slice(0, 1)]
+    : [];
+  const remainingSearchesCount = Math.max(0, searches.length - previewSearches.length);
+
+  const savedSearchCardProps = (s: SavedSearchDTO) => ({
+    s,
+    activeSearchId,
+    expandedId,
+    onToggleExpand: (id: string) => setExpandedId((prev) => (prev === id ? null : id)),
+    deleteConfirmId,
+    setDeleteConfirmId,
+    subsBySearch,
+    deliveriesBySearch,
+    onMatch: handleMatch,
+    onEditOpen: handleEditOpen,
+    onSetActive: handleSetActive,
+    onDelete: handleDelete,
+    onAlert: handleAlert,
+  });
 
   if (loading) {
     return (
@@ -236,116 +449,66 @@ export default function DashboardPage() {
           </p>
         )}
 
-        <div className="mt-3 flex flex-wrap gap-2">
-          {['Casa en venta', 'Depto alquiler', 'Terreno', 'Con pileta'].map((suggestion) => (
-            <button
-              key={suggestion}
-              type="button"
-              onClick={() => {
-                setSearchText(suggestion);
-                inputRef.current?.focus();
-              }}
-              className="px-3 py-1.5 text-sm rounded-full bg-[var(--mp-bg)] text-[var(--mp-muted)] hover:bg-sky-50 hover:text-sky-600 border border-[var(--mp-border)] transition-colors"
-            >
-              {suggestion}
-            </button>
-          ))}
-        </div>
+        {/* Sugerencias removidas en la home (dashboard) */}
       </div>
 
-      {/* Mis match y Mis alertas — destacados */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-        <Link
-          href="/me/match"
-          className="block p-4 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/25 hover:shadow-xl transition-shadow"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium opacity-90">Mis match</p>
-              <p className="text-xs opacity-75 mt-0.5">
-                Propiedades de tus búsquedas, ordenadas por like y favoritos
-              </p>
-            </div>
-            <span className="text-3xl">🔥</span>
-          </div>
-        </Link>
-        <Link
-          href="/alerts"
-          className="block p-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25 hover:shadow-xl transition-shadow"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium opacity-90">Mis alertas</p>
-              <p className="text-xs opacity-75 mt-0.5">Resultado de todas las alertas activas</p>
-            </div>
-            <span className="text-3xl">🔔</span>
-          </div>
-        </Link>
-      </div>
-
-      {/* Stats rápidos */}
-      {recentMatches > 0 && (
-        <Link
-          href="/feed"
-          className="block mb-6 p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] hover:border-sky-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-[var(--mp-muted)]">Propiedades disponibles</p>
-              <p className="text-2xl font-bold text-[var(--mp-foreground)]">
-                {recentMatches.toLocaleString()}
-              </p>
-            </div>
-            <span className="text-3xl">🏠</span>
-          </div>
-          <p className="text-sm text-sky-600 mt-1">Ver feed →</p>
-        </Link>
-      )}
-
-      {/* Mis búsquedas */}
-      {searches.length > 0 && (
-        <div>
+      {/* Mis búsquedas — búsqueda activa (o la primera) + Ver más con misma UX que /searches */}
+      {primarySearch && (
+        <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">Mis búsquedas</h2>
             <Link href="/searches" className="text-sm text-sky-600 hover:underline">
               Ver todas
             </Link>
           </div>
-
-          <div className="space-y-2">
-            {searches.slice(0, 5).map((search) => (
-              <button
-                key={search.id}
-                type="button"
-                onClick={() => activateSearch(search.id)}
-                className="w-full p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] hover:border-sky-300 hover:shadow-sm text-left transition-all group"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-medium text-[var(--mp-foreground)] truncate">
-                      {search.name || 'Búsqueda guardada'}
-                    </h3>
-                    {search.filters && Object.keys(search.filters).length > 0 && (
-                      <p className="text-sm text-[var(--mp-muted)] truncate mt-0.5">
-                        {filtersToHumanSummary(search.filters)}
-                      </p>
-                    )}
-                  </div>
-                  <span className="ml-3 text-sky-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                    →
-                  </span>
-                </div>
-              </button>
+          <div className="space-y-3">
+            {previewSearches.map((s) => (
+              <SavedSearchCard key={s.id} {...savedSearchCardProps(s)} />
             ))}
+            {remainingSearchesCount > 0 && (
+              <p className="text-xs text-[var(--mp-muted)] mt-1">
+                Y {remainingSearchesCount} búsquedas más están disponibles en “Ver todas”.
+              </p>
+            )}
           </div>
         </div>
       )}
 
-      {/* Mis alertas */}
+      {/* Mis match — botón alargado: likes → favoritos → resultados búsquedas */}
+      <Link
+        href="/me/match"
+        className="block w-full p-4 mb-6 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/25 hover:shadow-xl transition-shadow md:hidden"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-base font-semibold opacity-95">Mis match</p>
+            <p className="text-xs opacity-80 mt-0.5">
+              Likes 👍 → Favoritos ★ → Resultados de búsquedas guardadas
+            </p>
+          </div>
+          <span className="text-4xl">🔥</span>
+        </div>
+      </Link>
+
+      {/* Mis alertas — destacado */}
+      <Link
+        href="/alerts"
+        className="block w-full p-4 mb-6 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25 hover:shadow-xl transition-shadow md:hidden"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-base font-semibold opacity-95">Mis alertas</p>
+            <p className="text-xs opacity-80 mt-0.5">Resultado de todas las alertas activas</p>
+          </div>
+          <span className="text-4xl">🔔</span>
+        </div>
+      </Link>
+
+      {/* Detalle de alertas activas */}
       {alerts.length > 0 && (
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">Mis alertas</h2>
+            <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">Alertas activas</h2>
             <Link href="/alerts" className="text-sm text-sky-600 hover:underline">
               Ver todas
             </Link>
@@ -399,8 +562,8 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Accesos rápidos: Match, Búsquedas, Alertas, etc. */}
-      <div className="mt-8 pt-6 border-t border-[var(--mp-border)]">
+      {/* Accesos rápidos — solo en mobile (web tiene sidebar) */}
+      <div className="md:hidden mt-8 pt-6 border-t border-[var(--mp-border)]">
         <div className="grid grid-cols-2 gap-3">
           <Link
             href="/feed"
@@ -446,6 +609,17 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      <EditSearchModal
+        open={!!editingId}
+        editName={editName}
+        editText={editText}
+        editSaving={editSaving}
+        onEditName={setEditName}
+        onEditText={setEditText}
+        onSave={handleEditSave}
+        onClose={() => setEditingId(null)}
+      />
     </main>
   );
 }
