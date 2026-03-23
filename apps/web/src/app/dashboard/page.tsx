@@ -253,67 +253,17 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Mis match y Mis alertas — destacados */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-        <Link
-          href="/me/match"
-          className="block p-4 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/25 hover:shadow-xl transition-shadow"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium opacity-90">Mis match</p>
-              <p className="text-xs opacity-75 mt-0.5">
-                Propiedades de tus búsquedas, ordenadas por like y favoritos
-              </p>
-            </div>
-            <span className="text-3xl">🔥</span>
-          </div>
-        </Link>
-        <Link
-          href="/alerts"
-          className="block p-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25 hover:shadow-xl transition-shadow"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium opacity-90">Mis alertas</p>
-              <p className="text-xs opacity-75 mt-0.5">Resultado de todas las alertas activas</p>
-            </div>
-            <span className="text-3xl">🔔</span>
-          </div>
-        </Link>
-      </div>
-
-      {/* Stats rápidos */}
-      {recentMatches > 0 && (
-        <Link
-          href="/feed"
-          className="block mb-6 p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] hover:border-sky-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-[var(--mp-muted)]">Propiedades disponibles</p>
-              <p className="text-2xl font-bold text-[var(--mp-foreground)]">
-                {recentMatches.toLocaleString()}
-              </p>
-            </div>
-            <span className="text-3xl">🏠</span>
-          </div>
-          <p className="text-sm text-sky-600 mt-1">Ver feed →</p>
-        </Link>
-      )}
-
-      {/* Mis búsquedas */}
+      {/* Mis búsquedas — última visible, resto con Ver más */}
       {searches.length > 0 && (
-        <div>
+        <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">Mis búsquedas</h2>
             <Link href="/searches" className="text-sm text-sky-600 hover:underline">
               Ver todas
             </Link>
           </div>
-
           <div className="space-y-2">
-            {searches.slice(0, 5).map((search) => (
+            {searches.slice(0, 1).map((search) => (
               <button
                 key={search.id}
                 type="button"
@@ -337,15 +287,53 @@ export default function DashboardPage() {
                 </div>
               </button>
             ))}
+            {searches.length > 1 && (
+              <Link
+                href="/searches"
+                className="block w-full py-3 text-center text-sm text-sky-600 hover:text-sky-700 font-medium rounded-2xl border border-dashed border-[var(--mp-border)] hover:border-sky-300"
+              >
+                Ver más ({searches.length - 1})
+              </Link>
+            )}
           </div>
         </div>
       )}
 
-      {/* Mis alertas */}
+      {/* Mis match — botón alargado: likes → favoritos → resultados búsquedas */}
+      <Link
+        href="/me/match"
+        className="block w-full p-4 mb-6 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/25 hover:shadow-xl transition-shadow"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-base font-semibold opacity-95">Mis match</p>
+            <p className="text-xs opacity-80 mt-0.5">
+              Likes 👍 → Favoritos ★ → Resultados de búsquedas guardadas
+            </p>
+          </div>
+          <span className="text-4xl">🔥</span>
+        </div>
+      </Link>
+
+      {/* Mis alertas — destacado */}
+      <Link
+        href="/alerts"
+        className="block w-full p-4 mb-6 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25 hover:shadow-xl transition-shadow"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-base font-semibold opacity-95">Mis alertas</p>
+            <p className="text-xs opacity-80 mt-0.5">Resultado de todas las alertas activas</p>
+          </div>
+          <span className="text-4xl">🔔</span>
+        </div>
+      </Link>
+
+      {/* Detalle de alertas activas */}
       {alerts.length > 0 && (
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">Mis alertas</h2>
+            <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">Alertas activas</h2>
             <Link href="/alerts" className="text-sm text-sky-600 hover:underline">
               Ver todas
             </Link>
@@ -399,8 +387,8 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Accesos rápidos: Match, Búsquedas, Alertas, etc. */}
-      <div className="mt-8 pt-6 border-t border-[var(--mp-border)]">
+      {/* Accesos rápidos — solo en mobile (web tiene sidebar) */}
+      <div className="md:hidden mt-8 pt-6 border-t border-[var(--mp-border)]">
         <div className="grid grid-cols-2 gap-3">
           <Link
             href="/feed"

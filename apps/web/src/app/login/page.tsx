@@ -11,7 +11,6 @@ function LoginPageContent() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle');
   const [devLink, setDevLink] = useState<string | null>(null);
   const [magicMessage, setMagicMessage] = useState<string | null>(null);
-  const [oauthError, setOauthError] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const [demoError, setDemoError] = useState(false);
   const [password, setPassword] = useState('');
@@ -21,10 +20,6 @@ function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const useDemoTriggered = useRef(false);
-
-  useEffect(() => {
-    if (searchParams.get('error') === 'oauth') setOauthError(true);
-  }, [searchParams]);
 
   const handleDemoLink = useCallback(async () => {
     setDemoError(false);
@@ -120,10 +115,6 @@ function LoginPageContent() {
     }
   }
 
-  function handleOAuth(provider: string) {
-    window.location.href = `${API_BASE}/auth/oauth/${provider}`;
-  }
-
   async function handleLogout() {
     try {
       await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
@@ -134,12 +125,17 @@ function LoginPageContent() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6 sm:p-8 bg-[var(--mp-bg)]">
-      <div className="w-full max-w-sm space-y-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-center text-[var(--mp-foreground)]">
-          Iniciar sesión
-        </h1>
+      <div className="w-full max-w-sm space-y-5">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--mp-foreground)]">
+            Iniciar sesión
+          </h1>
+          <p className="text-sm text-[var(--mp-muted)] mt-1">
+            Magic link a tu email, o demo para probar
+          </p>
+        </div>
 
-        <form onSubmit={handleMagicLink} className="space-y-5">
+        <form onSubmit={handleMagicLink} className="space-y-4">
           <div>
             <label
               htmlFor="email"
@@ -167,44 +163,60 @@ function LoginPageContent() {
         </form>
 
         {status === 'sent' && (
-          <div className="text-sm text-center space-y-2">
-            <p className="text-green-600">
+          <div className="p-4 rounded-2xl bg-green-100 dark:bg-green-950/40 border border-green-300 dark:border-green-800 space-y-3">
+            <p className="font-medium text-green-800 dark:text-green-300 text-center">
+              ✓ Link enviado
+            </p>
+            <p className="text-sm text-green-700 dark:text-green-200 text-center">
               {magicMessage ??
                 'Revisá tu correo. Si existe, recibirás un link para iniciar sesión.'}
             </p>
             {devLink && (
               <a
                 href={devLink}
-                className="block w-full py-3 mt-2 bg-green-100 text-green-800 rounded-xl font-medium hover:bg-green-200"
+                className="block w-full py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 text-center"
                 target="_blank"
                 rel="noreferrer"
               >
-                Abrir link de acceso (dev)
+                Abrir magic link (dev)
               </a>
             )}
             <button
               type="button"
               onClick={handleVolver}
-              className="block w-full py-2 mt-2 text-sm text-[var(--mp-muted)] hover:text-[var(--mp-foreground)] border border-[var(--mp-border)] rounded-xl hover:bg-[var(--mp-card)]"
+              className="block w-full py-2 text-sm text-[var(--mp-muted)] hover:text-[var(--mp-foreground)] border border-[var(--mp-border)] rounded-xl hover:bg-[var(--mp-card)]"
             >
               Volver
             </button>
           </div>
         )}
         {status === 'error' && (
-          <div className="text-sm text-red-600 text-center space-y-1">
-            <p>Error. Intentá de nuevo.</p>
-            <p className="text-[var(--mp-muted)] text-xs">
-              Para ingresar rápido, usá <strong>Entrar como demo</strong>.
-            </p>
+          <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300 text-center">
+            <p>Error al enviar. Intentá de nuevo o usá <strong>Entrar como demo</strong>.</p>
           </div>
         )}
 
         {searchParams.get('error') === 'admin_magic_forbidden' && (
-          <div className="text-sm text-red-600 text-center space-y-1">
-            <p>Los administradores deben ingresar con email y contraseña.</p>
+          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-sm text-amber-800 dark:text-amber-200 text-center">
+            Los administradores deben entrar con email y contraseña.
           </div>
         )}
+
+        <div className="space-y-1">
+          <button
+            type="button"
+            onClick={handleDemoLink}
+            disabled={demoLoading}
+            className="w-full py-3 text-sm font-medium rounded-xl border-2 border-green-600 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30 disabled:opacity-50 transition-colors"
+          >
+            {demoLoading ? 'Entrando...' : 'Entrar como demo'}
+          </button>
+          {demoError && (
+            <p className="text-xs text-red-600 dark:text-red-400 text-center">
+              No se pudo conectar. En local ejecutá <code className="px-1 rounded bg-[var(--mp-card)]">pnpm run dev-local</code>.
+            </p>
+          )}
+        </div>
 
         <form
           onSubmit={handlePasswordLogin}
@@ -234,92 +246,30 @@ function LoginPageContent() {
           )}
         </form>
 
-        <div className="space-y-1">
-          <button
-            type="button"
-            onClick={handleDemoLink}
-            disabled={demoLoading}
-            className="w-full py-2 text-sm font-medium rounded-lg border border-green-600 text-green-700 hover:bg-green-50 disabled:opacity-50 transition-colors"
-          >
-            {demoLoading ? 'Entrando...' : 'Entrar como demo'}
-          </button>
-          {demoError && (
-            <p className="text-xs text-red-600 text-center">
-              No se pudo conectar con la API. Dejá la terminal abierta con{' '}
-              <code className="bg-black/10 px-1 rounded">pnpm run dev-local</code>.
-            </p>
-          )}
-        </div>
-
-        <p className="text-sm text-amber-600 text-center">
-          Google/Apple/Facebook requieren configuración. Usá Magic Link o Passkey.
-        </p>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-[var(--mp-bg)]">o continuar con</span>
-          </div>
-        </div>
-
-        {oauthError && (
-          <p className="text-sm text-amber-600 text-center">
-            OAuth no configurado. Usá Magic Link o Passkey.
-          </p>
-        )}
-        <div className="space-y-2">
-          <button
-            type="button"
-            onClick={() => {
-              setOauthError(false);
-              handleOAuth('google');
-            }}
-            className="w-full py-2 border rounded hover:bg-gray-50"
-          >
-            Continuar con Google
-          </button>
-          <button
-            type="button"
-            onClick={() => handleOAuth('apple')}
-            className="w-full py-2 border rounded hover:bg-gray-50"
-          >
-            Continuar con Apple
-          </button>
-          <button
-            type="button"
-            onClick={() => handleOAuth('facebook')}
-            className="w-full py-2 border rounded hover:bg-gray-50"
-          >
-            Continuar con Facebook
-          </button>
-        </div>
-
-        <div>
+        <div className="pt-4 border-t border-[var(--mp-border)] space-y-3">
           <button
             type="button"
             onClick={() => router.push('/login/passkey')}
-            className="w-full py-2 border rounded hover:bg-gray-50"
+            className="w-full py-2.5 text-sm border border-[var(--mp-border)] rounded-xl hover:bg-[var(--mp-card)] text-[var(--mp-foreground)]"
           >
             Entrar con passkey
           </button>
-          <p className="text-xs text-slate-500 text-center mt-2">
-            ¿Primera vez? En la pantalla de passkey podés crear uno.
+          <p className="text-center text-xs text-[var(--mp-muted)]">
+            ¿No tenés cuenta?{' '}
+            <Link href="/register" className="text-[var(--mp-accent)] hover:underline">
+              Registrarse
+            </Link>
+          </p>
+          <p className="text-center text-xs text-[var(--mp-muted)]">
+            Sesión activa?{' '}
+            <button type="button" onClick={handleLogout} className="text-[var(--mp-accent)] hover:underline">
+              Cerrar sesión
+            </button>
           </p>
         </div>
 
-        <p className="text-center text-xs text-[var(--mp-muted)] pt-4 border-t border-[var(--mp-border)]">
-          ¿No tenés cuenta?{' '}
-          <Link href="/register" className="text-sky-600 hover:underline">
-            Registrarse
-          </Link>
-        </p>
-        <p className="text-center text-xs text-[var(--mp-muted)]">
-          Si te redirige al feed al entrar, hay sesión activa.{' '}
-          <button type="button" onClick={handleLogout} className="underline hover:no-underline">
-            Cerrar sesión y limpiar
-          </button>
+        <p className="text-xs text-[var(--mp-muted)] text-center">
+          Google/Apple/Facebook requieren configuración. Usá Magic Link o demo.
         </p>
       </div>
     </main>
