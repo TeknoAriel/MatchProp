@@ -16,7 +16,9 @@ type ListingStatus = {
   lead: { status: string } | null;
 };
 
-function normalizeCard(raw: unknown): (ListingCard & { media?: { url: string; sortOrder: number }[] }) | null {
+function normalizeCard(
+  raw: unknown
+): (ListingCard & { media?: { url: string; sortOrder: number }[] }) | null {
   if (!raw || typeof raw !== 'object') return null;
   const c = raw as Record<string, unknown>;
   const id = typeof c.id === 'string' ? c.id : null;
@@ -24,7 +26,10 @@ function normalizeCard(raw: unknown): (ListingCard & { media?: { url: string; so
   const media = Array.isArray(c.media)
     ? (c.media as { url?: string; sortOrder?: number }[])
         .filter((m): m is { url: string; sortOrder?: number } => typeof m?.url === 'string')
-        .map((m, i) => ({ url: m.url, sortOrder: typeof m.sortOrder === 'number' ? m.sortOrder : i }))
+        .map((m, i) => ({
+          url: m.url,
+          sortOrder: typeof m.sortOrder === 'number' ? m.sortOrder : i,
+        }))
     : undefined;
   return {
     id,

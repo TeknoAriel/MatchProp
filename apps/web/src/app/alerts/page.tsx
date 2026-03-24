@@ -197,10 +197,7 @@ export default function AlertsPage() {
                         ? `${d.listingCurrency ?? 'USD'} ${d.listingPrice.toLocaleString()}`
                         : ''}
                     </span>
-                    <span
-                      className="text-xs text-[var(--mp-muted)]"
-                      suppressHydrationWarning
-                    >
+                    <span className="text-xs text-[var(--mp-muted)]" suppressHydrationWarning>
                       {new Date(d.createdAt).toLocaleDateString('es-AR', {
                         day: '2-digit',
                         month: '2-digit',
