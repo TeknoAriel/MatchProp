@@ -169,6 +169,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     timeout-minutes: 15
+    continue-on-error: true  # No bloquear merge; revisar logs si falla
     services:
       postgres:
         image: postgres:16

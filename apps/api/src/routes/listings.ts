@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { trackEvent } from '../lib/analytics.js';
+import { isProductionRuntime } from '../lib/error-handler.js';
 
 export async function listingRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', fastify.authenticate);
@@ -372,17 +373,26 @@ export async function listingRoutes(fastify: FastifyInstance) {
         });
         if (!res.ok) {
           const text = await res.text();
+          request.log.warn(
+            { status: res.status, bodyPreview: text.slice(0, 200) },
+            'Kiteprop callback responded with error'
+          );
           return reply.status(502).send({
             ok: false,
-            message: `Kiteprop respondió ${res.status}: ${text.slice(0, 200)}`,
+            message: isProductionRuntime()
+              ? 'Error al enviar la consulta. Intentá más tarde.'
+              : `Kiteprop respondió ${res.status}: ${text.slice(0, 200)}`,
           });
         }
         return { ok: true, message: 'Lead enviado a Kiteprop' };
       } catch (err) {
+        request.log.error({ err }, 'Kiteprop callback failed');
         const msg = err instanceof Error ? err.message : String(err);
         return reply.status(502).send({
           ok: false,
-          message: `Error al conectar con Kiteprop: ${msg}`,
+          message: isProductionRuntime()
+            ? 'Error al enviar la consulta. Intentá más tarde.'
+            : `Error al conectar con Kiteprop: ${msg}`,
         });
       }
     }

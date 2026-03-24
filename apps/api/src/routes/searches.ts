@@ -272,13 +272,8 @@ export async function searchesRoutes(fastify: FastifyInstance) {
 
         return result;
       } catch (err) {
-        request.log.error(err, 'Searches results error');
-        return {
-          items: [],
-          total: 0,
-          limit,
-          nextCursor: null,
-        };
+        request.log.error({ err }, 'Searches results error');
+        throw err;
       }
     }
   );

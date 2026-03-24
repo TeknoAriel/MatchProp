@@ -1,6 +1,8 @@
 # Configurar permisos para deploy 100% automático
 
-Si el PR se crea pero **no se hace merge automático** cuando CI pasa, o si algún workflow falla, seguí estos pasos. Solo los tenés que hacer **una vez**.
+Si el PR se crea pero **no se hace merge automático** cuando CI pasa, o hay demoras/errores al deployar, seguí estos pasos. Solo los tenés que hacer **una vez**.
+
+Ver también **`docs/DEPLOY_TROUBLESHOOTING.md`** para diagnóstico cuando los cambios no llegan a producción.
 
 ---
 

@@ -5,6 +5,12 @@ alwaysApply: true
 
 # Deploy automático
 
+## ⛔ Regla crítica
+
+**NUNCA pedir al usuario que deploye.** El usuario no ejecuta comandos, no crea PRs, no hace merge. El agente hace TODO. Si hay un impedimento técnico, informar y resolver; no derivar la tarea al usuario.
+
+**NUNCA decir "listo" o "deployado" hasta verificar que el commit está en main Y en producción.** Ejecutar `bash scripts/verify-deploy-status.sh`; solo cuando pase, informar. Si el PR no se mergea o prod no se actualiza, el usuario pierde tiempo.
+
 ## Responsabilidad del agente
 
 **Es responsabilidad del agente que todo funcione en automático y se deploye cada vez que se termine un sprint** para probar en producción.
@@ -26,7 +32,12 @@ Cuando el usuario pida **deploy**, **deployar**, **subir a producción**, **term
    - NO pedir que cree el PR.
    - NO pedir que haga merge.
 
-4. **Verificar que la pipeline esté verde** (CI, deploy-auto, cron-ingest) y que el PR se mergee automáticamente. Si algo falla, corregir.
+4. **Verificar pipeline y merge**: CI debe pasar. Si el PR no se mergea tras CI verde, ver `docs/DEPLOY_TROUBLESHOOTING.md` (AUTOMERGE_TOKEN, branch protection).
+
+5. **Verificación obligatoria antes de informar**:
+   - `bash scripts/verify-deploy-status.sh` → debe mostrar "Producción está en el commit de main"
+   - Si no: esperar 2-3 min (Vercel) y reintentar, o investigar por qué no se mergeó.
+   - **Solo cuando verify-deploy-status.sh pase:** informar que el deploy está en producción.
 
 ## Automatización en GitHub
 
@@ -43,4 +54,4 @@ Si el merge automático nunca funcionó, el usuario configura **una vez** permis
 
 ## Regla de oro
 
-**El usuario no ejecuta ni verifica nada** en el día a día. El agente hace commit, push, verificaciones y asegura que la pipeline despliegue automáticamente al terminar cada sprint.
+No decir "listo" hasta que `verify-deploy-status.sh` confirme que producción tiene el commit de main. Ver `docs/DEPLOY_TROUBLESHOOTING.md` si los PRs no se mergean.

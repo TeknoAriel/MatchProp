@@ -16,11 +16,21 @@ type ListingStatus = {
   lead: { status: string } | null;
 };
 
-function normalizeCard(raw: unknown): ListingCard | null {
+function normalizeCard(
+  raw: unknown
+): (ListingCard & { media?: { url: string; sortOrder: number }[] }) | null {
   if (!raw || typeof raw !== 'object') return null;
   const c = raw as Record<string, unknown>;
   const id = typeof c.id === 'string' ? c.id : null;
   if (!id) return null;
+  const media = Array.isArray(c.media)
+    ? (c.media as { url?: string; sortOrder?: number }[])
+        .filter((m): m is { url: string; sortOrder?: number } => typeof m?.url === 'string')
+        .map((m, i) => ({
+          url: m.url,
+          sortOrder: typeof m.sortOrder === 'number' ? m.sortOrder : i,
+        }))
+    : undefined;
   return {
     id,
     title: typeof c.title === 'string' ? c.title : null,
@@ -34,6 +44,7 @@ function normalizeCard(raw: unknown): ListingCard | null {
     publisherRef: typeof c.publisherRef === 'string' ? c.publisherRef : null,
     source: typeof c.source === 'string' ? c.source : 'API_PARTNER_1',
     operationType: typeof c.operationType === 'string' ? c.operationType : null,
+    ...(media?.length ? { media } : {}),
   };
 }
 
@@ -44,48 +55,72 @@ export default function MyMatchPage() {
   const [listingsStatus, setListingsStatus] = useState<Record<string, ListingStatus>>({});
   const [inquiryListingId, setInquiryListingId] = useState<string | null>(null);
 
-  const fetchFeed = useCallback(async () => {
-    const res = await fetch(`${API_BASE}/feed?limit=100&includeTotal=1`, {
-      credentials: 'include',
-    });
-    if (res.status === 401) {
-      router.replace('/login');
-      return [];
-    }
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (data.items ?? [])
-      .map(normalizeCard)
-      .filter((c: ListingCard | null): c is ListingCard => c !== null);
-  }, [router]);
+  const fetchFeed = useCallback(
+    async (searchId?: string | null) => {
+      const url = searchId
+        ? `${API_BASE}/feed?limit=100&includeTotal=1&searchId=${encodeURIComponent(searchId)}`
+        : `${API_BASE}/feed?limit=100&includeTotal=1`;
+      const res = await fetch(url, { credentials: 'include' });
+      if (res.status === 401) {
+        router.replace('/login');
+        return [];
+      }
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.items ?? [])
+        .map(normalizeCard)
+        .filter((c: ListingCard | null): c is ListingCard => c !== null);
+    },
+    [router]
+  );
 
   useEffect(() => {
-    fetchFeed().then((raw) => {
+    async function load() {
+      let raw = await fetchFeed();
+      if (raw.length === 0) {
+        const searchesRes = await fetch(`${API_BASE}/searches`, { credentials: 'include' });
+        if (searchesRes.ok) {
+          const searches = await searchesRes.json();
+          const first = Array.isArray(searches) ? searches[0] : null;
+          if (first?.id) {
+            await fetch(`${API_BASE}/me/active-search`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ searchId: first.id }),
+            });
+            raw = await fetchFeed(first.id);
+          }
+        }
+      }
       const ids = raw.map((c: ListingCard) => c.id).filter(Boolean);
       if (ids.length === 0) {
         setItems([]);
         setLoading(false);
         return;
       }
-      fetch(`${API_BASE}/listings/my-status-bulk?ids=${ids.join(',')}`, {
-        credentials: 'include',
-      })
-        .then((r) => (r.ok ? r.json() : { items: {} }))
-        .then((data: { items?: Record<string, ListingStatus> }) => {
-          const status = data.items ?? {};
-          const sorted = [...raw].sort((a, b) => {
-            const sa = status[a.id];
-            const sb = status[b.id];
-            const scoreA = sa?.inLike ? 0 : sa?.inFavorite ? 1 : 2;
-            const scoreB = sb?.inLike ? 0 : sb?.inFavorite ? 1 : 2;
-            return scoreA - scoreB;
-          });
-          setItems(sorted);
-          setListingsStatus(status);
-        })
-        .catch(() => setItems(raw))
-        .finally(() => setLoading(false));
-    });
+      try {
+        const r = await fetch(`${API_BASE}/listings/my-status-bulk?ids=${ids.join(',')}`, {
+          credentials: 'include',
+        });
+        const data: { items?: Record<string, ListingStatus> } = r.ok ? await r.json() : {};
+        const status = data.items ?? {};
+        const sorted = [...raw].sort((a, b) => {
+          const sa = status[a.id];
+          const sb = status[b.id];
+          const scoreA = sa?.inLike ? 0 : sa?.inFavorite ? 1 : 2;
+          const scoreB = sb?.inLike ? 0 : sb?.inFavorite ? 1 : 2;
+          return scoreA - scoreB;
+        });
+        setItems(sorted);
+        setListingsStatus(status);
+      } catch {
+        setItems(raw);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
   }, [fetchFeed]);
 
   async function handleToggleLike(listingId: string) {
