@@ -38,7 +38,10 @@ El `GITHUB_TOKEN` por defecto **no puede** mergear PRs en branches protegidos. N
    - Name: `AUTOMERGE_TOKEN`
    - Value: pegar el token
 
-El workflow `pr-automerge-label` usa este secret cuando existe. Si no está, usará `GITHUB_TOKEN` y el merge fallará en branches protegidos.
+Los workflows `pr-automerge-label`, `merge-after-ci` y `manual-merge-pr` usan este secret cuando existe. Si no está, usará `GITHUB_TOKEN` y el merge fallará en branches protegidos.
+
+- **Merge after CI** (`.github/workflows/merge-after-ci.yml`): cuando el workflow **CI** termina en verde en un PR, intenta `squash` del PR si tiene etiqueta `automerge` (no depende solo del evento `labeled`).
+- **Manual merge PR**: reserva si hace falta — **Actions → Manual merge PR** → indicar número de PR.
 
 ---
 
@@ -68,7 +71,7 @@ Si tenés "Require approvals" > 0, el bot no puede mergear hasta que alguien apr
 Los workflows ya están configurados. Si GitHub marca errores de permisos:
 
 - **deploy-auto-pr**: necesita `pull-requests: write` (crear PR, labels)
-- **pr-automerge-label**: necesita `contents: write`, `pull-requests: write`
+- **pr-automerge-label**, **merge-after-ci**, **manual-merge-pr**: necesitan `contents: write`, `pull-requests: write`
 
 En **Settings → Actions → General**:
 
