@@ -3,6 +3,7 @@ import './globals.css';
 import { ThemeProvider } from '../components/ThemeProvider';
 import { ToastProvider } from '../components/FunToast';
 import AppShell from '../components/AppShell';
+import { BuildStamp } from '../components/BuildStamp';
 
 const PRODUCT_NAME = process.env.NEXT_PUBLIC_PRODUCT_NAME || 'MatchProp';
 
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ThemeProvider>
           <ToastProvider>
             <AppShell>{children}</AppShell>
+            <BuildStamp />
           </ToastProvider>
         </ThemeProvider>
       </body>
