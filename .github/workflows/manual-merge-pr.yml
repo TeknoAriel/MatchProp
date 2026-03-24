@@ -1,0 +1,30 @@
+# Respaldo: merge manual desde Actions (p. ej. si el merge automático no corre).
+# Inputs: número de PR. Usa AUTOMERGE_TOKEN si existe.
+name: Manual merge PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Número del PR a mergear (squash)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge squash
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          PR="${{ github.event.inputs.pr_number }}"
+          REPO="${{ github.repository }}"
+          gh pr view "$PR" --repo "$REPO" || { echo "::error::PR #$PR no existe"; exit 1; }
+          gh pr merge "$PR" --repo "$REPO" --squash --delete-branch
+          echo "PR #$PR mergeado."
