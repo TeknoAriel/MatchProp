@@ -5,6 +5,10 @@ alwaysApply: true
 
 # Deploy automático
 
+## ⛔ Regla crítica
+
+**NUNCA pedir al usuario que deploye.** El usuario no ejecuta comandos, no crea PRs, no hace merge. El agente hace TODO. Si hay un impedimento técnico (ej. gh no autenticado), informar y resolver; no derivar la tarea al usuario.
+
 ## Responsabilidad del agente
 
 **Es responsabilidad del agente que todo funcione en automático y se deploye cada vez que se termine un sprint** para probar en producción.
@@ -28,6 +32,11 @@ Cuando el usuario pida **deploy**, **deployar**, **subir a producción**, **term
 
 4. **Verificar que la pipeline esté verde** (CI, deploy-auto, cron-ingest) y que el PR se mergee automáticamente. Si algo falla, corregir.
 
+5. **Al finalizar el deploy**, verificar producción:
+   - `curl -s https://match-prop-admin-dsvv.vercel.app/health` → status ok
+   - `bash scripts/smoke-prod.sh` → OK
+   - Informar al usuario que todo quedó OK. Si falla, corregir.
+
 ## Automatización en GitHub
 
 Tras el push, el workflow `.github/workflows/deploy-auto-pr.yml`:
@@ -43,4 +52,4 @@ Si el merge automático nunca funcionó, el usuario configura **una vez** permis
 
 ## Regla de oro
 
-**El usuario no ejecuta ni verifica nada** en el día a día. El agente hace commit, push, verificaciones y asegura que la pipeline despliegue automáticamente al terminar cada sprint.
+**El usuario no ejecuta ni verifica nada** en el día a día. El agente hace commit, push, verificaciones y asegura que la pipeline despliegue automáticamente al terminar cada sprint. No ofrecer "podés hacer el deploy" ni "creá el PR"; el agente lo hace. Si no hay cambios pendientes, verificar que producción esté OK (health + smoke).

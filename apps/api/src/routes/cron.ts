@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { runIngest } from '../services/ingest/index.js';
 import { prisma } from '../lib/prisma.js';
+import { isProductionRuntime } from '../lib/error-handler.js';
 
 const CRON_SECRET = process.env.CRON_SECRET || '';
 
@@ -70,13 +71,16 @@ export async function cronRoutes(fastify: FastifyInstance) {
         };
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
-        console.error('[Cron Ingest Error]', msg);
+        request.log.error({ err: error }, 'Cron ingest failed');
 
-        return reply.status(500).send({
+        const body: { ok: false; error?: string; duration: number } = {
           ok: false,
-          error: msg,
           duration: Date.now() - start,
-        });
+        };
+        if (!isProductionRuntime()) {
+          body.error = msg;
+        }
+        return reply.status(500).send(body);
       }
     }
   );
