@@ -30,7 +30,7 @@ jobs:
           fi
 
           echo "Checking lastRun from: $STATUS_URL"
-          STATUS_JSON="$(curl -sS "$STATUS_URL" || true)"
+          STATUS_JSON="$(curl -sS "$STATUS_URL" 2>/dev/null || true)"
           export STATUS_JSON
           LAST_RUN="$(python3 - <<'PY'
 import json, os
@@ -44,7 +44,11 @@ print(v if v is not None else "")
 PY
 )"
 
-          INTERVAL_HOURS="$CRON_INGEST_INTERVAL_HOURS"
+          # Default 240h si la variable viene vacía o no es numérica en el runner
+          INTERVAL_HOURS="${CRON_INGEST_INTERVAL_HOURS:-240}"
+          case "$INTERVAL_HOURS" in
+            ''|*[!0-9]*) INTERVAL_HOURS=240 ;;
+          esac
           INTERVAL_SECONDS=$((INTERVAL_HOURS * 3600))
 
           export LAST_RUN INTERVAL_SECONDS
@@ -53,16 +57,26 @@ import os
 from datetime import datetime, timezone
 
 last = (os.environ.get("LAST_RUN") or "").strip()
-interval_seconds = int(os.environ.get("INTERVAL_SECONDS"))
+raw = (os.environ.get("INTERVAL_SECONDS") or "").strip()
+try:
+    interval_seconds = int(raw) if raw else 864000
+except ValueError:
+    interval_seconds = 864000
 
 if not last:
     print("run")
 else:
-    # lastRun llega como ISO (ej: 2026-03-17T10:00:00.000Z)
-    last_dt = datetime.fromisoformat(last.replace("Z", "+00:00"))
-    now = datetime.now(timezone.utc)
-    diff = (now - last_dt).total_seconds()
-    print("skip" if diff < interval_seconds else "run")
+    try:
+        iso = last.replace("Z", "+00:00") if last.endswith("Z") else last
+        last_dt = datetime.fromisoformat(iso)
+        if last_dt.tzinfo is None:
+            last_dt = last_dt.replace(tzinfo=timezone.utc)
+        now = datetime.now(timezone.utc)
+        diff = (now - last_dt).total_seconds()
+        print("skip" if diff < interval_seconds else "run")
+    except Exception:
+        # Formato inesperado: no bloquear el workflow; intentar ingest
+        print("run")
 PY
 )"
 
