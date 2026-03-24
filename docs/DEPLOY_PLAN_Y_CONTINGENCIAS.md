@@ -2,7 +2,7 @@
 
 ## ¿Podemos seguir trabajando?
 
-**Sí.** El problema no fue “no poder desarrollar”, sino **cómo se mergea a `main`**: el *ruleset* de GitHub exige checks concretos y, con **strict**, la rama del PR debe estar **al día con `main`**. Mientras tanto, podés:
+**Sí.** El problema no fue “no poder desarrollar”, sino **cómo se mergea a `main`**: el _ruleset_ de GitHub exige checks concretos y, con **strict**, la rama del PR debe estar **al día con `main`**. Mientras tanto, podés:
 
 - Trabajar en **ramas de feature** (`fix/…`, `feat/…`) y abrir PRs a `main`.
 - Usar una rama tipo **`deploy-…`** solo si querís el flujo automático (PR + `automerge`); antes de pedir merge final, **mergeá `main` en esa rama** (o rebase) para no quedar `behind`.
@@ -11,13 +11,13 @@
 
 ## Reglas de deploy (recomendadas)
 
-| Regla | Motivo |
-|--------|--------|
-| **Todo a `main` vía PR** | Historial, revisión y CI único. |
-| **Antes de mergear un PR largo:** `git merge origin/main` en tu rama y push | Evita `mergeable: unstable` y cumple *strict* del ruleset. |
-| **Secret `AUTOMERGE_TOKEN`** en el repo | Sin PAT, el bot no puede mergear en `main` protegido. Ver `docs/CONFIGURAR_DEPLOY_AUTOMATICO.md`. |
-| **Un PR de deploy activo** o cerrar los viejos | Varias ramas “deploy” abiertas generan confusión y colas. |
-| **Tras merge a `main`:** esperar 2–5 min y revisar `/health` | Confirma commit en prod (`version` = SHA). |
+| Regla                                                                       | Motivo                                                                                            |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **Todo a `main` vía PR**                                                    | Historial, revisión y CI único.                                                                   |
+| **Antes de mergear un PR largo:** `git merge origin/main` en tu rama y push | Evita `mergeable: unstable` y cumple _strict_ del ruleset.                                        |
+| **Secret `AUTOMERGE_TOKEN`** en el repo                                     | Sin PAT, el bot no puede mergear en `main` protegido. Ver `docs/CONFIGURAR_DEPLOY_AUTOMATICO.md`. |
+| **Un PR de deploy activo** o cerrar los viejos                              | Varias ramas “deploy” abiertas generan confusión y colas.                                         |
+| **Tras merge a `main`:** esperar 2–5 min y revisar `/health`                | Confirma commit en prod (`version` = SHA).                                                        |
 
 ### Reglas del repo en GitHub (no duplicar aquí)
 
@@ -55,7 +55,7 @@
 
 ### E. Auto-merge / etiqueta `automerge` no hace nada
 
-- La etiqueta **no sustituye** los checks obligatorios ni el *strict*.
+- La etiqueta **no sustituye** los checks obligatorios ni el _strict_.
 - Hay que cumplir ruleset + opcionalmente **`AUTOMERGE_TOKEN`**.
 
 ---
