@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { envFlag } from '../config.js';
+import { extractFromRawJson } from '../lib/rawjson-fallback.js';
 
 const listingSelect = {
   id: true,
@@ -9,6 +10,7 @@ const listingSelect = {
   currency: true,
   locationText: true,
   heroImageUrl: true,
+  rawJson: true,
   source: true,
   bedrooms: true,
   bathrooms: true,
@@ -260,13 +262,24 @@ export async function listsRoutes(fastify: FastifyInstance) {
         list: { id: list.id, name: list.name },
         items: list.items.map((i) => {
           const listing = i.listing;
-          const heroImageUrl = listing
-            ? (listing.heroImageUrl ?? listing.media?.[0]?.url ?? null)
-            : null;
+          if (!listing)
+            return { id: i.id, listingId: i.listingId, listing: null };
+          let heroImageUrl = listing.heroImageUrl ?? listing.media?.[0]?.url ?? null;
+          let title = listing.title;
+          let media = listing.media;
+          if ((!heroImageUrl || !title?.trim()) && listing.rawJson) {
+            const fallback = extractFromRawJson(listing.rawJson);
+            if (!heroImageUrl) heroImageUrl = fallback.heroImageUrl;
+            if (!title?.trim()) title = fallback.title;
+            if (!media?.length && fallback.mediaUrls.length) {
+              media = fallback.mediaUrls.map((m) => ({ url: m.url, sortOrder: m.sortOrder }));
+            }
+          }
+          const { rawJson: _r, ...rest } = listing;
           return {
             id: i.id,
             listingId: i.listingId,
-            listing: listing ? { ...listing, heroImageUrl, media: listing.media } : null,
+            listing: { ...rest, heroImageUrl, title, media },
           };
         }),
       };

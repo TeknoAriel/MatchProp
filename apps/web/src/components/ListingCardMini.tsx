@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { formatListingPrice } from '../lib/format-price';
 
 export interface ListingCardMiniData {
   id: string;
@@ -96,9 +97,7 @@ export default function ListingCardMini({
 
   const title = displayTitle(listing);
   const priceText =
-    listing.price != null
-      ? `${listing.currency ?? 'USD'} ${listing.price.toLocaleString()}`
-      : 'Consultar';
+    listing.price != null ? formatListingPrice(listing.price, listing.currency) : 'Consultar';
   const hasLead = !!status?.lead;
   const leadStatus = status?.lead?.status;
   const inLists = status?.inLists ?? [];

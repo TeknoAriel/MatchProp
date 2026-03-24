@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { SavedListType } from '@prisma/client';
+import { extractFromRawJson } from '../lib/rawjson-fallback.js';
 
 export async function savedRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', fastify.authenticate);
@@ -119,6 +120,7 @@ export async function savedRoutes(fastify: FastifyInstance) {
               currency: true,
               locationText: true,
               heroImageUrl: true,
+              rawJson: true,
               source: true,
               bedrooms: true,
               bathrooms: true,
@@ -140,15 +142,27 @@ export async function savedRoutes(fastify: FastifyInstance) {
           const listing = s.listing;
           if (!listing)
             return { id: s.id, listingId: s.listingId, listType: s.listType, listing: null };
-          const heroImageUrl = listing.heroImageUrl ?? listing.media?.[0]?.url ?? null;
+          let heroImageUrl = listing.heroImageUrl ?? listing.media?.[0]?.url ?? null;
+          let title = listing.title;
+          let media = listing.media;
+          if ((!heroImageUrl || !title?.trim()) && listing.rawJson) {
+            const fallback = extractFromRawJson(listing.rawJson);
+            if (!heroImageUrl) heroImageUrl = fallback.heroImageUrl;
+            if (!title?.trim()) title = fallback.title;
+            if (!media?.length && fallback.mediaUrls.length) {
+              media = fallback.mediaUrls.map((m) => ({ url: m.url, sortOrder: m.sortOrder }));
+            }
+          }
           return {
             id: s.id,
             listingId: s.listingId,
             listType: s.listType,
             listing: {
               ...listing,
+              rawJson: undefined,
               heroImageUrl,
-              media: listing.media,
+              title,
+              media,
             },
           };
         }),
