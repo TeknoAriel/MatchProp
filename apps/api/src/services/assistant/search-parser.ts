@@ -81,19 +81,22 @@ function parseBathrooms(text: string): { count: number; isMax?: boolean } | unde
 }
 
 function parseAreaMax(text: string): number | undefined {
-  const m = text.match(
-    /(?:m[aá]ximo|hasta)\s*(\d+)\s*(?:m2|mts2|m²|m\s*2|metros?\s*cuadrados?)/i
-  );
+  const m = text.match(/(?:m[aá]ximo|hasta)\s*(\d+)\s*(?:m2|mts2|m²|m\s*2|metros?\s*cuadrados?)/i);
   return m ? parseInt(m[1]!, 10) : undefined;
 }
 
-function parseSortBy(text: string): 'date_desc' | 'price_asc' | 'price_desc' | 'area_desc' | undefined {
+function parseSortBy(
+  text: string
+): 'date_desc' | 'price_asc' | 'price_desc' | 'area_desc' | undefined {
   const lower = text.toLowerCase();
-  if (/\bm[aá]s\s+barat[oa]s?|ordenar\s+por\s+precio\s+asc|precio\s+asc|menor\s+precio/i.test(lower))
+  if (
+    /\bm[aá]s\s+barat[oa]s?|ordenar\s+por\s+precio\s+asc|precio\s+asc|menor\s+precio/i.test(lower)
+  )
     return 'price_asc';
   if (/\bm[aá]s\s+car[oa]s?|precio\s+desc|mayor\s+precio/i.test(lower)) return 'price_desc';
   if (/\bm[aá]s\s+grandes?|por\s+metros?|área\s+desc|area\s+desc/i.test(lower)) return 'area_desc';
-  if (/\bm[aá]s\s+recientes?|nuevas?|últimas?|ultimas?|por\s+fecha/i.test(lower)) return 'date_desc';
+  if (/\bm[aá]s\s+recientes?|nuevas?|últimas?|ultimas?|por\s+fecha/i.test(lower))
+    return 'date_desc';
   return undefined;
 }
 
