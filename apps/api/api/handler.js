@@ -14,6 +14,19 @@ async function getApp() {
   return appPromise;
 }
 
+/** Quita del query params del catch-all de Vercel (path / [...path]) para no romper el matcher de Fastify. */
+function stripCatchAllFromQuery(qs) {
+  if (!qs || !qs.startsWith('?')) return qs;
+  const params = new URLSearchParams(qs.slice(1));
+  const toDelete = new Set();
+  for (const key of params.keys()) {
+    if (key === 'path' || (key.includes('path') && key.includes('...'))) toDelete.add(key);
+  }
+  for (const k of toDelete) params.delete(k);
+  const rest = params.toString();
+  return rest ? '?' + rest : '';
+}
+
 function pathForFastify(req) {
   const originalUrl =
     req.headers['x-vercel-original-url'] ||
@@ -53,6 +66,7 @@ function pathForFastify(req) {
   pathname = pathname.replace(/^\/api(?=\/|$)/i, '') || '/';
   if (!pathname.startsWith('/')) pathname = '/' + pathname;
 
+  qs = stripCatchAllFromQuery(qs);
   return pathname + qs;
 }
 
@@ -113,7 +127,7 @@ module.exports = async function handler(req, res) {
   const path = pathForFastify(req);
 
   if (req.url?.includes('__debug_raw') || path === '/__debug_raw') {
-    res.status(200).json({
+    sendJson(res, 200, {
       reqUrl: req.url,
       path,
       method,
