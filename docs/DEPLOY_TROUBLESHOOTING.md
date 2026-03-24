@@ -24,17 +24,18 @@ El workflow ya está configurado para usar `AUTOMERGE_TOKEN` si existe.
 
 **Revisar:** Settings → Branches → main → Edit rule
 
-| Regla | Debe estar |
-|-------|------------|
-| Require approvals | **0** (cero) |
-| Require conversation resolution | Desactivado |
-| Require status checks | Los del CI (typecheck, lint, etc.) |
+| Regla                           | Debe estar                         |
+| ------------------------------- | ---------------------------------- |
+| Require approvals               | **0** (cero)                       |
+| Require conversation resolution | Desactivado                        |
+| Require status checks           | Los del CI (typecheck, lint, etc.) |
 
 ### 3. CI falla
 
 **Revisar:** GitHub Actions → workflow que falló → logs
 
 Errores frecuentes:
+
 - **Lint:** `pnpm lint` y `pnpm format:check` deben pasar. Corregir localmente, commit, push.
 - **Typecheck:** Corregir errores de tipos.
 - **Tests:** Revisar qué test falla y corregir.
