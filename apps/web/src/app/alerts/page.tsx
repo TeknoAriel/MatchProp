@@ -191,20 +191,28 @@ export default function AlertsPage() {
                       )}
                     </div>
                   </div>
-                  <span className="text-sm text-[var(--mp-muted)] shrink-0">
-                    {d.listingPrice != null
-                      ? `${d.listingCurrency ?? 'USD'} ${d.listingPrice.toLocaleString()}`
-                      : ''}
-                  </span>
-                  <span
-                    className="text-xs text-[var(--mp-muted)] shrink-0"
-                    suppressHydrationWarning
-                  >
-                    {new Date(d.createdAt).toLocaleDateString('es-AR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                    })}
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-sm text-[var(--mp-muted)]">
+                      {d.listingPrice != null
+                        ? `${d.listingCurrency ?? 'USD'} ${d.listingPrice.toLocaleString()}`
+                        : ''}
+                    </span>
+                    <span
+                      className="text-xs text-[var(--mp-muted)]"
+                      suppressHydrationWarning
+                    >
+                      {new Date(d.createdAt).toLocaleDateString('es-AR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                      })}
+                    </span>
+                    <Link
+                      href={`/listing/${d.listingId}`}
+                      className="px-3 py-1.5 bg-sky-100 text-sky-700 rounded-lg text-sm font-medium hover:bg-sky-200"
+                    >
+                      Ver
+                    </Link>
+                  </div>
                 </li>
               );
             })}
