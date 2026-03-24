@@ -43,10 +43,10 @@ Errores frecuentes:
 
 **Commits que fallaron en PR #10 (deploy-20260324):**
 
-| Commit  | Descripción                         | Causa del fallo                          | Resolución                                      |
-| ------- | ----------------------------------- | ---------------------------------------- | ----------------------------------------------- |
-| `4608bf7` | fix(web): alertas con botón Ver…   | Smoke UX: heading "Alertas" vs "Mis alertas" | Test actualizado con regex que acepta ambos textos |
-| `0876c1e` | fix(deploy): verificación obligatoria | Smoke UX fallando en commit anterior     | Resuelto con fix de smoke-ux.spec.ts            |
+| Commit    | Descripción                           | Causa del fallo                              | Resolución                                         |
+| --------- | ------------------------------------- | -------------------------------------------- | -------------------------------------------------- |
+| `4608bf7` | fix(web): alertas con botón Ver…      | Smoke UX: heading "Alertas" vs "Mis alertas" | Test actualizado con regex que acepta ambos textos |
+| `0876c1e` | fix(deploy): verificación obligatoria | Smoke UX fallando en commit anterior         | Resuelto con fix de smoke-ux.spec.ts               |
 
 ### 4. Múltiples PRs abiertos
 
