@@ -157,7 +157,8 @@ export async function executeFeed(params: {
 
   const hasMore = itemsRaw.length > limit;
   const items = (hasMore ? itemsRaw.slice(0, limit) : itemsRaw).map((l) => {
-    let heroImageUrl = l.heroImageUrl ?? (l as { media?: { url: string }[] }).media?.[0]?.url ?? null;
+    let heroImageUrl =
+      l.heroImageUrl ?? (l as { media?: { url: string }[] }).media?.[0]?.url ?? null;
     let title = l.title;
     if ((!heroImageUrl || !title?.trim()) && l.rawJson) {
       const fb = extractFromRawJson(l.rawJson);

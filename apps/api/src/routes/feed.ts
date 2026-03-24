@@ -42,25 +42,23 @@ const VALID_SORT = ['date_desc', 'price_asc', 'price_desc', 'area_desc'] as cons
 const AMENITIES_OPTIONS = ['SUM', 'quincho', 'parrilla', 'cocheras', 'pileta', 'gimnasio'] as const;
 
 /** Aplica rawJson fallback cuando heroImageUrl o title faltan en el listing */
-function feedItemWithRawJsonFallback(
-  l: {
-    id: string;
-    title: string | null;
-    heroImageUrl: string | null;
-    media?: { url: string; sortOrder: number }[];
-    rawJson?: unknown;
-    price?: number | null;
-    currency?: string | null;
-    bedrooms?: number | null;
-    bathrooms?: number | null;
-    areaTotal?: number | null;
-    locationText?: string | null;
-    publisherRef?: string | null;
-    source?: string;
-    operationType?: string | null;
-    lastSeenAt?: Date;
-  }
-) {
+function feedItemWithRawJsonFallback(l: {
+  id: string;
+  title: string | null;
+  heroImageUrl: string | null;
+  media?: { url: string; sortOrder: number }[];
+  rawJson?: unknown;
+  price?: number | null;
+  currency?: string | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  areaTotal?: number | null;
+  locationText?: string | null;
+  publisherRef?: string | null;
+  source?: string;
+  operationType?: string | null;
+  lastSeenAt?: Date;
+}) {
   let heroImageUrl = l.heroImageUrl ?? l.media?.[0]?.url ?? null;
   let title = l.title;
   let media = l.media;
@@ -82,7 +80,9 @@ function feedItemWithRawJsonFallback(
     areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
     locationText: l.locationText,
     heroImageUrl,
-    media: Array.isArray(media) ? media.map((m) => ({ url: m.url, sortOrder: m.sortOrder })) : undefined,
+    media: Array.isArray(media)
+      ? media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }))
+      : undefined,
     publisherRef: l.publisherRef,
     source: l.source,
     operationType: l.operationType,

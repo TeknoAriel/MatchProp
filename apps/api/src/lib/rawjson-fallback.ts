@@ -39,11 +39,7 @@ export function extractFromRawJson(raw: unknown): {
       .map((f, i) => ({
         url: String(f.url),
         sortOrder:
-          typeof f.orden === 'number'
-            ? f.orden
-            : typeof f.order === 'number'
-              ? f.order
-              : i,
+          typeof f.orden === 'number' ? f.orden : typeof f.order === 'number' ? f.order : i,
       }))
       .sort((a, b) => a.sortOrder - b.sortOrder);
     if (valid.length) {
@@ -58,9 +54,15 @@ export function extractFromRawJson(raw: unknown): {
     // imagenes: ["url1"] (iCasas, Kiteprop)
     if (!addFromStringArray(Array.isArray(r.imagenes) ? r.imagenes : [])) {
       // images: [{ url, order }] (Yumblin, Externalsite, API v1)
-      if (!addFromObjectArray(Array.isArray(r.images) ? (r.images as { url?: string; order?: number }[]) : [])) {
+      if (
+        !addFromObjectArray(
+          Array.isArray(r.images) ? (r.images as { url?: string; order?: number }[]) : []
+        )
+      ) {
         // fotos: [{ url, orden }] (Toctoc)
-        addFromObjectArray(Array.isArray(r.fotos) ? (r.fotos as { url?: string; orden?: number }[]) : []);
+        addFromObjectArray(
+          Array.isArray(r.fotos) ? (r.fotos as { url?: string; orden?: number }[]) : []
+        );
       }
     }
   }
