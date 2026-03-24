@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check automerge label and enable merge
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           PR="${{ github.event.pull_request.number }}"
           LABELS=$(gh pr view "$PR" --json labels -q '.labels[].name')
