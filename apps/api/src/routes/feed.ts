@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { encodeListingCursor, decodeListingCursor } from '../lib/cursor.js';
 import { getCachedTotal, setCachedTotal } from '../lib/feed-total-cache.js';
+import { extractFromRawJson } from '../lib/rawjson-fallback.js';
 
 const FEED_LIMIT_DEFAULT = 20;
 const FEED_LIMIT_MAX = 50;
@@ -38,7 +39,78 @@ const error400Schema = {
 };
 
 const VALID_SORT = ['date_desc', 'price_asc', 'price_desc', 'area_desc'] as const;
-const AMENITIES_OPTIONS = ['SUM', 'quincho', 'parrilla', 'cocheras', 'pileta', 'gimnasio'] as const;
+/** Amenidades Zonaprop filtrables (caracteristicas booleanas) */
+const AMENITIES_OPTIONS = [
+  'pileta',
+  'parrilla',
+  'quincho',
+  'gimnasio',
+  'cochera',
+  'cocheras',
+  'jardín',
+  'terraza',
+  'balcón',
+  'aire acondicionado',
+  'calefacción',
+  'chimenea',
+  'ascensor',
+  'SUM',
+  'hidromasaje',
+  'sauna',
+  'vigilancia',
+  'internet wifi',
+  'alarma',
+  'baulera',
+  'amoblado',
+] as const;
+
+/** Aplica rawJson fallback cuando heroImageUrl o title faltan en el listing */
+function feedItemWithRawJsonFallback(l: {
+  id: string;
+  title: string | null;
+  heroImageUrl: string | null;
+  media?: { url: string; sortOrder: number }[];
+  rawJson?: unknown;
+  price?: number | null;
+  currency?: string | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  areaTotal?: number | null;
+  locationText?: string | null;
+  publisherRef?: string | null;
+  source?: string;
+  operationType?: string | null;
+  lastSeenAt?: Date;
+}) {
+  let heroImageUrl = l.heroImageUrl ?? l.media?.[0]?.url ?? null;
+  let title = l.title;
+  let media = l.media;
+  if ((!heroImageUrl || !title?.trim()) && l.rawJson) {
+    const fb = extractFromRawJson(l.rawJson);
+    if (!heroImageUrl) heroImageUrl = fb.heroImageUrl;
+    if (!title?.trim()) title = fb.title;
+    if (!media?.length && fb.mediaUrls.length) {
+      media = fb.mediaUrls.map((m) => ({ url: m.url, sortOrder: m.sortOrder }));
+    }
+  }
+  return {
+    id: l.id,
+    title,
+    price: l.price ? Math.round(l.price) : null,
+    currency: l.currency,
+    bedrooms: l.bedrooms,
+    bathrooms: l.bathrooms,
+    areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
+    locationText: l.locationText,
+    heroImageUrl,
+    media: Array.isArray(media)
+      ? media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }))
+      : undefined,
+    publisherRef: l.publisherRef,
+    source: l.source,
+    operationType: l.operationType,
+  };
+}
 
 type FeedFilters = {
   operationType?: string;
@@ -330,15 +402,21 @@ function filtersToWhere(f: FeedFilters): Record<string, unknown> {
     where.lastSeenAt = { gte: since };
   }
   if (f.aptoCredito === true) {
-    where.details = { path: ['aptoCredito'], equals: true };
+    where.AND = [
+      ...((where.AND as Record<string, unknown>[]) ?? []),
+      { details: { path: ['aptoCredito'], equals: true } },
+    ];
   }
   if (f.amenities?.length) {
     const andList: Record<string, unknown>[] = [];
     for (const amenity of f.amenities) {
+      const amenityNorm = String(amenity).trim();
+      if (!amenityNorm) continue;
       andList.push({
         OR: [
-          { description: { contains: amenity, mode: 'insensitive' } },
-          { title: { contains: amenity, mode: 'insensitive' } },
+          { description: { contains: amenityNorm, mode: 'insensitive' } },
+          { title: { contains: amenityNorm, mode: 'insensitive' } },
+          { details: { path: ['amenities'], array_contains: [amenityNorm] } },
         ],
       });
     }
@@ -616,6 +694,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
           areaTotal: true,
           locationText: true,
           heroImageUrl: true,
+          rawJson: true,
           publisherRef: true,
           source: true,
           operationType: true,
@@ -630,23 +709,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
 
       const hasMore = itemsRaw.length > limit;
       const items = (hasMore ? itemsRaw.slice(0, limit) : itemsRaw)
-        .map((l) => ({
-          id: l.id,
-          title: l.title,
-          price: l.price ? Math.round(l.price) : null,
-          currency: l.currency,
-          bedrooms: l.bedrooms,
-          bathrooms: l.bathrooms,
-          areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
-          locationText: l.locationText,
-          heroImageUrl: l.heroImageUrl ?? l.media?.[0]?.url ?? null,
-          media: Array.isArray(l.media)
-            ? l.media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }))
-            : undefined,
-          publisherRef: l.publisherRef,
-          source: l.source,
-          operationType: l.operationType,
-        }))
+        .map((l) => feedItemWithRawJsonFallback(l))
         .filter((i) => i.id != null && i.id !== '');
       const last = items[items.length - 1];
       const lastRaw = hasMore ? itemsRaw[limit - 1] : itemsRaw[itemsRaw.length - 1];
@@ -685,6 +748,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
             areaTotal: true,
             locationText: true,
             heroImageUrl: true,
+            rawJson: true,
             publisherRef: true,
             source: true,
             operationType: true,
@@ -698,23 +762,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
         });
         const fbHasMore = fallbackRaw.length > limit;
         const fbItems = (fbHasMore ? fallbackRaw.slice(0, limit) : fallbackRaw)
-          .map((l) => ({
-            id: l.id,
-            title: l.title,
-            price: l.price ? Math.round(l.price) : null,
-            currency: l.currency,
-            bedrooms: l.bedrooms,
-            bathrooms: l.bathrooms,
-            areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
-            locationText: l.locationText,
-            heroImageUrl: l.heroImageUrl ?? l.media?.[0]?.url ?? null,
-            media: Array.isArray(l.media)
-              ? l.media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }))
-              : undefined,
-            publisherRef: l.publisherRef,
-            source: l.source,
-            operationType: l.operationType,
-          }))
+          .map((l) => feedItemWithRawJsonFallback(l))
           .filter((i) => i.id != null && i.id !== '');
         const fbLast = fbItems[fbItems.length - 1];
         const fbLastRaw = fbHasMore ? fallbackRaw[limit - 1] : fallbackRaw[fallbackRaw.length - 1];
@@ -891,6 +939,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
           price: true,
           locationText: true,
           heroImageUrl: true,
+          rawJson: true,
           areaTotal: true,
           bedrooms: true,
           bathrooms: true,
@@ -908,25 +957,26 @@ export async function feedRoutes(fastify: FastifyInstance) {
 
       const items = itemsRaw
         .filter((l) => l.id && l.lat != null && l.lng != null)
-        .map((l) => ({
-          id: l.id,
-          lat: l.lat!,
-          lng: l.lng!,
-          title: l.title,
-          price: l.price ? Math.round(l.price) : null,
-          locationText: l.locationText,
-          heroImageUrl: l.heroImageUrl ?? l.media?.[0]?.url ?? null,
-          media: Array.isArray(l.media)
-            ? l.media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }))
-            : undefined,
-          areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
-          bedrooms: l.bedrooms ?? null,
-          bathrooms: l.bathrooms ?? null,
-          currency: l.currency ?? null,
-          operationType: l.operationType ?? null,
-          source: l.source ?? 'API_PARTNER_1',
-          publisherRef: l.publisherRef ?? null,
-        }));
+        .map((l) => {
+          const card = feedItemWithRawJsonFallback(l);
+          return {
+            id: l.id,
+            lat: l.lat!,
+            lng: l.lng!,
+            title: card.title,
+            price: card.price,
+            locationText: card.locationText,
+            heroImageUrl: card.heroImageUrl,
+            media: card.media,
+            areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
+            bedrooms: l.bedrooms ?? null,
+            bathrooms: l.bathrooms ?? null,
+            currency: l.currency ?? null,
+            operationType: l.operationType ?? null,
+            source: l.source ?? 'API_PARTNER_1',
+            publisherRef: l.publisherRef ?? null,
+          };
+        });
 
       return reply.send({ items });
     }

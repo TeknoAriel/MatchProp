@@ -4,6 +4,7 @@
 import { prisma } from './prisma.js';
 import { encodeListingCursor, decodeListingCursor } from './cursor.js';
 import { getCachedTotal, setCachedTotal } from './feed-total-cache.js';
+import { extractFromRawJson } from './rawjson-fallback.js';
 import type { SearchFilters } from '@matchprop/shared';
 
 export type FeedFiltersInput = {
@@ -19,6 +20,8 @@ export type FeedFiltersInput = {
   bathroomsMin?: number;
   areaMin?: number;
   locationText?: string;
+  aptoCredito?: boolean;
+  amenities?: string[];
 };
 
 export function filtersToWhere(f: FeedFiltersInput): Record<string, unknown> {
@@ -39,6 +42,28 @@ export function filtersToWhere(f: FeedFiltersInput): Record<string, unknown> {
   if (baths != null) where.bathrooms = { gte: baths };
   if (f.areaMin != null) where.areaTotal = { gte: f.areaMin };
   if (f.locationText) where.locationText = { contains: f.locationText, mode: 'insensitive' };
+  if (f.aptoCredito === true) {
+    where.AND = [
+      ...((where.AND as Record<string, unknown>[]) ?? []),
+      { details: { path: ['aptoCredito'], equals: true } },
+    ];
+  }
+  if (f.amenities?.length) {
+    const andList: Record<string, unknown>[] = [];
+    for (const amenity of f.amenities) {
+      const amenityNorm = String(amenity).trim();
+      if (!amenityNorm) continue;
+      andList.push({
+        OR: [
+          { description: { contains: amenityNorm, mode: 'insensitive' } },
+          { title: { contains: amenityNorm, mode: 'insensitive' } },
+          { details: { path: ['amenities'], array_contains: [amenityNorm] } },
+        ],
+      });
+    }
+    if (andList.length)
+      where.AND = [...((where.AND as Record<string, unknown>[]) ?? []), ...andList];
+  }
   return where;
 }
 
@@ -53,6 +78,8 @@ function searchFiltersToFeedFilters(s: SearchFilters): FeedFiltersInput {
     bathroomsMin: s.bathroomsMin,
     areaMin: s.areaMin,
     locationText: s.locationText,
+    aptoCredito: s.aptoCredito,
+    amenities: s.amenities,
   };
 }
 
@@ -141,28 +168,44 @@ export async function executeFeed(params: {
       areaTotal: true,
       locationText: true,
       heroImageUrl: true,
+      rawJson: true,
       publisherRef: true,
       source: true,
       operationType: true,
       lastSeenAt: true,
+      media: {
+        orderBy: { sortOrder: 'asc' },
+        take: 6,
+        select: { url: true, sortOrder: true },
+      },
     },
   });
 
   const hasMore = itemsRaw.length > limit;
-  const items = (hasMore ? itemsRaw.slice(0, limit) : itemsRaw).map((l) => ({
-    id: l.id,
-    title: l.title,
-    price: l.price ? Math.round(l.price) : null,
-    currency: l.currency,
-    bedrooms: l.bedrooms,
-    bathrooms: l.bathrooms,
-    areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
-    locationText: l.locationText,
-    heroImageUrl: l.heroImageUrl,
-    publisherRef: l.publisherRef,
-    source: l.source,
-    operationType: l.operationType,
-  }));
+  const items = (hasMore ? itemsRaw.slice(0, limit) : itemsRaw).map((l) => {
+    let heroImageUrl =
+      l.heroImageUrl ?? (l as { media?: { url: string }[] }).media?.[0]?.url ?? null;
+    let title = l.title;
+    if ((!heroImageUrl || !title?.trim()) && l.rawJson) {
+      const fb = extractFromRawJson(l.rawJson);
+      if (!heroImageUrl) heroImageUrl = fb.heroImageUrl;
+      if (!title?.trim()) title = fb.title;
+    }
+    return {
+      id: l.id,
+      title,
+      price: l.price ? Math.round(l.price) : null,
+      currency: l.currency,
+      bedrooms: l.bedrooms,
+      bathrooms: l.bathrooms,
+      areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
+      locationText: l.locationText,
+      heroImageUrl,
+      publisherRef: l.publisherRef,
+      source: l.source,
+      operationType: l.operationType,
+    };
+  });
   const lastRaw = hasMore ? itemsRaw[limit - 1] : itemsRaw[itemsRaw.length - 1];
   const last = items[items.length - 1];
   const nextCursor =

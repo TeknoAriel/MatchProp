@@ -7,43 +7,37 @@ function trunc(s: string): string {
   return s.trim().slice(0, LOCATION_MAX) || '';
 }
 
-/** Gatillos de precio: solo asignar price si el texto contiene alguno. */
-const PRICE_TRIGGERS =
+/** Gatillos de precio máx: hasta, menos de, presupuesto */
+const PRICE_MAX_TRIGGERS =
   /hasta|máx|max|presupuesto|por\s+\d|menos\s+de|\busd\b|u\$s|\bars\b|\$|pesos|dólares|dolares/i;
 
-function parsePrice(text: string): number | undefined {
-  if (!PRICE_TRIGGERS.test(text)) return undefined;
+/** Gatillos de precio mín: desde, mínimo, al menos */
+const PRICE_MIN_TRIGGERS = /desde|m[ií]nimo|m[ií]nimo|al\s+menos|m[aá]s\s+de/i;
 
+function parseNumberWithK(text: string, match: RegExpMatchArray): number {
+  let n = parseFloat(match[1]!.replace(',', '.'));
+  const suffix = match[2]?.toLowerCase();
+  if (suffix === 'k' || suffix === '000') n *= 1000;
+  else if (suffix === 'mil') n *= 1000;
+  return Math.round(n);
+}
+
+function parsePriceMax(text: string): number | undefined {
+  if (!PRICE_MAX_TRIGGERS.test(text)) return undefined;
   const lower = text.toLowerCase();
-  // 100.000 o 100,000 = 100 mil (separador de miles, con contexto de precio)
   const thousandsMatch = text.match(/(\d{1,3})[.,](\d{3})(?:\s|$|k|mil|usd|ars)/i);
   if (thousandsMatch) {
     const n = parseInt(thousandsMatch[1]! + thousandsMatch[2]!, 10);
     return Number.isNaN(n) ? undefined : n;
   }
-  // Gatillo explícito: hasta/max/presupuesto/por/menos de + número
   const triggerMatch = lower.match(
     /(?:hasta|máx|max|presupuesto|por|menos\s+de)\s*(\d+(?:[.,]\d+)?)\s*(k|mil|000)?/i
   );
-  if (triggerMatch) {
-    let n = parseFloat(triggerMatch[1]!.replace(',', '.'));
-    const suffix = triggerMatch[2]?.toLowerCase();
-    if (suffix === 'k' || suffix === '000') n *= 1000;
-    else if (suffix === 'mil') n *= 1000;
-    return Math.round(n);
-  }
-  // Número + moneda: "120k usd", "900k ars", "60 mil" (con presupuesto/hasta en texto)
+  if (triggerMatch) return parseNumberWithK(text, triggerMatch);
   const numCurrencyMatch = lower.match(
     /(\d+(?:[.,]\d+)?)\s*(k|mil|000)?\s*(usd|u\$s|ars|pesos|dólares|dolares)/i
   );
-  if (numCurrencyMatch) {
-    let n = parseFloat(numCurrencyMatch[1]!.replace(',', '.'));
-    const suffix = numCurrencyMatch[2]?.toLowerCase();
-    if (suffix === 'k' || suffix === '000') n *= 1000;
-    else if (suffix === 'mil') n *= 1000;
-    return Math.round(n);
-  }
-  // $ número: "$ 120000" o "$120000"
+  if (numCurrencyMatch) return parseNumberWithK(text, numCurrencyMatch);
   const dollarMatch = text.match(/\$\s*(\d[\d.,]*)/);
   if (dollarMatch) {
     const n = parseFloat(dollarMatch[1]!.replace(/[.,]/g, (c) => (c === ',' ? '' : '.')));
@@ -52,9 +46,24 @@ function parsePrice(text: string): number | undefined {
   return undefined;
 }
 
+function parsePriceMin(text: string): number | undefined {
+  if (!PRICE_MIN_TRIGGERS.test(text)) return undefined;
+  const m = text.match(
+    /(?:desde|m[ií]nimo|al\s+menos|m[aá]s\s+de)\s*(\d+(?:[.,]\d+)?)\s*(k|mil|000)?/i
+  );
+  if (m) return parseNumberWithK(text, m);
+  return undefined;
+}
+
 function parseBedrooms(
   text: string
-): { count: number; word: 'dormitorios' | 'ambientes' } | undefined {
+): { count: number; word: 'dormitorios' | 'ambientes'; isMax?: boolean } | undefined {
+  const dormMax = text.match(
+    /(?:m[aá]ximo|hasta)\s*(\d+)\s*(?:dorms?|dormitorios?|dormis|habitaci[oó]ns?|habitaciones)/i
+  );
+  if (dormMax) return { count: parseInt(dormMax[1]!, 10), word: 'dormitorios', isMax: true };
+  const ambMax = text.match(/(?:m[aá]ximo|hasta)\s*(\d+)\s*(?:amb|ambientes)/i);
+  if (ambMax) return { count: parseInt(ambMax[1]!, 10), word: 'ambientes', isMax: true };
   const dormMatch = text.match(
     /(\d+)\s*(?:dorms?|dormitorios?|dormis|habitaci[oó]ns?|habitaciones)/i
   );
@@ -64,9 +73,51 @@ function parseBedrooms(
   return undefined;
 }
 
-function parseBathrooms(text: string): number | undefined {
+function parseBathrooms(text: string): { count: number; isMax?: boolean } | undefined {
+  const maxM = text.match(/(?:m[aá]ximo|hasta)\s*(\d+)\s*(?:baño|baños|banos|bath)/i);
+  if (maxM) return { count: parseInt(maxM[1]!, 10), isMax: true };
   const m = text.match(/(\d+)\s*(?:baño|baños|banos|bath)/i);
+  return m ? { count: parseInt(m[1]!, 10) } : undefined;
+}
+
+function parseAreaMax(text: string): number | undefined {
+  const m = text.match(/(?:m[aá]ximo|hasta)\s*(\d+)\s*(?:m2|mts2|m²|m\s*2|metros?\s*cuadrados?)/i);
   return m ? parseInt(m[1]!, 10) : undefined;
+}
+
+function parseSortBy(
+  text: string
+): 'date_desc' | 'price_asc' | 'price_desc' | 'area_desc' | undefined {
+  const lower = text.toLowerCase();
+  if (
+    /\bm[aá]s\s+barat[oa]s?|ordenar\s+por\s+precio\s+asc|precio\s+asc|menor\s+precio/i.test(lower)
+  )
+    return 'price_asc';
+  if (/\bm[aá]s\s+car[oa]s?|precio\s+desc|mayor\s+precio/i.test(lower)) return 'price_desc';
+  if (/\bm[aá]s\s+grandes?|por\s+metros?|área\s+desc|area\s+desc/i.test(lower)) return 'area_desc';
+  if (/\bm[aá]s\s+recientes?|nuevas?|últimas?|ultimas?|por\s+fecha/i.test(lower))
+    return 'date_desc';
+  return undefined;
+}
+
+function parsePhotosCountMin(text: string): number | undefined {
+  if (/\bcon\s+fotos?\b|\bvarias?\s+fotos?\b|\bcon\s+im[aá]genes?\b/i.test(text)) return 1;
+  if (/\bcon\s+al\s+menos\s+(\d+)\s+fotos?/i.test(text)) {
+    const m = text.match(/con\s+al\s+menos\s+(\d+)\s+fotos?/i);
+    return m ? parseInt(m[1]!, 10) : undefined;
+  }
+  return undefined;
+}
+
+function parseListingAgeDays(text: string): number | undefined {
+  const lower = text.toLowerCase();
+  if (/\besta\s+semana\b|\búltimos?\s+7\s+d[ií]as?\b|\bultimos?\s+7\s+dias?\b/i.test(lower))
+    return 7;
+  if (/\besta\s+quincena\b|\b15\s+d[ií]as?\b/i.test(lower)) return 15;
+  if (/\beste\s+mes\b|\búltimos?\s+30\s+d[ií]as?\b|\bultimos?\s+30\s+dias?\b/i.test(lower))
+    return 30;
+  if (/\bnuevas?\b|\brecientes?\b/i.test(lower)) return 7;
+  return undefined;
 }
 
 function parseLocation(text: string): string {
@@ -148,6 +199,7 @@ const AMENITY_PATTERNS: { pattern: RegExp; key: string }[] = [
   { pattern: /\b(amueblad[oa]|amoblad[oa]|muebles)\b/i, key: 'amoblado' },
   { pattern: /\b(aire\s*acondicionado|aa|ac)\b/i, key: 'aire acondicionado' },
   { pattern: /\b(calefacci[oó]n|calefaccion)\b/i, key: 'calefacción' },
+  { pattern: /\b(chimenea|chimeneas)\b/i, key: 'chimenea' },
   { pattern: /\b(seguridad|porter[ií]a|porteria|vigilancia)\b/i, key: 'seguridad' },
   { pattern: /\b(ascensor|ascensores)\b/i, key: 'ascensor' },
   { pattern: /\b(terraza|terrazas|balc[oó]n|balcon)\b/i, key: 'terraza' },
@@ -180,12 +232,20 @@ function hasRecognizedFilters(f: SearchFilters): boolean {
     f.priceMin != null ||
     f.priceMax != null ||
     f.bedroomsMin != null ||
+    f.bedroomsMax != null ||
     f.bathroomsMin != null ||
+    f.bathroomsMax != null ||
     f.areaMin != null ||
+    f.areaMax != null ||
+    f.areaCoveredMin != null ||
     (f.locationText?.trim()?.length ?? 0) > 0 ||
+    (f.addressText?.trim()?.length ?? 0) > 0 ||
     f.currency != null ||
     (f.amenities?.length ?? 0) > 0 ||
     f.aptoCredito === true ||
+    f.sortBy != null ||
+    f.photosCountMin != null ||
+    f.listingAgeDays != null ||
     (f.keywords?.length ?? 0) > 0
   );
 }
@@ -208,43 +268,86 @@ export function parseSearchText(text: string): {
 
   const operation = parseOperation(t);
   const currency = parseCurrency(t);
-  const priceMax = parsePrice(t);
+  const priceMin = parsePriceMin(t);
+  const priceMax = parsePriceMax(t);
   const bedroomsResult = parseBedrooms(t);
-  const bathrooms = parseBathrooms(t);
+  const bathroomsResult = parseBathrooms(t);
   const areaMin = parseAreaMin(t);
+  const areaMax = parseAreaMax(t);
   const locationText = parseLocation(t);
   const propertyType = parsePropertyType(t);
   const amenities = parseAmenities(t);
   const aptoCredito = parseAptoCredito(t);
+  const sortBy = parseSortBy(t);
+  const photosCountMin = parsePhotosCountMin(t);
+  const listingAgeDays = parseListingAgeDays(t);
 
   const filters: SearchFilters = {};
   if (operation) filters.operationType = operation;
   if (currency) filters.currency = currency;
+  if (priceMin != null) filters.priceMin = priceMin;
   if (priceMax != null) filters.priceMax = priceMax;
-  if (bedroomsResult != null) filters.bedroomsMin = bedroomsResult.count;
-  if (bathrooms != null) filters.bathroomsMin = bathrooms;
+  if (bedroomsResult != null) {
+    if (bedroomsResult.isMax) filters.bedroomsMax = bedroomsResult.count;
+    else filters.bedroomsMin = bedroomsResult.count;
+  }
+  if (bathroomsResult != null) {
+    if (bathroomsResult.isMax) filters.bathroomsMax = bathroomsResult.count;
+    else filters.bathroomsMin = bathroomsResult.count;
+  }
   if (areaMin != null) filters.areaMin = areaMin;
+  if (areaMax != null) filters.areaMax = areaMax;
   if (locationText) filters.locationText = locationText;
   if (propertyType?.length) filters.propertyType = propertyType;
   if (amenities.length) filters.amenities = amenities;
-  if (aptoCredito === true) filters.aptoCredito = true;
+  if (aptoCredito === true) filters.aptoCredito = aptoCredito;
+  if (sortBy) filters.sortBy = sortBy;
+  if (photosCountMin != null) filters.photosCountMin = photosCountMin;
+  if (listingAgeDays != null) filters.listingAgeDays = listingAgeDays;
 
   const parts: string[] = [];
   if (operation) parts.push(operation === 'SALE' ? 'venta' : 'alquiler');
   if (propertyType?.length) parts.push(propertyType.map((p) => p.toLowerCase()).join(' o '));
   if (locationText) parts.push(`en ${locationText}`);
-  if (priceMax) {
-    if (currency) {
-      parts.push(`hasta ${priceMax.toLocaleString()} ${currency}`);
-    } else {
-      parts.push(`hasta ${priceMax.toLocaleString()} (moneda no especificada)`);
-    }
+  if (priceMin != null) {
+    parts.push(`desde ${priceMin.toLocaleString()}${currency ? ` ${currency}` : ''}`);
   }
-  if (bedroomsResult) parts.push(`${bedroomsResult.count} ${bedroomsResult.word}`);
-  if (bathrooms) parts.push(`${bathrooms} baños`);
-  if (areaMin) parts.push(`${areaMin} m²`);
+  if (priceMax) {
+    parts.push(
+      currency
+        ? `hasta ${priceMax.toLocaleString()} ${currency}`
+        : `hasta ${priceMax.toLocaleString()} (moneda no especificada)`
+    );
+  }
+  if (bedroomsResult) {
+    parts.push(
+      bedroomsResult.isMax
+        ? `máx ${bedroomsResult.count} ${bedroomsResult.word}`
+        : `${bedroomsResult.count} ${bedroomsResult.word}`
+    );
+  }
+  if (bathroomsResult) {
+    parts.push(
+      bathroomsResult.isMax
+        ? `máx ${bathroomsResult.count} baños`
+        : `${bathroomsResult.count} baños`
+    );
+  }
+  if (areaMin != null) parts.push(`desde ${areaMin} m²`);
+  if (areaMax != null) parts.push(`hasta ${areaMax} m²`);
   if (amenities.length) parts.push(`con ${amenities.join(', ')}`);
   if (aptoCredito) parts.push('apto crédito');
+  if (sortBy) {
+    const sortLabels: Record<string, string> = {
+      price_asc: 'más baratas primero',
+      price_desc: 'más caras primero',
+      area_desc: 'más grandes primero',
+      date_desc: 'más recientes primero',
+    };
+    parts.push(sortLabels[sortBy] ?? sortBy);
+  }
+  if (photosCountMin != null) parts.push('con fotos');
+  if (listingAgeDays != null) parts.push(`publicadas últimos ${listingAgeDays} días`);
 
   const explanation =
     parts.length > 0

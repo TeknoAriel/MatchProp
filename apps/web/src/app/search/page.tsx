@@ -19,12 +19,20 @@ const SORT_OPTIONS = [
   { value: 'area_desc', label: 'Superficie mayor' },
 ] as const;
 const AMENITIES = [
-  { id: 'SUM', label: 'SUM' },
-  { id: 'quincho', label: 'Quincho' },
-  { id: 'parrilla', label: 'Parrilla' },
-  { id: 'cocheras', label: 'Cocheras' },
   { id: 'pileta', label: 'Pileta' },
+  { id: 'parrilla', label: 'Parrilla' },
+  { id: 'quincho', label: 'Quincho' },
   { id: 'gimnasio', label: 'Gimnasio' },
+  { id: 'cochera', label: 'Cochera' },
+  { id: 'cocheras', label: 'Cocheras' },
+  { id: 'aire acondicionado', label: 'Aire acondicionado' },
+  { id: 'calefacción', label: 'Calefacción' },
+  { id: 'chimenea', label: 'Chimenea' },
+  { id: 'SUM', label: 'SUM' },
+  { id: 'ascensor', label: 'Ascensor' },
+  { id: 'jardín', label: 'Jardín' },
+  { id: 'terraza', label: 'Terraza' },
+  { id: 'balcón', label: 'Balcón' },
 ] as const;
 
 function AccordionSection({

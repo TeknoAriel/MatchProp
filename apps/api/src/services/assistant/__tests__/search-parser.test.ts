@@ -176,6 +176,28 @@ describe('parseSearchText', () => {
     });
   });
 
+  it('detecta precio mínimo (desde)', () => {
+    const r = parseSearchText('casa desde 50 mil USD');
+    expect(r.filters.priceMin).toBe(50000);
+    expect(r.filters.currency).toBe('USD');
+  });
+
+  it('detecta máximo dormitorios', () => {
+    const r = parseSearchText('depto máximo 2 ambientes en Palermo');
+    expect(r.filters.bedroomsMax).toBe(2);
+    expect(r.filters.bedroomsMin).toBeUndefined();
+  });
+
+  it('detecta ordenar por precio', () => {
+    const r = parseSearchText('casa más baratas en Rosario');
+    expect(r.filters.sortBy).toBe('price_asc');
+  });
+
+  it('detecta publicaciones recientes', () => {
+    const r = parseSearchText('depto nuevas en CABA');
+    expect(r.filters.listingAgeDays).toBe(7);
+  });
+
   describe('warnings', () => {
     it('textos con filtros: warnings vacío', () => {
       const t1 = parseSearchText('departamento en Palermo');

@@ -43,7 +43,12 @@ function extractDetailsFromRaw(
     'gimnasio',
     'aire_acondicionado',
     'calefaccion',
+    'chimenea',
     'ascensor',
+    'hidromasaje',
+    'solarium',
+    'sauna',
+    'vigilancia',
   ];
   const foundAmenities = new Set<string>();
   for (const key of amenityKeys) {
