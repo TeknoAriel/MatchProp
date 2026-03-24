@@ -40,8 +40,8 @@ Eso no quita el CI: los checks siguen siendo obligatorios si los dejás marcados
 
 ## Resumen
 
-| Querés… | Dónde |
-|--------|--------|
+| Querés…                         | Dónde                                             |
+| ------------------------------- | ------------------------------------------------- |
 | Merge automático cuando CI pasa | `AUTOMERGE_TOKEN` + etiqueta `automerge` en el PR |
-| Saber quién cambió reglas | Audit log / admins del repo |
-| Crear un PR sin consola | `docs/COMO_CREAR_PR.md` |
+| Saber quién cambió reglas       | Audit log / admins del repo                       |
+| Crear un PR sin consola         | `docs/COMO_CREAR_PR.md`                           |

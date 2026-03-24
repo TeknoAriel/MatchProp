@@ -16,8 +16,8 @@ Listo: el PR queda abierto. Cuando el **CI** (Actions) termine en verde, podés 
 
 ## Opción B — Desde el repo
 
-1. Entrá a: https://github.com/TeknoAriel/MatchProp  
-2. **Pull requests** → **New pull request**  
+1. Entrá a: https://github.com/TeknoAriel/MatchProp
+2. **Pull requests** → **New pull request**
 3. **base:** `main` ← **compare:** `chore/subir-web-produccion` → **Create pull request**
 
 ---
