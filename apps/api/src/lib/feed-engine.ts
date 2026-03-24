@@ -43,7 +43,10 @@ export function filtersToWhere(f: FeedFiltersInput): Record<string, unknown> {
   if (f.areaMin != null) where.areaTotal = { gte: f.areaMin };
   if (f.locationText) where.locationText = { contains: f.locationText, mode: 'insensitive' };
   if (f.aptoCredito === true) {
-    where.AND = [...((where.AND as Record<string, unknown>[]) ?? []), { details: { path: ['aptoCredito'], equals: true } }];
+    where.AND = [
+      ...((where.AND as Record<string, unknown>[]) ?? []),
+      { details: { path: ['aptoCredito'], equals: true } },
+    ];
   }
   if (f.amenities?.length) {
     const andList: Record<string, unknown>[] = [];

@@ -402,7 +402,10 @@ function filtersToWhere(f: FeedFilters): Record<string, unknown> {
     where.lastSeenAt = { gte: since };
   }
   if (f.aptoCredito === true) {
-    where.AND = [...((where.AND as Record<string, unknown>[]) ?? []), { details: { path: ['aptoCredito'], equals: true } }];
+    where.AND = [
+      ...((where.AND as Record<string, unknown>[]) ?? []),
+      { details: { path: ['aptoCredito'], equals: true } },
+    ];
   }
   if (f.amenities?.length) {
     const andList: Record<string, unknown>[] = [];
