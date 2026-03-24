@@ -28,9 +28,11 @@ Notas:
 **Producción (`main`) es la fuente de verdad.** Si tu local muestra una versión distinta a la de producción:
 
 1. **Sincronizar de inmediato:**
+
    ```bash
    bash scripts/sync-local-from-main.sh
    ```
+
    Esto hace `git fetch`, `checkout main` y `pull`. Los cambios locales se guardan en stash.
 
 2. **Flujo recomendado al empezar a trabajar:**

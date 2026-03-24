@@ -262,8 +262,7 @@ export async function listsRoutes(fastify: FastifyInstance) {
         list: { id: list.id, name: list.name },
         items: list.items.map((i) => {
           const listing = i.listing;
-          if (!listing)
-            return { id: i.id, listingId: i.listingId, listing: null };
+          if (!listing) return { id: i.id, listingId: i.listingId, listing: null };
           let heroImageUrl = listing.heroImageUrl ?? listing.media?.[0]?.url ?? null;
           let title = listing.title;
           let media = listing.media;
