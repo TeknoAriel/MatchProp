@@ -199,6 +199,7 @@ const AMENITY_PATTERNS: { pattern: RegExp; key: string }[] = [
   { pattern: /\b(amueblad[oa]|amoblad[oa]|muebles)\b/i, key: 'amoblado' },
   { pattern: /\b(aire\s*acondicionado|aa|ac)\b/i, key: 'aire acondicionado' },
   { pattern: /\b(calefacci[oó]n|calefaccion)\b/i, key: 'calefacción' },
+  { pattern: /\b(chimenea|chimeneas)\b/i, key: 'chimenea' },
   { pattern: /\b(seguridad|porter[ií]a|porteria|vigilancia)\b/i, key: 'seguridad' },
   { pattern: /\b(ascensor|ascensores)\b/i, key: 'ascensor' },
   { pattern: /\b(terraza|terrazas|balc[oó]n|balcon)\b/i, key: 'terraza' },

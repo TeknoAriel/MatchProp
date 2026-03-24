@@ -62,9 +62,11 @@ const BOOL_CARACTERISTICA_TO_AMENITY: Record<string, string> = {
   'AMBIENTES|LIVING': 'living',
   'AMBIENTES|LIVING_COMEDOR': 'living comedor',
   'AMBIENTES|COMEDOR_DIARIO': 'comedor de diario',
+  'GENERALES|APTO_CREDITO': 'apto crédito',
   'OTROS|AIRE_ACONDICIONADO': 'aire acondicionado',
   'OTROS|CALEFACCION': 'calefacción',
   'OTROS|CALDERA': 'caldera',
+  'OTROS|CHIMENEA': 'chimenea',
   'OTROS|ALARMA': 'alarma',
   'OTROS|COCINA_EQUIPADA': 'cocina equipada',
   'OTROS|QUINCHO': 'quincho',
@@ -294,6 +296,7 @@ function parseCaracteristicasOpenNavent(block: string): {
   if (amenities.has('jardín') || ambientes.JARDIN === true) details.jardin = true;
   if (amenities.has('parrilla')) details.parrilla = true;
   if (amenities.has('gimnasio')) details.gimnasio = true;
+  if (amenities.has('apto crédito')) details.aptoCredito = true;
 
   return { bedrooms, bathrooms, areaTotal, areaCovered, details };
 }

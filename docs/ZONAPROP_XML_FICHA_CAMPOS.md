@@ -150,6 +150,7 @@ Guardar como `details.ambientes.CAMPO = true/false` y/o aplanar a `details.ameni
 | `OTROS          | AIRE_ACONDICIONADO` | Aire acondicionado        |
 | `OTROS          | CALEFACCION`        | Calefacción               |
 | `OTROS          | CALDERA`            | Caldera                   |
+| `OTROS          | CHIMENEA`           | Chimenea                  |
 | `OTROS          | ALARMA`             | Alarma                    |
 | `OTROS          | COCINA_EQUIPADA`    | Cocina equipada           |
 | `OTROS          | LAVAVAJILLAS`       | Lavavajillas              |

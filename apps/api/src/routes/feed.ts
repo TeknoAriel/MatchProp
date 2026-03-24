@@ -39,7 +39,30 @@ const error400Schema = {
 };
 
 const VALID_SORT = ['date_desc', 'price_asc', 'price_desc', 'area_desc'] as const;
-const AMENITIES_OPTIONS = ['SUM', 'quincho', 'parrilla', 'cocheras', 'pileta', 'gimnasio'] as const;
+/** Amenidades Zonaprop filtrables (caracteristicas booleanas) */
+const AMENITIES_OPTIONS = [
+  'pileta',
+  'parrilla',
+  'quincho',
+  'gimnasio',
+  'cochera',
+  'cocheras',
+  'jardín',
+  'terraza',
+  'balcón',
+  'aire acondicionado',
+  'calefacción',
+  'chimenea',
+  'ascensor',
+  'SUM',
+  'hidromasaje',
+  'sauna',
+  'vigilancia',
+  'internet wifi',
+  'alarma',
+  'baulera',
+  'amoblado',
+] as const;
 
 /** Aplica rawJson fallback cuando heroImageUrl o title faltan en el listing */
 function feedItemWithRawJsonFallback(l: {
@@ -379,15 +402,18 @@ function filtersToWhere(f: FeedFilters): Record<string, unknown> {
     where.lastSeenAt = { gte: since };
   }
   if (f.aptoCredito === true) {
-    where.details = { path: ['aptoCredito'], equals: true };
+    where.AND = [...((where.AND as Record<string, unknown>[]) ?? []), { details: { path: ['aptoCredito'], equals: true } }];
   }
   if (f.amenities?.length) {
     const andList: Record<string, unknown>[] = [];
     for (const amenity of f.amenities) {
+      const amenityNorm = String(amenity).trim();
+      if (!amenityNorm) continue;
       andList.push({
         OR: [
-          { description: { contains: amenity, mode: 'insensitive' } },
-          { title: { contains: amenity, mode: 'insensitive' } },
+          { description: { contains: amenityNorm, mode: 'insensitive' } },
+          { title: { contains: amenityNorm, mode: 'insensitive' } },
+          { details: { path: ['amenities'], array_contains: [amenityNorm] } },
         ],
       });
     }
