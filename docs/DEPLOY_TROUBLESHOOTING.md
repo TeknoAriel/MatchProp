@@ -39,6 +39,14 @@ Errores frecuentes:
 - **Lint:** `pnpm lint` y `pnpm format:check` deben pasar. Corregir localmente, commit, push.
 - **Typecheck:** Corregir errores de tipos.
 - **Tests:** Revisar qué test falla y corregir.
+- **Smoke UX (E2E):** Si falla en `/alerts`, puede ser por cambio de texto en la UI. Ej.: la página usa "Mis alertas" pero el test esperaba "Alertas". Ajustar en `apps/web/e2e/smoke-ux.spec.ts` usando regex flexibles (`/Alertas|Mis alertas/`).
+
+**Commits que fallaron en PR #10 (deploy-20260324):**
+
+| Commit  | Descripción                         | Causa del fallo                          | Resolución                                      |
+| ------- | ----------------------------------- | ---------------------------------------- | ----------------------------------------------- |
+| `4608bf7` | fix(web): alertas con botón Ver…   | Smoke UX: heading "Alertas" vs "Mis alertas" | Test actualizado con regex que acepta ambos textos |
+| `0876c1e` | fix(deploy): verificación obligatoria | Smoke UX fallando en commit anterior     | Resuelto con fix de smoke-ux.spec.ts            |
 
 ### 4. Múltiples PRs abiertos
 

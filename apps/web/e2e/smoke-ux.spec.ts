@@ -95,7 +95,9 @@ test.describe('smoke:ux', () => {
     }
 
     await page.goto('/alerts');
-    await expect(page.getByRole('heading', { name: 'Alertas' })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('heading', { name: /Alertas|Mis alertas/ })).toBeVisible({
+      timeout: 5000,
+    });
     await expect(
       page.getByText('Nuevas publicaciones').or(page.locator('a[href^="/searches/"]')).first()
     ).toBeVisible({ timeout: 5000 });
@@ -361,7 +363,9 @@ test.describe('smoke:ux', () => {
       await page.waitForTimeout(2000);
     }
     await page.goto('/alerts');
-    await expect(page.getByRole('heading', { name: 'Alertas' })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('heading', { name: /Alertas|Mis alertas/ })).toBeVisible({
+      timeout: 5000,
+    });
     await expect(
       page.getByText('Nuevas publicaciones').or(page.locator('a[href^="/searches/"]')).first()
     ).toBeVisible({ timeout: 5000 });
