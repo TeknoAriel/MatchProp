@@ -7,6 +7,7 @@ import { getCachedTotal, setCachedTotal } from './feed-total-cache.js';
 import { extractFromRawJson } from './rawjson-fallback.js';
 import type { SearchFilters } from '@matchprop/shared';
 
+/** Entrada alineada con filtros del GET /feed (filtersToWhere). */
 export type FeedFiltersInput = {
   operationType?: string;
   propertyType?: string[];
@@ -16,12 +17,28 @@ export type FeedFiltersInput = {
   currency?: string;
   bedrooms?: number;
   bedroomsMin?: number;
+  bedroomsMax?: number;
   bathrooms?: number;
   bathroomsMin?: number;
+  bathroomsMax?: number;
   areaMin?: number;
+  areaMax?: number;
+  areaCoveredMin?: number;
   locationText?: string;
+  addressText?: string;
+  titleContains?: string;
+  descriptionContains?: string;
+  sortBy?: 'date_desc' | 'price_asc' | 'price_desc' | 'area_desc';
+  source?: string;
   aptoCredito?: boolean;
   amenities?: string[];
+  photosCountMin?: number;
+  listingAgeDays?: number;
+  keywords?: string[];
+  minLat?: number;
+  maxLat?: number;
+  minLng?: number;
+  maxLng?: number;
 };
 
 export function filtersToWhere(f: FeedFiltersInput): Record<string, unknown> {
@@ -36,12 +53,41 @@ export function filtersToWhere(f: FeedFiltersInput): Record<string, unknown> {
     where.price = pf;
   }
   if (f.currency) where.currency = f.currency;
-  const beds = f.bedrooms ?? f.bedroomsMin;
-  if (beds != null) where.bedrooms = { gte: beds };
-  const baths = f.bathrooms ?? f.bathroomsMin;
-  if (baths != null) where.bathrooms = { gte: baths };
-  if (f.areaMin != null) where.areaTotal = { gte: f.areaMin };
+  const bedsMin = f.bedrooms ?? f.bedroomsMin;
+  if (bedsMin != null || f.bedroomsMax != null) {
+    const bf: { gte?: number; lte?: number } = {};
+    if (bedsMin != null) bf.gte = bedsMin;
+    if (f.bedroomsMax != null) bf.lte = f.bedroomsMax;
+    where.bedrooms = bf;
+  }
+  const bathsMin = f.bathrooms ?? f.bathroomsMin;
+  if (bathsMin != null || f.bathroomsMax != null) {
+    const bf: { gte?: number; lte?: number } = {};
+    if (bathsMin != null) bf.gte = bathsMin;
+    if (f.bathroomsMax != null) bf.lte = f.bathroomsMax;
+    where.bathrooms = bf;
+  }
+  if (f.areaMin != null || f.areaMax != null) {
+    const af: { gte?: number; lte?: number } = {};
+    if (f.areaMin != null) af.gte = f.areaMin;
+    if (f.areaMax != null) af.lte = f.areaMax;
+    where.areaTotal = af;
+  }
+  if (f.areaCoveredMin != null) where.areaCovered = { gte: f.areaCoveredMin };
   if (f.locationText) where.locationText = { contains: f.locationText, mode: 'insensitive' };
+  if (f.addressText) where.addressText = { contains: f.addressText, mode: 'insensitive' };
+  if (f.titleContains) where.title = { contains: f.titleContains, mode: 'insensitive' };
+  if (f.descriptionContains)
+    where.description = { contains: f.descriptionContains, mode: 'insensitive' };
+  if (f.source) where.source = f.source;
+  if (f.photosCountMin != null && f.photosCountMin >= 0) {
+    where.photosCount = { gte: f.photosCountMin };
+  }
+  if (f.listingAgeDays != null && f.listingAgeDays >= 1) {
+    const since = new Date();
+    since.setDate(since.getDate() - f.listingAgeDays);
+    where.lastSeenAt = { gte: since };
+  }
   if (f.aptoCredito === true) {
     where.AND = [
       ...((where.AND as Record<string, unknown>[]) ?? []),
@@ -64,6 +110,30 @@ export function filtersToWhere(f: FeedFiltersInput): Record<string, unknown> {
     if (andList.length)
       where.AND = [...((where.AND as Record<string, unknown>[]) ?? []), ...andList];
   }
+  if (f.keywords?.length) {
+    const andKw: Record<string, unknown>[] = [];
+    for (const kw of f.keywords) {
+      const k = String(kw).trim();
+      if (!k) continue;
+      andKw.push({
+        OR: [
+          { title: { contains: k, mode: 'insensitive' } },
+          { description: { contains: k, mode: 'insensitive' } },
+        ],
+      });
+    }
+    if (andKw.length) where.AND = [...((where.AND as Record<string, unknown>[]) ?? []), ...andKw];
+  }
+  if (f.minLat != null || f.maxLat != null || f.minLng != null || f.maxLng != null) {
+    const latCond: { not?: null; gte?: number; lte?: number } = { not: null };
+    if (f.minLat != null) latCond.gte = f.minLat;
+    if (f.maxLat != null) latCond.lte = f.maxLat;
+    const lngCond: { not?: null; gte?: number; lte?: number } = { not: null };
+    if (f.minLng != null) lngCond.gte = f.minLng;
+    if (f.maxLng != null) lngCond.lte = f.maxLng;
+    where.lat = latCond;
+    where.lng = lngCond;
+  }
   return where;
 }
 
@@ -75,12 +145,78 @@ function searchFiltersToFeedFilters(s: SearchFilters): FeedFiltersInput {
     priceMax: s.priceMax,
     currency: s.currency,
     bedroomsMin: s.bedroomsMin,
+    bedroomsMax: s.bedroomsMax,
     bathroomsMin: s.bathroomsMin,
+    bathroomsMax: s.bathroomsMax,
     areaMin: s.areaMin,
+    areaMax: s.areaMax,
+    areaCoveredMin: s.areaCoveredMin,
     locationText: s.locationText,
+    addressText: s.addressText,
+    titleContains: s.titleContains,
+    descriptionContains: s.descriptionContains,
+    sortBy: s.sortBy,
+    source: s.source,
     aptoCredito: s.aptoCredito,
     amenities: s.amenities,
+    photosCountMin: s.photosCountMin,
+    listingAgeDays: s.listingAgeDays,
+    keywords: s.keywords,
+    minLat: s.minLat,
+    maxLat: s.maxLat,
+    minLng: s.minLng,
+    maxLng: s.maxLng,
   };
+}
+
+/** Campos exclusivos de SearchFilters frente al querystring plano del feed. */
+function isSearchFiltersShape(f: object): boolean {
+  const k = f as Record<string, unknown>;
+  return (
+    'bedroomsMin' in k ||
+    'bedroomsMax' in k ||
+    'bathroomsMax' in k ||
+    'areaMax' in k ||
+    'areaCoveredMin' in k ||
+    'addressText' in k ||
+    'titleContains' in k ||
+    'descriptionContains' in k ||
+    'sortBy' in k ||
+    'source' in k ||
+    'photosCountMin' in k ||
+    'listingAgeDays' in k ||
+    'keywords' in k ||
+    'minLat' in k ||
+    'maxLat' in k ||
+    'minLng' in k ||
+    'maxLng' in k
+  );
+}
+
+export function toFeedFiltersInput(filters: FeedFiltersInput | SearchFilters): FeedFiltersInput {
+  if (isSearchFiltersShape(filters)) {
+    return searchFiltersToFeedFilters(filters as SearchFilters);
+  }
+  const legacy = filters as FeedFiltersInput;
+  return {
+    ...legacy,
+    propertyType: legacy.propertyType ?? legacy.propertyTypes,
+  };
+}
+
+function orderByForSort(sortBy: FeedFiltersInput['sortBy']) {
+  const s = sortBy ?? 'date_desc';
+  if (s === 'price_asc')
+    return [{ price: 'asc' as const }, { lastSeenAt: 'desc' as const }, { id: 'desc' as const }];
+  if (s === 'price_desc')
+    return [{ price: 'desc' as const }, { lastSeenAt: 'desc' as const }, { id: 'desc' as const }];
+  if (s === 'area_desc')
+    return [
+      { areaTotal: 'desc' as const },
+      { lastSeenAt: 'desc' as const },
+      { id: 'desc' as const },
+    ];
+  return [{ lastSeenAt: 'desc' as const }, { id: 'desc' as const }];
 }
 
 /**
@@ -91,10 +227,7 @@ export async function listingMatchesFilters(
   listingId: string,
   filters: FeedFiltersInput | SearchFilters
 ): Promise<boolean> {
-  const f: FeedFiltersInput =
-    'propertyType' in filters || 'propertyTypes' in filters
-      ? (filters as FeedFiltersInput)
-      : searchFiltersToFeedFilters(filters as SearchFilters);
+  const f = toFeedFiltersInput(filters);
 
   const baseWhere = {
     id: listingId,
@@ -117,10 +250,7 @@ export async function executeFeed(params: {
   since?: Date;
 }) {
   const { userId, limit, cursor, includeTotal, excludeSwipes = true, since } = params;
-  const filters: FeedFiltersInput =
-    'propertyType' in params.filters || 'propertyTypes' in params.filters
-      ? (params.filters as FeedFiltersInput)
-      : searchFiltersToFeedFilters(params.filters as SearchFilters);
+  const filters = toFeedFiltersInput(params.filters);
 
   const cursorData = decodeListingCursor(cursor ?? undefined);
   if (cursor !== undefined && cursor !== null && String(cursor).trim() !== '' && !cursorData) {
@@ -154,10 +284,12 @@ export async function executeFeed(params: {
     total = getCachedTotal(userId, filters as Record<string, unknown>) ?? null;
   }
 
+  const orderBy = orderByForSort(filters.sortBy);
+
   const itemsRaw = await prisma.listing.findMany({
     where: findWhere,
     take: limit + 1,
-    orderBy: [{ lastSeenAt: 'desc' }, { id: 'desc' }],
+    orderBy,
     select: {
       id: true,
       title: true,

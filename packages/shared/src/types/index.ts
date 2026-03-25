@@ -146,6 +146,11 @@ export interface SearchFilters {
   photosCountMin?: number;
   listingAgeDays?: number;
   keywords?: string[];
+  /** Bounds del mapa (mismo criterio que GET /feed); suelen venir de la UI, no del texto. */
+  minLat?: number;
+  maxLat?: number;
+  minLng?: number;
+  maxLng?: number;
 }
 
 /** Búsqueda guardada */
