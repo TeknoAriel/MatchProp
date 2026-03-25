@@ -155,7 +155,7 @@ function parseDescriptionContains(text: string): string {
 
 function parseKeywords(text: string): string[] {
   const m = text.match(/\bpalabras?\s+clave\s*:\s*([^.;\n]+)/i);
-  const raw = m?.[1] ?? (/\bkeywords?\s*:\s*([^.;\n]+)/i.exec(text)?.[1] ?? '');
+  const raw = m?.[1] ?? /\bkeywords?\s*:\s*([^.;\n]+)/i.exec(text)?.[1] ?? '';
   if (!raw.trim()) return [];
   return raw
     .split(/[,;]/)
@@ -361,7 +361,11 @@ export function parseSearchText(text: string): {
   const areaCoveredMin = parseAreaCoveredMin(t);
   const locationText = parseLocation(t);
   let addressText = parseAddressText(t);
-  if (addressText && locationText && addressText.toLowerCase().includes(locationText.toLowerCase())) {
+  if (
+    addressText &&
+    locationText &&
+    addressText.toLowerCase().includes(locationText.toLowerCase())
+  ) {
     addressText = '';
   }
   const titleContains = parseTitleContains(t);
