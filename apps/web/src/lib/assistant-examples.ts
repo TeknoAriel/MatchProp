@@ -1,4 +1,4 @@
-/** Frases de ejemplo para el asistente conversacional (búsqueda por lenguaje natural). */
+/** Frases de ejemplo para el asistente (máx. 50 para UI y bundle liviano). */
 export const ASSISTANT_EXAMPLES: string[] = [
   'Departamento 3 ambientes en venta, Belgrano',
   'Casa en alquiler Palermo hasta 500k',
@@ -30,7 +30,7 @@ export const ASSISTANT_EXAMPLES: string[] = [
   'Local a la calle, Córdoba capital centro',
   'Alquiler depto 2 amb con mascotas permitidas',
   'Oficina equipada coworking, Palermo Soho',
-  'Casa en venta Rosario, zona parque',
+  'Comprar depto 2 dorm Rosario hasta 120k USD',
   'Departamento bajo expensas, Flores',
   'Piso alto con vista al río, Puerto Norte',
   'Galpón en alquiler, zona industrial Lomas',
@@ -50,5 +50,4 @@ export const ASSISTANT_EXAMPLES: string[] = [
   'Semipiso premium cochera fija, Recoleta',
   'Casa en venta Córdoba, barrio Jardín',
   'Departamento con escritorio, home office, Saavedra',
-  'Monoambiente al frente con lavadero, Villa Crespo',
 ];
