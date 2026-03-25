@@ -89,7 +89,10 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
 
   // Raw body para webhook Stripe (verificación de firma)
   fastify.addContentTypeParser('application/json', { parseAs: 'buffer' }, (req, body, done) => {
-    if (req.url && req.url.startsWith('/webhooks/stripe')) {
+    const path = req.url?.split('?')[0] ?? '';
+    const needsStripeRaw =
+      path.startsWith('/webhooks/stripe') || path.startsWith('/payments/webhook/stripe');
+    if (needsStripeRaw) {
       (req as { rawBody?: Buffer }).rawBody = Buffer.isBuffer(body) ? body : Buffer.from(body);
       done(null, body);
     } else {

@@ -561,6 +561,12 @@ export default function ManualSearchPage() {
               Mis búsquedas
             </Link>
           </p>
+          <Link
+            href="/search/map"
+            className="inline-flex mt-3 px-3 py-1.5 text-sm font-medium rounded-xl bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100 transition-colors"
+          >
+            Abrir búsqueda en mapa
+          </Link>
         </header>
 
         <div className="p-4 sm:p-5 rounded-2xl bg-[var(--mp-card)] shadow-sm border border-[var(--mp-border)] space-y-2">

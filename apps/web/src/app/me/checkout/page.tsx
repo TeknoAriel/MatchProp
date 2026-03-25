@@ -6,6 +6,8 @@ import Link from 'next/link';
 
 const API_BASE = '/api';
 
+const VALID_PLAN_IDS = new Set(['BUYER', 'AGENT', 'REALTOR', 'INMOBILIARIA']);
+
 type Plan = {
   id: string;
   name: string;
@@ -28,14 +30,24 @@ function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const planId = searchParams?.get('plan') ?? 'AGENT';
+  const billingFromQuery = searchParams?.get('billingCycle');
 
   const [plans, setPlans] = useState<Plan[]>([]);
   const [config, setConfig] = useState<PaymentConfig | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<string>(planId);
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>(() =>
+    billingFromQuery === 'yearly' ? 'yearly' : 'monthly'
+  );
   const [provider, setProvider] = useState<'MERCADO_PAGO' | 'STRIPE'>('MERCADO_PAGO');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const bc = searchParams?.get('billingCycle');
+    if (bc === 'yearly' || bc === 'monthly') setBillingCycle(bc);
+    const p = searchParams?.get('plan');
+    if (p && VALID_PLAN_IDS.has(p)) setSelectedPlan(p);
+  }, [searchParams]);
 
   useEffect(() => {
     Promise.all([
