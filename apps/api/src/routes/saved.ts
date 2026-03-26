@@ -111,35 +111,41 @@ export async function savedRoutes(fastify: FastifyInstance) {
 
       const items = await prisma.savedItem.findMany({
         where,
-        include: {
-          listing: {
-            select: {
-              id: true,
-              title: true,
-              price: true,
-              currency: true,
-              locationText: true,
-              heroImageUrl: true,
-              rawJson: true,
-              source: true,
-              bedrooms: true,
-              bathrooms: true,
-              areaTotal: true,
-              propertyType: true,
-              operationType: true,
-              media: {
-                orderBy: { sortOrder: 'asc' },
-                select: { url: true, sortOrder: true },
-              },
-            },
-          },
-        },
         orderBy: { createdAt: 'desc' },
       });
 
+      // Hidratar listings por lote (más robusto que depender de include/relación).
+      const listingIds = Array.from(new Set(items.map((i) => i.listingId).filter(Boolean)));
+      const listings =
+        listingIds.length > 0
+          ? await prisma.listing.findMany({
+              where: { id: { in: listingIds } },
+              select: {
+                id: true,
+                title: true,
+                price: true,
+                currency: true,
+                locationText: true,
+                heroImageUrl: true,
+                rawJson: true,
+                source: true,
+                bedrooms: true,
+                bathrooms: true,
+                areaTotal: true,
+                propertyType: true,
+                operationType: true,
+                media: {
+                  orderBy: { sortOrder: 'asc' },
+                  select: { url: true, sortOrder: true },
+                },
+              },
+            })
+          : [];
+      const listingById = new Map(listings.map((l) => [l.id, l]));
+
       return {
         items: items.map((s) => {
-          const listing = s.listing;
+          const listing = listingById.get(s.listingId) ?? null;
           if (!listing)
             return { id: s.id, listingId: s.listingId, listType: s.listType, listing: null };
           let heroImageUrl = listing.heroImageUrl ?? listing.media?.[0]?.url ?? null;
