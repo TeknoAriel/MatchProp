@@ -6,6 +6,9 @@ on:
     - cron: '*/15 * * * *'  # cada 15 min
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   smoke:
     name: Prod health check

@@ -217,4 +217,37 @@ describe('parseSearchText', () => {
       expect(r2.warnings[0]).toContain('No entendí criterios');
     });
   });
+
+  it('hasta N m² no setea areaMin (solo areaMax)', () => {
+    const r = parseSearchText('departamento hasta 100 m2 en Palermo');
+    expect(r.filters.areaMax).toBe(100);
+    expect(r.filters.areaMin).toBeUndefined();
+  });
+
+  it('detecta m² cubiertos mínimos', () => {
+    const r = parseSearchText('casa con 120 m2 cubiertos en Pilar');
+    expect(r.filters.areaCoveredMin).toBe(120);
+    expect(r.filters.locationText).toContain('Pilar');
+  });
+
+  it('detecta calle en addressText', () => {
+    const r = parseSearchText('depto en calle Corrientes');
+    expect(r.filters.addressText).toMatch(/Corrientes/i);
+  });
+
+  it('detecta título y descripción', () => {
+    const r = parseSearchText('casa título con "luminoso" descripción con "pileta"');
+    expect(r.filters.titleContains).toBe('luminoso');
+    expect(r.filters.descriptionContains).toBe('pileta');
+  });
+
+  it('detecta palabras clave', () => {
+    const r = parseSearchText('ph palabras clave: luminoso, reciclado');
+    expect(r.filters.keywords).toEqual(['luminoso', 'reciclado']);
+  });
+
+  it('detecta origen Zonaprop', () => {
+    const r = parseSearchText('depto en venta publicado en Zonaprop');
+    expect(r.filters.source).toBe('KITEPROP_DIFUSION_ZONAPROP');
+  });
 });

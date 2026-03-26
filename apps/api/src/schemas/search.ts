@@ -29,6 +29,10 @@ export const searchFiltersSchema = z.object({
   photosCountMin: z.number().int().min(0).optional(),
   listingAgeDays: z.number().int().min(1).max(365).optional(),
   keywords: z.array(z.string()).optional(),
+  minLat: z.number().optional(),
+  maxLat: z.number().optional(),
+  minLng: z.number().optional(),
+  maxLng: z.number().optional(),
 });
 
 export type SearchFiltersValidated = z.infer<typeof searchFiltersSchema>;

@@ -1,6 +1,6 @@
 # Crea PR a main y agrega etiqueta automerge en cada push a un branch.
-# Flujo: push → PR creado/actualizado → etiqueta automerge → CI pasa → merge automático → Vercel deploy.
-# El usuario/agente solo hace: commit + push. Nada más.
+# No hace commit/push de format (evita carreras con CI y commits extra en Hobby).
+# El formato lo valida únicamente el workflow CI → job "Verify".
 name: Deploy auto (PR + automerge)
 
 on:
@@ -16,14 +16,13 @@ on:
         required: true
         default: 'docs-url-canon-20260320'
 
-# contents: write → push automático de format/lint; issues/pr → etiqueta y PR
 permissions:
-  contents: write
+  contents: read
   issues: write
   pull-requests: write
 
 env:
-  PNPM_VERSION: '9.0.0'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   create-or-update-pr:
@@ -33,29 +32,6 @@ jobs:
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Auto-format and lint fix
-        run: |
-          pnpm format
-          pnpm lint:fix
-          if ! git diff --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add -A
-            git commit -m "style: auto-format and lint"
-            git push
-          fi
 
       - name: Ensure automerge label exists
         env:
@@ -85,7 +61,6 @@ jobs:
             exit 0
           fi
 
-          # gh pr list a veces devuelve vacío cuando el PR existe; fallback REST API
           EXISTING=$(gh pr list --head "$HEAD_REF" --base main --state open --json number -q 'if length > 0 then .[0].number else empty end' 2>/dev/null || true)
           if [[ -z "$EXISTING" ]]; then
             EXISTING=$(curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" \

@@ -11,6 +11,7 @@ import FilterChips from '../../components/FilterChips';
 import AssistantChatInput from '../../components/AssistantChatInput';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import ListingImage from '../../components/ListingImage';
+import { ASSISTANT_EXAMPLES } from '../../lib/assistant-examples';
 
 const API_BASE = '/api';
 
@@ -28,14 +29,6 @@ function mapFiltersToPreferenceBody(f: SearchFilters): Record<string, unknown> {
   if (f.locationText?.trim()) body.locationText = f.locationText.trim();
   return body;
 }
-
-/** Ejemplos para invitar a tipear; el buscador es conversacional. */
-const EXAMPLES = [
-  'Departamento 3 ambientes en venta, Belgrano',
-  'Casa en alquiler Palermo hasta 500k',
-  'Monocambiente con balcón, CABA',
-  'Ph con patio, 2 dormitorios',
-];
 
 const showDebug =
   process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_SHOW_DEBUG === '1';
@@ -624,11 +617,11 @@ export default function AssistantPage() {
         </section>
 
         {/* Ejemplos como chips */}
-        {EXAMPLES.length > 0 && (
+        {ASSISTANT_EXAMPLES.length > 0 && (
           <div>
             <p className="text-xs font-medium text-[var(--mp-muted)] mb-2">Probá con:</p>
             <div className="flex flex-wrap gap-2">
-              {EXAMPLES.map((ex) => (
+              {ASSISTANT_EXAMPLES.map((ex) => (
                 <button
                   key={ex}
                   type="button"

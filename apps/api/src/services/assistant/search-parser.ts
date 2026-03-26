@@ -1,7 +1,19 @@
 import type { SearchFilters } from '@matchprop/shared';
 
 const LOCATION_MAX = 200;
+const TITLE_MAX = 100;
+const DESC_MAX = 200;
 const VALID_PROPERTY_TYPES = ['HOUSE', 'APARTMENT', 'LAND', 'OFFICE', 'OTHER'] as const;
+
+/** Origen del aviso (enum Prisma ListingSource). */
+const SOURCE_PHRASES: { pattern: RegExp; source: string }[] = [
+  { pattern: /\bzonaprop\b/i, source: 'KITEPROP_DIFUSION_ZONAPROP' },
+  { pattern: /\btoctoc\b|\btoc\s*toc\b/i, source: 'KITEPROP_DIFUSION_TOCTOC' },
+  { pattern: /\bicasas\b/i, source: 'KITEPROP_DIFUSION_ICASAS' },
+  { pattern: /\byumblin\b/i, source: 'KITEPROP_DIFUSION_YUMBLIN' },
+  { pattern: /\bkitoprop\b|\bkiteprop\b/i, source: 'KITEPROP_API' },
+  { pattern: /\bpartner\s*1\b|\bapi\s*partner\b/i, source: 'API_PARTNER_1' },
+];
 
 function trunc(s: string): string {
   return s.trim().slice(0, LOCATION_MAX) || '';
@@ -85,6 +97,80 @@ function parseAreaMax(text: string): number | undefined {
   return m ? parseInt(m[1]!, 10) : undefined;
 }
 
+/** m² totales: ignora números que ya cuentan como techo (hasta/máximo N m²). */
+function parseAreaMin(text: string): number | undefined {
+  const withoutMax = text.replace(
+    /\b(?:hasta|m[aá]ximo)\s+\d+\s*(?:m2|mts2|m²|m\s*2|metros?\s*cuadrados?)\b/gi,
+    ' '
+  );
+  const m = withoutMax.match(/(\d+)\s*(?:m2|mts2|m²|m\s*2|metros?\s*cuadrados?)/i);
+  return m ? parseInt(m[1]!, 10) : undefined;
+}
+
+function parseAreaCoveredMin(text: string): number | undefined {
+  const m1 = text.match(
+    /(\d+)\s*(?:m2|mts2|m²|m\s*2)\s*cubiert[oa]s?\b|\bcubiert[oa]s?\s*(?:de\s*|m[ií]n\.?\s*)?(\d+)\s*(?:m2|mts2|m²|m\s*2)/i
+  );
+  if (m1) {
+    const n = parseInt(m1[1] || m1[2] || '', 10);
+    return Number.isNaN(n) ? undefined : n;
+  }
+  const m2 = text.match(
+    /\bsuperficie\s+cubierta\s*(?:(?:m[ií]n|mínimo|al\s+menos|desde)\s*)?(\d+)\s*(?:m2|mts2|m²|m\s*2)?/i
+  );
+  return m2 ? parseInt(m2[1]!, 10) : undefined;
+}
+
+function parseAddressText(text: string): string {
+  const m1 = text.match(
+    /\b(?:calle|av\.?|avenida|pasaje|boulevard)\s+([A-Za-záéíóúÁÉÍÓÚñÑ0-9.\s°º'-]{2,120})/i
+  );
+  if (m1?.[1]) return trunc(m1[1].replace(/\s+/g, ' '));
+  const m2 = text.match(/\bdirecci[oó]n\s*[:\s]+\s*([^,.]{2,120})/i);
+  if (m2?.[1]) return trunc(m2[1].trim());
+  return '';
+}
+
+function parseTitleContains(text: string): string {
+  const quoted = text.match(
+    /\bt[ií]tulo\s+(?:con\s+|que\s+contenga\s+)?["""']([^"""']{2,80})["""']/i
+  );
+  if (quoted?.[1]) return quoted[1].trim().slice(0, TITLE_MAX);
+  const q2 = text.match(/\bque\s+diga\s+["']([^"']{2,80})["']/i);
+  if (q2?.[1]) return q2[1].trim().slice(0, TITLE_MAX);
+  const q3 = text.match(/\ben\s+el\s+t[ií]tulo\s+["']?([^,."']{2,80})/i);
+  if (q3?.[1]) return q3[1].trim().slice(0, TITLE_MAX);
+  return '';
+}
+
+function parseDescriptionContains(text: string): string {
+  const quoted = text.match(
+    /\bdescripci[oó]n\s+(?:con\s+|que\s+contenga\s+)?["""']([^"""']{2,120})["""']/i
+  );
+  if (quoted?.[1]) return quoted[1].trim().slice(0, DESC_MAX);
+  const q2 = text.match(/\ben\s+la\s+descripci[oó]n\s+["']?([^,."']{2,120})/i);
+  if (q2?.[1]) return q2[1].trim().slice(0, DESC_MAX);
+  return '';
+}
+
+function parseKeywords(text: string): string[] {
+  const m = text.match(/\bpalabras?\s+clave\s*:\s*([^.;\n]+)/i);
+  const raw = m?.[1] ?? /\bkeywords?\s*:\s*([^.;\n]+)/i.exec(text)?.[1] ?? '';
+  if (!raw.trim()) return [];
+  return raw
+    .split(/[,;]/)
+    .map((s) => s.trim().replace(/^["']|["']$/g, ''))
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
+function parseSource(text: string): string | undefined {
+  for (const { pattern, source } of SOURCE_PHRASES) {
+    if (pattern.test(text)) return source;
+  }
+  return undefined;
+}
+
 function parseSortBy(
   text: string
 ): 'date_desc' | 'price_asc' | 'price_desc' | 'area_desc' | undefined {
@@ -165,11 +251,6 @@ function parseCurrency(text: string): string | undefined {
   return undefined;
 }
 
-function parseAreaMin(text: string): number | undefined {
-  const m = text.match(/(\d+)\s*(?:m2|mts2|m²|m\s*2|metros?\s*cuadrados?)/i);
-  return m ? parseInt(m[1]!, 10) : undefined;
-}
-
 function parsePropertyType(text: string): string[] | undefined {
   const lower = text.toLowerCase();
   const found: string[] = [];
@@ -192,10 +273,6 @@ const AMENITY_PATTERNS: { pattern: RegExp; key: string }[] = [
   { pattern: /\b(parrilla|parrillas|asador|asadores)\b/i, key: 'parrilla' },
   { pattern: /\b(quincho|quinchos)\b/i, key: 'quincho' },
   { pattern: /\b(gimnasio|gimnasios)\b/i, key: 'gimnasio' },
-  {
-    pattern: /\b(apto\s*cr[eé]dito|apto\s*credito|cr[eé]dito\s*hipotecario)\b/i,
-    key: 'apto crédito',
-  },
   { pattern: /\b(amueblad[oa]|amoblad[oa]|muebles)\b/i, key: 'amoblado' },
   { pattern: /\b(aire\s*acondicionado|aa|ac)\b/i, key: 'aire acondicionado' },
   { pattern: /\b(calefacci[oó]n|calefaccion)\b/i, key: 'calefacción' },
@@ -246,7 +323,14 @@ function hasRecognizedFilters(f: SearchFilters): boolean {
     f.sortBy != null ||
     f.photosCountMin != null ||
     f.listingAgeDays != null ||
-    (f.keywords?.length ?? 0) > 0
+    (f.keywords?.length ?? 0) > 0 ||
+    (f.titleContains?.trim()?.length ?? 0) > 0 ||
+    (f.descriptionContains?.trim()?.length ?? 0) > 0 ||
+    f.source != null ||
+    f.minLat != null ||
+    f.maxLat != null ||
+    f.minLng != null ||
+    f.maxLng != null
   );
 }
 
@@ -272,9 +356,22 @@ export function parseSearchText(text: string): {
   const priceMax = parsePriceMax(t);
   const bedroomsResult = parseBedrooms(t);
   const bathroomsResult = parseBathrooms(t);
-  const areaMin = parseAreaMin(t);
   const areaMax = parseAreaMax(t);
+  const areaMin = parseAreaMin(t);
+  const areaCoveredMin = parseAreaCoveredMin(t);
   const locationText = parseLocation(t);
+  let addressText = parseAddressText(t);
+  if (
+    addressText &&
+    locationText &&
+    addressText.toLowerCase().includes(locationText.toLowerCase())
+  ) {
+    addressText = '';
+  }
+  const titleContains = parseTitleContains(t);
+  const descriptionContains = parseDescriptionContains(t);
+  const keywords = parseKeywords(t);
+  const source = parseSource(t);
   const propertyType = parsePropertyType(t);
   const amenities = parseAmenities(t);
   const aptoCredito = parseAptoCredito(t);
@@ -297,7 +394,13 @@ export function parseSearchText(text: string): {
   }
   if (areaMin != null) filters.areaMin = areaMin;
   if (areaMax != null) filters.areaMax = areaMax;
+  if (areaCoveredMin != null) filters.areaCoveredMin = areaCoveredMin;
   if (locationText) filters.locationText = locationText;
+  if (addressText) filters.addressText = addressText;
+  if (titleContains) filters.titleContains = titleContains;
+  if (descriptionContains) filters.descriptionContains = descriptionContains;
+  if (keywords.length) filters.keywords = keywords;
+  if (source) filters.source = source;
   if (propertyType?.length) filters.propertyType = propertyType;
   if (amenities.length) filters.amenities = amenities;
   if (aptoCredito === true) filters.aptoCredito = aptoCredito;
@@ -333,8 +436,14 @@ export function parseSearchText(text: string): {
         : `${bathroomsResult.count} baños`
     );
   }
-  if (areaMin != null) parts.push(`desde ${areaMin} m²`);
-  if (areaMax != null) parts.push(`hasta ${areaMax} m²`);
+  if (areaMin != null) parts.push(`desde ${areaMin} m² totales`);
+  if (areaMax != null) parts.push(`hasta ${areaMax} m² totales`);
+  if (areaCoveredMin != null) parts.push(`cubiertos desde ${areaCoveredMin} m²`);
+  if (addressText) parts.push(`dirección similar a «${addressText}»`);
+  if (titleContains) parts.push(`título con «${titleContains}»`);
+  if (descriptionContains) parts.push(`descripción con «${descriptionContains}»`);
+  if (keywords.length) parts.push(`palabras clave: ${keywords.join(', ')}`);
+  if (source) parts.push(`origen ${source}`);
   if (amenities.length) parts.push(`con ${amenities.join(', ')}`);
   if (aptoCredito) parts.push('apto crédito');
   if (sortBy) {

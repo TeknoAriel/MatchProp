@@ -18,6 +18,7 @@ import {
   verifyWebhookSignature,
 } from '../lib/mercadopago.js';
 import { PLANS } from './subscriptions.js';
+import Stripe from 'stripe';
 
 // Tipo de cambio aproximado USD -> ARS (actualizar periódicamente o usar API)
 const USD_TO_ARS = 1000; // $1 USD = $1000 ARS aproximadamente
@@ -233,12 +234,63 @@ export async function paymentRoutes(fastify: FastifyInstance) {
         };
       }
 
-      // STRIPE (placeholder - implementar cuando sea necesario)
       if (provider === 'STRIPE') {
-        // TODO: Implementar Stripe Checkout
-        return reply.status(501).send({
-          message: 'Stripe checkout aún no implementado. Usá Mercado Pago.',
+        const stripeSecret = process.env.STRIPE_SECRET_KEY;
+        if (!stripeSecret) {
+          return reply.status(400).send({ message: 'Stripe no configurado' });
+        }
+
+        const stripe = new Stripe(stripeSecret);
+        const session = await stripe.checkout.sessions.create({
+          mode: 'payment',
+          customer_email: user.email ?? undefined,
+          client_reference_id: externalRef,
+          metadata: {
+            userId,
+            subscriptionId: subscription.id,
+            plan: body.plan,
+            billingCycle: body.billingCycle ?? 'monthly',
+          },
+          line_items: [
+            {
+              price_data: {
+                currency: 'usd',
+                product_data: {
+                  name: `MatchProp ${plan.name} — ${body.billingCycle === 'yearly' ? 'Anual' : 'Mensual'}`,
+                  description: plan.description,
+                },
+                unit_amount: finalPriceUSD,
+              },
+              quantity: 1,
+            },
+          ],
+          success_url: `${baseUrl}/me/premium?status=success&session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${baseUrl}/me/premium?status=failure`,
         });
+
+        await prisma.payment.create({
+          data: {
+            userId,
+            subscriptionId: subscription.id,
+            amount: finalPriceUSD,
+            currency: 'USD',
+            status: 'PENDING',
+            provider: 'STRIPE',
+            providerPaymentId: session.id,
+            description: `Suscripción ${plan.name}`,
+          },
+        });
+
+        const checkoutUrl = session.url;
+        if (!checkoutUrl) {
+          return reply.status(500).send({ message: 'Stripe no devolvió URL de checkout' });
+        }
+
+        return {
+          checkoutUrl,
+          provider: 'STRIPE',
+          preferenceId: null,
+        };
       }
 
       return reply.status(400).send({ message: 'Provider no soportado' });
@@ -373,20 +425,101 @@ export async function paymentRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // POST /payments/webhook/stripe - Webhook de Stripe (placeholder)
   fastify.post(
     '/payments/webhook/stripe',
     {
+      config: { rawBody: true },
       schema: {
         tags: ['Payments'],
         response: {
           200: { type: 'object', properties: { received: { type: 'boolean' } } },
+          400: { type: 'object', properties: { received: { type: 'boolean' } } },
         },
       },
     },
-    async () => {
-      // TODO: Implementar webhook de Stripe cuando sea necesario
-      return { received: true };
+    async (request, reply) => {
+      const stripeSecret = process.env.STRIPE_SECRET_KEY;
+      const webhookSecret =
+        process.env.STRIPE_PAYMENTS_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
+      if (!stripeSecret || !webhookSecret) {
+        fastify.log.warn('Webhook Stripe pagos: falta STRIPE_SECRET_KEY o secreto de webhook');
+        return reply.status(400).send({ received: false });
+      }
+
+      const rawBody = (request as { rawBody?: Buffer }).rawBody;
+      const sig = request.headers['stripe-signature'] as string | undefined;
+      if (!rawBody || !sig) {
+        return reply.status(400).send({ received: false });
+      }
+
+      const stripe = new Stripe(stripeSecret);
+      let event: Stripe.Event;
+      try {
+        event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+      } catch {
+        fastify.log.warn('Webhook Stripe pagos: firma inválida');
+        return reply.status(400).send({ received: false });
+      }
+
+      try {
+        if (event.type === 'checkout.session.completed') {
+          const session = event.data.object as Stripe.Checkout.Session;
+          if (session.payment_status !== 'paid') {
+            return { received: true };
+          }
+
+          const subscriptionId = session.metadata?.subscriptionId;
+          if (!subscriptionId) {
+            fastify.log.warn('Webhook Stripe pagos: sin subscriptionId en metadata');
+            return { received: true };
+          }
+
+          const subscription = await prisma.subscription.findUnique({
+            where: { id: subscriptionId },
+            include: { user: true },
+          });
+
+          if (!subscription) {
+            fastify.log.warn(`Webhook Stripe pagos: suscripción no encontrada ${subscriptionId}`);
+            return { received: true };
+          }
+
+          await prisma.payment.updateMany({
+            where: {
+              subscriptionId,
+              provider: 'STRIPE',
+              status: 'PENDING',
+            },
+            data: {
+              status: 'COMPLETED' as PaymentStatus,
+              providerPaymentId: session.id,
+              paidAt: new Date(),
+            },
+          });
+
+          await prisma.subscription.update({
+            where: { id: subscriptionId },
+            data: { status: 'ACTIVE' },
+          });
+
+          await prisma.user.update({
+            where: { id: subscription.userId },
+            data: {
+              role: subscription.plan,
+              premiumUntil: subscription.currentPeriodEnd,
+            },
+          });
+
+          fastify.log.info(
+            `Suscripción ${subscriptionId} activada (Stripe) para user ${subscription.userId}`
+          );
+        }
+
+        return { received: true };
+      } catch (err) {
+        fastify.log.error(err, 'Error procesando webhook Stripe pagos');
+        return reply.status(500).send({ received: false });
+      }
     }
   );
 

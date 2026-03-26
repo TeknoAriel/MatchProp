@@ -5,18 +5,40 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  workflow_dispatch:
 
+# Un grupo por PR (#número) o por ref en push: no mezcla PR con push a ramas sueltas.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || github.ref }}
   cancel-in-progress: true
 
 env:
   PNPM_VERSION: '9.0.0'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
-  typecheck:
-    name: Typecheck
+  # Un único check requerido en rulesets: "CI / Verify".
+  # Antes: Typecheck, Lint, Unit tests, Integration tests y Full build en paralelo → más puntos de fallo y carreras con otros workflows.
+  verify:
+    name: Verify
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: matchprop
+          POSTGRES_PASSWORD: matchprop
+          POSTGRES_DB: matchprop
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://matchprop:matchprop@localhost:5432/matchprop
     steps:
       - uses: actions/checkout@v4
 
@@ -30,146 +52,33 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
       - run: pnpm build:shared
       - run: pnpm --filter api exec prisma generate
       - run: pnpm -r run typecheck
       - run: pnpm --filter api run typecheck:vercel
-
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm format:check
-
-  unit-tests:
-    name: Unit tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build:shared
-      - run: pnpm --filter api exec prisma generate
       - run: pnpm -r run test
 
-  integration-tests:
-    name: Integration tests
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: matchprop
-          POSTGRES_PASSWORD: matchprop
-          POSTGRES_DB: matchprop
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build:shared
-      - run: pnpm --filter api exec prisma generate
-
-      - name: Setup DB
-        run: |
-          cd apps/api
-          echo "DATABASE_URL=postgresql://matchprop:matchprop@localhost:5432/matchprop" >> .env
-          pnpm exec prisma migrate deploy
-
-      - name: Run integration tests
-        env:
-          DATABASE_URL: postgresql://matchprop:matchprop@localhost:5432/matchprop
-        run: pnpm --filter api run test:all
-
-  build:
-    name: Full build (gate)
-    runs-on: ubuntu-latest
-    needs: [typecheck, lint, unit-tests, integration-tests]
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: matchprop
-          POSTGRES_PASSWORD: matchprop
-          POSTGRES_DB: matchprop
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Setup DB for pre-deploy
+      - name: DB migrate + integration (test:all)
         run: |
           mkdir -p apps/api
-          echo "DATABASE_URL=postgresql://matchprop:matchprop@localhost:5432/matchprop" >> apps/api/.env
-          pnpm --filter api exec prisma generate
+          echo "DATABASE_URL=${DATABASE_URL}" >> apps/api/.env
           pnpm --filter api exec prisma migrate deploy
+          pnpm --filter api run test:all
 
-      - name: Pre-deploy verify (build api + web + admin + test:all)
+      - name: Pre-deploy (builds apps; sin duplicar typecheck/tests)
         env:
-          DATABASE_URL: postgresql://matchprop:matchprop@localhost:5432/matchprop
+          PRE_DEPLOY_FAST: '1'
         run: pnpm run pre-deploy:verify
 
   smoke-ux:
     name: Smoke UX (E2E)
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [verify]
     timeout-minutes: 15
-    continue-on-error: true  # No bloquear merge; revisar logs si falla
+    continue-on-error: true
     services:
       postgres:
         image: postgres:16
@@ -206,7 +115,7 @@ jobs:
     name: Smoke prod (post-merge)
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: [build, smoke-ux]
+    needs: [verify, smoke-ux]
     permissions:
       contents: read
       pull-requests: write

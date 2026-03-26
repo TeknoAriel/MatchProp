@@ -17,6 +17,7 @@
     "build:admin": "pnpm --filter admin build",
     "build:mobile": "pnpm --filter mobile build",
     "build:shared": "pnpm --filter shared build",
+    "ci:verify": "pnpm build:shared && pnpm --filter api exec prisma generate && pnpm -r run typecheck && pnpm --filter api run typecheck:vercel && pnpm lint && pnpm format:check && pnpm -r run test",
     "lint": "eslint \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\"",
     "lint:fix": "eslint --fix \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\"",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",

@@ -11,6 +11,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { UserRole, PaymentProvider } from '@prisma/client';
+import { isMercadoPagoConfigured } from '../lib/mercadopago.js';
 
 // Planes y precios (centavos USD)
 export const PLANS = {
@@ -204,7 +205,22 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
           200: {
             type: 'object',
             properties: {
-              subscription: { type: 'object' },
+              subscription: {
+                anyOf: [
+                  { type: 'null' },
+                  {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string' },
+                      plan: { type: 'string' },
+                      status: { type: 'string' },
+                      currentPeriodEnd: { type: 'string' },
+                      priceUsd: { type: 'number' },
+                      hasOrgDiscount: { type: 'boolean' },
+                    },
+                  },
+                ],
+              },
               checkoutUrl: { type: ['string', 'null'] },
             },
           },
@@ -229,13 +245,34 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
         select: { organizationId: true, role: true },
       });
 
-      // Calcular precio con descuento si aplica
+      const resolvedProvider = body.provider ?? 'STRIPE';
+      if (resolvedProvider !== 'MANUAL') {
+        const mpOk = isMercadoPagoConfigured();
+        const stripeOk = !!process.env.STRIPE_SECRET_KEY;
+        if (!mpOk && !stripeOk) {
+          return reply.status(400).send({
+            message:
+              'No hay proveedores de pago configurados. En prueba usá provider MANUAL o configurá Stripe/Mercado Pago.',
+          });
+        }
+        const baseUrl = (
+          process.env.FRONTEND_URL ||
+          process.env.APP_URL ||
+          'https://matchprop.vercel.app'
+        ).replace(/\/$/, '');
+        const bc = body.billingCycle ?? 'monthly';
+        return {
+          subscription: null,
+          checkoutUrl: `${baseUrl}/me/checkout?plan=${encodeURIComponent(body.plan)}&billingCycle=${encodeURIComponent(bc)}`,
+        };
+      }
+
+      // MANUAL: activación inmediata (modo prueba / demo)
       const hasOrgDiscount =
         (body.plan === 'AGENT' || body.plan === 'REALTOR') && !!dbUser?.organizationId;
       const basePrice = body.billingCycle === 'yearly' ? plan.priceYearly : plan.priceMonthly;
       const finalPrice = hasOrgDiscount ? Math.round(basePrice * (1 - ORG_DISCOUNT)) : basePrice;
 
-      // Calcular fecha de fin del período
       const periodEnd = new Date();
       if (body.billingCycle === 'yearly') {
         periodEnd.setFullYear(periodEnd.getFullYear() + 1);
@@ -243,13 +280,12 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
         periodEnd.setMonth(periodEnd.getMonth() + 1);
       }
 
-      // Crear suscripción
       const subscription = await prisma.subscription.create({
         data: {
           userId,
           plan: body.plan as UserRole,
           status: 'ACTIVE',
-          provider: body.provider ?? 'STRIPE',
+          provider: 'MANUAL',
           currentPeriodStart: new Date(),
           currentPeriodEnd: periodEnd,
         },
@@ -263,7 +299,7 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
           amount: finalPrice,
           currency: 'USD',
           status: 'PENDING',
-          provider: body.provider ?? 'STRIPE',
+          provider: 'MANUAL',
           description: `Suscripción ${plan.name} - ${body.billingCycle === 'yearly' ? 'Anual' : 'Mensual'}`,
         },
       });
@@ -277,13 +313,6 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // TODO: Integrar con Stripe/MercadoPago para checkout real
-      let checkoutUrl: string | null = null;
-      if (body.provider === 'STRIPE' && process.env.STRIPE_SECRET_KEY) {
-        // Aquí iría la integración con Stripe
-        checkoutUrl = `/me/checkout-session?plan=${body.plan}`;
-      }
-
       return {
         subscription: {
           id: subscription.id,
@@ -293,7 +322,7 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
           priceUsd: finalPrice / 100,
           hasOrgDiscount,
         },
-        checkoutUrl,
+        checkoutUrl: null,
       };
     }
   );

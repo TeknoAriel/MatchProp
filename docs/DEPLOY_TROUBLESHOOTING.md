@@ -10,6 +10,14 @@ bash scripts/verify-deploy-status.sh
 
 Muestra si la rama está en main, si prod responde, y si el commit en prod coincide con main.
 
+## Ruleset en `main`: checks requeridos
+
+El workflow **CI** expone un solo job obligatorio para reglas de rama: **`CI / Verify`** (typecheck, lint, tests, integración y `pre-deploy:verify` en un solo run).
+
+Si en GitHub seguís exigiendo jobs viejos (`Typecheck`, `Lint`, `Unit tests`, `Integration tests`, `Full build (gate)` por separado), los checks pueden quedar en **“Expected — Waiting for status”** para siempre.
+
+**Qué hacer:** en **Settings → Rules → Rulesets** (rama `main`), reemplazá la lista de status checks requeridos por **`CI / Verify`** (y los de Vercel si los usás). Eliminá los cinco nombres antiguos del mismo workflow.
+
 ## Causas habituales
 
 ### 1. PR no se mergea (queda abierto con CI verde)
