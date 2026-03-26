@@ -436,4 +436,34 @@ test.describe('smoke:ux', () => {
       await expect(page.getByText('WhatsApp')).toHaveCount(0);
     }
   });
+
+  test('regresión favoritos/match: si hay cards, no deben quedar en mockup puro', async ({
+    page,
+  }) => {
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(TEST_EMAIL);
+    await page.getByRole('button', { name: 'Enviar link a mi email' }).click();
+    await expect(page.getByText('Revisá tu correo')).toBeVisible({ timeout: 10000 });
+    const devLink = page.getByRole('link', { name: 'Abrir link de acceso (dev)' });
+    const href = await devLink.getAttribute('href');
+    expect(href).toBeTruthy();
+    await page.goto(href!, { waitUntil: 'domcontentloaded' });
+    await page.waitForURL(/\/(dashboard|feed)/, { timeout: 25000 });
+
+    for (const path of ['/me/saved', '/me/match']) {
+      await page.goto(path);
+      await page.waitForTimeout(2000);
+      const cards = page.locator('a[href^="/listing/"]');
+      const cardsCount = await cards.count();
+      if (cardsCount === 0) continue;
+
+      const firstCard = cards.first().locator('xpath=..');
+      const text = (await firstCard.textContent()) ?? '';
+      const seemsPureMockup = text.includes('Propiedad') && text.includes('Consultar');
+      expect(
+        seemsPureMockup,
+        `Card en ${path} parece mockup puro (sin title/price hidratados): ${text.slice(0, 200)}`
+      ).toBe(false);
+    }
+  });
 });
