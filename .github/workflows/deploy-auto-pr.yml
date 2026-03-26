@@ -38,7 +38,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh --version
-
       - name: Ensure automerge label exists
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
