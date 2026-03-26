@@ -17,7 +17,7 @@ on:
         default: 'docs-url-canon-20260320'
 
 permissions:
-  contents: read
+  contents: write
   actions: write
   issues: write
   pull-requests: write
@@ -93,6 +93,11 @@ jobs:
           if [[ -n "$EXISTING" ]]; then
             echo "PR #$EXISTING: asegurando etiqueta automerge"
             gh pr edit "$EXISTING" --add-label automerge || true
+          fi
+
+          if [[ -n "$EXISTING" ]]; then
+            echo "Habilitando auto-merge en PR #$EXISTING..."
+            gh pr merge "$EXISTING" --repo "$REPO" --squash --auto || true
           fi
 
           echo "Disparando CI vía workflow_dispatch (evita checks 'Expected' sin run)..."
