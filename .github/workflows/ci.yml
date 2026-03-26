@@ -67,7 +67,6 @@ jobs:
           echo "DATABASE_URL=${DATABASE_URL}" >> apps/api/.env
           pnpm --filter api exec prisma migrate deploy
           pnpm --filter api run test:all
-
       - name: Pre-deploy (builds apps; sin duplicar typecheck/tests)
         env:
           PRE_DEPLOY_FAST: '1'

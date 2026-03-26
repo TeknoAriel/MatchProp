@@ -56,7 +56,7 @@ export default function MyMatchPage() {
   const [inquiryListingId, setInquiryListingId] = useState<string | null>(null);
 
   const fetchFeed = useCallback(
-    async (searchId?: string | null) => {
+    async (searchId?: string | null): Promise<ListingCard[]> => {
       const url = searchId
         ? `${API_BASE}/feed?limit=100&includeTotal=1&searchId=${encodeURIComponent(searchId)}`
         : `${API_BASE}/feed?limit=100&includeTotal=1`;
@@ -74,10 +74,37 @@ export default function MyMatchPage() {
     [router]
   );
 
+  const fetchSavedCards = useCallback(
+    async (listType: 'LATER' | 'FAVORITE'): Promise<ListingCard[]> => {
+      const res = await fetch(`${API_BASE}/me/saved?listType=${listType}`, {
+        credentials: 'include',
+      });
+      if (res.status === 401) {
+        router.replace('/login');
+        return [];
+      }
+      if (!res.ok) return [];
+      const data: unknown = await res.json();
+      const rawItems = (data as { items?: unknown[] } | null)?.items ?? [];
+      return rawItems
+        .map((it) =>
+          it && typeof it === 'object' ? (it as { listing?: unknown }).listing : undefined
+        )
+        .map((l: unknown) => normalizeCard(l))
+        .filter((c: ListingCard | null): c is ListingCard => c !== null);
+    },
+    [router]
+  );
+
   useEffect(() => {
     async function load() {
-      let raw = await fetchFeed();
-      if (raw.length === 0) {
+      const [likesCards, favoritesCards] = await Promise.all([
+        fetchSavedCards('LATER'),
+        fetchSavedCards('FAVORITE'),
+      ]);
+
+      let feedCards: ListingCard[] = await fetchFeed();
+      if (feedCards.length === 0) {
         const searchesRes = await fetch(`${API_BASE}/searches`, { credentials: 'include' });
         if (searchesRes.ok) {
           const searches = await searchesRes.json();
@@ -89,39 +116,50 @@ export default function MyMatchPage() {
               credentials: 'include',
               body: JSON.stringify({ searchId: first.id }),
             });
-            raw = await fetchFeed(first.id);
+            feedCards = await fetchFeed(first.id);
           }
         }
       }
-      const ids = raw.map((c: ListingCard) => c.id).filter(Boolean);
-      if (ids.length === 0) {
+
+      // Orden buscado (real, deduplicado): likes -> favoritos -> resto (de búsquedas activas).
+      const savedIds = new Set<string>([...likesCards, ...favoritesCards].map((c) => c.id));
+      const restCards = feedCards.filter((c) => !savedIds.has(c.id));
+      const combined = [...likesCards, ...favoritesCards, ...restCards];
+
+      if (combined.length === 0) {
         setItems([]);
+        setListingsStatus({});
         setLoading(false);
         return;
       }
+
+      const ids = combined.map((c) => c.id).filter(Boolean);
+      const baseStatus: Record<string, ListingStatus> = {};
+      for (const c of likesCards) {
+        baseStatus[c.id] = { inLike: true, inFavorite: false, inLists: [], lead: null };
+      }
+      for (const c of favoritesCards) {
+        baseStatus[c.id] = { inLike: false, inFavorite: true, inLists: [], lead: null };
+      }
+
       try {
         const r = await fetch(`${API_BASE}/listings/my-status-bulk?ids=${ids.join(',')}`, {
           credentials: 'include',
         });
         const data: { items?: Record<string, ListingStatus> } = r.ok ? await r.json() : {};
         const status = data.items ?? {};
-        const sorted = [...raw].sort((a, b) => {
-          const sa = status[a.id];
-          const sb = status[b.id];
-          const scoreA = sa?.inLike ? 0 : sa?.inFavorite ? 1 : 2;
-          const scoreB = sb?.inLike ? 0 : sb?.inFavorite ? 1 : 2;
-          return scoreA - scoreB;
-        });
-        setItems(sorted);
+
+        setItems(combined);
         setListingsStatus(status);
       } catch {
-        setItems(raw);
+        setItems(combined);
+        setListingsStatus(baseStatus);
       } finally {
         setLoading(false);
       }
     }
     load();
-  }, [fetchFeed]);
+  }, [fetchFeed, fetchSavedCards]);
 
   async function handleToggleLike(listingId: string) {
     const inLike = listingsStatus[listingId]?.inLike ?? false;
