@@ -16,6 +16,13 @@ type ListingStatus = {
   lead: { status: string } | null;
 };
 
+function getMatchPriority(status?: ListingStatus): number {
+  if (status?.inLike) return 0;
+  if (status?.inFavorite) return 1;
+  if (status?.lead?.status === 'ACTIVE') return 2;
+  return 3;
+}
+
 function normalizeCard(
   raw: unknown
 ): (ListingCard & { media?: { url: string; sortOrder: number }[] }) | null {
@@ -148,7 +155,7 @@ export default function MyMatchPage() {
         }
       }
 
-      // Orden buscado (real, deduplicado): likes -> favoritos -> resto (de búsquedas activas).
+      // Orden base: likes -> favoritos -> resto (de búsquedas activas).
       const savedIds = new Set<string>([...likesCards, ...favoritesCards].map((c) => c.id));
       const restCards = feedCards.filter((c) => !savedIds.has(c.id));
       const combined = [...likesCards, ...favoritesCards, ...restCards];
@@ -175,8 +182,15 @@ export default function MyMatchPage() {
         });
         const data: { items?: Record<string, ListingStatus> } = r.ok ? await r.json() : {};
         const status = data.items ?? {};
+        const stableOrder = new Map(combined.map((card, idx) => [card.id, idx]));
+        const ordered = [...combined].sort((a, b) => {
+          const pa = getMatchPriority(status[a.id] ?? baseStatus[a.id]);
+          const pb = getMatchPriority(status[b.id] ?? baseStatus[b.id]);
+          if (pa !== pb) return pa - pb;
+          return (stableOrder.get(a.id) ?? 0) - (stableOrder.get(b.id) ?? 0);
+        });
 
-        setItems(combined);
+        setItems(ordered);
         setListingsStatus(status);
       } catch {
         setItems(combined);
