@@ -99,6 +99,5 @@ jobs:
             echo "Habilitando auto-merge en PR #$EXISTING..."
             gh pr merge "$EXISTING" --repo "$REPO" --squash --auto || true
           fi
-
           echo "Disparando CI vía workflow_dispatch (evita checks 'Expected' sin run)..."
           gh workflow run "CI" --ref "$BRANCH" || true
