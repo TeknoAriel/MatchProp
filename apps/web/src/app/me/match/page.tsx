@@ -87,7 +87,9 @@ export default function MyMatchPage() {
       const data: unknown = await res.json();
       const rawItems = (data as { items?: unknown[] } | null)?.items ?? [];
       return rawItems
-        .map((it: any) => it?.listing)
+        .map((it) =>
+          it && typeof it === 'object' ? (it as { listing?: unknown }).listing : undefined
+        )
         .map((l: unknown) => normalizeCard(l))
         .filter((c: ListingCard | null): c is ListingCard => c !== null);
     },
