@@ -33,6 +33,11 @@ jobs:
           ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Setup GH CLI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh --version
+
       - name: Ensure automerge label exists
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -89,3 +94,6 @@ jobs:
             echo "PR #$EXISTING: asegurando etiqueta automerge"
             gh pr edit "$EXISTING" --add-label automerge || true
           fi
+
+          echo "Disparando CI vía workflow_dispatch (evita checks 'Expected' sin run)..."
+          gh workflow run "CI" --ref "$BRANCH" || true
