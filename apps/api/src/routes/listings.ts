@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { trackEvent } from '../lib/analytics.js';
 import { isProductionRuntime } from '../lib/error-handler.js';
+import { extractFromRawJson } from '../lib/rawjson-fallback.js';
 
 export async function listingRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', fastify.authenticate);
@@ -71,8 +72,18 @@ export async function listingRoutes(fastify: FastifyInstance) {
         }).catch(() => {});
       }
 
-      const mediaList = listing.media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }));
-      const photosCount = mediaList.length || (listing.heroImageUrl ? 1 : 0);
+      let mediaList = listing.media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }));
+      let heroImageUrl = listing.heroImageUrl;
+      let title = listing.title;
+      if ((!heroImageUrl || !title?.trim() || mediaList.length === 0) && listing.rawJson) {
+        const fb = extractFromRawJson(listing.rawJson);
+        if (!heroImageUrl) heroImageUrl = fb.heroImageUrl;
+        if (!title?.trim()) title = fb.title;
+        if (mediaList.length === 0 && fb.mediaUrls.length) {
+          mediaList = fb.mediaUrls.map((m) => ({ url: m.url, sortOrder: m.sortOrder }));
+        }
+      }
+      const photosCount = mediaList.length || (heroImageUrl ? 1 : 0);
       const details =
         listing.details != null && typeof listing.details === 'object'
           ? (listing.details as object)
@@ -82,7 +93,7 @@ export async function listingRoutes(fastify: FastifyInstance) {
         id: listing.id,
         source: listing.source,
         externalId: listing.externalId,
-        title: listing.title,
+        title,
         description: listing.description,
         operationType: listing.operationType,
         propertyType: listing.propertyType,
@@ -96,7 +107,7 @@ export async function listingRoutes(fastify: FastifyInstance) {
         lng: listing.lng,
         addressText: listing.addressText,
         locationText: listing.locationText,
-        heroImageUrl: listing.heroImageUrl,
+        heroImageUrl,
         photosCount,
         details,
         media: mediaList,
