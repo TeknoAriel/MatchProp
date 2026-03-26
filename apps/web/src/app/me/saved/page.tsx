@@ -158,12 +158,52 @@ function SavedPageContent() {
         }
         return res.json();
       })
-      .then((data) => {
+      .then(async (data) => {
         if (data === null) {
           setItems([]);
         } else {
           const raw = isCustomList ? (data?.items ?? []) : (data?.items ?? []);
-          setItems(Array.isArray(raw) ? raw : []);
+          const baseItems = Array.isArray(raw) ? (raw as SavedItemRaw[]) : [];
+
+          const needsHydration = baseItems.filter((it) => {
+            const l = it.listing;
+            return (
+              !l ||
+              ((!l.title || !l.title.trim()) &&
+                l.price == null &&
+                !l.heroImageUrl &&
+                !(l.media?.length ?? 0))
+            );
+          });
+
+          if (needsHydration.length === 0) {
+            setItems(baseItems);
+          } else {
+            const hydratedEntries = await Promise.all(
+              needsHydration.map(async (it) => {
+                if (!it.listingId) return [it.listingId, null] as const;
+                const r = await fetch(`${API_BASE}/listings/${it.listingId}`, {
+                  credentials: 'include',
+                });
+                if (!r.ok) return [it.listingId, null] as const;
+                const payload = (await r.json()) as SavedItemRaw['listing'];
+                return [it.listingId, payload] as const;
+              })
+            );
+            const byId = new Map<string, SavedItemRaw['listing']>(
+              hydratedEntries.filter(
+                (x): x is readonly [string, NonNullable<SavedItemRaw['listing']>] =>
+                  !!x[0] && !!x[1]
+              )
+            );
+            setItems(
+              baseItems.map((it) =>
+                byId.has(it.listingId)
+                  ? { ...it, listing: byId.get(it.listingId) ?? it.listing }
+                  : it
+              )
+            );
+          }
         }
         setLoading(false);
       })
