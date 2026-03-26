@@ -119,7 +119,7 @@ export default function MyMatchPage() {
         }
       }
 
-      // Orden buscado (real): likes -> favoritos -> resto (de búsquedas activas).
+      // Orden buscado (real, deduplicado): likes -> favoritos -> resto (de búsquedas activas).
       const savedIds = new Set<string>([...likesCards, ...favoritesCards].map((c) => c.id));
       const restCards = feedCards.filter((c) => !savedIds.has(c.id));
       const combined = [...likesCards, ...favoritesCards, ...restCards];
