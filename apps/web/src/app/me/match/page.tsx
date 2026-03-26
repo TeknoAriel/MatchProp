@@ -86,12 +86,39 @@ export default function MyMatchPage() {
       if (!res.ok) return [];
       const data: unknown = await res.json();
       const rawItems = (data as { items?: unknown[] } | null)?.items ?? [];
-      return rawItems
-        .map((it) =>
-          it && typeof it === 'object' ? (it as { listing?: unknown }).listing : undefined
-        )
-        .map((l: unknown) => normalizeCard(l))
+      const parsed = rawItems.map((it) => {
+        if (!it || typeof it !== 'object')
+          return { listingId: '', listingRaw: undefined as unknown };
+        const obj = it as { listingId?: unknown; listing?: unknown };
+        return {
+          listingId: typeof obj.listingId === 'string' ? obj.listingId : '',
+          listingRaw: obj.listing,
+        };
+      });
+      const directCards = parsed
+        .map((p) => normalizeCard(p.listingRaw))
         .filter((c: ListingCard | null): c is ListingCard => c !== null);
+
+      const missingIds = Array.from(
+        new Set(
+          parsed
+            .filter((p) => !normalizeCard(p.listingRaw) && p.listingId)
+            .map((p) => p.listingId)
+            .filter(Boolean)
+        )
+      );
+      const hydrated = await Promise.all(
+        missingIds.map(async (id) => {
+          const r = await fetch(`${API_BASE}/listings/${id}`, { credentials: 'include' });
+          if (!r.ok) return null;
+          const payload: unknown = await r.json();
+          return normalizeCard(payload);
+        })
+      );
+      const hydratedCards = hydrated.filter((c): c is ListingCard => c !== null);
+      const byId = new Map<string, ListingCard>();
+      for (const c of [...directCards, ...hydratedCards]) byId.set(c.id, c);
+      return Array.from(byId.values());
     },
     [router]
   );

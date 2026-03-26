@@ -51,8 +51,10 @@ jobs:
               sleep 20
               mergeable=$(gh pr view "$PR" --repo "$REPO" --json mergeable -q '.mergeable' 2>/dev/null || echo "UNKNOWN")
             fi
-            if [ "$mergeable" != "MERGEABLE" ]; then
-              echo "PR #$PR mergeable=$mergeable; no se mergea (conflictos o reglas de rama)."
+            # UNSTABLE suele aparecer cuando fallan checks no requeridos (ej. smoke UX con continue-on-error).
+            # Para auto-merge usamos MERGEABLE o UNSTABLE, siempre que CI principal esté en verde.
+            if [ "$mergeable" != "MERGEABLE" ] && [ "$mergeable" != "UNSTABLE" ]; then
+              echo "PR #$PR mergeable=$mergeable; no se mergea (conflictos reales o reglas de rama)."
               continue
             fi
             echo "Merge squash PR #$PR"
