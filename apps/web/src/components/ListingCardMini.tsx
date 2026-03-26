@@ -98,6 +98,10 @@ export default function ListingCardMini({
   const title = displayTitle(listing);
   const priceText =
     listing.price != null ? formatListingPrice(listing.price, listing.currency) : 'Consultar';
+  const hasVisualContent = !!listing.heroImageUrl || (listing.media?.length ?? 0) > 0;
+  const hasCoreContent =
+    !!listing.title?.trim() || listing.price != null || !!listing.locationText?.trim();
+  const hasIncompleteData = !hasVisualContent || !hasCoreContent;
   const hasLead = !!status?.lead;
   const leadStatus = status?.lead?.status;
   const inLists = status?.inLists ?? [];
@@ -214,6 +218,11 @@ export default function ListingCardMini({
           <p className="text-lg font-semibold text-blue-700 mt-1">{priceText}</p>
           {listing.locationText && (
             <p className="text-sm text-slate-600 truncate mt-1">{listing.locationText}</p>
+          )}
+          {hasIncompleteData && (
+            <p className="text-xs text-amber-700 mt-1">
+              Ficha incompleta. Abrila para ver todos los datos.
+            </p>
           )}
           <div className="flex gap-3 mt-3 flex-wrap">
             {listing.bedrooms != null && (
