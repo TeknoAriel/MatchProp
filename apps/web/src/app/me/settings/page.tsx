@@ -120,11 +120,26 @@ export default function SettingsPage() {
       .finally(() => setProfileDone(true));
   }, [router]);
 
+  useEffect(() => {
+    if (!profileDone || role === null) return;
+    if (role !== 'ADMIN') {
+      router.replace('/me/profile');
+    }
+  }, [profileDone, role, router]);
+
   const isAdmin = role === 'ADMIN';
   // Mostrar siempre todas las secciones para que el menú no quede vacío si /me/profile falla (ej. 404).
   // El backend devuelve 403 en integraciones para no-admin.
   const sectionsToShow =
     profileDone && !isAdmin && role !== null ? SECTIONS.filter((s) => !s.adminOnly) : SECTIONS;
+
+  if (profileDone && role !== null && !isAdmin) {
+    return (
+      <main className="min-h-[50vh] flex items-center justify-center p-4">
+        <div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
+      </main>
+    );
+  }
 
   return (
     <main className="p-4 md:p-6">

@@ -127,6 +127,15 @@ export async function leadRoutes(fastify: FastifyInstance) {
                     price: { type: 'number' },
                     currency: { type: 'string' },
                     locationText: { type: 'string' },
+                    heroImageUrl: { type: 'string' },
+                    publisherRef: { type: ['string', 'null'] },
+                    publisher: {
+                      type: ['object', 'null'],
+                      properties: {
+                        type: { type: 'string' },
+                        displayName: { type: 'string' },
+                      },
+                    },
                   },
                 },
               },
@@ -149,6 +158,8 @@ export async function leadRoutes(fastify: FastifyInstance) {
               currency: true,
               locationText: true,
               heroImageUrl: true,
+              publisherRef: true,
+              publisher: { select: { type: true, displayName: true } },
             },
           },
           deliveryAttempts: {

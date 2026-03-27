@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import AlertSubscriptionModal from '../../components/AlertSubscriptionModal';
-import AlertDeliveryModal, { type AlertDeliveryRow } from '../../components/AlertDeliveryModal';
 
 const API_BASE = '/api';
 
@@ -29,7 +27,16 @@ type Subscription = {
   createdAt: string;
 };
 
-type AlertDelivery = AlertDeliveryRow;
+type AlertDelivery = {
+  id: string;
+  listingId: string;
+  type: string;
+  createdAt: string;
+  listingTitle: string | null;
+  listingPrice: number | null;
+  listingCurrency: string | null;
+  savedSearchName: string | null;
+};
 
 export default function AlertsPage() {
   const router = useRouter();
@@ -38,8 +45,6 @@ export default function AlertsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
-  const [modalSub, setModalSub] = useState<Subscription | null>(null);
-  const [modalDelivery, setModalDelivery] = useState<AlertDelivery | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -89,7 +94,6 @@ export default function AlertsPage() {
         setItems((prev) =>
           prev.map((s) => (s.id === sub.id ? { ...s, isEnabled: nextEnabled } : s))
         );
-        setModalSub((m) => (m?.id === sub.id ? { ...m, isEnabled: nextEnabled } : m));
         // Refrescar deliveries por si cambió qué está activo
         fetch(`${API_BASE}/alerts/deliveries?limit=30`, { credentials: 'include' })
           .then((r) => (r.ok ? r.json() : { deliveries: [] }))
@@ -107,10 +111,7 @@ export default function AlertsPage() {
       credentials: 'include',
     });
     if (res.status === 401) router.replace('/login');
-    else if (res.ok) {
-      setItems((prev) => prev.filter((s) => s.id !== id));
-      setModalSub((m) => (m?.id === id ? null : m));
-    }
+    else if (res.ok) setItems((prev) => prev.filter((s) => s.id !== id));
   }
 
   async function verResultados(sub: Subscription) {
@@ -166,7 +167,6 @@ export default function AlertsPage() {
         </Link>
       </div>
 
-      {/* Resultado unificado de alertas */}
       {deliveries.length > 0 && (
         <div className="mb-6 p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)]">
           <h2 className="text-lg font-semibold text-[var(--mp-foreground)] mb-3">
@@ -219,13 +219,20 @@ export default function AlertsPage() {
                     </p>
                   </div>
                   <div className="px-4 pb-4">
-                    <button
-                      type="button"
-                      onClick={() => setModalDelivery(d)}
-                      className="w-full py-3 px-4 rounded-xl bg-slate-100 text-[var(--mp-foreground)] font-semibold text-sm border border-[var(--mp-border)] hover:bg-slate-200/80 active:scale-[0.99] transition-colors"
-                    >
-                      Acciones del aviso
-                    </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Link
+                        href={`/listing/${d.listingId}`}
+                        className="text-center py-2.5 px-3 rounded-xl bg-sky-500 text-white font-semibold text-sm hover:bg-sky-600"
+                      >
+                        Ver ficha
+                      </Link>
+                      <Link
+                        href="/me/match"
+                        className="text-center py-2.5 px-3 rounded-xl bg-slate-100 text-[var(--mp-foreground)] font-semibold text-sm border border-[var(--mp-border)] hover:bg-slate-200/80"
+                      >
+                        Mis match
+                      </Link>
+                    </div>
                   </div>
                 </li>
               );
@@ -305,15 +312,50 @@ export default function AlertsPage() {
                   </p>
                 </div>
 
-                {/* Botonera unificada */}
                 <div className="px-4 pb-4 pt-0">
-                  <button
-                    type="button"
-                    onClick={() => setModalSub(sub)}
-                    className="w-full py-3 px-4 rounded-xl bg-slate-100 text-[var(--mp-foreground)] font-semibold text-sm border border-[var(--mp-border)] hover:bg-slate-200/80 active:scale-[0.99] transition-colors"
-                  >
-                    Acciones de alerta
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      disabled={togglingId === sub.id}
+                      onClick={() => toggleEnabled(sub)}
+                      className={`py-2.5 px-3 rounded-xl font-semibold text-sm border transition-colors ${
+                        sub.isEnabled
+                          ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                          : 'bg-slate-100 text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-200/80'
+                      } disabled:opacity-60`}
+                    >
+                      {togglingId === sub.id ? 'Guardando…' : sub.isEnabled ? 'Pausar' : 'Activar'}
+                    </button>
+                    {sub.savedSearchId ? (
+                      <button
+                        type="button"
+                        onClick={() => verResultados(sub)}
+                        className="py-2.5 px-3 rounded-xl bg-sky-500 text-white font-semibold text-sm hover:bg-sky-600"
+                      >
+                        Ver resultados
+                      </button>
+                    ) : (
+                      <div />
+                    )}
+                    {sub.savedSearchId ? (
+                      <Link
+                        href={`/searches/${sub.savedSearchId}`}
+                        className="col-span-2 text-center py-2.5 px-3 rounded-xl bg-sky-50 text-sky-900 border border-sky-200 font-semibold text-sm hover:bg-sky-100"
+                      >
+                        Ir a la búsqueda
+                      </Link>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!confirm('¿Eliminar esta alerta?')) return;
+                        deleteSub(sub.id);
+                      }}
+                      className="col-span-2 py-2.5 px-3 rounded-xl bg-red-50 text-red-700 border border-red-100 font-semibold text-sm hover:bg-red-100"
+                    >
+                      Eliminar alerta
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -321,29 +363,12 @@ export default function AlertsPage() {
         </div>
       )}
 
-      {/* Tip */}
       <div className="mt-8 p-4 rounded-2xl bg-sky-50 border border-sky-100">
         <p className="text-sm text-sky-800">
           <strong>💡 Tip:</strong> Podés tener alertas de diferentes tipos para la misma búsqueda:
           nuevas publicaciones, bajas de precio, o propiedades que vuelven al mercado.
         </p>
       </div>
-
-      <AlertSubscriptionModal
-        open={modalSub != null}
-        sub={modalSub}
-        onClose={() => setModalSub(null)}
-        togglingId={togglingId}
-        onToggle={toggleEnabled}
-        onVerResultados={verResultados}
-        onDelete={deleteSub}
-      />
-
-      <AlertDeliveryModal
-        open={modalDelivery != null}
-        delivery={modalDelivery}
-        onClose={() => setModalDelivery(null)}
-      />
     </main>
   );
 }

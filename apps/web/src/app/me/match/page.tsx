@@ -342,9 +342,16 @@ export default function MyMatchPage() {
                       e.preventDefault();
                       setInquiryListingId(card.id);
                     }}
-                    className="flex-1 py-2 bg-sky-500 text-white text-sm rounded-lg font-medium hover:bg-sky-600"
+                    disabled={!!listingsStatus[card.id]?.lead}
+                    className={`flex-1 py-2 text-white text-sm rounded-lg font-medium transition-colors ${
+                      listingsStatus[card.id]?.lead
+                        ? 'bg-emerald-600'
+                        : 'bg-sky-500 hover:bg-sky-600'
+                    } disabled:opacity-100`}
                   >
-                    Quiero que me contacten
+                    {listingsStatus[card.id]?.lead
+                      ? `✓ Consulta enviada`
+                      : 'Quiero que me contacten'}
                   </button>
                 </div>
               </div>
@@ -360,6 +367,20 @@ export default function MyMatchPage() {
           listingId={inquiryListingId}
           source="LIST"
           onSent={() => setInquiryListingId(null)}
+          onSentLead={(lead) => {
+            setListingsStatus((prev) => ({
+              ...prev,
+              [lead.listingId]: {
+                ...(prev[lead.listingId] ?? {
+                  inFavorite: false,
+                  inLike: false,
+                  inLists: [],
+                  lead: null,
+                }),
+                lead: { status: lead.status ?? 'PENDING' },
+              },
+            }));
+          }}
         />
       )}
     </main>

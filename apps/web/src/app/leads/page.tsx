@@ -33,6 +33,8 @@ type Lead = {
     currency: string | null;
     locationText: string | null;
     heroImageUrl: string | null;
+    publisherRef?: string | null;
+    publisher?: { type: string; displayName: string } | null;
   };
   lastDelivery: LastDelivery | null;
 };
@@ -50,6 +52,10 @@ export default function LeadsPage() {
   const [activatingId, setActivatingId] = useState<string | null>(null);
   const [visitModalLeadId, setVisitModalLeadId] = useState<string | null>(null);
   const [showGraceToast, setShowGraceToast] = useState(false);
+  const [expandedListingId, setExpandedListingId] = useState<string | null>(null);
+  const [filterOwnerType, setFilterOwnerType] = useState<'ALL' | 'OWNER' | 'INMOBILIARIA'>('ALL');
+  const [filterSource, setFilterSource] = useState<'ALL' | 'ASSISTANT' | 'MANUAL'>('ALL');
+  const [filterPublisher, setFilterPublisher] = useState('');
   const router = useRouter();
 
   const isPremium = premiumUntil && new Date(premiumUntil) > new Date();
@@ -204,136 +210,252 @@ export default function LeadsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {leads.map((lead) => (
-              <div
-                key={lead.id}
-                className="block border rounded-lg overflow-hidden bg-white shadow-sm"
-              >
-                <div className="flex">
-                  <Link href={`/listing/${lead.listingId}`} className="flex flex-1 min-w-0">
-                    <div className="w-24 h-24 shrink-0 overflow-hidden">
-                      <ListingImage
-                        src={lead.listing.heroImageUrl}
-                        alt={lead.listing.title ?? ''}
-                        fallbackClassName="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-200"
-                        fallbackIcon="🏠"
-                        fallbackText=""
-                      />
-                    </div>
-                    <div className="p-3 flex-1 min-w-0">
-                      <h2 className="font-medium truncate">{lead.listing.title ?? 'Sin título'}</h2>
-                      <p className="text-sm text-gray-600">
-                        {lead.listing.price != null
-                          ? `${lead.listing.currency ?? 'USD'} ${lead.listing.price.toLocaleString()}`
-                          : 'Consultar'}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">{lead.listing.locationText}</p>
-                      <div className="flex flex-wrap gap-1 mt-2 items-center">
-                        <span
-                          className={`inline-block px-2 py-0.5 text-xs rounded ${
-                            lead.status === 'ACTIVE'
-                              ? 'bg-green-100 text-green-800'
-                              : lead.status === 'CLOSED'
-                                ? 'bg-gray-100 text-gray-600'
-                                : 'bg-amber-50 text-amber-800'
-                          }`}
-                        >
-                          {STATUS_LABEL[lead.status] ?? lead.status}
-                        </span>
-                        {lead.lastDelivery && (
-                          <span
-                            className={`inline-block px-2 py-0.5 text-xs rounded ${
-                              lead.lastDelivery.status === 'OK'
-                                ? 'bg-green-50 text-green-700'
-                                : 'bg-red-50 text-red-700'
-                            }`}
-                            title={lead.lastDelivery.snippet ?? undefined}
-                          >
-                            {lead.lastDelivery.status === 'OK' ? 'SENT' : 'FAILED'}
-                            {lead.lastDelivery.httpStatus != null
-                              ? ` ${lead.lastDelivery.httpStatus}`
-                              : ''}
-                          </span>
-                        )}
-                      </div>
-                      {lead.lastDelivery &&
-                        lead.lastDelivery.status !== 'OK' &&
-                        lead.lastDelivery.kind === 'KITEPROP' && (
-                          <div className="mt-2 flex flex-wrap items-center gap-2">
-                            {lead.lastDelivery.userMessage && (
-                              <p className="text-xs text-red-700">
-                                {lead.lastDelivery.userMessage}
-                              </p>
+            {/* Filtros */}
+            <div className="p-3 rounded-2xl bg-white border border-slate-100 shadow-sm flex flex-col gap-2">
+              <div className="flex gap-2 flex-wrap">
+                <select
+                  value={filterOwnerType}
+                  onChange={(e) => setFilterOwnerType(e.target.value as typeof filterOwnerType)}
+                  className="px-3 py-2 rounded-xl border border-slate-200 text-sm"
+                >
+                  <option value="ALL">Dueño/Inmobiliaria: todas</option>
+                  <option value="OWNER">Dueño directo</option>
+                  <option value="INMOBILIARIA">Inmobiliaria</option>
+                </select>
+                <select
+                  value={filterSource}
+                  onChange={(e) => setFilterSource(e.target.value as typeof filterSource)}
+                  className="px-3 py-2 rounded-xl border border-slate-200 text-sm"
+                >
+                  <option value="ALL">Origen: todos</option>
+                  <option value="ASSISTANT">Asistente</option>
+                  <option value="MANUAL">Manual</option>
+                </select>
+                <input
+                  value={filterPublisher}
+                  onChange={(e) => setFilterPublisher(e.target.value)}
+                  placeholder="Filtrar por inmobiliaria (nombre)…"
+                  className="flex-1 min-w-[220px] px-3 py-2 rounded-xl border border-slate-200 text-sm"
+                />
+              </div>
+              <p className="text-xs text-slate-500">
+                Agrupado por propiedad: verás una tarjeta por publicación, con todas tus consultas
+                dentro.
+              </p>
+            </div>
+
+            {(() => {
+              const byListing = new Map<
+                string,
+                { listingId: string; listing: Lead['listing']; leads: Lead[] }
+              >();
+              for (const l of leads) {
+                const g = byListing.get(l.listingId) ?? {
+                  listingId: l.listingId,
+                  listing: l.listing,
+                  leads: [],
+                };
+                g.leads.push(l);
+                byListing.set(l.listingId, g);
+              }
+
+              const groups = Array.from(byListing.values()).map((g) => {
+                const latest = [...g.leads].sort(
+                  (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                )[0];
+                const publisherName = g.listing.publisher?.displayName ?? null;
+                const publisherType = g.listing.publisher?.type ?? null;
+                const ownerKind =
+                  publisherType === 'OWNER'
+                    ? 'OWNER'
+                    : publisherType
+                      ? 'INMOBILIARIA'
+                      : 'INMOBILIARIA';
+                return { ...g, latest, publisherName, publisherType, ownerKind };
+              });
+
+              const publisherNeedle = filterPublisher.trim().toLowerCase();
+              const filtered = groups
+                .filter((g) => (filterOwnerType === 'ALL' ? true : g.ownerKind === filterOwnerType))
+                .filter((g) => {
+                  if (filterSource === 'ALL') return true;
+                  if (filterSource === 'ASSISTANT')
+                    return g.leads.some((l) => l.source === 'ASSISTANT');
+                  // Manual: cualquier source que no sea assistant (incluye FEED/LIST/DETAIL/DEMO/null)
+                  return g.leads.some((l) => l.source !== 'ASSISTANT');
+                })
+                .filter((g) => {
+                  if (!publisherNeedle) return true;
+                  const name = (g.publisherName ?? '').toLowerCase();
+                  return name.includes(publisherNeedle);
+                })
+                .sort(
+                  (a, b) =>
+                    new Date(b.latest?.createdAt ?? 0).getTime() -
+                    new Date(a.latest?.createdAt ?? 0).getTime()
+                );
+
+              return filtered.map((group) => {
+                const listing = group.listing;
+                const priceText =
+                  listing.price != null
+                    ? `${listing.currency ?? 'USD'} ${listing.price.toLocaleString()}`
+                    : 'Consultar';
+                const expanded = expandedListingId === group.listingId;
+                const publisherLabel =
+                  group.ownerKind === 'OWNER' ? 'Dueño directo' : 'Inmobiliaria';
+                const publisherName = group.publisherName ?? group.listing.publisherRef ?? '—';
+
+                return (
+                  <div
+                    key={group.listingId}
+                    className="block border rounded-lg overflow-hidden bg-white shadow-sm"
+                  >
+                    <div className="flex">
+                      <Link href={`/listing/${group.listingId}`} className="flex flex-1 min-w-0">
+                        <div className="w-24 h-24 shrink-0 overflow-hidden">
+                          <ListingImage
+                            src={listing.heroImageUrl}
+                            alt={listing.title ?? ''}
+                            fallbackClassName="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-200"
+                            fallbackIcon="🏠"
+                            fallbackText=""
+                          />
+                        </div>
+                        <div className="p-3 flex-1 min-w-0">
+                          <h2 className="font-medium truncate">{listing.title ?? 'Sin título'}</h2>
+                          <p className="text-sm text-gray-600">{priceText}</p>
+                          <p className="text-xs text-gray-500 truncate">{listing.locationText}</p>
+                          <div className="flex flex-wrap gap-1 mt-2 items-center">
+                            <span className="inline-block px-2 py-0.5 text-xs rounded bg-slate-100 text-slate-700">
+                              {group.leads.length} consulta{group.leads.length === 1 ? '' : 's'}
+                            </span>
+                            <span className="inline-block px-2 py-0.5 text-xs rounded bg-indigo-50 text-indigo-700">
+                              {publisherLabel}: {publisherName}
+                            </span>
+                            {group.latest?.source && (
+                              <span className="inline-block px-2 py-0.5 text-xs rounded bg-sky-50 text-sky-700">
+                                Origen: {group.latest.source}
+                              </span>
                             )}
-                            <Link
-                              href="/settings/integrations/kiteprop"
-                              className="text-xs text-blue-600 hover:underline"
-                            >
-                              Ir a integración Kiteprop
-                            </Link>
                           </div>
-                        )}
-                    </div>
-                  </Link>
-                </div>
-                {lead.status === 'PENDING' && (
-                  <div className="p-3 border-t bg-amber-50/50 space-y-2">
-                    {canActivate ? (
-                      <>
+                        </div>
+                      </Link>
+                      <div className="p-3 flex flex-col gap-2">
                         <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleActivate(lead.id);
-                          }}
-                          disabled={!!activatingId}
-                          className="px-3 py-1.5 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 disabled:opacity-50"
+                          type="button"
+                          onClick={() => setExpandedListingId(expanded ? null : group.listingId)}
+                          className="px-3 py-2 text-sm bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 font-medium"
                         >
-                          {activatingId === lead.id ? 'Activando...' : 'Activar ahora'}
+                          {expanded ? 'Ocultar' : 'Ver'} consultas
                         </button>
-                        {GRACE_PERIOD && !isPremium && (
-                          <p className="text-xs text-amber-800">
-                            Función premium. Por ahora: período de prueba sin límites (3–6 meses).{' '}
-                            <Link href="/me/premium" className="underline font-medium">
-                              Ver planes
-                            </Link>
-                          </p>
-                        )}
-                      </>
-                    ) : (
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm text-amber-800">
-                          Activá con Premium para ver contacto
-                        </p>
-                        <HacersePremiumButton variant="secondary" />
+                      </div>
+                    </div>
+
+                    {expanded && (
+                      <div className="border-t bg-slate-50/40 p-3 space-y-2">
+                        {group.leads.map((lead) => (
+                          <div
+                            key={lead.id}
+                            className="rounded-xl bg-white border border-slate-100 p-3"
+                          >
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <div className="flex flex-wrap gap-1 items-center">
+                                <span
+                                  className={`inline-block px-2 py-0.5 text-xs rounded ${
+                                    lead.status === 'ACTIVE'
+                                      ? 'bg-green-100 text-green-800'
+                                      : lead.status === 'CLOSED'
+                                        ? 'bg-gray-100 text-gray-600'
+                                        : 'bg-amber-50 text-amber-800'
+                                  }`}
+                                >
+                                  {STATUS_LABEL[lead.status] ?? lead.status}
+                                </span>
+                                <span className="inline-block px-2 py-0.5 text-xs rounded bg-slate-100 text-slate-700">
+                                  {lead.source ?? 'MANUAL'}
+                                </span>
+                                <span className="text-xs text-slate-500" suppressHydrationWarning>
+                                  {new Date(lead.createdAt).toLocaleString('es-AR')}
+                                </span>
+                                {lead.lastDelivery && (
+                                  <span
+                                    className={`inline-block px-2 py-0.5 text-xs rounded ${
+                                      lead.lastDelivery.status === 'OK'
+                                        ? 'bg-green-50 text-green-700'
+                                        : 'bg-red-50 text-red-700'
+                                    }`}
+                                    title={lead.lastDelivery.snippet ?? undefined}
+                                  >
+                                    {lead.lastDelivery.status === 'OK' ? 'SENT' : 'FAILED'}
+                                    {lead.lastDelivery.httpStatus != null
+                                      ? ` ${lead.lastDelivery.httpStatus}`
+                                      : ''}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex gap-2 flex-wrap">
+                                {lead.status === 'ACTIVE' && (
+                                  <>
+                                    <Link
+                                      href={`/leads/${lead.id}/chat`}
+                                      className="px-3 py-1.5 text-sm font-medium bg-[var(--mp-accent)] text-white rounded-xl hover:opacity-90"
+                                    >
+                                      Chat
+                                    </Link>
+                                    <button
+                                      type="button"
+                                      onClick={() => setVisitModalLeadId(lead.id)}
+                                      className="px-3 py-1.5 text-sm font-medium bg-emerald-600 text-white rounded-xl hover:bg-emerald-700"
+                                    >
+                                      Agendar visita
+                                    </button>
+                                    <Link
+                                      href={`/leads/${lead.id}/visits`}
+                                      className="px-3 py-1.5 text-sm font-medium rounded-xl border border-[var(--mp-border)] bg-[var(--mp-card)] text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]"
+                                    >
+                                      Ver agenda
+                                    </Link>
+                                  </>
+                                )}
+                                {lead.status === 'PENDING' && (
+                                  <>
+                                    {canActivate ? (
+                                      <button
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          handleActivate(lead.id);
+                                        }}
+                                        disabled={!!activatingId}
+                                        className="px-3 py-1.5 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 disabled:opacity-50"
+                                      >
+                                        {activatingId === lead.id
+                                          ? 'Activando...'
+                                          : 'Activar ahora'}
+                                      </button>
+                                    ) : (
+                                      <HacersePremiumButton variant="secondary" />
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            {lead.lastDelivery &&
+                              lead.lastDelivery.status !== 'OK' &&
+                              lead.lastDelivery.kind === 'KITEPROP' &&
+                              lead.lastDelivery.userMessage && (
+                                <p className="text-xs text-red-700 mt-2">
+                                  {lead.lastDelivery.userMessage}
+                                </p>
+                              )}
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
-                )}
-                {lead.status === 'ACTIVE' && (
-                  <div className="p-3 border-t bg-emerald-50/50 dark:bg-emerald-900/20 flex flex-wrap gap-2">
-                    <Link
-                      href={`/leads/${lead.id}/chat`}
-                      className="px-3 py-1.5 text-sm font-medium bg-[var(--mp-accent)] text-white rounded-xl hover:opacity-90"
-                    >
-                      Chat
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => setVisitModalLeadId(lead.id)}
-                      className="px-3 py-1.5 text-sm font-medium bg-emerald-600 text-white rounded-xl hover:bg-emerald-700"
-                    >
-                      Agendar visita
-                    </button>
-                    <Link
-                      href={`/leads/${lead.id}/visits`}
-                      className="px-3 py-1.5 text-sm font-medium rounded-xl border border-[var(--mp-border)] bg-[var(--mp-card)] text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]"
-                    >
-                      Ver agenda
-                    </Link>
-                  </div>
-                )}
-              </div>
-            ))}
+                );
+              });
+            })()}
           </div>
         )}
 

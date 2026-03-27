@@ -9,7 +9,10 @@ export interface InquiryModalProps {
   onClose: () => void;
   listingId: string;
   source: 'FEED' | 'LIST' | 'ASSISTANT' | 'DETAIL';
-  onSent: () => void;
+  /** Callback legacy (sin payload) */
+  onSent?: () => void;
+  /** Callback con payload del lead creado */
+  onSentLead?: (lead: { id: string; status: string; listingId: string }) => void;
   sending?: boolean;
 }
 
@@ -19,6 +22,7 @@ export default function InquiryModal({
   listingId,
   source,
   onSent,
+  onSentLead,
   sending: sendingProp = false,
 }: InquiryModalProps) {
   const [message, setMessage] = useState(DEFAULT_MESSAGE);
@@ -41,7 +45,19 @@ export default function InquiryModal({
     });
     if (res.ok) {
       setMessage(DEFAULT_MESSAGE);
-      onSent();
+      const payload = (await res.json().catch(() => null)) as {
+        id?: string;
+        status?: string;
+        listingId?: string;
+      } | null;
+      if (payload?.id && payload?.listingId) {
+        onSentLead?.({
+          id: payload.id,
+          status: payload.status ?? 'PENDING',
+          listingId: payload.listingId,
+        });
+      }
+      onSent?.();
       onClose();
     }
     setSending(false);
