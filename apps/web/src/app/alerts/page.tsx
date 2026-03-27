@@ -111,9 +111,7 @@ export default function AlertsPage() {
       credentials: 'include',
     });
     if (res.status === 401) router.replace('/login');
-    else if (res.ok) {
-      setItems((prev) => prev.filter((s) => s.id !== id));
-    }
+    else if (res.ok) setItems((prev) => prev.filter((s) => s.id !== id));
   }
 
   async function verResultados(sub: Subscription) {
@@ -169,7 +167,6 @@ export default function AlertsPage() {
         </Link>
       </div>
 
-      {/* Resultado unificado de alertas */}
       {deliveries.length > 0 && (
         <div className="mb-6 p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)]">
           <h2 className="text-lg font-semibold text-[var(--mp-foreground)] mb-3">
@@ -315,7 +312,6 @@ export default function AlertsPage() {
                   </p>
                 </div>
 
-                {/* Botonera visible (sin modal) */}
                 <div className="px-4 pb-4 pt-0">
                   <div className="grid grid-cols-2 gap-2">
                     <button
@@ -367,7 +363,6 @@ export default function AlertsPage() {
         </div>
       )}
 
-      {/* Tip */}
       <div className="mt-8 p-4 rounded-2xl bg-sky-50 border border-sky-100">
         <p className="text-sm text-sky-800">
           <strong>💡 Tip:</strong> Podés tener alertas de diferentes tipos para la misma búsqueda:
