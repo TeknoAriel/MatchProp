@@ -336,23 +336,44 @@ export default function MyMatchPage() {
                   >
                     ★
                   </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setInquiryListingId(card.id);
-                    }}
-                    disabled={!!listingsStatus[card.id]?.lead}
-                    className={`flex-1 py-2 text-white text-sm rounded-lg font-medium transition-colors ${
-                      listingsStatus[card.id]?.lead
-                        ? 'bg-emerald-600'
-                        : 'bg-sky-500 hover:bg-sky-600'
-                    } disabled:opacity-100`}
-                  >
-                    {listingsStatus[card.id]?.lead
-                      ? `✓ Consulta enviada`
-                      : 'Quiero que me contacten'}
-                  </button>
+                  {listingsStatus[card.id]?.lead ? (
+                    <div className="flex-1 flex items-center gap-1 min-w-0">
+                      <span
+                        className={`flex-1 py-2 text-center text-sm rounded-lg font-medium ${
+                          listingsStatus[card.id]?.lead?.status === 'ACTIVE'
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                        }`}
+                      >
+                        ✓{' '}
+                        {listingsStatus[card.id]?.lead?.status === 'ACTIVE'
+                          ? 'Esperando respuesta'
+                          : 'Consulta enviada'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setInquiryListingId(card.id);
+                        }}
+                        className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200"
+                        title="Reenviar consulta"
+                      >
+                        ✉️
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setInquiryListingId(card.id);
+                      }}
+                      className="flex-1 py-2 bg-sky-500 text-white text-sm rounded-lg font-medium hover:bg-sky-600"
+                    >
+                      Quiero que me contacten
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
