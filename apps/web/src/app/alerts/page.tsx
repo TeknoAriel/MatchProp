@@ -318,21 +318,29 @@ export default function AlertsPage() {
                       type="button"
                       disabled={togglingId === sub.id}
                       onClick={() => toggleEnabled(sub)}
-                      className={`py-2.5 px-3 rounded-xl font-semibold text-sm border transition-colors ${
+                      className={`py-2 px-3 rounded-xl font-semibold text-sm border transition-colors flex items-center justify-center gap-2 ${
                         sub.isEnabled
                           ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
                           : 'bg-slate-100 text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-200/80'
                       } disabled:opacity-60`}
                     >
-                      {togglingId === sub.id ? 'Guardando…' : sub.isEnabled ? 'Pausar' : 'Activar'}
+                      <span className="text-base">{sub.isEnabled ? '⏸' : '▶'}</span>
+                      <span>
+                        {togglingId === sub.id
+                          ? 'Guardando…'
+                          : sub.isEnabled
+                            ? 'Pausar'
+                            : 'Activar'}
+                      </span>
                     </button>
                     {sub.savedSearchId ? (
                       <button
                         type="button"
                         onClick={() => verResultados(sub)}
-                        className="py-2.5 px-3 rounded-xl bg-sky-500 text-white font-semibold text-sm hover:bg-sky-600"
+                        className="py-2 px-3 rounded-xl bg-sky-500 text-white font-semibold text-sm hover:bg-sky-600 flex items-center justify-center gap-2"
                       >
-                        Ver resultados
+                        <span className="text-base">📋</span>
+                        <span>Ver resultados</span>
                       </button>
                     ) : (
                       <div />
@@ -340,9 +348,10 @@ export default function AlertsPage() {
                     {sub.savedSearchId ? (
                       <Link
                         href={`/searches/${sub.savedSearchId}`}
-                        className="col-span-2 text-center py-2.5 px-3 rounded-xl bg-sky-50 text-sky-900 border border-sky-200 font-semibold text-sm hover:bg-sky-100"
+                        className="col-span-2 text-center py-2 px-3 rounded-xl bg-sky-50 text-sky-900 border border-sky-200 font-semibold text-sm hover:bg-sky-100 flex items-center justify-center gap-2"
                       >
-                        Ir a la búsqueda
+                        <span className="text-base">✏️</span>
+                        <span>Ir a la búsqueda</span>
                       </Link>
                     ) : null}
                     <button
@@ -351,9 +360,10 @@ export default function AlertsPage() {
                         if (!confirm('¿Eliminar esta alerta?')) return;
                         deleteSub(sub.id);
                       }}
-                      className="col-span-2 py-2.5 px-3 rounded-xl bg-red-50 text-red-700 border border-red-100 font-semibold text-sm hover:bg-red-100"
+                      className="col-span-2 py-2 px-3 rounded-xl bg-red-50 text-red-700 border border-red-100 font-semibold text-sm hover:bg-red-100 flex items-center justify-center gap-2"
                     >
-                      Eliminar alerta
+                      <span className="text-base">🗑️</span>
+                      <span>Eliminar alerta</span>
                     </button>
                   </div>
                 </div>
