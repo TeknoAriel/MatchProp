@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { ListingCard } from '@matchprop/shared';
 import ListingCardImageCarousel from '../../../components/ListingCardImageCarousel';
 import InquiryModal from '../../../components/InquiryModal';
+import { fetchListingsBatchByIds } from '../../../lib/fetch-listings-batch';
 
 const API_BASE = '/api';
 
@@ -114,15 +115,10 @@ export default function MyMatchPage() {
             .filter(Boolean)
         )
       );
-      const hydrated = await Promise.all(
-        missingIds.map(async (id) => {
-          const r = await fetch(`${API_BASE}/listings/${id}`, { credentials: 'include' });
-          if (!r.ok) return null;
-          const payload: unknown = await r.json();
-          return normalizeCard(payload);
-        })
-      );
-      const hydratedCards = hydrated.filter((c): c is ListingCard => c !== null);
+      const batchPayloads = await fetchListingsBatchByIds(API_BASE, missingIds);
+      const hydratedCards = batchPayloads
+        .map((payload) => normalizeCard(payload))
+        .filter((c): c is ListingCard => c !== null);
       const byId = new Map<string, ListingCard>();
       for (const c of [...directCards, ...hydratedCards]) byId.set(c.id, c);
       return Array.from(byId.values());

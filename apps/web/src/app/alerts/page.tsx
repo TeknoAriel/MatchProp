@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import AlertSubscriptionModal from '../../components/AlertSubscriptionModal';
+import AlertDeliveryModal, { type AlertDeliveryRow } from '../../components/AlertDeliveryModal';
 
 const API_BASE = '/api';
 
@@ -27,16 +29,7 @@ type Subscription = {
   createdAt: string;
 };
 
-type AlertDelivery = {
-  id: string;
-  listingId: string;
-  type: string;
-  createdAt: string;
-  listingTitle: string | null;
-  listingPrice: number | null;
-  listingCurrency: string | null;
-  savedSearchName: string | null;
-};
+type AlertDelivery = AlertDeliveryRow;
 
 export default function AlertsPage() {
   const router = useRouter();
@@ -45,6 +38,8 @@ export default function AlertsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [modalSub, setModalSub] = useState<Subscription | null>(null);
+  const [modalDelivery, setModalDelivery] = useState<AlertDelivery | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -68,7 +63,11 @@ export default function AlertsPage() {
         setItems(i);
         setDeliveries(d);
       })
-      .catch((e) => setError(e.message))
+      .catch((e) =>
+        setError(
+          e instanceof Error ? e.message : 'No pudimos cargar las alertas. Intentá de nuevo.'
+        )
+      )
       .finally(() => setLoading(false));
   }, [router]);
 
@@ -86,9 +85,11 @@ export default function AlertsPage() {
         return;
       }
       if (res.ok) {
+        const nextEnabled = !sub.isEnabled;
         setItems((prev) =>
-          prev.map((s) => (s.id === sub.id ? { ...s, isEnabled: !s.isEnabled } : s))
+          prev.map((s) => (s.id === sub.id ? { ...s, isEnabled: nextEnabled } : s))
         );
+        setModalSub((m) => (m?.id === sub.id ? { ...m, isEnabled: nextEnabled } : m));
         // Refrescar deliveries por si cambió qué está activo
         fetch(`${API_BASE}/alerts/deliveries?limit=30`, { credentials: 'include' })
           .then((r) => (r.ok ? r.json() : { deliveries: [] }))
@@ -101,13 +102,15 @@ export default function AlertsPage() {
   }
 
   async function deleteSub(id: string) {
-    if (!confirm('¿Eliminar esta alerta?')) return;
     const res = await fetch(`${API_BASE}/alerts/subscriptions/${id}`, {
       method: 'DELETE',
       credentials: 'include',
     });
     if (res.status === 401) router.replace('/login');
-    else if (res.ok) setItems((prev) => prev.filter((s) => s.id !== id));
+    else if (res.ok) {
+      setItems((prev) => prev.filter((s) => s.id !== id));
+      setModalSub((m) => (m?.id === id ? null : m));
+    }
   }
 
   async function verResultados(sub: Subscription) {
@@ -123,8 +126,16 @@ export default function AlertsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-sky-500 border-t-transparent rounded-full animate-spin" />
+      <main className="py-2 min-h-[60vh]">
+        <div className="h-8 w-48 bg-slate-200 rounded-lg animate-pulse mb-6" />
+        <div className="space-y-3">
+          {[1, 2].map((k) => (
+            <div
+              key={k}
+              className="h-28 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] animate-pulse"
+            />
+          ))}
+        </div>
       </main>
     );
   }
@@ -164,7 +175,7 @@ export default function AlertsPage() {
           <p className="text-sm text-[var(--mp-muted)] mb-3">
             Propiedades que dispararon tus alertas activas
           </p>
-          <ul className="space-y-2 mb-4">
+          <ul className="space-y-3 mb-4">
             {deliveries.map((d) => {
               const typeInfo = TYPE_LABELS[d.type] ?? {
                 label: d.type,
@@ -174,41 +185,47 @@ export default function AlertsPage() {
               return (
                 <li
                   key={d.id}
-                  className="flex items-center justify-between gap-2 py-2 border-b border-[var(--mp-border)] last:border-0"
+                  className="rounded-2xl border border-[var(--mp-border)] bg-[var(--mp-bg)] overflow-hidden"
                 >
-                  <div className="min-w-0 flex-1">
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${typeInfo.color}`}
+                      >
+                        {typeInfo.icon} {typeInfo.label}
+                      </span>
+                      <span
+                        className="text-xs text-[var(--mp-muted)] shrink-0"
+                        suppressHydrationWarning
+                      >
+                        {new Date(d.createdAt).toLocaleDateString('es-AR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                        })}
+                      </span>
+                    </div>
                     <p className="font-medium text-[var(--mp-foreground)] truncate">
                       {d.listingTitle ?? d.listingId}
                     </p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className={`px-1.5 py-0.5 rounded text-xs ${typeInfo.color}`}>
-                        {typeInfo.icon} {typeInfo.label}
-                      </span>
-                      {d.savedSearchName && (
-                        <span className="text-xs text-[var(--mp-muted)] truncate">
-                          {d.savedSearchName}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-sm text-[var(--mp-muted)]">
+                    {d.savedSearchName && (
+                      <p className="text-xs text-[var(--mp-muted)] truncate mt-0.5">
+                        {d.savedSearchName}
+                      </p>
+                    )}
+                    <p className="text-sm font-semibold text-sky-700 mt-1">
                       {d.listingPrice != null
                         ? `${d.listingCurrency ?? 'USD'} ${d.listingPrice.toLocaleString()}`
-                        : ''}
-                    </span>
-                    <span className="text-xs text-[var(--mp-muted)]" suppressHydrationWarning>
-                      {new Date(d.createdAt).toLocaleDateString('es-AR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                      })}
-                    </span>
-                    <Link
-                      href={`/listing/${d.listingId}`}
-                      className="px-3 py-1.5 bg-sky-100 text-sky-700 rounded-lg text-sm font-medium hover:bg-sky-200"
+                        : 'Consultar'}
+                    </p>
+                  </div>
+                  <div className="px-4 pb-4">
+                    <button
+                      type="button"
+                      onClick={() => setModalDelivery(d)}
+                      className="w-full py-3 px-4 rounded-xl bg-slate-100 text-[var(--mp-foreground)] font-semibold text-sm border border-[var(--mp-border)] hover:bg-slate-200/80 active:scale-[0.99] transition-colors"
                     >
-                      Ver
-                    </Link>
+                      Acciones del aviso
+                    </button>
                   </div>
                 </li>
               );
@@ -248,73 +265,55 @@ export default function AlertsPage() {
             return (
               <div
                 key={sub.id}
-                className={`p-4 rounded-2xl border transition-all ${
+                className={`rounded-2xl border transition-all overflow-hidden ${
                   sub.isEnabled
                     ? 'bg-[var(--mp-card)] border-[var(--mp-border)]'
-                    : 'bg-gray-50 border-gray-200 opacity-60'
+                    : 'bg-gray-50 border-gray-200 opacity-75'
                 }`}
               >
-                <div className="flex items-start gap-3">
-                  {/* Toggle switch */}
-                  <button
-                    onClick={() => toggleEnabled(sub)}
-                    disabled={togglingId === sub.id}
-                    className={`relative mt-1 w-12 h-7 rounded-full transition-colors flex-shrink-0 ${
-                      sub.isEnabled ? 'bg-green-500' : 'bg-gray-300'
-                    }`}
-                  >
+                <div className="p-4">
+                  <div className="flex items-start justify-between gap-2 mb-2">
                     <span
-                      className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                        sub.isEnabled ? 'left-6' : 'left-1'
-                      }`}
-                    />
-                  </button>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${typeInfo.color}`}
-                      >
-                        {typeInfo.icon} {typeInfo.label}
-                      </span>
-                    </div>
-
-                    <h3 className="font-medium text-[var(--mp-foreground)] truncate">
-                      {sub.savedSearchName ?? 'Búsqueda guardada'}
-                    </h3>
-                    {(sub.savedSearchQueryText ?? '').trim() && (
-                      <p className="text-sm text-[var(--mp-muted)] mt-0.5 line-clamp-2">
-                        {sub.savedSearchQueryText}
-                      </p>
-                    )}
-
-                    <p className="text-xs text-[var(--mp-muted)] mt-1">
-                      {sub.isEnabled ? '✓ Activa' : '⏸ Pausada'}
-                      {sub.lastRunAt && (
-                        <> · Última: {new Date(sub.lastRunAt).toLocaleDateString()}</>
-                      )}
-                    </p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {sub.savedSearchId && (
-                      <button
-                        onClick={() => verResultados(sub)}
-                        className="px-3 py-2 bg-sky-100 text-sky-700 rounded-xl text-sm font-medium hover:bg-sky-200"
-                      >
-                        Ver resultados
-                      </button>
-                    )}
-                    <button
-                      onClick={() => deleteSub(sub.id)}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-xl"
-                      title="Eliminar"
+                      className={`px-2 py-0.5 rounded-full text-xs font-medium ${typeInfo.color}`}
                     >
-                      🗑️
-                    </button>
+                      {typeInfo.icon} {typeInfo.label}
+                    </span>
+                    <span
+                      className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${
+                        sub.isEnabled
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-slate-200 text-slate-600'
+                      }`}
+                    >
+                      {sub.isEnabled ? 'Activa' : 'Pausada'}
+                    </span>
                   </div>
+
+                  <h3 className="font-medium text-[var(--mp-foreground)] truncate">
+                    {sub.savedSearchName ?? 'Búsqueda guardada'}
+                  </h3>
+                  {(sub.savedSearchQueryText ?? '').trim() && (
+                    <p className="text-sm text-[var(--mp-muted)] mt-0.5 line-clamp-2">
+                      {sub.savedSearchQueryText}
+                    </p>
+                  )}
+
+                  <p className="text-xs text-[var(--mp-muted)] mt-1">
+                    {sub.lastRunAt && (
+                      <>Última: {new Date(sub.lastRunAt).toLocaleDateString('es-AR')}</>
+                    )}
+                  </p>
+                </div>
+
+                {/* Botonera unificada */}
+                <div className="px-4 pb-4 pt-0">
+                  <button
+                    type="button"
+                    onClick={() => setModalSub(sub)}
+                    className="w-full py-3 px-4 rounded-xl bg-slate-100 text-[var(--mp-foreground)] font-semibold text-sm border border-[var(--mp-border)] hover:bg-slate-200/80 active:scale-[0.99] transition-colors"
+                  >
+                    Acciones de alerta
+                  </button>
                 </div>
               </div>
             );
@@ -329,6 +328,22 @@ export default function AlertsPage() {
           nuevas publicaciones, bajas de precio, o propiedades que vuelven al mercado.
         </p>
       </div>
+
+      <AlertSubscriptionModal
+        open={modalSub != null}
+        sub={modalSub}
+        onClose={() => setModalSub(null)}
+        togglingId={togglingId}
+        onToggle={toggleEnabled}
+        onVerResultados={verResultados}
+        onDelete={deleteSub}
+      />
+
+      <AlertDeliveryModal
+        open={modalDelivery != null}
+        delivery={modalDelivery}
+        onClose={() => setModalDelivery(null)}
+      />
     </main>
   );
 }

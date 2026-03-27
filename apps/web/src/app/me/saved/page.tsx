@@ -11,6 +11,7 @@ import ListingCardMini, {
 import ShareModal from '../../../components/ShareModal';
 import InquiryModal from '../../../components/InquiryModal';
 import BetaPremiumBanner from '../../../components/BetaPremiumBanner';
+import { fetchListingsBatchByIds } from '../../../lib/fetch-listings-batch';
 
 const API_BASE = '/api';
 
@@ -179,23 +180,16 @@ function SavedPageContent() {
           if (needsHydration.length === 0) {
             setItems(baseItems);
           } else {
-            const hydratedEntries = await Promise.all(
-              needsHydration.map(async (it) => {
-                if (!it.listingId) return [it.listingId, null] as const;
-                const r = await fetch(`${API_BASE}/listings/${it.listingId}`, {
-                  credentials: 'include',
-                });
-                if (!r.ok) return [it.listingId, null] as const;
-                const payload = (await r.json()) as SavedItemRaw['listing'];
-                return [it.listingId, payload] as const;
-              })
-            );
-            const byId = new Map<string, SavedItemRaw['listing']>(
-              hydratedEntries.filter(
-                (x): x is readonly [string, NonNullable<SavedItemRaw['listing']>] =>
-                  !!x[0] && !!x[1]
-              )
-            );
+            const ids = needsHydration.map((it) => it.listingId).filter(Boolean);
+            const payloads = await fetchListingsBatchByIds(API_BASE, ids);
+            const byId = new Map<string, NonNullable<SavedItemRaw['listing']>>();
+            for (const p of payloads) {
+              if (!p || typeof p !== 'object') continue;
+              const id = (p as { id?: string }).id;
+              if (typeof id === 'string') {
+                byId.set(id, p as NonNullable<SavedItemRaw['listing']>);
+              }
+            }
             setItems(
               baseItems.map((it) =>
                 byId.has(it.listingId)

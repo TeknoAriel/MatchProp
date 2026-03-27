@@ -61,3 +61,52 @@ jobs:
             gh pr merge "$PR" --repo "$REPO" --squash --delete-branch
             echo "PR #$PR mergeado."
           done
+
+  # Mismo merge cuando CI se disparó con workflow_dispatch (p. ej. gh workflow run desde deploy-auto):
+  # el commit sigue asociado al PR y debe poder mergearse igual.
+  merge-if-ready-dispatch:
+    if: |
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'workflow_dispatch' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge squash PR con etiqueta automerge (CI por dispatch)
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          SHA="${{ github.event.workflow_run.head_sha }}"
+          REPO="${{ github.repository }}"
+
+          nums=$(gh api "repos/${REPO}/commits/${SHA}/pulls" -q '.[].number' 2>/dev/null || true)
+          if [ -z "$nums" ]; then
+            echo "Ningún PR asociado a este commit; nada que mergear."
+            exit 0
+          fi
+
+          for PR in $nums; do
+            state=$(gh pr view "$PR" --repo "$REPO" --json state -q '.state' 2>/dev/null || echo "")
+            if [ "$state" != "OPEN" ]; then
+              echo "PR #$PR state=$state; skip"
+              continue
+            fi
+            labels=$(gh pr view "$PR" --repo "$REPO" --json labels -q '.labels[].name' 2>/dev/null || true)
+            if ! echo "$labels" | grep -qx "automerge"; then
+              echo "PR #$PR sin etiqueta automerge; skip"
+              continue
+            fi
+            mergeable=$(gh pr view "$PR" --repo "$REPO" --json mergeable -q '.mergeable' 2>/dev/null || echo "UNKNOWN")
+            if [ "$mergeable" = "UNKNOWN" ]; then
+              echo "mergeable UNKNOWN, esperando 20s..."
+              sleep 20
+              mergeable=$(gh pr view "$PR" --repo "$REPO" --json mergeable -q '.mergeable' 2>/dev/null || echo "UNKNOWN")
+            fi
+            if [ "$mergeable" != "MERGEABLE" ] && [ "$mergeable" != "UNSTABLE" ]; then
+              echo "PR #$PR mergeable=$mergeable; no se mergea."
+              continue
+            fi
+            echo "Merge squash PR #$PR (dispatch)"
+            gh pr merge "$PR" --repo "$REPO" --squash --delete-branch
+            echo "PR #$PR mergeado."
+          done
