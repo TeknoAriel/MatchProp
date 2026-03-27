@@ -1,11 +1,120 @@
 import { FastifyInstance } from 'fastify';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { trackEvent } from '../lib/analytics.js';
 import { isProductionRuntime } from '../lib/error-handler.js';
 import { extractFromRawJson } from '../lib/rawjson-fallback.js';
 
+type ListingWithMedia = Prisma.ListingGetPayload<{
+  include: { media: { orderBy: { sortOrder: 'asc' } } };
+}>;
+
+const MAX_LISTING_BATCH = 40;
+
+function listingRecordToApiResponse(listing: ListingWithMedia, opts?: { viewUserId?: string }) {
+  if (opts?.viewUserId) {
+    trackEvent('listing_viewed', {
+      userId: opts.viewUserId,
+      payload: { listingId: listing.id },
+    }).catch(() => {});
+  }
+
+  let mediaList = listing.media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }));
+  let heroImageUrl = listing.heroImageUrl;
+  let title = listing.title;
+  if ((!heroImageUrl || !title?.trim() || mediaList.length === 0) && listing.rawJson) {
+    const fb = extractFromRawJson(listing.rawJson);
+    if (!heroImageUrl) heroImageUrl = fb.heroImageUrl;
+    if (!title?.trim()) title = fb.title;
+    if (mediaList.length === 0 && fb.mediaUrls.length) {
+      mediaList = fb.mediaUrls.map((m) => ({ url: m.url, sortOrder: m.sortOrder }));
+    }
+  }
+  const photosCount = mediaList.length || (heroImageUrl ? 1 : 0);
+  const details =
+    listing.details != null && typeof listing.details === 'object'
+      ? (listing.details as object)
+      : null;
+
+  return {
+    id: listing.id,
+    source: listing.source,
+    externalId: listing.externalId,
+    title,
+    description: listing.description,
+    operationType: listing.operationType,
+    propertyType: listing.propertyType,
+    price: listing.price,
+    currency: listing.currency,
+    bedrooms: listing.bedrooms,
+    bathrooms: listing.bathrooms,
+    areaTotal: listing.areaTotal,
+    areaCovered: listing.areaCovered,
+    lat: listing.lat,
+    lng: listing.lng,
+    addressText: listing.addressText,
+    locationText: listing.locationText,
+    heroImageUrl,
+    photosCount,
+    details,
+    media: mediaList,
+  };
+}
+
 export async function listingRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', fastify.authenticate);
+
+  fastify.get(
+    '/listings/batch',
+    {
+      schema: {
+        tags: ['Listings'],
+        security: [{ bearerAuth: [] }],
+        querystring: {
+          type: 'object',
+          required: ['ids'],
+          properties: {
+            ids: { type: 'string', description: 'IDs separados por coma (máx. 40)' },
+          },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              items: {
+                type: 'array',
+                items: { type: 'object', additionalProperties: true },
+              },
+            },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const idsRaw = (request.query as { ids?: string }).ids ?? '';
+      const listingIds = Array.from(
+        new Set(
+          idsRaw
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        )
+      ).slice(0, MAX_LISTING_BATCH);
+      if (listingIds.length === 0) return { items: [] };
+
+      const rows = await prisma.listing.findMany({
+        where: { id: { in: listingIds }, status: 'ACTIVE' },
+        include: { media: { orderBy: { sortOrder: 'asc' } } },
+      });
+      const byId = new Map(rows.map((r) => [r.id, r]));
+      const items = listingIds
+        .map((id) => byId.get(id))
+        .filter((r): r is ListingWithMedia => r != null)
+        .map((r) => listingRecordToApiResponse(r));
+      return { items };
+    }
+  );
+
   fastify.get(
     '/listings/:id',
     {
@@ -65,53 +174,10 @@ export async function listingRoutes(fastify: FastifyInstance) {
       if (!listing) throw fastify.httpErrors.notFound('Listing no encontrado');
 
       const user = request.user as { userId: string } | undefined;
-      if (user?.userId) {
-        trackEvent('listing_viewed', {
-          userId: user.userId,
-          payload: { listingId: listing.id },
-        }).catch(() => {});
-      }
-
-      let mediaList = listing.media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }));
-      let heroImageUrl = listing.heroImageUrl;
-      let title = listing.title;
-      if ((!heroImageUrl || !title?.trim() || mediaList.length === 0) && listing.rawJson) {
-        const fb = extractFromRawJson(listing.rawJson);
-        if (!heroImageUrl) heroImageUrl = fb.heroImageUrl;
-        if (!title?.trim()) title = fb.title;
-        if (mediaList.length === 0 && fb.mediaUrls.length) {
-          mediaList = fb.mediaUrls.map((m) => ({ url: m.url, sortOrder: m.sortOrder }));
-        }
-      }
-      const photosCount = mediaList.length || (heroImageUrl ? 1 : 0);
-      const details =
-        listing.details != null && typeof listing.details === 'object'
-          ? (listing.details as object)
-          : null;
-
-      return {
-        id: listing.id,
-        source: listing.source,
-        externalId: listing.externalId,
-        title,
-        description: listing.description,
-        operationType: listing.operationType,
-        propertyType: listing.propertyType,
-        price: listing.price,
-        currency: listing.currency,
-        bedrooms: listing.bedrooms,
-        bathrooms: listing.bathrooms,
-        areaTotal: listing.areaTotal,
-        areaCovered: listing.areaCovered,
-        lat: listing.lat,
-        lng: listing.lng,
-        addressText: listing.addressText,
-        locationText: listing.locationText,
-        heroImageUrl,
-        photosCount,
-        details,
-        media: mediaList,
-      };
+      return listingRecordToApiResponse(
+        listing,
+        user?.userId ? { viewUserId: user.userId } : undefined
+      );
     }
   );
 
