@@ -26,7 +26,7 @@ type Subscription = AlertSubscriptionForModal;
 type AlertDelivery = AlertDeliveryRow;
 
 const toolbarBase =
-  'inline-flex items-center justify-center gap-1 min-h-[34px] px-2 py-1 rounded-lg text-[11px] font-semibold border leading-tight transition-colors disabled:opacity-50 shrink-0';
+  'inline-flex items-center justify-center gap-1 min-h-[34px] px-2 py-1 rounded-[var(--mp-radius-chip)] text-[11px] font-semibold border border-[var(--mp-border)] leading-tight transition-colors disabled:opacity-50 shrink-0';
 
 /** Botonera compacta (misma para entregas y suscripciones) */
 function ToolbarBtn({
@@ -69,7 +69,7 @@ function ToolbarLink({
 /** Contenedor de acciones siempre visible al pie de la ficha */
 function AlertCardToolbar({ children }: { children: ReactNode }) {
   return (
-    <div className="border-t border-[var(--mp-border)] bg-[var(--mp-bg)] px-2.5 py-2">
+    <div className="mp-toolbar px-2.5 py-2">
       <div className="flex flex-wrap gap-1.5 items-stretch">{children}</div>
     </div>
   );
@@ -198,10 +198,7 @@ export default function AlertsPage() {
         <div className="h-8 w-48 bg-slate-200 rounded-lg animate-pulse mb-6" />
         <div className="space-y-3">
           {[1, 2].map((k) => (
-            <div
-              key={k}
-              className="h-28 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] animate-pulse"
-            />
+            <div key={k} className="h-28 mp-surface animate-pulse" />
           ))}
         </div>
       </main>
@@ -221,21 +218,14 @@ export default function AlertsPage() {
 
   return (
     <main className="py-2">
-      {toast && (
-        <div className="mb-3 p-3 rounded-xl bg-emerald-50 text-emerald-900 border border-emerald-200 text-sm font-medium">
-          {toast}
-        </div>
-      )}
+      {toast && <div className="mb-3 mp-callout font-medium">{toast}</div>}
 
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[var(--mp-foreground)]">Mis alertas</h1>
           <p className="text-sm text-[var(--mp-muted)]">Recibí avisos cuando haya novedades</p>
         </div>
-        <Link
-          href="/searches"
-          className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-medium shadow-sm"
-        >
+        <Link href="/searches" className="mp-btn-primary-sm no-underline hover:no-underline">
           + Nueva
         </Link>
       </div>
@@ -256,10 +246,7 @@ export default function AlertsPage() {
                 color: 'bg-gray-100 text-gray-800',
               };
               return (
-                <li
-                  key={d.id}
-                  className="rounded-2xl border border-[var(--mp-border)] bg-[var(--mp-card)] overflow-hidden shadow-sm"
-                >
+                <li key={d.id} className="mp-surface overflow-hidden">
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <span
@@ -278,7 +265,7 @@ export default function AlertsPage() {
                           type="button"
                           aria-label="Más acciones"
                           onClick={() => setDeliveryModal(d)}
-                          className="ml-0.5 min-h-[34px] min-w-[34px] rounded-lg border border-[var(--mp-border)] bg-[var(--mp-bg)] text-[var(--mp-foreground)] text-lg leading-none flex items-center justify-center hover:bg-slate-50"
+                          className="ml-0.5 min-h-[34px] min-w-[34px] rounded-[var(--mp-radius-chip)] border border-[var(--mp-border)] bg-[var(--mp-bg)] text-[var(--mp-foreground)] text-lg leading-none flex items-center justify-center hover:bg-[color-mix(in_srgb,var(--mp-muted)_8%,var(--mp-card))]"
                         >
                           ⋯
                         </button>
@@ -292,7 +279,7 @@ export default function AlertsPage() {
                         {d.savedSearchName}
                       </p>
                     )}
-                    <p className="text-base font-bold text-sky-700 mt-2">
+                    <p className="mp-price mt-2">
                       {d.listingPrice != null
                         ? `${d.listingCurrency ?? 'USD'} ${d.listingPrice.toLocaleString()}`
                         : 'Consultar'}
@@ -320,24 +307,21 @@ export default function AlertsPage() {
                     <ToolbarBtn
                       icon="🔗"
                       label="Copiar"
-                      className="bg-white text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-50"
+                      className="bg-[var(--mp-card)] text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
                       onClick={() => void copyListingLink(d.listingId)}
                     />
                     <ToolbarLink
                       href="/searches"
                       icon="🔔"
                       label="Búsquedas"
-                      className="bg-slate-100 text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-200/80"
+                      className="bg-[color-mix(in_srgb,var(--mp-muted)_10%,var(--mp-card))] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[color-mix(in_srgb,var(--mp-muted)_16%,var(--mp-card))]"
                     />
                   </AlertCardToolbar>
                 </li>
               );
             })}
           </ul>
-          <Link
-            href="/me/match"
-            className="text-sm font-semibold text-sky-700 hover:text-sky-800 inline-flex items-center gap-1"
-          >
+          <Link href="/me/match" className="mp-link text-sm inline-flex items-center gap-1">
             Ver todo en Mis match →
           </Link>
         </div>
@@ -345,7 +329,7 @@ export default function AlertsPage() {
 
       {items.length === 0 ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center border border-[var(--mp-border)] bg-[color-mix(in_srgb,var(--mp-accent)_10%,var(--mp-card))]">
             <span className="text-3xl">🔔</span>
           </div>
           <h3 className="font-medium text-[var(--mp-foreground)] mb-2">No tenés alertas activas</h3>
@@ -354,7 +338,7 @@ export default function AlertsPage() {
           </p>
           <Link
             href="/searches"
-            className="inline-block px-6 py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700"
+            className="mp-btn-primary inline-block no-underline hover:no-underline px-6"
           >
             Ver mis búsquedas
           </Link>
@@ -369,10 +353,7 @@ export default function AlertsPage() {
             };
 
             return (
-              <div
-                key={sub.id}
-                className="rounded-2xl border border-[var(--mp-border)] bg-[var(--mp-card)] overflow-hidden shadow-sm"
-              >
+              <div key={sub.id} className="mp-surface overflow-hidden">
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <span
@@ -381,20 +362,14 @@ export default function AlertsPage() {
                       {typeInfo.icon} {typeInfo.label}
                     </span>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span
-                        className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                          sub.isEnabled
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-slate-200 text-slate-600'
-                        }`}
-                      >
+                      <span className={sub.isEnabled ? 'mp-pill-success' : 'mp-pill-muted'}>
                         {sub.isEnabled ? 'Activa' : 'Pausada'}
                       </span>
                       <button
                         type="button"
                         aria-label="Más acciones"
                         onClick={() => setSubModal(sub)}
-                        className="min-h-[34px] min-w-[34px] rounded-lg border border-[var(--mp-border)] bg-[var(--mp-bg)] text-[var(--mp-foreground)] text-lg leading-none flex items-center justify-center hover:bg-slate-50"
+                        className="min-h-[34px] min-w-[34px] rounded-[var(--mp-radius-chip)] border border-[var(--mp-border)] bg-[var(--mp-bg)] text-[var(--mp-foreground)] text-lg leading-none flex items-center justify-center hover:bg-[color-mix(in_srgb,var(--mp-muted)_8%,var(--mp-card))]"
                       >
                         ⋯
                       </button>
@@ -420,19 +395,13 @@ export default function AlertsPage() {
                 <AlertCardToolbar>
                   <ToolbarBtn
                     icon={sub.isEnabled ? '⏸' : '▶'}
-                    label={
-                      togglingId === sub.id
-                        ? '…'
-                        : sub.isEnabled
-                          ? 'Pausar'
-                          : 'Activar'
-                    }
+                    label={togglingId === sub.id ? '…' : sub.isEnabled ? 'Pausar' : 'Activar'}
                     disabled={togglingId === sub.id}
                     onClick={() => toggleEnabled(sub)}
                     className={
                       sub.isEnabled
-                        ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700'
-                        : 'bg-white text-emerald-800 border-emerald-300 hover:bg-emerald-50'
+                        ? 'bg-emerald-600 text-white !border-emerald-700 hover:bg-emerald-700'
+                        : 'bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]'
                     }
                   />
                   {sub.savedSearchId ? (
@@ -440,7 +409,7 @@ export default function AlertsPage() {
                       <ToolbarBtn
                         icon="📋"
                         label="Listado"
-                        className="bg-white text-emerald-900 border-emerald-200 hover:bg-emerald-50"
+                        className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
                         onClick={() => void verResultados(sub)}
                       />
                       <ToolbarBtn
@@ -453,19 +422,19 @@ export default function AlertsPage() {
                         href={`/searches/${sub.savedSearchId}`}
                         icon="✏️"
                         label="Editar"
-                        className="bg-white text-emerald-900 border-emerald-200 hover:bg-emerald-50"
+                        className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
                       />
                       <ToolbarLink
                         href="/assistant"
                         icon="🔍"
                         label="Asistente"
-                        className="bg-sky-50 text-sky-900 border-sky-200 hover:bg-sky-100"
+                        className="bg-[color-mix(in_srgb,var(--mp-accent)_12%,var(--mp-card))] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[color-mix(in_srgb,var(--mp-accent)_18%,var(--mp-card))]"
                       />
                       <ToolbarLink
                         href="/searches"
                         icon="📂"
                         label="Búsquedas"
-                        className="bg-slate-100 text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-200/80"
+                        className="bg-[color-mix(in_srgb,var(--mp-muted)_10%,var(--mp-card))] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[color-mix(in_srgb,var(--mp-muted)_16%,var(--mp-card))]"
                       />
                     </>
                   ) : (
@@ -473,7 +442,7 @@ export default function AlertsPage() {
                       href="/searches"
                       icon="📂"
                       label="Búsquedas"
-                      className="bg-slate-100 text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-200/80"
+                      className="bg-[color-mix(in_srgb,var(--mp-muted)_10%,var(--mp-card))] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[color-mix(in_srgb,var(--mp-muted)_16%,var(--mp-card))]"
                     />
                   )}
                   <ToolbarBtn
@@ -492,11 +461,11 @@ export default function AlertsPage() {
         </div>
       )}
 
-      <div className="mt-8 p-4 rounded-2xl bg-emerald-50/80 border border-emerald-100">
-        <p className="text-sm text-emerald-900">
-          <strong className="text-emerald-800">💡 Tip:</strong> Podés tener alertas de distintos
-          tipos para la misma búsqueda: nuevas publicaciones, bajas de precio o propiedades que
-          vuelven al mercado. Usá <strong>Listado</strong> para revisar en tabla o{' '}
+      <div className="mt-8 mp-callout">
+        <p className="text-sm">
+          <strong className="text-[var(--mp-foreground)]">💡 Tip:</strong> Podés tener alertas de
+          distintos tipos para la misma búsqueda: nuevas publicaciones, bajas de precio o
+          propiedades que vuelven al mercado. Usá <strong>Listado</strong> para revisar en tabla o{' '}
           <strong>Deck</strong> para decidir con swipe.
         </p>
       </div>

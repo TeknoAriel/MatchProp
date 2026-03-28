@@ -31,13 +31,18 @@ const config: Config = {
         },
       },
       borderRadius: {
-        card: '20px',
-        chip: '12px',
+        /** Alineado con --mp-radius-card / --mp-radius-chip en globals.css */
+        card: 'var(--mp-radius-card)',
+        chip: 'var(--mp-radius-chip)',
         'card-lg': '24px',
+        'mp-card': 'var(--mp-radius-card)',
+        'mp-chip': 'var(--mp-radius-chip)',
       },
       boxShadow: {
-        card: '0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06)',
-        'card-hover': '0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.06)',
+        mp: 'var(--mp-shadow)',
+        'mp-md': 'var(--mp-shadow-md)',
+        card: 'var(--mp-shadow)',
+        'card-hover': 'var(--mp-shadow-md)',
       },
       minHeight: {
         tap: '48px',

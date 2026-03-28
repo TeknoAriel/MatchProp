@@ -304,7 +304,7 @@ export default function MyMatchPage() {
   if (loading) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-4">
-        <div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[var(--mp-accent)] border-t-transparent rounded-full animate-spin" />
         <p className="text-sm text-[var(--mp-muted)] mt-3">Cargando tus matches...</p>
       </main>
     );
@@ -320,13 +320,13 @@ export default function MyMatchPage() {
               Propiedades de tus búsquedas activas. Primero like 👍, luego favoritos ★.
             </p>
           </div>
-          <Link href="/dashboard" className="text-sm text-sky-600 hover:underline">
+          <Link href="/dashboard" className="text-sm mp-link hover:underline">
             ← Inicio
           </Link>
         </div>
 
         {items.length === 0 ? (
-          <div className="text-center py-12 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)]">
+          <div className="text-center py-12 mp-surface">
             <span className="text-4xl block mb-3">🔥</span>
             <p className="text-[var(--mp-foreground)] font-medium">Sin matches todavía</p>
             <p className="text-sm text-[var(--mp-muted)] mt-2">
@@ -334,7 +334,7 @@ export default function MyMatchPage() {
             </p>
             <Link
               href="/assistant"
-              className="inline-block mt-4 px-4 py-2 bg-sky-500 text-white rounded-xl font-medium hover:bg-sky-600"
+              className="mp-btn-primary inline-block mt-4 no-underline hover:no-underline"
             >
               Ir a Buscar
             </Link>
@@ -342,10 +342,7 @@ export default function MyMatchPage() {
         ) : (
           <div className="space-y-4">
             {items.map((card) => (
-              <div
-                key={card.id}
-                className="rounded-xl overflow-hidden bg-[var(--mp-card)] border border-[var(--mp-border)] shadow-sm relative"
-              >
+              <div key={card.id} className="mp-surface overflow-hidden relative">
                 <button
                   type="button"
                   onClick={() => void handleRemoveFromList(card.id)}
@@ -356,7 +353,7 @@ export default function MyMatchPage() {
                   ×
                 </button>
                 <Link href={`/listing/${card.id}`} className="block">
-                  <div className="aspect-[16/10] bg-gray-100 relative overflow-hidden">
+                  <div className="aspect-[16/10] bg-[var(--mp-bg)] relative overflow-hidden">
                     <ListingCardImageCarousel
                       heroImageUrl={card.heroImageUrl}
                       media={(card as { media?: { url: string; sortOrder: number }[] }).media}
@@ -364,8 +361,16 @@ export default function MyMatchPage() {
                     />
                   </div>
                   <div className="p-3">
-                    <h2 className="font-medium truncate">{card.title ?? 'Sin título'}</h2>
-                    <p className="text-sm text-[var(--mp-muted)]">
+                    <h2 className="font-medium truncate text-[var(--mp-foreground)]">
+                      {card.title ?? 'Sin título'}
+                    </h2>
+                    <p
+                      className={
+                        card.price != null
+                          ? 'text-sm font-semibold text-[var(--mp-accent-hover)]'
+                          : 'text-sm text-[var(--mp-muted)]'
+                      }
+                    >
                       {card.price != null
                         ? `${card.currency ?? 'USD'} ${card.price.toLocaleString()}`
                         : 'Consultar'}
@@ -379,10 +384,10 @@ export default function MyMatchPage() {
                   <button
                     type="button"
                     onClick={() => handleToggleLike(card.id)}
-                    className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-lg ${
+                    className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-[var(--mp-radius-chip)] text-lg ${
                       listingsStatus[card.id]?.inLike
                         ? 'bg-green-600 text-white'
-                        : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                        : 'bg-[color-mix(in_srgb,var(--mp-muted)_16%,var(--mp-bg))] text-[var(--mp-muted)] hover:bg-[color-mix(in_srgb,var(--mp-muted)_22%,var(--mp-bg))]'
                     }`}
                     title={listingsStatus[card.id]?.inLike ? 'En like' : 'Agregar a like'}
                   >
@@ -391,7 +396,7 @@ export default function MyMatchPage() {
                   <button
                     type="button"
                     onClick={() => handleToggleFavorite(card.id)}
-                    className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-lg ${
+                    className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-[var(--mp-radius-chip)] text-lg ${
                       listingsStatus[card.id]?.inFavorite
                         ? 'bg-amber-500 text-white'
                         : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
@@ -405,7 +410,7 @@ export default function MyMatchPage() {
                   {listingsStatus[card.id]?.lead ? (
                     <div className="flex-1 flex items-center gap-1 min-w-0">
                       <span
-                        className={`flex-1 py-2 text-center text-sm rounded-lg font-medium ${
+                        className={`flex-1 py-2 text-center text-sm rounded-[var(--mp-radius-chip)] font-medium ${
                           listingsStatus[card.id]?.lead?.status === 'ACTIVE'
                             ? 'bg-emerald-600 text-white'
                             : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
@@ -422,7 +427,7 @@ export default function MyMatchPage() {
                           e.preventDefault();
                           setInquiryListingId(card.id);
                         }}
-                        className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200"
+                        className="shrink-0 w-9 h-9 flex items-center justify-center rounded-[var(--mp-radius-chip)] bg-[color-mix(in_srgb,var(--mp-accent)_16%,var(--mp-card))] text-[var(--mp-accent-hover)] hover:bg-[color-mix(in_srgb,var(--mp-accent)_22%,var(--mp-card))]"
                         title="Reenviar consulta"
                       >
                         ✉️
@@ -435,7 +440,7 @@ export default function MyMatchPage() {
                         e.preventDefault();
                         setInquiryListingId(card.id);
                       }}
-                      className="flex-1 py-2 bg-sky-500 text-white text-sm rounded-lg font-medium hover:bg-sky-600"
+                      className="flex-1 py-2 bg-[var(--mp-accent)] text-white text-sm rounded-[var(--mp-radius-chip)] font-medium hover:bg-[var(--mp-accent-hover)]"
                     >
                       Quiero que me contacten
                     </button>
