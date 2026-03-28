@@ -5,64 +5,23 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { SavedSearchDTO } from '@matchprop/shared';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
-import { WelcomeMessage, TipBanner } from '../../components/FunTips';
 import { useToast } from '../../components/FunToast';
-import SavedSearchCard, {
-  EditSearchModal,
-  type AlertTypeSaved,
-  type SubStateSaved,
-  type AlertDeliverySaved,
-} from '../../components/SavedSearchCard';
 
 const API_BASE = '/api';
 
-type AlertType = AlertTypeSaved;
-type SubState = SubStateSaved;
-type AlertDelivery = AlertDeliverySaved;
-
-type AlertSubscription = {
-  id: string;
-  savedSearchId: string | null;
-  savedSearchName: string | null;
-  savedSearchQueryText?: string | null;
-  type: string;
-  isEnabled: boolean;
-  lastRunAt: string | null;
-  createdAt: string;
-};
-
-const ALERT_TYPE_LABELS: Record<string, { label: string; icon: string }> = {
-  NEW_LISTING: { label: 'Nuevas publicaciones', icon: '🏠' },
-  PRICE_DROP: { label: 'Bajó el precio', icon: '📉' },
-  BACK_ON_MARKET: { label: 'Volvió al mercado', icon: '🔄' },
-};
+const EXAMPLE_QUERIES = ['PH 2 amb en Palermo', 'Casa en venta Funes', 'Depto alquiler Rosario centro'];
 
 export default function DashboardPage() {
   const router = useRouter();
   const [searches, setSearches] = useState<SavedSearchDTO[]>([]);
-  const [activeSearchId, setActiveSearchId] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState('');
-  const [editText, setEditText] = useState('');
-  const [editSaving, setEditSaving] = useState(false);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [subsBySearch, setSubsBySearch] = useState<Record<string, Record<AlertType, SubState>>>({});
-  const [deliveriesBySearch, setDeliveriesBySearch] = useState<Record<string, AlertDelivery[]>>({});
-  const [alerts, setAlerts] = useState<AlertSubscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [searching, setSearching] = useState(false);
-  const [userName, setUserName] = useState<string | null>(null);
-  const [showTip, setShowTip] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const { showSuccess } = useToast();
 
   const fetchSearches = useCallback(() => {
-    return Promise.all([
-      fetch(`${API_BASE}/searches`, { credentials: 'include' }),
-      fetch(`${API_BASE}/me/active-search`, { credentials: 'include' }),
-    ]).then(async ([resSearches, resActive]) => {
+    return fetch(`${API_BASE}/searches`, { credentials: 'include' }).then(async (resSearches) => {
       if (resSearches.status === 401) {
         router.replace('/login');
         setSearches([]);
@@ -75,8 +34,6 @@ export default function DashboardPage() {
       const raw = await resSearches.json();
       const list = Array.isArray(raw) ? raw : (raw?.searches ?? []);
       setSearches(list);
-      const activeData = resActive.ok ? await resActive.json() : {};
-      setActiveSearchId(activeData.search?.id ?? null);
     });
   }, [router]);
 
@@ -103,70 +60,8 @@ export default function DashboardPage() {
   }, [isListening, transcript, interimTranscript]);
 
   useEffect(() => {
-    Promise.all([
-      fetchSearches(),
-      fetch(`${API_BASE}/alerts/subscriptions`, { credentials: 'include' }).then(async (res) => {
-        if (res.status === 401) return [];
-        if (res.ok) return res.json();
-        return [];
-      }),
-    ])
-      .then(([, alertsList]) => {
-        setAlerts(alertsList ?? []);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-
-    // Obtener nombre del usuario
-    fetch(`${API_BASE}/me/profile`, { credentials: 'include' })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.profile?.firstName) {
-          setUserName(data.profile.firstName);
-        }
-      })
-      .catch(() => {});
-  }, [router, fetchSearches]);
-
-  useEffect(() => {
-    if (searches.length === 0) return;
-    const ids = searches.map((s) => s.id);
-    Promise.all([
-      fetch(`${API_BASE}/alerts/subscriptions`, { credentials: 'include' }).then((r) =>
-        r.ok ? r.json() : []
-      ),
-      ...ids.map((id) =>
-        fetch(`${API_BASE}/alerts/deliveries/by-search/${id}?limit=5`, {
-          credentials: 'include',
-        }).then((r) => (r.ok ? r.json() : { deliveries: [] }))
-      ),
-    ]).then(([subsList, ...deliveryResults]) => {
-      const subsMap: Record<string, Record<AlertType, SubState>> = {};
-      ids.forEach((id) => {
-        subsMap[id] = {
-          NEW_LISTING: null,
-          PRICE_DROP: null,
-          BACK_ON_MARKET: null,
-        };
-      });
-      for (const s of subsList ?? []) {
-        if (s.savedSearchId && ids.includes(s.savedSearchId)) {
-          const t = s.type as AlertType;
-          if (t in subsMap[s.savedSearchId]!) {
-            subsMap[s.savedSearchId]![t] = { id: s.id, isEnabled: s.isEnabled };
-          }
-        }
-      }
-      setSubsBySearch(subsMap);
-
-      const delMap: Record<string, AlertDelivery[]> = {};
-      ids.forEach((id, i) => {
-        const d = deliveryResults[i] as { deliveries?: AlertDelivery[] };
-        delMap[id] = d?.deliveries ?? [];
-      });
-      setDeliveriesBySearch(delMap);
-    });
-  }, [searches]);
+    fetchSearches().finally(() => setLoading(false));
+  }, [fetchSearches]);
 
   async function handleSearch(text?: string) {
     const query = (text ?? searchText).trim();
@@ -223,131 +118,12 @@ export default function DashboardPage() {
       body: JSON.stringify({ searchId }),
     });
     if (res.status === 401) router.replace('/login');
-    else if (res.ok) {
-      setActiveSearchId(searchId);
-      showSuccess('Búsqueda activada', '🔍');
-    }
+    else if (res.ok) showSuccess('Búsqueda activada', '🔍');
   }
 
-  async function handleMatch(searchId: string) {
+  async function handleGoToMatch(searchId: string) {
     await handleSetActive(searchId);
     router.push('/feed');
-  }
-
-  function handleEditOpen(s: SavedSearchDTO) {
-    setEditingId(s.id);
-    setEditName(s.name || '');
-    setEditText(s.queryText || '');
-  }
-
-  async function handleEditSave() {
-    if (!editingId || editSaving) return;
-    setEditSaving(true);
-    try {
-      let body: { name?: string; text?: string; filters?: unknown } = {
-        name: editName.trim() || undefined,
-      };
-      if (editText.trim().length >= 3) {
-        const parseRes = await fetch(`${API_BASE}/assistant/search`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ text: editText.trim() }),
-        });
-        if (parseRes.ok) {
-          const parsed = await parseRes.json();
-          body = { ...body, text: editText.trim(), filters: parsed.filters };
-        }
-      }
-      const res = await fetch(`${API_BASE}/searches/${editingId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body),
-      });
-      if (res.status === 401) router.replace('/login');
-      else if (res.ok) {
-        await fetchSearches();
-        setEditingId(null);
-      }
-    } finally {
-      setEditSaving(false);
-    }
-  }
-
-  async function handleDelete(searchId: string) {
-    const res = await fetch(`${API_BASE}/searches/${searchId}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    if (res.status === 401) router.replace('/login');
-    else if (res.ok) {
-      setSearches((prev) => prev.filter((s) => s.id !== searchId));
-      setDeleteConfirmId(null);
-      if (activeSearchId === searchId) setActiveSearchId(null);
-    }
-  }
-
-  async function handleAlert(searchId: string, type: AlertType, enable: boolean) {
-    const sub = subsBySearch[searchId]?.[type];
-    if (sub) {
-      const res = await fetch(`${API_BASE}/alerts/subscriptions/${sub.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ isEnabled: enable }),
-      });
-      if (res.ok) {
-        setSubsBySearch((prev) => {
-          const base = prev[searchId] ?? {
-            NEW_LISTING: null,
-            PRICE_DROP: null,
-            BACK_ON_MARKET: null,
-          };
-          const updated: Record<AlertType, SubState> = {
-            NEW_LISTING:
-              type === 'NEW_LISTING' ? { ...sub, isEnabled: enable } : (base.NEW_LISTING ?? null),
-            PRICE_DROP:
-              type === 'PRICE_DROP' ? { ...sub, isEnabled: enable } : (base.PRICE_DROP ?? null),
-            BACK_ON_MARKET:
-              type === 'BACK_ON_MARKET'
-                ? { ...sub, isEnabled: enable }
-                : (base.BACK_ON_MARKET ?? null),
-          };
-          return { ...prev, [searchId]: updated };
-        });
-      }
-    } else if (enable) {
-      const res = await fetch(`${API_BASE}/alerts/subscriptions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ savedSearchId: searchId, type }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSubsBySearch((prev) => {
-          const base = prev[searchId] ?? {
-            NEW_LISTING: null,
-            PRICE_DROP: null,
-            BACK_ON_MARKET: null,
-          };
-          const updated: Record<AlertType, SubState> = {
-            NEW_LISTING:
-              type === 'NEW_LISTING'
-                ? { id: data.id, isEnabled: true }
-                : (base.NEW_LISTING ?? null),
-            PRICE_DROP:
-              type === 'PRICE_DROP' ? { id: data.id, isEnabled: true } : (base.PRICE_DROP ?? null),
-            BACK_ON_MARKET:
-              type === 'BACK_ON_MARKET'
-                ? { id: data.id, isEnabled: true }
-                : (base.BACK_ON_MARKET ?? null),
-          };
-          return { ...prev, [searchId]: updated };
-        });
-      }
-    }
   }
 
   const sortedSearches = [...searches].sort((a, b) => {
@@ -355,28 +131,7 @@ export default function DashboardPage() {
     const tb = new Date(b.updatedAt).getTime();
     return tb - ta;
   });
-  const primarySearch =
-    sortedSearches.find((s) => s.id === activeSearchId) ?? sortedSearches[0] ?? null;
-  const previewSearches: SavedSearchDTO[] = primarySearch
-    ? [primarySearch, ...sortedSearches.filter((s) => s.id !== primarySearch.id).slice(0, 1)]
-    : [];
-  const remainingSearchesCount = Math.max(0, searches.length - previewSearches.length);
-
-  const savedSearchCardProps = (s: SavedSearchDTO) => ({
-    s,
-    activeSearchId,
-    expandedId,
-    onToggleExpand: (id: string) => setExpandedId((prev) => (prev === id ? null : id)),
-    deleteConfirmId,
-    setDeleteConfirmId,
-    subsBySearch,
-    deliveriesBySearch,
-    onMatch: handleMatch,
-    onEditOpen: handleEditOpen,
-    onSetActive: handleSetActive,
-    onDelete: handleDelete,
-    onAlert: handleAlert,
-  });
+  const recentForHint = sortedSearches.slice(0, 2);
 
   if (loading) {
     return (
@@ -387,23 +142,17 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="py-2">
-      {/* Header con saludo personalizado */}
-      <div className="mb-6">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--mp-accent)] mb-1">
+    <main className="py-4 md:py-6">
+      <div className="mb-8">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--mp-accent)] mb-2">
           Buscador asistido
         </p>
-        <WelcomeMessage name={userName} />
-        <p className="text-[var(--mp-muted)] text-sm mt-1">
-          Una búsqueda clara → descubrimiento en Match → revisás en Mis match.
-        </p>
+        <h1 className="text-2xl md:text-3xl font-bold text-[var(--mp-foreground)] tracking-tight">
+          ¿Qué estás buscando?
+        </h1>
       </div>
 
-      {/* Tip aleatorio */}
-      {showTip && <TipBanner onDismiss={() => setShowTip(false)} />}
-
-      {/* Buscador principal */}
-      <div className="mb-8">
+      <div className="mb-10">
         <div className="relative">
           <input
             ref={inputRef}
@@ -413,7 +162,7 @@ export default function DashboardPage() {
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             placeholder="Ej: casa 3 dormitorios en Funes hasta 150mil USD"
             disabled={searching || isListening}
-            className="w-full px-4 py-4 pr-24 text-base rounded-[var(--mp-radius-card)] border-2 border-[var(--mp-border)] bg-[var(--mp-card)] text-[var(--mp-foreground)] placeholder:text-[var(--mp-muted)] focus:border-[var(--mp-accent)] focus:outline-none transition-colors disabled:opacity-60"
+            className="w-full px-4 py-4 pr-24 text-base rounded-[var(--mp-radius-card)] border border-[var(--mp-border)] bg-[var(--mp-card)] text-[var(--mp-foreground)] placeholder:text-[var(--mp-muted)] focus:border-[var(--mp-accent)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--mp-accent)_25%,transparent)] transition-colors disabled:opacity-60"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
             {voiceSupported && (
@@ -426,6 +175,7 @@ export default function DashboardPage() {
                     ? 'bg-red-500 text-white animate-pulse'
                     : 'bg-[var(--mp-bg)] text-[var(--mp-muted)] hover:bg-[color-mix(in_srgb,var(--mp-accent)_12%,var(--mp-bg))] hover:text-[var(--mp-accent-hover)]'
                 }`}
+                aria-label={isListening ? 'Detener micrófono' : 'Buscar por voz'}
               >
                 🎤
               </button>
@@ -435,6 +185,7 @@ export default function DashboardPage() {
               onClick={() => handleSearch()}
               disabled={searching || !searchText.trim() || searchText.length < 3}
               className="p-2.5 rounded-[var(--mp-radius-chip)] bg-[var(--mp-accent)] text-white hover:bg-[var(--mp-accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              aria-label="Buscar"
             >
               {searching ? (
                 <span className="w-5 h-5 block border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -446,155 +197,62 @@ export default function DashboardPage() {
         </div>
 
         {isListening && (
-          <p className="mt-2 text-sm text-[var(--mp-accent)] flex items-center gap-2 font-medium">
+          <p className="mt-3 text-sm text-[var(--mp-accent)] flex items-center gap-2 font-medium">
             <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            Escuchando... Decí lo que buscás
+            Escuchando… decí lo que buscás
           </p>
         )}
 
-        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-          <span className="text-[var(--mp-muted)]">Seguí en:</span>
-          <Link href="/feed" className="font-semibold text-[var(--mp-accent)] hover:underline">
-            Match
-          </Link>
-          <Link href="/feed/list" className="font-semibold text-[var(--mp-accent)] hover:underline">
-            Lista
-          </Link>
-          <Link href="/me/match" className="font-semibold text-[var(--mp-accent)] hover:underline">
-            Mis match
-          </Link>
-        </div>
-        <p className="mt-3 text-xs text-[var(--mp-muted)]">
-          ¿Filtros finos o vista previa?{' '}
-          <Link
-            href="/assistant"
-            className="text-[var(--mp-foreground)] font-medium hover:underline"
-          >
-            Asistente avanzado
-          </Link>
+        <p className="mt-4 text-xs text-[var(--mp-muted)] leading-relaxed">
+          Ideas rápidas:{' '}
+          {EXAMPLE_QUERIES.map((q, i) => (
+            <span key={q}>
+              {i > 0 ? ' · ' : null}
+              <button
+                type="button"
+                className="text-[var(--mp-foreground)] font-medium hover:text-[var(--mp-accent)] hover:underline"
+                onClick={() => {
+                  setSearchText(q);
+                  inputRef.current?.focus();
+                }}
+              >
+                {q}
+              </button>
+            </span>
+          ))}
         </p>
-      </div>
 
-      {/* Mis búsquedas — búsqueda activa (o la primera) + Ver más con misma UX que /searches */}
-      {primarySearch && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">Mis búsquedas</h2>
-            <Link href="/searches" className="text-sm mp-link hover:underline">
-              Ver todas
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {previewSearches.map((s) => (
-              <SavedSearchCard key={s.id} {...savedSearchCardProps(s)} />
-            ))}
-            {remainingSearchesCount > 0 && (
-              <p className="text-xs text-[var(--mp-muted)] mt-1">
-                Y {remainingSearchesCount} búsquedas más están disponibles en “Ver todas”.
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Detalle de alertas activas */}
-      {alerts.length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">Alertas activas</h2>
-            <Link href="/alerts" className="text-sm mp-link hover:underline">
-              Ver todas
-            </Link>
-          </div>
-          <div className="space-y-2">
-            {alerts.slice(0, 5).map((alert) => {
-              const typeInfo = ALERT_TYPE_LABELS[alert.type] ?? {
-                label: alert.type,
-                icon: '🔔',
-              };
-              return (
-                <Link
-                  key={alert.id}
-                  href="/alerts"
-                  className="block p-4 mp-surface mp-surface-interactive"
+        {recentForHint.length > 0 && (
+          <p className="mt-3 text-xs text-[var(--mp-muted)]">
+            Seguí con:{' '}
+            {recentForHint.map((s, i) => (
+              <span key={s.id}>
+                {i > 0 ? ' · ' : null}
+                <button
+                  type="button"
+                  className="font-medium text-[var(--mp-accent)] hover:underline"
+                  onClick={() => void handleGoToMatch(s.id)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0 flex-1">
-                      <span className="text-xs font-medium text-[var(--mp-accent-hover)]">
-                        {typeInfo.icon} {typeInfo.label}
-                      </span>
-                      <p className="text-sm text-[var(--mp-foreground)] truncate mt-0.5">
-                        {alert.savedSearchQueryText || alert.savedSearchName || 'Búsqueda guardada'}
-                      </p>
-                      <p className="text-xs text-[var(--mp-muted)] mt-0.5">
-                        {alert.isEnabled ? '✓ Activa' : '⏸ Pausada'}
-                      </p>
-                    </div>
-                    <span className="ml-3 text-[var(--mp-accent)]">→</span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Empty state + Motivational */}
-      {searches.length === 0 && alerts.length === 0 && (
-        <div className="text-center py-8">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center border border-[var(--mp-border)] bg-[color-mix(in_srgb,var(--mp-accent)_12%,var(--mp-card))]">
-            <span className="text-4xl animate-float">🏠</span>
-          </div>
-          <h3 className="font-semibold text-lg text-[var(--mp-foreground)] mb-2">
-            ¡Tu próximo hogar te espera! ✨
-          </h3>
-          <p className="text-sm text-[var(--mp-muted)] mb-6">
-            Escribí arriba qué tipo de propiedad buscás
-            <br />y te mostramos los matches perfectos
+                  {s.name || s.queryText?.slice(0, 40) || 'Búsqueda'}
+                </button>
+              </span>
+            ))}
+            <span className="text-[var(--mp-muted)]"> · </span>
+            <Link href="/searches" className="text-[var(--mp-foreground)] hover:underline">
+              Gestionar búsquedas
+            </Link>
           </p>
-        </div>
-      )}
+        )}
 
-      {/* Accesos rápidos — solo en mobile (web tiene sidebar) */}
-      <div className="md:hidden mt-8 pt-6 border-t border-[var(--mp-border)]">
-        <div className="grid grid-cols-2 gap-3">
-          <Link href="/feed" className="p-4 mp-surface mp-surface-interactive text-center">
-            <span className="text-2xl block mb-1">🔥</span>
-            <span className="text-sm font-medium text-[var(--mp-foreground)]">Match</span>
-          </Link>
-          <Link href="/searches" className="p-4 mp-surface mp-surface-interactive text-center">
-            <span className="text-2xl block mb-1">📁</span>
-            <span className="text-sm font-medium text-[var(--mp-foreground)]">Búsquedas</span>
-          </Link>
-          <Link href="/alerts" className="p-4 mp-surface mp-surface-interactive text-center">
-            <span className="text-2xl block mb-1">🔔</span>
-            <span className="text-sm font-medium text-[var(--mp-foreground)]">Alertas</span>
-          </Link>
-          <Link href="/feed/list" className="p-4 mp-surface mp-surface-interactive text-center">
-            <span className="text-2xl block mb-1">📋</span>
-            <span className="text-sm font-medium text-[var(--mp-foreground)]">Lista</span>
-          </Link>
-          <Link href="/search/map" className="p-4 mp-surface mp-surface-interactive text-center">
-            <span className="text-2xl block mb-1">🗺️</span>
-            <span className="text-sm font-medium text-[var(--mp-foreground)]">Mapa</span>
-          </Link>
-          <Link href="/me/saved" className="p-4 mp-surface mp-surface-interactive text-center">
-            <span className="text-2xl block mb-1">⭐</span>
-            <span className="text-sm font-medium text-[var(--mp-foreground)]">Favoritos</span>
+        <div className="mt-10">
+          <Link
+            href="/feed"
+            className="inline-flex items-center justify-center w-full sm:w-auto min-h-[52px] px-8 rounded-full font-semibold bg-[var(--mp-accent)] text-white border border-[var(--mp-accent-hover)] hover:opacity-[0.96] transition-opacity"
+          >
+            Ir a Match
           </Link>
         </div>
       </div>
-
-      <EditSearchModal
-        open={!!editingId}
-        editName={editName}
-        editText={editText}
-        editSaving={editSaving}
-        onEditName={setEditName}
-        onEditText={setEditText}
-        onSave={handleEditSave}
-        onClose={() => setEditingId(null)}
-      />
     </main>
   );
 }

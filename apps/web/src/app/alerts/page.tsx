@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
-import { MpSecondaryNav, SECONDARY_NAV_HUB } from '../../components/MpSecondaryNav';
+import { useRouter } from 'next/navigation';
 import { CardToolbar, ToolbarBtn, ToolbarLink, ToolbarRow } from '../../components/MpCardToolbar';
 import AlertSubscriptionModal from '../../components/AlertSubscriptionModal';
 import type { AlertSubscriptionForModal } from '../../components/AlertSubscriptionModal';
@@ -27,7 +26,6 @@ type AlertDelivery = AlertDeliveryRow;
 
 export default function AlertsPage() {
   const router = useRouter();
-  const pathname = usePathname();
   const [items, setItems] = useState<Subscription[]>([]);
   const [deliveries, setDeliveries] = useState<AlertDelivery[]>([]);
   const [loading, setLoading] = useState(true);
@@ -226,7 +224,6 @@ export default function AlertsPage() {
             + Nueva
           </Link>
         </div>
-        <MpSecondaryNav items={SECONDARY_NAV_HUB} pathname={pathname} />
       </div>
 
       {deliveries.length > 0 && (

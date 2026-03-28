@@ -81,7 +81,7 @@ export async function savedRoutes(fastify: FastifyInstance) {
           200: {
             type: 'object',
             properties: {
-              items: {
+                items: {
                 type: 'array',
                 items: {
                   type: 'object',
@@ -89,6 +89,7 @@ export async function savedRoutes(fastify: FastifyInstance) {
                     id: { type: 'string' },
                     listingId: { type: 'string' },
                     listType: { type: 'string' },
+                    savedAt: { type: 'string' },
                     listing: { type: 'object' },
                   },
                 },
@@ -163,6 +164,7 @@ export async function savedRoutes(fastify: FastifyInstance) {
             id: s.id,
             listingId: s.listingId,
             listType: s.listType,
+            savedAt: s.createdAt.toISOString(),
             listing: {
               ...listing,
               rawJson: undefined,

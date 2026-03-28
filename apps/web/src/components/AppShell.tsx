@@ -7,7 +7,7 @@ import { useTheme } from './ThemeProvider';
 
 /**
  * Flujo principal (masterplan v3.2): una acción clara por nivel.
- * Todo lo profesional / avanzado va en "Más herramientas" o sheet móvil.
+ * "Más" agrupa herramientas por sección (no lista plana).
  */
 const NAV_PRIMARY = [
   { href: '/dashboard', label: 'Buscar', icon: '🔍' },
@@ -16,23 +16,48 @@ const NAV_PRIMARY = [
   { href: '/feed/list', label: 'Lista', icon: '📋' },
 ] as const;
 
-const NAV_SECONDARY = [
+type MasEntry = { href: string; label: string; icon: string; desc: string };
+
+const MAS_SECTIONS: { title: string; items: readonly MasEntry[] }[] = [
   {
-    href: '/assistant',
-    label: 'Asistente avanzado',
-    icon: '🛠️',
-    desc: 'Filtros finos y vista previa',
+    title: 'Buscar mejor',
+    items: [
+      {
+        href: '/assistant',
+        label: 'Asistente avanzado',
+        icon: '🛠️',
+        desc: 'Filtros finos y vista previa',
+      },
+      { href: '/search/map', label: 'Mapa', icon: '🗺️', desc: 'Propiedades en el mapa' },
+    ],
   },
-  { href: '/search/map', label: 'Mapa', icon: '🗺️', desc: 'Propiedades en el mapa' },
-  { href: '/me/saved', label: 'Listas y favoritos', icon: '⭐', desc: 'Tus listas y destacados' },
-  { href: '/searches', label: 'Búsquedas', icon: '📁', desc: 'Gestionar búsquedas guardadas' },
-  { href: '/alerts', label: 'Alertas', icon: '🔔', desc: 'Avisos de novedades' },
-  { href: '/leads', label: 'Consultas', icon: '💬', desc: 'Contactos con inmobiliarias' },
-  { href: '/me/visits', label: 'Visitas', icon: '📅', desc: 'Agenda de visitas' },
-  { href: '/me/profile', label: 'Perfil', icon: '👤', desc: 'Datos y preferencias' },
+  {
+    title: 'Organizar',
+    items: [
+      {
+        href: '/me/saved',
+        label: 'Listas y favoritos',
+        icon: '⭐',
+        desc: 'Listas personalizadas y destacados',
+      },
+      { href: '/searches', label: 'Búsquedas guardadas', icon: '📁', desc: 'Gestionar búsquedas' },
+    ],
+  },
+  {
+    title: 'Gestión',
+    items: [
+      { href: '/alerts', label: 'Alertas', icon: '🔔', desc: 'Avisos de novedades' },
+      { href: '/leads', label: 'Consultas', icon: '💬', desc: 'Contactos con inmobiliarias' },
+      { href: '/me/visits', label: 'Visitas', icon: '📅', desc: 'Agenda de visitas' },
+    ],
+  },
+  {
+    title: 'Cuenta',
+    items: [{ href: '/me/profile', label: 'Perfil', icon: '👤', desc: 'Datos y preferencias' }],
+  },
 ] as const;
 
-const MAS_ITEMS = [...NAV_SECONDARY];
+const MAS_FLAT = MAS_SECTIONS.flatMap((s) => s.items);
 
 const NAV_LINK_CLASS =
   'flex items-center gap-3 px-3 py-3 rounded-[var(--mp-radius-chip)] text-[15px] font-medium transition-colors min-h-[44px]';
@@ -59,7 +84,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       .catch(() => {});
   }, []);
 
-  const secondaryActive = NAV_SECONDARY.some((item) => navItemActive(pathname, item.href));
+  const secondaryActive = MAS_FLAT.some((item) => navItemActive(pathname, item.href));
 
   const isPublic =
     pathname?.startsWith('/login') ||
@@ -124,36 +149,45 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               >
                 <span className="flex items-center gap-3 min-w-0">
                   <span className="text-lg shrink-0">⋯</span>
-                  <span className="truncate">Más herramientas</span>
+                  <span className="truncate">Más</span>
                 </span>
                 <span className="text-xs shrink-0 opacity-70">{toolsOpen ? '▲' : '▼'}</span>
               </button>
               {toolsOpen && (
-                <div className="mt-1 space-y-0.5 pl-1 border-l-2 border-[var(--mp-border)] ml-3">
-                  {NAV_SECONDARY.map((item) => {
-                    const active = navItemActive(pathname, item.href);
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`${NAV_LINK_CLASS} min-w-0 text-[14px] py-2.5 ${
-                          active
-                            ? 'bg-[color-mix(in_srgb,var(--mp-accent)_14%,var(--mp-card))] text-[var(--mp-accent-hover)] font-semibold'
-                            : 'text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]'
-                        }`}
-                      >
-                        <span className="text-base shrink-0">{item.icon}</span>
-                        <span className="truncate">{item.label}</span>
-                      </Link>
-                    );
-                  })}
+                <div className="mt-2 space-y-3 pl-1 ml-2 border-l-2 border-[var(--mp-border)]">
+                  {MAS_SECTIONS.map((section) => (
+                    <div key={section.title}>
+                      <p className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--mp-muted)]">
+                        {section.title}
+                      </p>
+                      <div className="space-y-0.5">
+                        {section.items.map((item) => {
+                          const active = navItemActive(pathname, item.href);
+                          return (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              className={`${NAV_LINK_CLASS} min-w-0 text-[14px] py-2.5 ${
+                                active
+                                  ? 'bg-[color-mix(in_srgb,var(--mp-accent)_14%,var(--mp-card))] text-[var(--mp-accent-hover)] font-semibold'
+                                  : 'text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]'
+                              }`}
+                            >
+                              <span className="text-base shrink-0">{item.icon}</span>
+                              <span className="truncate">{item.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
           )}
 
           {!sidebarOpen &&
-            NAV_SECONDARY.map((item) => {
+            MAS_FLAT.map((item) => {
               const active = navItemActive(pathname, item.href);
               if (!active) return null;
               return (
@@ -238,7 +272,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               type="button"
               onClick={() => setMasOpen(true)}
               className={`flex flex-col items-center justify-center flex-1 py-3 min-h-[52px] rounded-[var(--mp-radius-chip)] transition-colors active:scale-[0.98] ${
-                MAS_ITEMS.some((m) => navItemActive(pathname, m.href))
+                MAS_FLAT.some((m) => navItemActive(pathname, m.href))
                   ? 'text-[var(--mp-accent)] font-semibold'
                   : 'text-[var(--mp-muted)]'
               }`}
@@ -256,14 +290,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               aria-hidden
               onClick={() => setMasOpen(false)}
             />
-            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 max-h-[70vh] rounded-t-[var(--mp-radius-card)] bg-[var(--mp-card)] border-t border-[var(--mp-border)] shadow-mp-md safe-area-pb">
+            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 max-h-[78vh] rounded-t-[var(--mp-radius-card)] bg-[var(--mp-card)] border-t border-[var(--mp-border)] shadow-mp-md safe-area-pb overflow-y-auto">
               <div className="p-4 pb-8">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">
-                      Más herramientas
-                    </h2>
-                    <p className="text-xs text-[var(--mp-muted)]">Modo avanzado y gestión</p>
+                    <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">Más</h2>
+                    <p className="text-xs text-[var(--mp-muted)]">Herramientas y gestión</p>
                   </div>
                   <button
                     type="button"
@@ -274,32 +306,41 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     ✕
                   </button>
                 </div>
-                <div className="space-y-0.5">
-                  {MAS_ITEMS.map((item) => {
-                    const active = navItemActive(pathname, item.href);
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setMasOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-[var(--mp-radius-chip)] min-h-[52px] ${
-                          active
-                            ? 'bg-[var(--mp-accent)] text-white'
-                            : 'text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]'
-                        }`}
-                      >
-                        <span className="text-xl shrink-0">{item.icon}</span>
-                        <div className="min-w-0">
-                          <span className="font-medium block">{item.label}</span>
-                          <span
-                            className={`text-xs block truncate ${active ? 'text-white/80' : 'text-[var(--mp-muted)]'}`}
-                          >
-                            {item.desc}
-                          </span>
-                        </div>
-                      </Link>
-                    );
-                  })}
+                <div className="space-y-5">
+                  {MAS_SECTIONS.map((section) => (
+                    <div key={section.title}>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--mp-muted)] mb-2 px-1">
+                        {section.title}
+                      </p>
+                      <div className="space-y-0.5">
+                        {section.items.map((item) => {
+                          const active = navItemActive(pathname, item.href);
+                          return (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              onClick={() => setMasOpen(false)}
+                              className={`flex items-center gap-3 px-4 py-3 rounded-[var(--mp-radius-chip)] min-h-[52px] ${
+                                active
+                                  ? 'bg-[var(--mp-accent)] text-white'
+                                  : 'text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]'
+                              }`}
+                            >
+                              <span className="text-xl shrink-0">{item.icon}</span>
+                              <div className="min-w-0">
+                                <span className="font-medium block">{item.label}</span>
+                                <span
+                                  className={`text-xs block truncate ${active ? 'text-white/80' : 'text-[var(--mp-muted)]'}`}
+                                >
+                                  {item.desc}
+                                </span>
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
