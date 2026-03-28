@@ -1,5 +1,6 @@
 'use client';
 
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import Link from 'next/link';
 
 /** Compatible con `Subscription` de la página de alertas */
@@ -27,7 +28,24 @@ interface AlertSubscriptionModalProps {
   togglingId: string | null;
   onToggle: (sub: AlertSubscriptionForModal) => void | Promise<void>;
   onVerResultados: (sub: AlertSubscriptionForModal) => void | Promise<void>;
+  onIrAlDeck?: (sub: AlertSubscriptionForModal) => void | Promise<void>;
   onDelete: (id: string) => void;
+}
+
+function ModalActionBtn({
+  children,
+  className = '',
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & { children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-left transition-colors disabled:opacity-50 ${className}`}
+      {...props}
+    >
+      {children}
+    </button>
+  );
 }
 
 export default function AlertSubscriptionModal({
@@ -37,6 +55,7 @@ export default function AlertSubscriptionModal({
   togglingId,
   onToggle,
   onVerResultados,
+  onIrAlDeck,
   onDelete,
 }: AlertSubscriptionModalProps) {
   if (!open || !sub) return null;
@@ -59,63 +78,87 @@ export default function AlertSubscriptionModal({
       role="presentation"
     >
       <div
-        className="bg-[var(--mp-card)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto border border-[var(--mp-border)]"
+        className="bg-[var(--mp-card)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto border border-emerald-200/60"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="alert-modal-title"
       >
-        <div className="p-5 border-b border-[var(--mp-border)]">
-          <h2 id="alert-modal-title" className="text-lg font-semibold text-[var(--mp-foreground)]">
+        <div className="p-5 bg-gradient-to-br from-emerald-600 to-emerald-800 text-white rounded-t-2xl sm:rounded-t-2xl">
+          <h2 id="alert-modal-title" className="text-lg font-semibold">
             Gestionar alerta
           </h2>
-          <p className="text-xs text-[var(--mp-muted)] mt-1">
-            {typeInfo.icon} {typeInfo.label}
+          <p className="text-xs text-emerald-100 mt-1.5 flex items-center gap-1.5">
+            <span aria-hidden>{typeInfo.icon}</span>
+            {typeInfo.label}
           </p>
-          <p className="font-medium text-[var(--mp-foreground)] mt-2 truncate">
+          <p className="font-semibold mt-3 truncate">
             {sub.savedSearchName ?? 'Búsqueda guardada'}
           </p>
           {(sub.savedSearchQueryText ?? '').trim() && (
-            <p className="text-sm text-[var(--mp-muted)] mt-1 line-clamp-3">
+            <p className="text-sm text-emerald-50/90 mt-1.5 line-clamp-3 leading-snug">
               {sub.savedSearchQueryText}
             </p>
           )}
-          <p className="text-xs text-[var(--mp-muted)] mt-2">
-            {sub.isEnabled ? '✓ Activa' : '⏸ Pausada'}
+          <p className="text-xs text-emerald-100/90 mt-3 flex flex-wrap gap-x-2 gap-y-0.5">
+            <span>{sub.isEnabled ? '● Activa' : '○ Pausada'}</span>
             {sub.lastRunAt && (
-              <> · Última ejecución: {new Date(sub.lastRunAt).toLocaleDateString('es-AR')}</>
+              <span suppressHydrationWarning>
+                · Última: {new Date(sub.lastRunAt).toLocaleDateString('es-AR')}
+              </span>
             )}
           </p>
         </div>
 
-        <div className="p-3 flex flex-col gap-2">
-          <button
-            type="button"
+        <div className="p-3 flex flex-col gap-2 bg-[var(--mp-bg)]">
+          <ModalActionBtn
             disabled={busy}
             onClick={() => onToggle(sub)}
-            className="w-full text-left px-4 py-3 rounded-xl bg-[var(--mp-bg)] border border-[var(--mp-border)] text-[var(--mp-foreground)] font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 disabled:opacity-50"
+            className="bg-emerald-600 text-white hover:bg-emerald-700 border border-emerald-700"
           >
-            {busy ? 'Guardando…' : sub.isEnabled ? '⏸ Pausar alerta' : '▶ Activar alerta'}
-          </button>
+            <span className="text-xl shrink-0" aria-hidden>
+              {sub.isEnabled ? '⏸' : '▶'}
+            </span>
+            <span>{busy ? 'Guardando…' : sub.isEnabled ? 'Pausar alerta' : 'Activar alerta'}</span>
+          </ModalActionBtn>
 
           {sub.savedSearchId && (
             <>
-              <button
-                type="button"
+              <ModalActionBtn
                 onClick={() => {
-                  onVerResultados(sub);
+                  void onVerResultados(sub);
                   onClose();
                 }}
-                className="w-full text-left px-4 py-3 rounded-xl bg-sky-500 text-white font-medium hover:bg-sky-600"
+                className="bg-sky-500 text-white hover:bg-sky-600 border border-sky-600"
               >
-                📋 Ver resultados en listado
-              </button>
+                <span className="text-xl shrink-0" aria-hidden>
+                  📋
+                </span>
+                <span>Ver resultados (listado)</span>
+              </ModalActionBtn>
+              {onIrAlDeck && (
+                <ModalActionBtn
+                  onClick={() => {
+                    void onIrAlDeck(sub);
+                    onClose();
+                  }}
+                  className="bg-violet-600 text-white hover:bg-violet-700 border border-violet-700"
+                >
+                  <span className="text-xl shrink-0" aria-hidden>
+                    💫
+                  </span>
+                  <span>Ir al deck (swipe)</span>
+                </ModalActionBtn>
+              )}
               <Link
                 href={`/searches/${sub.savedSearchId}`}
                 onClick={onClose}
-                className="block w-full text-center px-4 py-3 rounded-xl bg-sky-50 text-sky-800 border border-sky-200 font-medium hover:bg-sky-100"
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-white text-emerald-900 border border-emerald-200 font-medium hover:bg-emerald-50"
               >
-                ✏️ Ir a la búsqueda guardada
+                <span className="text-xl shrink-0" aria-hidden>
+                  ✏️
+                </span>
+                <span>Editar búsqueda guardada</span>
               </Link>
             </>
           )}
@@ -123,18 +166,23 @@ export default function AlertSubscriptionModal({
           <Link
             href="/searches"
             onClick={onClose}
-            className="block w-full text-center px-4 py-3 rounded-xl bg-slate-100 text-slate-800 font-medium hover:bg-slate-200"
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-slate-100 text-[var(--mp-foreground)] border border-[var(--mp-border)] font-medium hover:bg-slate-200/80"
           >
-            📂 Ver todas mis búsquedas
+            <span className="text-xl shrink-0" aria-hidden>
+              📂
+            </span>
+            <span>Ver todas mis búsquedas</span>
           </Link>
 
-          <button
-            type="button"
+          <ModalActionBtn
             onClick={handleDelete}
-            className="w-full px-4 py-3 rounded-xl text-red-600 bg-red-50 border border-red-100 font-medium hover:bg-red-100"
+            className="bg-red-50 text-red-700 border border-red-100 hover:bg-red-100"
           >
-            🗑️ Eliminar esta alerta
-          </button>
+            <span className="text-xl shrink-0" aria-hidden>
+              🗑️
+            </span>
+            <span>Eliminar esta alerta</span>
+          </ModalActionBtn>
 
           <button
             type="button"

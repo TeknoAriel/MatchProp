@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import { encodeListingCursor, decodeListingCursor } from '../lib/cursor.js';
 import { getCachedTotal, setCachedTotal } from '../lib/feed-total-cache.js';
 import { extractFromRawJson } from '../lib/rawjson-fallback.js';
+import { amenityFiltersToAndList } from '../lib/amenity-filter.js';
 
 const FEED_LIMIT_DEFAULT = 20;
 const FEED_LIMIT_MAX = 50;
@@ -408,18 +409,7 @@ function filtersToWhere(f: FeedFilters): Record<string, unknown> {
     ];
   }
   if (f.amenities?.length) {
-    const andList: Record<string, unknown>[] = [];
-    for (const amenity of f.amenities) {
-      const amenityNorm = String(amenity).trim();
-      if (!amenityNorm) continue;
-      andList.push({
-        OR: [
-          { description: { contains: amenityNorm, mode: 'insensitive' } },
-          { title: { contains: amenityNorm, mode: 'insensitive' } },
-          { details: { path: ['amenities'], array_contains: [amenityNorm] } },
-        ],
-      });
-    }
+    const andList = amenityFiltersToAndList(f.amenities);
     if (andList.length)
       where.AND = [...((where.AND as Record<string, unknown>[]) ?? []), ...andList];
   }

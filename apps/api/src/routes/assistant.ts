@@ -5,21 +5,55 @@ import { assistantSearchRequestSchema, normalizeFilters } from '../schemas/searc
 import { executeFeed } from '../lib/feed-engine.js';
 import { prisma } from '../lib/prisma.js';
 import { decrypt } from '../lib/crypto.js';
+import { reorderByEngagementAffinity } from '../services/assistant/preview-affinity.js';
 import type { SearchFilters } from '@matchprop/shared';
 
 const PREVIEW_LIMIT = 10;
 
-export type FallbackMode = 'STRICT' | 'RELAX' | 'FEED';
+export type FallbackMode = 'STRICT' | 'RELAX' | 'BROAD' | 'FEED';
 
-function relaxFilters(f: SearchFilters): SearchFilters {
-  const next: SearchFilters = {};
-  if (f.operationType) next.operationType = f.operationType;
-  if (f.currency) next.currency = f.currency;
+/** Relaja números y quita filtros muy restrictivos; mantiene tipo, zona, amenities y texto. */
+export function relaxFilters(f: SearchFilters): SearchFilters {
+  const next: SearchFilters = {
+    operationType: f.operationType,
+    currency: f.currency,
+    propertyType: f.propertyType,
+    locationText: f.locationText,
+    addressText: f.addressText,
+    titleContains: f.titleContains,
+    descriptionContains: f.descriptionContains,
+    keywords: f.keywords,
+    amenities: f.amenities,
+    aptoCredito: f.aptoCredito,
+    source: f.source,
+    sortBy: f.sortBy,
+    minLat: f.minLat,
+    maxLat: f.maxLat,
+    minLng: f.minLng,
+    maxLng: f.maxLng,
+  };
   if (f.priceMin != null) next.priceMin = f.priceMin;
   if (f.priceMax != null) next.priceMax = f.priceMax;
   if (f.bathroomsMin != null) next.bathroomsMin = f.bathroomsMin;
-  if (f.areaMin != null) next.areaMin = f.areaMin;
-  if (f.bedroomsMin != null && f.bedroomsMin > 1) next.bedroomsMin = Math.max(0, f.bedroomsMin - 1);
+  if (f.bathroomsMax != null) next.bathroomsMax = f.bathroomsMax;
+  if (f.bedroomsMin != null) {
+    next.bedroomsMin = f.bedroomsMin <= 1 ? 0 : f.bedroomsMin - 1;
+  }
+  if (f.bedroomsMax != null) next.bedroomsMax = f.bedroomsMax + 1;
+  return next;
+}
+
+/** Misma zona + tipo + operación (y moneda si hay); sin precio/dorm/superficie. Opcional: amenities si no hay tipo. */
+export function broadSearchFilters(f: SearchFilters): SearchFilters {
+  const next: SearchFilters = {};
+  if (f.operationType) next.operationType = f.operationType;
+  if (f.currency) next.currency = f.currency;
+  if (f.propertyType?.length) next.propertyType = [...f.propertyType];
+  const loc = f.locationText?.trim();
+  if (loc) next.locationText = loc;
+  if (!next.propertyType?.length && !loc && f.amenities?.length) {
+    next.amenities = [...f.amenities];
+  }
   return next;
 }
 
@@ -142,7 +176,7 @@ export async function assistantRoutes(fastify: FastifyInstance) {
             filters: { type: 'object' },
             cursor: { type: 'string' },
             limit: { type: 'integer' },
-            fallbackMode: { type: 'string', enum: ['STRICT', 'RELAX', 'FEED'] },
+            fallbackMode: { type: 'string', enum: ['STRICT', 'RELAX', 'BROAD', 'FEED'] },
           },
         },
         response: {
@@ -182,6 +216,8 @@ export async function assistantRoutes(fastify: FastifyInstance) {
         filters = {};
       } else if (mode === 'RELAX') {
         filters = relaxFilters(rawFilters);
+      } else if (mode === 'BROAD') {
+        filters = broadSearchFilters(rawFilters);
       } else {
         filters = rawFilters;
       }
@@ -220,9 +256,19 @@ export async function assistantRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const feedResult = result as { items: unknown[]; nextCursor: string | null; limit: number };
+      const feedResult = result as {
+        items: { id: string; propertyType?: string | null }[];
+        nextCursor: string | null;
+        limit: number;
+      };
+
+      let itemsOut = feedResult.items;
+      if (!cursor && mode !== 'FEED' && Array.isArray(itemsOut) && itemsOut.length > 1) {
+        itemsOut = await reorderByEngagementAffinity(user.userId, itemsOut);
+      }
+
       return {
-        items: feedResult.items,
+        items: itemsOut,
         nextCursor: feedResult.nextCursor,
         limit: feedResult.limit,
       };

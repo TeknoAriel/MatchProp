@@ -94,6 +94,8 @@ export interface ListingCard {
   publisherRef: string | null;
   source: string;
   operationType?: string | null;
+  /** HOUSE | APARTMENT | LAND | OFFICE | OTHER */
+  propertyType?: string | null;
 }
 
 /** Respuesta GET /feed (Listing-based) */

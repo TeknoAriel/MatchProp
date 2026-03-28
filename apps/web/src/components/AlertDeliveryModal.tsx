@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 
 const TYPE_LABELS: Record<string, { label: string; icon: string }> = {
   NEW_LISTING: { label: 'Nuevas publicaciones', icon: '🏠' },
@@ -26,13 +27,28 @@ interface AlertDeliveryModalProps {
 }
 
 export default function AlertDeliveryModal({ open, delivery, onClose }: AlertDeliveryModalProps) {
+  const [copied, setCopied] = useState(false);
+
   if (!open || !delivery) return null;
 
-  const typeInfo = TYPE_LABELS[delivery.type] ?? { label: delivery.type, icon: '🔔' };
+  const drow = delivery;
+  const typeInfo = TYPE_LABELS[drow.type] ?? { label: drow.type, icon: '🔔' };
   const priceText =
-    delivery.listingPrice != null
-      ? `${delivery.listingCurrency ?? 'USD'} ${delivery.listingPrice.toLocaleString()}`
+    drow.listingPrice != null
+      ? `${drow.listingCurrency ?? 'USD'} ${drow.listingPrice.toLocaleString()}`
       : 'Consultar';
+
+  async function copyLink() {
+    const id = drow.listingId;
+    const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/listing/${id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
 
   return (
     <div
@@ -41,33 +57,31 @@ export default function AlertDeliveryModal({ open, delivery, onClose }: AlertDel
       role="presentation"
     >
       <div
-        className="bg-[var(--mp-card)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto border border-[var(--mp-border)]"
+        className="bg-[var(--mp-card)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto border border-emerald-200/60"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="delivery-modal-title"
       >
-        <div className="p-5 border-b border-[var(--mp-border)]">
-          <h2
-            id="delivery-modal-title"
-            className="text-lg font-semibold text-[var(--mp-foreground)]"
-          >
+        <div className="p-5 bg-gradient-to-br from-emerald-600 to-teal-800 text-white rounded-t-2xl sm:rounded-t-2xl">
+          <h2 id="delivery-modal-title" className="text-lg font-semibold">
             Aviso disparado
           </h2>
-          <p className="text-xs text-[var(--mp-muted)] mt-1">
-            {typeInfo.icon} {typeInfo.label}
+          <p className="text-xs text-emerald-100 mt-1.5 flex items-center gap-1.5">
+            <span aria-hidden>{typeInfo.icon}</span>
+            {typeInfo.label}
           </p>
-          <p className="font-medium text-[var(--mp-foreground)] mt-2 line-clamp-2">
-            {delivery.listingTitle ?? delivery.listingId}
+          <p className="font-semibold mt-3 line-clamp-2 leading-snug">
+            {drow.listingTitle ?? drow.listingId}
           </p>
-          <p className="text-sm text-sky-700 font-semibold mt-1">{priceText}</p>
-          {delivery.savedSearchName && (
-            <p className="text-xs text-[var(--mp-muted)] mt-1 truncate">
-              Búsqueda: {delivery.savedSearchName}
+          <p className="text-lg font-bold text-white mt-2">{priceText}</p>
+          {drow.savedSearchName && (
+            <p className="text-xs text-emerald-100/90 mt-2 truncate">
+              Búsqueda: {drow.savedSearchName}
             </p>
           )}
-          <p className="text-xs text-[var(--mp-muted)] mt-2" suppressHydrationWarning>
-            {new Date(delivery.createdAt).toLocaleString('es-AR', {
+          <p className="text-xs text-emerald-100/80 mt-2" suppressHydrationWarning>
+            {new Date(drow.createdAt).toLocaleString('es-AR', {
               day: '2-digit',
               month: '2-digit',
               year: 'numeric',
@@ -77,26 +91,55 @@ export default function AlertDeliveryModal({ open, delivery, onClose }: AlertDel
           </p>
         </div>
 
-        <div className="p-3 flex flex-col gap-2">
+        <div className="p-3 flex flex-col gap-2 bg-[var(--mp-bg)]">
           <Link
-            href={`/listing/${delivery.listingId}`}
+            href={`/listing/${drow.listingId}`}
             onClick={onClose}
-            className="block w-full text-center px-4 py-3 rounded-xl bg-sky-500 text-white font-medium hover:bg-sky-600"
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-sky-500 text-white font-semibold hover:bg-sky-600"
           >
+            <span className="text-xl" aria-hidden>
+              📄
+            </span>
             Ver ficha completa
           </Link>
           <Link
             href="/me/match"
             onClick={onClose}
-            className="block w-full text-center px-4 py-3 rounded-xl bg-slate-100 text-[var(--mp-foreground)] font-medium border border-[var(--mp-border)] hover:bg-slate-200/80"
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 border border-emerald-700"
           >
+            <span className="text-xl" aria-hidden>
+              💚
+            </span>
             Ir a Mis match
           </Link>
           <Link
+            href="/feed"
+            onClick={onClose}
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-700"
+          >
+            <span className="text-xl" aria-hidden>
+              💫
+            </span>
+            Ir al deck (swipe)
+          </Link>
+          <button
+            type="button"
+            onClick={() => void copyLink()}
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-white text-[var(--mp-foreground)] font-medium border border-[var(--mp-border)] hover:bg-slate-50"
+          >
+            <span className="text-xl" aria-hidden>
+              🔗
+            </span>
+            {copied ? '¡Copiado!' : 'Copiar enlace de la ficha'}
+          </button>
+          <Link
             href="/searches"
             onClick={onClose}
-            className="block w-full text-center px-4 py-3 rounded-xl bg-sky-50 text-sky-900 border border-sky-200 font-medium hover:bg-sky-100"
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-slate-100 text-[var(--mp-foreground)] font-medium border border-[var(--mp-border)] hover:bg-slate-200/80"
           >
+            <span className="text-xl" aria-hidden>
+              🔔
+            </span>
             Ver mis búsquedas
           </Link>
           <button
