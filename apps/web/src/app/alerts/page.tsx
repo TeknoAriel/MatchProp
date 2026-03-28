@@ -1,9 +1,10 @@
 'use client';
 
-import type { ComponentProps } from 'react';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { MpSecondaryNav, SECONDARY_NAV_HUB } from '../../components/MpSecondaryNav';
+import { CardToolbar, ToolbarBtn, ToolbarLink, ToolbarRow } from '../../components/MpCardToolbar';
 import AlertSubscriptionModal from '../../components/AlertSubscriptionModal';
 import type { AlertSubscriptionForModal } from '../../components/AlertSubscriptionModal';
 import AlertDeliveryModal from '../../components/AlertDeliveryModal';
@@ -11,67 +12,22 @@ import type { AlertDeliveryRow } from '../../components/AlertDeliveryModal';
 
 const API_BASE = '/api';
 
-const TYPE_LABELS: Record<string, { label: string; icon: string; color: string }> = {
-  NEW_LISTING: { label: 'Nuevas publicaciones', icon: '🏠', color: 'bg-blue-100 text-blue-800' },
-  PRICE_DROP: { label: 'Bajó el precio', icon: '📉', color: 'bg-green-100 text-green-800' },
-  BACK_ON_MARKET: {
-    label: 'Volvió al mercado',
-    icon: '🔄',
-    color: 'bg-purple-100 text-purple-800',
-  },
+const TYPE_LABELS: Record<string, { label: string; icon: string }> = {
+  NEW_LISTING: { label: 'Nuevas publicaciones', icon: '🏠' },
+  PRICE_DROP: { label: 'Bajó el precio', icon: '📉' },
+  BACK_ON_MARKET: { label: 'Volvió al mercado', icon: '🔄' },
 };
+
+const typeChipClass =
+  'px-2.5 py-1 rounded-full text-xs font-medium border border-[var(--mp-border)] bg-[var(--mp-bg)] text-[var(--mp-foreground)]';
 
 type Subscription = AlertSubscriptionForModal;
 
 type AlertDelivery = AlertDeliveryRow;
 
-/** Botón compacto icono + etiqueta (primera pantalla) */
-function IconAction({
-  icon,
-  label,
-  className,
-  ...props
-}: { icon: string; label: string; className?: string } & ComponentProps<'button'>) {
-  return (
-    <button
-      type="button"
-      className={`flex flex-col items-center justify-center gap-1 min-h-[72px] px-2 py-2 rounded-xl border font-semibold text-[11px] leading-tight text-center transition-colors disabled:opacity-50 ${className ?? ''}`}
-      {...props}
-    >
-      <span className="text-2xl leading-none" aria-hidden>
-        {icon}
-      </span>
-      <span className="uppercase tracking-wide">{label}</span>
-    </button>
-  );
-}
-
-function IconLink({
-  icon,
-  label,
-  className,
-  href,
-}: {
-  icon: string;
-  label: string;
-  className?: string;
-  href: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`flex flex-col items-center justify-center gap-1 min-h-[72px] px-2 py-2 rounded-xl border font-semibold text-[11px] leading-tight text-center transition-colors ${className ?? ''}`}
-    >
-      <span className="text-2xl leading-none" aria-hidden>
-        {icon}
-      </span>
-      <span className="uppercase tracking-wide">{label}</span>
-    </Link>
-  );
-}
-
 export default function AlertsPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const [items, setItems] = useState<Subscription[]>([]);
   const [deliveries, setDeliveries] = useState<AlertDelivery[]>([]);
   const [loading, setLoading] = useState(true);
@@ -187,6 +143,45 @@ export default function AlertsPage() {
     }
   }
 
+  async function handleDeliveryNope(listingId: string) {
+    try {
+      await fetch(`${API_BASE}/swipes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ listingId, decision: 'NOPE' }),
+      });
+      setDeliveries((prev) => prev.filter((d) => d.listingId !== listingId));
+      setToast('Descartada');
+      setTimeout(() => setToast(null), 2500);
+    } catch {
+      setToast('No pudimos registrar el descarte. Probá de nuevo.');
+      setTimeout(() => setToast(null), 3000);
+    }
+  }
+
+  async function handleDeliveryLike(listingId: string) {
+    try {
+      await fetch(`${API_BASE}/saved`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ listingId, listType: 'LATER' }),
+      });
+      await fetch(`${API_BASE}/swipes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ listingId, decision: 'LIKE' }),
+      });
+      setToast('Guardada en tus match');
+      setTimeout(() => setToast(null), 2500);
+    } catch {
+      setToast('No pudimos guardar. Probá de nuevo.');
+      setTimeout(() => setToast(null), 3000);
+    }
+  }
+
   if (loading) {
     return (
       <main className="py-2 min-h-[60vh]">
@@ -222,44 +217,41 @@ export default function AlertsPage() {
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--mp-foreground)]">Mis alertas</h1>
-          <p className="text-sm text-[var(--mp-muted)]">Recibí avisos cuando haya novedades</p>
+      <div className="mb-6">
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+          <div>
+            <h1 className="text-2xl font-bold text-[var(--mp-foreground)]">Mis alertas</h1>
+            <p className="text-sm text-[var(--mp-muted)]">Recibí avisos cuando haya novedades</p>
+          </div>
+          <Link
+            href="/searches"
+            className="inline-flex items-center px-4 py-2 text-sm font-semibold rounded-[var(--mp-radius-chip)] bg-[var(--mp-accent)] text-white border border-[var(--mp-accent-hover)] hover:opacity-[0.96] shadow-sm"
+          >
+            + Nueva
+          </Link>
         </div>
-        <Link
-          href="/searches"
-          className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-medium shadow-sm"
-        >
-          + Nueva
-        </Link>
+        <MpSecondaryNav items={SECONDARY_NAV_HUB} pathname={pathname} />
       </div>
 
       {deliveries.length > 0 && (
-        <div className="mb-8 p-4 rounded-2xl bg-gradient-to-b from-emerald-50/40 to-[var(--mp-card)] border border-emerald-200/70 shadow-sm">
+        <div className="mb-8 p-4 rounded-2xl mp-surface">
           <h2 className="text-lg font-semibold text-[var(--mp-foreground)] mb-1">
             Resultado de alertas
           </h2>
           <p className="text-sm text-[var(--mp-muted)] mb-4">
-            Propiedades que dispararon tus alertas — acciones rápidas en cada ficha
+            Descartá a la izquierda o guardá en tus match a la derecha — misma lógica que el deck
           </p>
           <ul className="space-y-4 mb-4">
             {deliveries.map((d) => {
               const typeInfo = TYPE_LABELS[d.type] ?? {
                 label: d.type,
                 icon: '🔔',
-                color: 'bg-gray-100 text-gray-800',
               };
               return (
-                <li
-                  key={d.id}
-                  className="rounded-2xl border border-emerald-200/60 bg-[var(--mp-card)] overflow-hidden shadow-sm"
-                >
+                <li key={d.id} className="rounded-2xl mp-surface overflow-hidden">
                   <div className="p-4 pb-3">
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-medium ${typeInfo.color}`}
-                      >
+                      <span className={typeChipClass}>
                         {typeInfo.icon} {typeInfo.label}
                       </span>
                       <div className="flex items-center gap-1 shrink-0">
@@ -287,55 +279,47 @@ export default function AlertsPage() {
                         {d.savedSearchName}
                       </p>
                     )}
-                    <p className="text-base font-bold text-sky-700 mt-2">
+                    <p className="text-base font-bold text-[var(--mp-accent)] mt-2">
                       {d.listingPrice != null
                         ? `${d.listingCurrency ?? 'USD'} ${d.listingPrice.toLocaleString()}`
                         : 'Consultar'}
                     </p>
                   </div>
-                  <div className="px-3 pb-3 pt-0 space-y-2">
-                    <div className="grid grid-cols-3 gap-2">
-                      <IconLink
-                        href={`/listing/${d.listingId}`}
-                        icon="📄"
-                        label="Ficha"
-                        className="bg-sky-500 text-white border-sky-600 hover:bg-sky-600"
+                  <CardToolbar>
+                    <ToolbarRow className="w-full justify-between gap-2">
+                      <ToolbarBtn
+                        icon="👎"
+                        label="Descartar"
+                        variant="danger"
+                        onClick={() => void handleDeliveryNope(d.listingId)}
                       />
-                      <IconLink
-                        href="/me/match"
+                      <ToolbarBtn
                         icon="💚"
-                        label="Match"
-                        className="bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700"
+                        label="Me interesa"
+                        variant="primary"
+                        onClick={() => void handleDeliveryLike(d.listingId)}
                       />
-                      <IconLink
-                        href="/feed"
-                        icon="💫"
-                        label="Deck"
-                        className="bg-violet-600 text-white border-violet-700 hover:bg-violet-700"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <IconAction
+                    </ToolbarRow>
+                    <ToolbarRow className="w-full">
+                      <ToolbarLink href={`/listing/${d.listingId}`} icon="📄" label="Ficha" />
+                      <ToolbarLink href="/feed" icon="🎯" label="Deck" />
+                      <ToolbarLink href="/me/match" icon="⭐" label="Mis match" />
+                      <ToolbarBtn
                         icon="🔗"
-                        label="Copiar link"
-                        className="bg-white text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-50"
+                        label="Copiar"
+                        variant="muted"
                         onClick={() => void copyListingLink(d.listingId)}
                       />
-                      <IconLink
-                        href="/searches"
-                        icon="🔔"
-                        label="Búsquedas"
-                        className="bg-slate-100 text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-200/80"
-                      />
-                    </div>
-                  </div>
+                      <ToolbarLink href="/searches" icon="📁" label="Búsquedas" />
+                    </ToolbarRow>
+                  </CardToolbar>
                 </li>
               );
             })}
           </ul>
           <Link
             href="/me/match"
-            className="text-sm font-semibold text-emerald-700 hover:text-emerald-800 inline-flex items-center gap-1"
+            className="text-sm font-semibold text-[var(--mp-accent)] hover:opacity-90 inline-flex items-center gap-1"
           >
             Ver todo en Mis match →
           </Link>
@@ -364,7 +348,6 @@ export default function AlertsPage() {
             const typeInfo = TYPE_LABELS[sub.type] ?? {
               label: sub.type,
               icon: '🔔',
-              color: 'bg-gray-100 text-gray-800',
             };
 
             const activeCard = sub.isEnabled;
@@ -372,25 +355,21 @@ export default function AlertsPage() {
             return (
               <div
                 key={sub.id}
-                className={`rounded-2xl border overflow-hidden transition-shadow ${
-                  activeCard
-                    ? 'border-emerald-300/80 bg-gradient-to-b from-emerald-50/70 via-white to-[var(--mp-card)] shadow-md shadow-emerald-900/10'
-                    : 'bg-gray-50 border-gray-200 opacity-90'
+                className={`rounded-2xl border overflow-hidden transition-shadow mp-surface ${
+                  activeCard ? '' : 'opacity-[0.92]'
                 }`}
               >
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-medium ${typeInfo.color}`}
-                    >
+                    <span className={typeChipClass}>
                       {typeInfo.icon} {typeInfo.label}
                     </span>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <span
-                        className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                        className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
                           sub.isEnabled
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-slate-200 text-slate-600'
+                            ? 'bg-[var(--mp-accent)]/12 text-[var(--mp-accent-hover)] border-[var(--mp-accent)]/30'
+                            : 'bg-[var(--mp-bg)] text-[var(--mp-muted)] border-[var(--mp-border)]'
                         }`}
                       >
                         {sub.isEnabled ? 'Activa' : 'Pausada'}
@@ -422,18 +401,18 @@ export default function AlertsPage() {
                   </p>
                 </div>
 
-                <div className="px-3 pb-4 pt-0 space-y-2">
+                <CardToolbar>
                   <button
                     type="button"
                     disabled={togglingId === sub.id}
                     onClick={() => toggleEnabled(sub)}
-                    className={`w-full py-3 px-4 rounded-xl font-bold text-sm border flex items-center justify-center gap-2 transition-colors ${
+                    className={`w-full py-2.5 px-4 rounded-[var(--mp-radius-chip)] font-semibold text-sm border flex items-center justify-center gap-2 transition-colors ${
                       sub.isEnabled
-                        ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm'
-                        : 'bg-white text-emerald-800 border-emerald-300 hover:bg-emerald-50'
+                        ? 'bg-[var(--mp-accent)] text-white border-[var(--mp-accent-hover)] hover:opacity-[0.96]'
+                        : 'bg-[var(--mp-card)] text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-[var(--mp-bg)]'
                     } disabled:opacity-60`}
                   >
-                    <span className="text-xl" aria-hidden>
+                    <span className="text-lg" aria-hidden>
                       {sub.isEnabled ? '⏸' : '▶'}
                     </span>
                     {togglingId === sub.id
@@ -445,76 +424,55 @@ export default function AlertsPage() {
 
                   {sub.savedSearchId ? (
                     <>
-                      <div className="grid grid-cols-3 gap-2">
-                        <IconAction
+                      <ToolbarRow className="w-full">
+                        <ToolbarBtn
                           icon="📋"
-                          label="Listado"
-                          className="bg-white text-emerald-900 border-emerald-200 hover:bg-emerald-50"
+                          label="Lista"
                           onClick={() => void verResultados(sub)}
                         />
-                        <IconAction
-                          icon="💫"
+                        <ToolbarBtn
+                          icon="🎯"
                           label="Deck"
-                          className="bg-violet-600 text-white border-violet-700 hover:bg-violet-700"
+                          variant="primary"
                           onClick={() => void irAlDeck(sub)}
                         />
-                        <IconLink
+                        <ToolbarLink
                           href={`/searches/${sub.savedSearchId}`}
                           icon="✏️"
                           label="Editar"
-                          className="bg-white text-emerald-900 border-emerald-200 hover:bg-emerald-50"
                         />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <IconLink
-                          href="/assistant"
-                          icon="🔍"
-                          label="Asistente"
-                          className="bg-sky-50 text-sky-900 border-sky-200 hover:bg-sky-100"
-                        />
-                        <IconLink
-                          href="/searches"
-                          icon="📂"
-                          label="Búsquedas"
-                          className="bg-slate-100 text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-200/80"
-                        />
-                      </div>
+                      </ToolbarRow>
+                      <ToolbarRow className="w-full">
+                        <ToolbarLink href="/assistant" icon="🔍" label="Asistente" />
+                        <ToolbarLink href="/searches" icon="📁" label="Búsquedas" />
+                      </ToolbarRow>
                     </>
                   ) : (
-                    <IconLink
-                      href="/searches"
-                      icon="📂"
-                      label="Ver búsquedas"
-                      className="w-full bg-slate-100 text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-200/80"
-                    />
+                    <ToolbarLink href="/searches" icon="📁" label="Ver búsquedas" />
                   )}
 
-                  <button
-                    type="button"
+                  <ToolbarBtn
+                    icon="🗑️"
+                    label="Eliminar"
+                    variant="danger"
+                    className="w-full justify-center"
                     onClick={() => {
                       if (!confirm('¿Eliminar esta alerta?')) return;
                       void deleteSub(sub.id);
                     }}
-                    className="w-full py-2.5 px-3 rounded-xl bg-red-50 text-red-700 border border-red-100 font-semibold text-sm hover:bg-red-100 flex items-center justify-center gap-2"
-                  >
-                    <span className="text-lg" aria-hidden>
-                      🗑️
-                    </span>
-                    Eliminar alerta
-                  </button>
-                </div>
+                  />
+                </CardToolbar>
               </div>
             );
           })}
         </div>
       )}
 
-      <div className="mt-8 p-4 rounded-2xl bg-emerald-50/80 border border-emerald-100">
-        <p className="text-sm text-emerald-900">
-          <strong className="text-emerald-800">💡 Tip:</strong> Podés tener alertas de distintos
-          tipos para la misma búsqueda: nuevas publicaciones, bajas de precio o propiedades que
-          vuelven al mercado. Usá <strong>Listado</strong> para revisar en tabla o{' '}
-          <strong>Deck</strong> para decidir con swipe.
+      <div className="mt-8 p-4 rounded-2xl border border-[var(--mp-border)] bg-[var(--mp-bg)]">
+        <p className="text-sm text-[var(--mp-foreground)]">
+          <strong>💡 Tip:</strong> Podés combinar varios tipos de alerta por búsqueda. En{' '}
+          <strong>Resultado de alertas</strong>, descartá a la izquierda o guardá a la derecha como
+          en el deck Match.
         </p>
       </div>
 

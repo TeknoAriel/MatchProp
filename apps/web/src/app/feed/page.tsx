@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState, useCallback, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import type { ListingCard } from '@matchprop/shared';
 import ActiveSearchBar from '../../components/ActiveSearchBar';
@@ -9,6 +9,7 @@ import FilterChips from '../../components/FilterChips';
 import InquiryModal from '../../components/InquiryModal';
 import PlanErrorBlock from '../../components/PlanErrorBlock';
 import SwipeCard from '../../components/SwipeCard';
+import { MpSecondaryNav, SECONDARY_NAV_HUB } from '../../components/MpSecondaryNav';
 import { useToast, getRandomMessage } from '../../components/FunToast';
 import { useCelebration } from '../../components/Celebration';
 
@@ -43,6 +44,7 @@ function FeedPageContent() {
   const [contactingId, setContactingId] = useState<string | null>(null);
   const inFlightRef = useRef<Set<string>>(new Set());
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const feedAllFromUrl = searchParams?.get('feed') === 'all';
 
@@ -407,27 +409,10 @@ function FeedPageContent() {
       <ActiveSearchBar />
       <div className="w-full flex-1 flex flex-col">
         {/* Header: título + nav compacta */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-col gap-2 mb-3">
           <h1 className="text-lg font-bold text-[var(--mp-foreground)]">{PRODUCT_NAME}</h1>
-          <nav className="flex items-center gap-3 text-xs text-[var(--mp-muted)]">
-            <Link href="/feed/list" className="hover:text-[var(--mp-foreground)] transition-colors">
-              Lista
-            </Link>
-            <Link href="/me/saved" className="hover:text-[var(--mp-foreground)] transition-colors">
-              Favoritos
-            </Link>
-            <Link href="/leads" className="hover:text-[var(--mp-foreground)] transition-colors">
-              Consultas
-            </Link>
-          </nav>
+          <MpSecondaryNav items={SECONDARY_NAV_HUB} pathname={pathname} />
         </div>
-
-        <Link
-          href="/assistant"
-          className="mb-3 text-sm text-[var(--mp-accent)] hover:text-[var(--mp-accent-hover)] font-medium"
-        >
-          🔍 Buscar
-        </Link>
 
         {toast && (
           <div className="mb-3 p-3 rounded-xl bg-[var(--mp-premium)]/20 text-slate-800 border border-[var(--mp-premium)]/40 text-sm">
@@ -469,43 +454,54 @@ function FeedPageContent() {
                 card={currentCard}
                 onClick={() => router.push(`/listing/${currentCard.id}`)}
                 showInvestorLink={false}
+                swipeActions={{
+                  onLeft: () => handleSwipe(currentCard.id, 'NOPE'),
+                  onRight: () => handleSwipe(currentCard.id, 'LIKE'),
+                  disabled: swipeDisabled,
+                }}
               />
             </div>
 
-            {/* Acciones mín 48px para accesibilidad (Regla 3 taps) */}
-            <div className="flex gap-3 mt-6 pb-4 items-stretch">
-              <button
-                onClick={() => handleSwipe(currentCard.id, 'NOPE')}
-                disabled={swipeDisabled}
-                className="flex-1 min-h-[48px] py-3 bg-red-100 text-red-700 rounded-full font-medium hover:bg-red-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Nope
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSaveToList(currentCard.id, 'FAVORITE')}
-                disabled={swipeDisabled}
-                className="w-14 h-14 min-h-[48px] flex items-center justify-center bg-yellow-100 text-yellow-800 rounded-full hover:bg-yellow-200 transition text-2xl disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-                title="Agregar a favoritos"
-              >
-                ★
-              </button>
-              <button
-                type="button"
-                onClick={handleAgregarALista}
-                disabled={swipeDisabled}
-                className="w-14 h-14 min-h-[48px] flex items-center justify-center bg-slate-100 text-slate-700 rounded-full hover:bg-slate-200 transition text-xl disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-                title="Agregar a lista"
-              >
-                + Lista
-              </button>
-              <button
-                onClick={() => handleSwipe(currentCard.id, 'LIKE')}
-                disabled={swipeDisabled}
-                className="flex-1 min-h-[48px] py-3 bg-green-100 text-green-700 rounded-full font-medium hover:bg-green-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Like
-              </button>
+            {/* Tinder: descartar izquierda · me interesa derecha; acciones secundarias al centro */}
+            <div className="flex flex-col gap-3 mt-6 pb-4">
+              <div className="flex gap-3 items-stretch">
+                <button
+                  type="button"
+                  onClick={() => handleSwipe(currentCard.id, 'NOPE')}
+                  disabled={swipeDisabled}
+                  className="flex-1 min-h-[52px] py-3 rounded-full font-semibold border-2 border-rose-300/90 bg-rose-50 text-rose-800 hover:bg-rose-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ← Descartar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSwipe(currentCard.id, 'LIKE')}
+                  disabled={swipeDisabled}
+                  className="flex-1 min-h-[52px] py-3 rounded-full font-semibold bg-[var(--mp-accent)] text-white border border-[var(--mp-accent-hover)] hover:opacity-[0.96] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Me interesa →
+                </button>
+              </div>
+              <div className="flex justify-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => handleSaveToList(currentCard.id, 'FAVORITE')}
+                  disabled={swipeDisabled}
+                  className="min-h-[44px] px-4 py-2 rounded-full text-sm font-semibold border border-[var(--mp-border)] bg-[var(--mp-card)] text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Agregar a favoritos"
+                >
+                  ★ Favorito
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAgregarALista}
+                  disabled={swipeDisabled}
+                  className="min-h-[44px] px-4 py-2 rounded-full text-sm font-semibold border border-[var(--mp-border)] bg-[var(--mp-card)] text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Agregar a lista"
+                >
+                  + Lista
+                </button>
+              </div>
             </div>
 
             <div className="flex justify-center gap-4 mb-4 flex-wrap">

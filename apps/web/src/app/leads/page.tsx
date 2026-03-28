@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import HacersePremiumButton from '../../components/HacersePremiumButton';
 import VisitScheduleModal from '../../components/VisitScheduleModal';
 import PremiumGraceBanner from '../../components/PremiumGraceBanner';
 import ListingImage from '../../components/ListingImage';
+import { MpSecondaryNav, SECONDARY_NAV_LEADS } from '../../components/MpSecondaryNav';
 
 const API_BASE = '/api';
 const GRACE_PERIOD = process.env.NEXT_PUBLIC_PREMIUM_GRACE_PERIOD === '1';
@@ -57,6 +58,7 @@ export default function LeadsPage() {
   const [filterSource, setFilterSource] = useState<'ALL' | 'ASSISTANT' | 'MANUAL'>('ALL');
   const [filterPublisher, setFilterPublisher] = useState('');
   const router = useRouter();
+  const pathname = usePathname();
 
   const isPremium = premiumUntil && new Date(premiumUntil) > new Date();
   const canActivate = isPremium || GRACE_PERIOD;
@@ -134,28 +136,9 @@ export default function LeadsPage() {
             </p>
           </div>
         )}
-        <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-          <h1 className="text-xl font-bold text-slate-900">Mis consultas</h1>
-          <div className="flex gap-2 flex-wrap">
-            <Link
-              href="/me/visits"
-              className="px-3 py-1.5 text-sm bg-emerald-100 text-emerald-800 rounded-lg hover:bg-emerald-200 font-medium"
-            >
-              Mis visitas
-            </Link>
-            <Link
-              href="/feed"
-              className="px-3 py-1.5 text-sm bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200"
-            >
-              Match
-            </Link>
-            <Link
-              href="/assistant"
-              className="px-3 py-1.5 text-sm bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200"
-            >
-              Búsqueda
-            </Link>
-          </div>
+        <div className="mb-4">
+          <h1 className="text-xl font-bold text-slate-900 mb-3">Mis consultas</h1>
+          <MpSecondaryNav items={SECONDARY_NAV_LEADS} pathname={pathname} />
         </div>
 
         {leads.some((l) => l.status === 'ACTIVE') && (
