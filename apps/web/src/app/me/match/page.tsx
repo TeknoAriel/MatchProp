@@ -221,6 +221,63 @@ export default function MyMatchPage() {
     }
   }
 
+  async function handleRemoveFromList(listingId: string) {
+    const st = listingsStatus[listingId];
+    const parts: string[] = ['¿Quitar esta propiedad de Mis match?'];
+    if (st?.inLike) parts.push('Se quitará de tus likes.');
+    if (st?.inFavorite) parts.push('Se quitará de favoritos.');
+    if (!st?.inLike && !st?.inFavorite) {
+      parts.push('Dejará de mostrarse en esta lista (marcada como no interesada).');
+    }
+    if (!confirm(parts.join(' '))) return;
+
+    try {
+      if (st?.inLike) {
+        const res = await fetch(`${API_BASE}/me/saved/${listingId}?listType=LATER`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+        if (res.status === 401) {
+          router.replace('/login');
+          return;
+        }
+        if (!res.ok) return;
+      }
+      if (st?.inFavorite) {
+        const res = await fetch(`${API_BASE}/me/saved/${listingId}?listType=FAVORITE`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+        if (res.status === 401) {
+          router.replace('/login');
+          return;
+        }
+        if (!res.ok) return;
+      }
+      if (!st?.inLike && !st?.inFavorite) {
+        const res = await fetch(`${API_BASE}/swipes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ listingId, decision: 'NOPE' }),
+        });
+        if (res.status === 401) {
+          router.replace('/login');
+          return;
+        }
+        if (!res.ok) return;
+      }
+      setItems((prev) => prev.filter((c) => c.id !== listingId));
+      setListingsStatus((prev) => {
+        const next = { ...prev };
+        delete next[listingId];
+        return next;
+      });
+    } catch {
+      /* ignore */
+    }
+  }
+
   async function handleToggleFavorite(listingId: string) {
     const inFav = listingsStatus[listingId]?.inFavorite ?? false;
     const url = inFav ? `${API_BASE}/me/saved/${listingId}?listType=FAVORITE` : `${API_BASE}/saved`;
@@ -287,8 +344,17 @@ export default function MyMatchPage() {
             {items.map((card) => (
               <div
                 key={card.id}
-                className="rounded-xl overflow-hidden bg-[var(--mp-card)] border border-[var(--mp-border)] shadow-sm"
+                className="rounded-xl overflow-hidden bg-[var(--mp-card)] border border-[var(--mp-border)] shadow-sm relative"
               >
+                <button
+                  type="button"
+                  onClick={() => void handleRemoveFromList(card.id)}
+                  className="absolute top-1.5 right-1.5 z-10 min-h-[44px] min-w-[44px] rounded-full bg-black/55 text-white text-xl font-light leading-none flex items-center justify-center hover:bg-black/70 shadow-md [-webkit-tap-highlight-color:transparent]"
+                  aria-label="Quitar del listado"
+                  title="Quitar del listado"
+                >
+                  ×
+                </button>
                 <Link href={`/listing/${card.id}`} className="block">
                   <div className="aspect-[16/10] bg-gray-100 relative overflow-hidden">
                     <ListingCardImageCarousel

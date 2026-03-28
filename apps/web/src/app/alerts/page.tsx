@@ -1,6 +1,6 @@
 'use client';
 
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -25,28 +25,27 @@ type Subscription = AlertSubscriptionForModal;
 
 type AlertDelivery = AlertDeliveryRow;
 
-/** Botón compacto icono + etiqueta (primera pantalla) */
-function IconAction({
+const toolbarBase =
+  'inline-flex items-center justify-center gap-1 min-h-[34px] px-2 py-1 rounded-lg text-[11px] font-semibold border leading-tight transition-colors disabled:opacity-50 shrink-0';
+
+/** Botonera compacta (misma para entregas y suscripciones) */
+function ToolbarBtn({
   icon,
   label,
   className,
   ...props
 }: { icon: string; label: string; className?: string } & ComponentProps<'button'>) {
   return (
-    <button
-      type="button"
-      className={`flex flex-col items-center justify-center gap-1 min-h-[72px] px-2 py-2 rounded-xl border font-semibold text-[11px] leading-tight text-center transition-colors disabled:opacity-50 ${className ?? ''}`}
-      {...props}
-    >
-      <span className="text-2xl leading-none" aria-hidden>
+    <button type="button" className={`${toolbarBase} ${className ?? ''}`} {...props}>
+      <span className="text-sm leading-none" aria-hidden>
         {icon}
       </span>
-      <span className="uppercase tracking-wide">{label}</span>
+      <span>{label}</span>
     </button>
   );
 }
 
-function IconLink({
+function ToolbarLink({
   icon,
   label,
   className,
@@ -58,15 +57,21 @@ function IconLink({
   href: string;
 }) {
   return (
-    <Link
-      href={href}
-      className={`flex flex-col items-center justify-center gap-1 min-h-[72px] px-2 py-2 rounded-xl border font-semibold text-[11px] leading-tight text-center transition-colors ${className ?? ''}`}
-    >
-      <span className="text-2xl leading-none" aria-hidden>
+    <Link href={href} className={`${toolbarBase} ${className ?? ''}`}>
+      <span className="text-sm leading-none" aria-hidden>
         {icon}
       </span>
-      <span className="uppercase tracking-wide">{label}</span>
+      <span>{label}</span>
     </Link>
+  );
+}
+
+/** Contenedor de acciones siempre visible al pie de la ficha */
+function AlertCardToolbar({ children }: { children: ReactNode }) {
+  return (
+    <div className="border-t border-[var(--mp-border)] bg-[var(--mp-bg)] px-2.5 py-2">
+      <div className="flex flex-wrap gap-1.5 items-stretch">{children}</div>
+    </div>
   );
 }
 
@@ -236,14 +241,14 @@ export default function AlertsPage() {
       </div>
 
       {deliveries.length > 0 && (
-        <div className="mb-8 p-4 rounded-2xl bg-gradient-to-b from-emerald-50/40 to-[var(--mp-card)] border border-emerald-200/70 shadow-sm">
+        <div className="mb-8">
           <h2 className="text-lg font-semibold text-[var(--mp-foreground)] mb-1">
             Resultado de alertas
           </h2>
           <p className="text-sm text-[var(--mp-muted)] mb-4">
-            Propiedades que dispararon tus alertas — acciones rápidas en cada ficha
+            Propiedades que dispararon tus alertas — mismas acciones que en tus búsquedas guardadas
           </p>
-          <ul className="space-y-4 mb-4">
+          <ul className="space-y-3 mb-4">
             {deliveries.map((d) => {
               const typeInfo = TYPE_LABELS[d.type] ?? {
                 label: d.type,
@@ -253,9 +258,9 @@ export default function AlertsPage() {
               return (
                 <li
                   key={d.id}
-                  className="rounded-2xl border border-emerald-200/60 bg-[var(--mp-card)] overflow-hidden shadow-sm"
+                  className="rounded-2xl border border-[var(--mp-border)] bg-[var(--mp-card)] overflow-hidden shadow-sm"
                 >
-                  <div className="p-4 pb-3">
+                  <div className="p-4">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <span
                         className={`px-2.5 py-1 rounded-full text-xs font-medium ${typeInfo.color}`}
@@ -271,9 +276,9 @@ export default function AlertsPage() {
                         </span>
                         <button
                           type="button"
-                          aria-label="Acciones del aviso"
+                          aria-label="Más acciones"
                           onClick={() => setDeliveryModal(d)}
-                          className="ml-1 w-9 h-9 rounded-xl border border-[var(--mp-border)] bg-[var(--mp-bg)] text-[var(--mp-foreground)] text-lg leading-none hover:bg-emerald-50 hover:border-emerald-300"
+                          className="ml-0.5 min-h-[34px] min-w-[34px] rounded-lg border border-[var(--mp-border)] bg-[var(--mp-bg)] text-[var(--mp-foreground)] text-lg leading-none flex items-center justify-center hover:bg-slate-50"
                         >
                           ⋯
                         </button>
@@ -293,49 +298,45 @@ export default function AlertsPage() {
                         : 'Consultar'}
                     </p>
                   </div>
-                  <div className="px-3 pb-3 pt-0 space-y-2">
-                    <div className="grid grid-cols-3 gap-2">
-                      <IconLink
-                        href={`/listing/${d.listingId}`}
-                        icon="📄"
-                        label="Ficha"
-                        className="bg-sky-500 text-white border-sky-600 hover:bg-sky-600"
-                      />
-                      <IconLink
-                        href="/me/match"
-                        icon="💚"
-                        label="Match"
-                        className="bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700"
-                      />
-                      <IconLink
-                        href="/feed"
-                        icon="💫"
-                        label="Deck"
-                        className="bg-violet-600 text-white border-violet-700 hover:bg-violet-700"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <IconAction
-                        icon="🔗"
-                        label="Copiar link"
-                        className="bg-white text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-50"
-                        onClick={() => void copyListingLink(d.listingId)}
-                      />
-                      <IconLink
-                        href="/searches"
-                        icon="🔔"
-                        label="Búsquedas"
-                        className="bg-slate-100 text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-200/80"
-                      />
-                    </div>
-                  </div>
+                  <AlertCardToolbar>
+                    <ToolbarLink
+                      href={`/listing/${d.listingId}`}
+                      icon="📄"
+                      label="Ficha"
+                      className="bg-sky-500 text-white border-sky-600 hover:bg-sky-600"
+                    />
+                    <ToolbarLink
+                      href="/me/match"
+                      icon="💚"
+                      label="Match"
+                      className="bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700"
+                    />
+                    <ToolbarLink
+                      href="/feed"
+                      icon="💫"
+                      label="Deck"
+                      className="bg-violet-600 text-white border-violet-700 hover:bg-violet-700"
+                    />
+                    <ToolbarBtn
+                      icon="🔗"
+                      label="Copiar"
+                      className="bg-white text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-50"
+                      onClick={() => void copyListingLink(d.listingId)}
+                    />
+                    <ToolbarLink
+                      href="/searches"
+                      icon="🔔"
+                      label="Búsquedas"
+                      className="bg-slate-100 text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-200/80"
+                    />
+                  </AlertCardToolbar>
                 </li>
               );
             })}
           </ul>
           <Link
             href="/me/match"
-            className="text-sm font-semibold text-emerald-700 hover:text-emerald-800 inline-flex items-center gap-1"
+            className="text-sm font-semibold text-sky-700 hover:text-sky-800 inline-flex items-center gap-1"
           >
             Ver todo en Mis match →
           </Link>
@@ -359,7 +360,7 @@ export default function AlertsPage() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {items.map((sub) => {
             const typeInfo = TYPE_LABELS[sub.type] ?? {
               label: sub.type,
@@ -367,16 +368,10 @@ export default function AlertsPage() {
               color: 'bg-gray-100 text-gray-800',
             };
 
-            const activeCard = sub.isEnabled;
-
             return (
               <div
                 key={sub.id}
-                className={`rounded-2xl border overflow-hidden transition-shadow ${
-                  activeCard
-                    ? 'border-emerald-300/80 bg-gradient-to-b from-emerald-50/70 via-white to-[var(--mp-card)] shadow-md shadow-emerald-900/10'
-                    : 'bg-gray-50 border-gray-200 opacity-90'
-                }`}
+                className="rounded-2xl border border-[var(--mp-border)] bg-[var(--mp-card)] overflow-hidden shadow-sm"
               >
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
@@ -397,9 +392,9 @@ export default function AlertsPage() {
                       </span>
                       <button
                         type="button"
-                        aria-label="Acciones de alerta"
+                        aria-label="Más acciones"
                         onClick={() => setSubModal(sub)}
-                        className="w-9 h-9 rounded-xl border border-emerald-200/80 bg-white/90 text-[var(--mp-foreground)] text-lg leading-none hover:bg-emerald-50 shadow-sm"
+                        className="min-h-[34px] min-w-[34px] rounded-lg border border-[var(--mp-border)] bg-[var(--mp-bg)] text-[var(--mp-foreground)] text-lg leading-none flex items-center justify-center hover:bg-slate-50"
                       >
                         ⋯
                       </button>
@@ -417,92 +412,80 @@ export default function AlertsPage() {
 
                   <p className="text-xs text-[var(--mp-muted)] mt-2">
                     {sub.lastRunAt && (
-                      <>Última corrida: {new Date(sub.lastRunAt).toLocaleDateString('es-AR')}</>
+                      <>Última: {new Date(sub.lastRunAt).toLocaleDateString('es-AR')}</>
                     )}
                   </p>
                 </div>
 
-                <div className="px-3 pb-4 pt-0 space-y-2">
-                  <button
-                    type="button"
+                <AlertCardToolbar>
+                  <ToolbarBtn
+                    icon={sub.isEnabled ? '⏸' : '▶'}
+                    label={
+                      togglingId === sub.id
+                        ? '…'
+                        : sub.isEnabled
+                          ? 'Pausar'
+                          : 'Activar'
+                    }
                     disabled={togglingId === sub.id}
                     onClick={() => toggleEnabled(sub)}
-                    className={`w-full py-3 px-4 rounded-xl font-bold text-sm border flex items-center justify-center gap-2 transition-colors ${
+                    className={
                       sub.isEnabled
-                        ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm'
+                        ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700'
                         : 'bg-white text-emerald-800 border-emerald-300 hover:bg-emerald-50'
-                    } disabled:opacity-60`}
-                  >
-                    <span className="text-xl" aria-hidden>
-                      {sub.isEnabled ? '⏸' : '▶'}
-                    </span>
-                    {togglingId === sub.id
-                      ? 'Guardando…'
-                      : sub.isEnabled
-                        ? 'Pausar alerta'
-                        : 'Activar alerta'}
-                  </button>
-
+                    }
+                  />
                   {sub.savedSearchId ? (
                     <>
-                      <div className="grid grid-cols-3 gap-2">
-                        <IconAction
-                          icon="📋"
-                          label="Listado"
-                          className="bg-white text-emerald-900 border-emerald-200 hover:bg-emerald-50"
-                          onClick={() => void verResultados(sub)}
-                        />
-                        <IconAction
-                          icon="💫"
-                          label="Deck"
-                          className="bg-violet-600 text-white border-violet-700 hover:bg-violet-700"
-                          onClick={() => void irAlDeck(sub)}
-                        />
-                        <IconLink
-                          href={`/searches/${sub.savedSearchId}`}
-                          icon="✏️"
-                          label="Editar"
-                          className="bg-white text-emerald-900 border-emerald-200 hover:bg-emerald-50"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <IconLink
-                          href="/assistant"
-                          icon="🔍"
-                          label="Asistente"
-                          className="bg-sky-50 text-sky-900 border-sky-200 hover:bg-sky-100"
-                        />
-                        <IconLink
-                          href="/searches"
-                          icon="📂"
-                          label="Búsquedas"
-                          className="bg-slate-100 text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-200/80"
-                        />
-                      </div>
+                      <ToolbarBtn
+                        icon="📋"
+                        label="Listado"
+                        className="bg-white text-emerald-900 border-emerald-200 hover:bg-emerald-50"
+                        onClick={() => void verResultados(sub)}
+                      />
+                      <ToolbarBtn
+                        icon="💫"
+                        label="Deck"
+                        className="bg-violet-600 text-white border-violet-700 hover:bg-violet-700"
+                        onClick={() => void irAlDeck(sub)}
+                      />
+                      <ToolbarLink
+                        href={`/searches/${sub.savedSearchId}`}
+                        icon="✏️"
+                        label="Editar"
+                        className="bg-white text-emerald-900 border-emerald-200 hover:bg-emerald-50"
+                      />
+                      <ToolbarLink
+                        href="/assistant"
+                        icon="🔍"
+                        label="Asistente"
+                        className="bg-sky-50 text-sky-900 border-sky-200 hover:bg-sky-100"
+                      />
+                      <ToolbarLink
+                        href="/searches"
+                        icon="📂"
+                        label="Búsquedas"
+                        className="bg-slate-100 text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-200/80"
+                      />
                     </>
                   ) : (
-                    <IconLink
+                    <ToolbarLink
                       href="/searches"
                       icon="📂"
-                      label="Ver búsquedas"
-                      className="w-full bg-slate-100 text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-200/80"
+                      label="Búsquedas"
+                      className="bg-slate-100 text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-200/80"
                     />
                   )}
-
-                  <button
-                    type="button"
+                  <ToolbarBtn
+                    icon="🗑"
+                    label="Eliminar"
+                    className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
                     onClick={() => {
                       if (!confirm('¿Eliminar esta alerta?')) return;
                       void deleteSub(sub.id);
                     }}
-                    className="w-full py-2.5 px-3 rounded-xl bg-red-50 text-red-700 border border-red-100 font-semibold text-sm hover:bg-red-100 flex items-center justify-center gap-2"
-                  >
-                    <span className="text-lg" aria-hidden>
-                      🗑️
-                    </span>
-                    Eliminar alerta
-                  </button>
-                </div>
+                  />
+                </AlertCardToolbar>
               </div>
             );
           })}
