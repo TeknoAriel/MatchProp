@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { SavedSearchDTO } from '@matchprop/shared';
 import ActiveSearchBar from '../../components/ActiveSearchBar';
+import { ToolbarBtn, ToolbarLink, CardToolbar } from '../../components/MpCardToolbar';
 import { filtersToHumanSummary } from '../../lib/filters-summary';
 
 const API_BASE = '/api';
@@ -293,96 +294,96 @@ export default function SearchesPage() {
 
         <h1 className="text-xl font-bold mb-4">Búsquedas guardadas</h1>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {items.map((s) => (
-            <div key={s.id} className="p-4 mp-surface">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-medium text-[var(--mp-foreground)]">
-                    {s.name || 'Búsqueda sin nombre'}
-                  </h2>
-                  <p className="text-sm text-[var(--mp-muted)] mt-0.5 break-words">
-                    {s.queryText || filtersToHumanSummary(s.filters) || 'Sin criterios'}
-                  </p>
-                  <p className="text-xs text-[var(--mp-muted)] mt-1" suppressHydrationWarning>
-                    {typeof s.updatedAt === 'string'
-                      ? new Date(s.updatedAt).toLocaleDateString('es-AR', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                        })
-                      : ''}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleMatch(s.id)}
-                    className="mp-btn-primary-sm"
-                    title="Buscar en modo Match"
-                  >
-                    Match
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleEditOpen(s)}
-                    className="mp-btn-ghost"
-                    title="Editar"
-                  >
-                    ✏️
-                  </button>
-                  {activeSearchId === s.id ? (
-                    <span className="mp-pill-success">Activa</span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleSetActive(s.id)}
-                      className="mp-pill-muted"
-                    >
-                      Activar
-                    </button>
-                  )}
-                  {deleteConfirmId === s.id ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(s.id)}
-                        className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
-                      >
-                        Confirmar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeleteConfirmId(null)}
-                        className="px-2 py-1 text-xs text-slate-600 hover:underline"
-                      >
-                        Cancelar
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setDeleteConfirmId(s.id)}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                      title="Eliminar"
-                    >
-                      🗑️
-                    </button>
-                  )}
-                </div>
+            <div key={s.id} className="mp-surface overflow-hidden">
+              <div className="p-4 pb-3">
+                <h2 className="font-medium text-[var(--mp-foreground)]">
+                  {s.name || 'Búsqueda sin nombre'}
+                </h2>
+                <p className="text-sm text-[var(--mp-muted)] mt-0.5 break-words">
+                  {s.queryText || filtersToHumanSummary(s.filters) || 'Sin criterios'}
+                </p>
+                <p className="text-xs text-[var(--mp-muted)] mt-1" suppressHydrationWarning>
+                  {typeof s.updatedAt === 'string'
+                    ? new Date(s.updatedAt).toLocaleDateString('es-AR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                      })
+                    : ''}
+                </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
-                className="mt-2 mp-link hover:underline"
-              >
-                {expandedId === s.id ? 'Ocultar' : 'Ver'} alertas y resultados
-              </button>
+              <CardToolbar>
+                <ToolbarBtn
+                  icon="🎯"
+                  label="Match"
+                  title="Buscar en modo Match"
+                  className="bg-[var(--mp-accent)] text-white !border-[var(--mp-accent-hover)] hover:bg-[var(--mp-accent-hover)]"
+                  onClick={() => void handleMatch(s.id)}
+                />
+                <ToolbarLink
+                  href={`/searches/${s.id}`}
+                  icon="📋"
+                  label="Listado"
+                  className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
+                />
+                <ToolbarBtn
+                  icon="✏️"
+                  label="Editar"
+                  className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
+                  onClick={() => handleEditOpen(s)}
+                />
+                {activeSearchId === s.id ? (
+                  <span className="inline-flex items-center px-2 py-1 mp-pill-success">Activa</span>
+                ) : (
+                  <ToolbarBtn
+                    icon="▶"
+                    label="Activar"
+                    className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
+                    onClick={() => void handleSetActive(s.id)}
+                  />
+                )}
+                <ToolbarBtn
+                  icon={expandedId === s.id ? '▲' : '▼'}
+                  label="Alertas"
+                  className="bg-[color-mix(in_srgb,var(--mp-muted)_8%,var(--mp-card))] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[color-mix(in_srgb,var(--mp-muted)_14%,var(--mp-card))]"
+                  onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
+                />
+                <ToolbarLink
+                  href="/alerts"
+                  icon="🔔"
+                  label="Avisos"
+                  className="bg-[color-mix(in_srgb,var(--mp-muted)_10%,var(--mp-card))] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[color-mix(in_srgb,var(--mp-muted)_16%,var(--mp-card))]"
+                />
+                {deleteConfirmId === s.id ? (
+                  <>
+                    <ToolbarBtn
+                      icon="✓"
+                      label="Sí"
+                      className="bg-red-600 text-white !border-red-700 hover:bg-red-700"
+                      onClick={() => void handleDelete(s.id)}
+                    />
+                    <ToolbarBtn
+                      icon="✕"
+                      label="No"
+                      className="bg-[var(--mp-card)] text-[var(--mp-muted)] !border-[var(--mp-border)]"
+                      onClick={() => setDeleteConfirmId(null)}
+                    />
+                  </>
+                ) : (
+                  <ToolbarBtn
+                    icon="🗑"
+                    label="Borrar"
+                    className="bg-red-50 text-red-700 !border-red-200 hover:bg-red-100"
+                    onClick={() => setDeleteConfirmId(s.id)}
+                  />
+                )}
+              </CardToolbar>
 
               {expandedId === s.id && (
-                <div className="mt-3 space-y-3 pt-3 border-t border-[var(--mp-border)]">
+                <div className="px-4 pb-4 space-y-3 pt-2 border-t border-[var(--mp-border)] bg-[color-mix(in_srgb,var(--mp-bg)_40%,var(--mp-card))]">
                   <div>
                     <p className="text-sm font-medium text-[var(--mp-foreground)] mb-2">
                       Activar alertas

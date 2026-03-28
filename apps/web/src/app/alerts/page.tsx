@@ -1,6 +1,5 @@
 'use client';
 
-import type { ComponentProps, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -8,6 +7,7 @@ import AlertSubscriptionModal from '../../components/AlertSubscriptionModal';
 import type { AlertSubscriptionForModal } from '../../components/AlertSubscriptionModal';
 import AlertDeliveryModal from '../../components/AlertDeliveryModal';
 import type { AlertDeliveryRow } from '../../components/AlertDeliveryModal';
+import { ToolbarBtn, ToolbarLink, CardToolbar } from '../../components/MpCardToolbar';
 
 const API_BASE = '/api';
 
@@ -24,56 +24,6 @@ const TYPE_LABELS: Record<string, { label: string; icon: string; color: string }
 type Subscription = AlertSubscriptionForModal;
 
 type AlertDelivery = AlertDeliveryRow;
-
-const toolbarBase =
-  'inline-flex items-center justify-center gap-1 min-h-[34px] px-2 py-1 rounded-[var(--mp-radius-chip)] text-[11px] font-semibold border border-[var(--mp-border)] leading-tight transition-colors disabled:opacity-50 shrink-0';
-
-/** Botonera compacta (misma para entregas y suscripciones) */
-function ToolbarBtn({
-  icon,
-  label,
-  className,
-  ...props
-}: { icon: string; label: string; className?: string } & ComponentProps<'button'>) {
-  return (
-    <button type="button" className={`${toolbarBase} ${className ?? ''}`} {...props}>
-      <span className="text-sm leading-none" aria-hidden>
-        {icon}
-      </span>
-      <span>{label}</span>
-    </button>
-  );
-}
-
-function ToolbarLink({
-  icon,
-  label,
-  className,
-  href,
-}: {
-  icon: string;
-  label: string;
-  className?: string;
-  href: string;
-}) {
-  return (
-    <Link href={href} className={`${toolbarBase} ${className ?? ''}`}>
-      <span className="text-sm leading-none" aria-hidden>
-        {icon}
-      </span>
-      <span>{label}</span>
-    </Link>
-  );
-}
-
-/** Contenedor de acciones siempre visible al pie de la ficha */
-function AlertCardToolbar({ children }: { children: ReactNode }) {
-  return (
-    <div className="mp-toolbar px-2.5 py-2">
-      <div className="flex flex-wrap gap-1.5 items-stretch">{children}</div>
-    </div>
-  );
-}
 
 export default function AlertsPage() {
   const router = useRouter();
@@ -285,7 +235,7 @@ export default function AlertsPage() {
                         : 'Consultar'}
                     </p>
                   </div>
-                  <AlertCardToolbar>
+                  <CardToolbar>
                     <ToolbarLink
                       href={`/listing/${d.listingId}`}
                       icon="📄"
@@ -316,7 +266,7 @@ export default function AlertsPage() {
                       label="Búsquedas"
                       className="bg-[color-mix(in_srgb,var(--mp-muted)_10%,var(--mp-card))] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[color-mix(in_srgb,var(--mp-muted)_16%,var(--mp-card))]"
                     />
-                  </AlertCardToolbar>
+                  </CardToolbar>
                 </li>
               );
             })}
@@ -392,7 +342,7 @@ export default function AlertsPage() {
                   </p>
                 </div>
 
-                <AlertCardToolbar>
+                <CardToolbar>
                   <ToolbarBtn
                     icon={sub.isEnabled ? '⏸' : '▶'}
                     label={togglingId === sub.id ? '…' : sub.isEnabled ? 'Pausar' : 'Activar'}
@@ -454,7 +404,7 @@ export default function AlertsPage() {
                       void deleteSub(sub.id);
                     }}
                   />
-                </AlertCardToolbar>
+                </CardToolbar>
               </div>
             );
           })}
