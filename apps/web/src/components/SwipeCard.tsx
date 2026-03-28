@@ -183,7 +183,7 @@ export default function SwipeCard({
           )}
           {swipeEnabled && (
             <p className="text-xs text-[var(--mp-muted)] mt-2">
-              Deslizá izquierda para descartar · derecha para guardar en tus match
+              Deslizá: izq. descartar · der. me interesa
             </p>
           )}
         </div>

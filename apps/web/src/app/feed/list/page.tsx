@@ -583,7 +583,7 @@ function FeedListPageContent() {
         {hasActiveSearch === false && (
           <div className="mb-3 p-3 rounded-xl border border-[var(--mp-border)] bg-[var(--mp-card)] text-sm text-[var(--mp-muted)]">
             Definí qué buscás para ver solo lo que te interesa.{' '}
-            <Link href="/assistant" className="text-[var(--mp-accent)] font-medium hover:underline">
+            <Link href="/dashboard" className="text-[var(--mp-accent)] font-medium hover:underline">
               Buscar
             </Link>
           </div>
@@ -639,7 +639,7 @@ function FeedListPageContent() {
                     : 'En local: ejecutá start (dev-up) para cargar datos.'}
                 </p>
                 <Link
-                  href="/assistant"
+                  href="/dashboard"
                   className="inline-block mt-4 px-4 py-2 rounded-xl text-sm font-medium bg-[var(--mp-accent)] text-white"
                 >
                   Ir a Buscar
@@ -686,7 +686,7 @@ function FeedListPageContent() {
                     : 'En local: ejecutá demo:data o ingest:run para cargar datos.'}
                 </p>
                 <Link
-                  href="/assistant"
+                  href="/dashboard"
                   className="inline-block mt-4 px-4 py-2 rounded-xl text-sm font-medium bg-[var(--mp-accent)] text-white"
                 >
                   Buscar

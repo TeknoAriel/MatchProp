@@ -1,6 +1,7 @@
 # MATCHPROP – MASTERPLAN v3.0 (Frozen)
 
-**Source of truth para alineación producto ↔ implementación**
+**Source of truth histórico (epics E1–E8).**  
+**Referencia actual de visión, navegación y UX simplificada:** [`matchprop-masterplan-v3.2.md`](./matchprop-masterplan-v3.2.md).
 
 ---
 

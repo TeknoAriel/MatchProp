@@ -390,9 +390,12 @@ export default function DashboardPage() {
     <main className="py-2">
       {/* Header con saludo personalizado */}
       <div className="mb-6">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--mp-accent)] mb-1">
+          Buscador asistido
+        </p>
         <WelcomeMessage name={userName} />
         <p className="text-[var(--mp-muted)] text-sm mt-1">
-          Describí lo que buscás y te mostramos los matches ✨
+          Una búsqueda clara → descubrimiento en Match → revisás en Mis match.
         </p>
       </div>
 
@@ -449,7 +452,27 @@ export default function DashboardPage() {
           </p>
         )}
 
-        {/* Sugerencias removidas en la home (dashboard) */}
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+          <span className="text-[var(--mp-muted)]">Seguí en:</span>
+          <Link href="/feed" className="font-semibold text-[var(--mp-accent)] hover:underline">
+            Match
+          </Link>
+          <Link href="/feed/list" className="font-semibold text-[var(--mp-accent)] hover:underline">
+            Lista
+          </Link>
+          <Link href="/me/match" className="font-semibold text-[var(--mp-accent)] hover:underline">
+            Mis match
+          </Link>
+        </div>
+        <p className="mt-3 text-xs text-[var(--mp-muted)]">
+          ¿Filtros finos o vista previa?{' '}
+          <Link
+            href="/assistant"
+            className="text-[var(--mp-foreground)] font-medium hover:underline"
+          >
+            Asistente avanzado
+          </Link>
+        </p>
       </div>
 
       {/* Mis búsquedas — búsqueda activa (o la primera) + Ver más con misma UX que /searches */}
@@ -473,36 +496,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-
-      {/* Mis match — botón alargado: likes → favoritos → resultados búsquedas */}
-      <Link
-        href="/me/match"
-        className="block w-full p-4 mb-6 rounded-[var(--mp-radius-card)] bg-gradient-to-r from-[var(--mp-accent)] to-[var(--mp-accent-hover)] text-white shadow-mp-md hover:shadow-mp-md transition-shadow md:hidden"
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-base font-semibold opacity-95">Mis match</p>
-            <p className="text-xs opacity-80 mt-0.5">
-              Likes 👍 → Favoritos ★ → Resultados de búsquedas guardadas
-            </p>
-          </div>
-          <span className="text-4xl">🔥</span>
-        </div>
-      </Link>
-
-      {/* Mis alertas — destacado */}
-      <Link
-        href="/alerts"
-        className="block w-full p-4 mb-6 rounded-[var(--mp-radius-card)] bg-gradient-to-r from-[var(--mp-premium)] to-[var(--mp-premium-hover)] text-slate-900 shadow-mp-md hover:shadow-mp-md transition-shadow md:hidden"
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-base font-semibold opacity-95">Mis alertas</p>
-            <p className="text-xs opacity-80 mt-0.5">Resultado de todas las alertas activas</p>
-          </div>
-          <span className="text-4xl">🔔</span>
-        </div>
-      </Link>
 
       {/* Detalle de alertas activas */}
       {alerts.length > 0 && (

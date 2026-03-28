@@ -423,7 +423,7 @@ function FeedPageContent() {
         {hasActiveSearch === false && (
           <div className="mb-3 p-3 rounded-xl border border-[var(--mp-border)] bg-[var(--mp-card)] text-sm text-[var(--mp-muted)]">
             Definí qué buscás para ver solo lo que te interesa.{' '}
-            <Link href="/assistant" className="text-[var(--mp-accent)] font-medium hover:underline">
+            <Link href="/dashboard" className="text-[var(--mp-accent)] font-medium hover:underline">
               Buscar
             </Link>
           </div>
@@ -504,18 +504,11 @@ function FeedPageContent() {
               </div>
             </div>
 
-            <div className="flex justify-center gap-4 mb-4 flex-wrap">
-              {lastSwiped && (
-                <button
-                  onClick={handleUndo}
-                  className="text-sm text-gray-600 hover:text-gray-800 underline"
-                >
-                  Deshacer último
-                </button>
-              )}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3 mb-4">
               <button
+                type="button"
                 onClick={() => setInquiryListingId(currentCard.id)}
-                className={`px-4 py-3 text-sm rounded-xl font-medium min-h-[48px] flex items-center ${
+                className={`w-full sm:w-auto px-5 py-3 text-sm rounded-xl font-semibold min-h-[48px] flex items-center justify-center ${
                   leadSentIds.has(currentCard.id)
                     ? 'bg-emerald-600 text-white hover:bg-emerald-700'
                     : 'btn-accent'
@@ -523,12 +516,20 @@ function FeedPageContent() {
               >
                 {leadSentIds.has(currentCard.id) ? 'Reenviar consulta' : 'Quiero que me contacten'}
               </button>
-              <Link
-                href="/me/saved"
-                className="px-4 py-2 bg-slate-100 text-slate-700 text-sm rounded-lg hover:bg-slate-200 font-medium"
-              >
-                Listas favoritas
-              </Link>
+              <div className="flex justify-center gap-4 text-sm text-[var(--mp-muted)]">
+                {lastSwiped && (
+                  <button
+                    type="button"
+                    onClick={handleUndo}
+                    className="hover:text-[var(--mp-foreground)] underline"
+                  >
+                    Deshacer
+                  </button>
+                )}
+                <Link href="/me/match" className="hover:text-[var(--mp-accent)] font-medium">
+                  Ver mis match
+                </Link>
+              </div>
             </div>
 
             {inquiryListingId && (
