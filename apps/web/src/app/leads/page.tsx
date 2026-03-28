@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import HacersePremiumButton from '../../components/HacersePremiumButton';
 import VisitScheduleModal from '../../components/VisitScheduleModal';
 import PremiumGraceBanner from '../../components/PremiumGraceBanner';
 import ListingImage from '../../components/ListingImage';
-import { ToolbarBtn, ToolbarLink, CardToolbar, ToolbarRow } from '../../components/MpCardToolbar';
+import { CardToolbar, ToolbarBtn, ToolbarLink } from '../../components/MpCardToolbar';
+import { MpSecondaryNav, SECONDARY_NAV_LEADS } from '../../components/MpSecondaryNav';
 
 const API_BASE = '/api';
 const GRACE_PERIOD = process.env.NEXT_PUBLIC_PREMIUM_GRACE_PERIOD === '1';
@@ -58,6 +59,7 @@ export default function LeadsPage() {
   const [filterSource, setFilterSource] = useState<'ALL' | 'ASSISTANT' | 'MANUAL'>('ALL');
   const [filterPublisher, setFilterPublisher] = useState('');
   const router = useRouter();
+  const pathname = usePathname();
 
   const isPremium = premiumUntil && new Date(premiumUntil) > new Date();
   const canActivate = isPremium || GRACE_PERIOD;
@@ -135,28 +137,9 @@ export default function LeadsPage() {
             </p>
           </div>
         )}
-        <div className="flex justify-between items-start gap-3 mb-4 flex-wrap">
-          <h1 className="text-xl font-bold text-slate-900">Mis consultas</h1>
-          <ToolbarRow className="justify-end max-w-full">
-            <ToolbarLink
-              href="/me/visits"
-              icon="📅"
-              label="Visitas"
-              className="bg-emerald-100 text-emerald-800 !border-emerald-200 hover:bg-emerald-200"
-            />
-            <ToolbarLink
-              href="/feed"
-              icon="🎯"
-              label="Match"
-              className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
-            />
-            <ToolbarLink
-              href="/assistant"
-              icon="🔍"
-              label="Búsqueda"
-              className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
-            />
-          </ToolbarRow>
+        <div className="mb-4">
+          <h1 className="text-xl font-bold text-slate-900 mb-3">Mis consultas</h1>
+          <MpSecondaryNav items={SECONDARY_NAV_LEADS} pathname={pathname} />
         </div>
 
         {leads.some((l) => l.status === 'ACTIVE') && (
@@ -438,9 +421,7 @@ export default function LeadsPage() {
                                     {canActivate ? (
                                       <ToolbarBtn
                                         icon="▶"
-                                        label={
-                                          activatingId === lead.id ? '…' : 'Activar'
-                                        }
+                                        label={activatingId === lead.id ? '…' : 'Activar'}
                                         disabled={!!activatingId}
                                         className="bg-amber-600 text-white !border-amber-700 hover:bg-amber-700"
                                         onClick={(e) => {

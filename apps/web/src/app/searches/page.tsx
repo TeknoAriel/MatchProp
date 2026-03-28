@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import type { SavedSearchDTO } from '@matchprop/shared';
 import ActiveSearchBar from '../../components/ActiveSearchBar';
 import { ToolbarBtn, ToolbarLink, CardToolbar } from '../../components/MpCardToolbar';
 import { filtersToHumanSummary } from '../../lib/filters-summary';
+import { MpSecondaryNav, SECONDARY_NAV_HUB } from '../../components/MpSecondaryNav';
 
 const API_BASE = '/api';
 
@@ -30,6 +31,7 @@ const ALERT_LABELS: Record<AlertType, string> = {
 
 export default function SearchesPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const [items, setItems] = useState<SavedSearchDTO[]>([]);
   const [activeSearchId, setActiveSearchId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -280,17 +282,7 @@ export default function SearchesPage() {
     <main className="min-h-screen p-4">
       <ActiveSearchBar />
       <div className="max-w-2xl mx-auto">
-        <div className="flex gap-4 mb-6">
-          <Link href="/feed" className="text-sm mp-link hover:underline">
-            ← Feed
-          </Link>
-          <Link href="/assistant" className="text-sm mp-link hover:underline">
-            Asistente
-          </Link>
-          <Link href="/alerts" className="text-sm mp-link hover:underline">
-            Alertas
-          </Link>
-        </div>
+        <MpSecondaryNav items={SECONDARY_NAV_HUB} pathname={pathname} />
 
         <h1 className="text-xl font-bold mb-4">Búsquedas guardadas</h1>
 

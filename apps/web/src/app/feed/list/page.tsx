@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { FixedSizeList as List } from 'react-window';
 import type { ListingCard } from '@matchprop/shared';
@@ -13,6 +13,7 @@ import PlanErrorBlock from '../../../components/PlanErrorBlock';
 import BetaPremiumBanner from '../../../components/BetaPremiumBanner';
 import ShareModal from '../../../components/ShareModal';
 import ListingCardImageCarousel from '../../../components/ListingCardImageCarousel';
+import { MpSecondaryNav, SECONDARY_NAV_HUB } from '../../../components/MpSecondaryNav';
 
 const API_BASE = '/api';
 const PRODUCT_NAME = process.env.NEXT_PUBLIC_PRODUCT_NAME || 'MatchProp';
@@ -99,6 +100,7 @@ function FeedListPageContent() {
     >
   >({});
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const feedAllFromUrl = searchParams?.get('feed') === 'all';
   const isDemoMode = false;
@@ -550,20 +552,12 @@ function FeedListPageContent() {
       <ActiveSearchBar />
       <div className="w-full">
         {/* Header: título + nav compacta */}
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="text-lg font-bold text-[var(--mp-foreground)]">
-            {PRODUCT_NAME} <span className="text-sm font-normal text-[var(--mp-muted)]">Lista</span>
-          </h1>
-          <nav className="flex items-center gap-3 text-xs text-[var(--mp-muted)]">
-            <Link href="/feed" className="hover:text-[var(--mp-foreground)] transition-colors">
-              Match
-            </Link>
-            <Link href="/me/saved" className="hover:text-[var(--mp-foreground)] transition-colors">
-              Favoritos
-            </Link>
-            <Link href="/leads" className="hover:text-[var(--mp-foreground)] transition-colors">
-              Consultas
-            </Link>
+        <div className="flex flex-col gap-2 mb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h1 className="text-lg font-bold text-[var(--mp-foreground)]">
+              {PRODUCT_NAME}{' '}
+              <span className="text-sm font-normal text-[var(--mp-muted)]">Lista</span>
+            </h1>
             {items.length > 0 && (
               <button
                 type="button"
@@ -575,20 +569,14 @@ function FeedListPageContent() {
                   }
                   setShareListOpen(true);
                 }}
-                className="hover:text-[var(--mp-foreground)] transition-colors"
+                className="text-xs font-semibold px-2.5 py-1 rounded-[var(--mp-radius-chip)] border border-[var(--mp-border)] bg-[var(--mp-card)] text-[var(--mp-foreground)] hover:border-[var(--mp-accent)]/35"
               >
-                Compartir
+                Compartir lista
               </button>
             )}
-          </nav>
+          </div>
+          <MpSecondaryNav items={SECONDARY_NAV_HUB} pathname={pathname} />
         </div>
-
-        <Link
-          href="/assistant"
-          className="mb-3 text-sm text-[var(--mp-accent)] hover:text-[var(--mp-accent-hover)] font-medium"
-        >
-          🔍 Buscar
-        </Link>
 
         <BetaPremiumBanner className="mb-3" />
 
