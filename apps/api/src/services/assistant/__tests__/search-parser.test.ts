@@ -80,6 +80,14 @@ describe('parseSearchText', () => {
     expect(r.filters.bedroomsMin).toBe(2);
     expect(r.filters.priceMax).toBe(150000);
     expect(r.filters.currency).toBe('USD');
+    expect(r.filters.sortBy).toBe('date_desc');
+  });
+
+  it('ubicación no absorbe el precio (Funes hasta X)', () => {
+    const r = parseSearchText('casa en Funes hasta 150mil USD');
+    expect(r.filters.locationText).toBe('Funes');
+    expect(r.filters.priceMax).toBe(150000);
+    expect(r.filters.sortBy).toBe('date_desc');
   });
 
   it('100 mil pesos', () => {

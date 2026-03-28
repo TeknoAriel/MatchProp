@@ -4,6 +4,7 @@ import { encodeListingCursor, decodeListingCursor } from '../lib/cursor.js';
 import { getCachedTotal, setCachedTotal } from '../lib/feed-total-cache.js';
 import { extractFromRawJson } from '../lib/rawjson-fallback.js';
 import { amenityFiltersToAndList } from '../lib/amenity-filter.js';
+import { locationTextToPrismaClause } from '../lib/location-filter.js';
 
 const FEED_LIMIT_DEFAULT = 20;
 const FEED_LIMIT_MAX = 50;
@@ -402,7 +403,10 @@ function filtersToWhere(f: FeedFilters): Record<string, unknown> {
     where.areaTotal = af;
   }
   if (f.areaCoveredMin != null) where.areaCovered = { gte: f.areaCoveredMin };
-  if (f.locationText) where.locationText = { contains: f.locationText, mode: 'insensitive' };
+  if (f.locationText) {
+    const loc = locationTextToPrismaClause(f.locationText);
+    if (loc) where.AND = [...((where.AND as Record<string, unknown>[]) ?? []), loc];
+  }
   if (f.addressText) where.addressText = { contains: f.addressText, mode: 'insensitive' };
   if (f.titleContains) where.title = { contains: f.titleContains, mode: 'insensitive' };
   if (f.descriptionContains)
@@ -438,6 +442,39 @@ function filtersToWhere(f: FeedFilters): Record<string, unknown> {
     where.lng = lngCond;
   }
   return where;
+}
+
+/** Relaja filtros por pasos acumulativos antes de caer al catálogo completo (similares graduales). */
+function relaxFeedFiltersAccum(base: FeedFilters, step: number): FeedFilters {
+  const f: FeedFilters = { ...base };
+  if (step >= 1) {
+    f.bedrooms = undefined;
+    f.bedroomsMax = undefined;
+    f.bathrooms = undefined;
+    f.bathroomsMax = undefined;
+    f.areaMin = undefined;
+    f.areaMax = undefined;
+    f.areaCoveredMin = undefined;
+    f.amenities = undefined;
+  }
+  if (step >= 2) {
+    f.priceMin = undefined;
+    f.priceMax = undefined;
+    f.currency = undefined;
+  }
+  if (step >= 3) {
+    f.propertyTypes = undefined;
+  }
+  if (step >= 4) {
+    f.locationText = undefined;
+    f.addressText = undefined;
+    f.titleContains = undefined;
+    f.descriptionContains = undefined;
+  }
+  if (step >= 5) {
+    f.operationType = undefined;
+  }
+  return f;
 }
 
 export async function feedRoutes(fastify: FastifyInstance) {
@@ -643,23 +680,11 @@ export async function feedRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const baseWhere: Record<string, unknown> = {
-        status: 'ACTIVE',
-        swipeDecisions: { none: { userId: user.userId } },
-        ...filtersToWhere(filters),
-      };
-
-      const findWhere = { ...baseWhere } as Record<string, unknown>;
-      if (cursorData) {
-        findWhere.OR = [
-          { lastSeenAt: { lt: cursorData.lastSeenAt } },
-          { lastSeenAt: cursorData.lastSeenAt, id: { lt: cursorData.id } },
-        ];
-      }
-
-      const includeTotal = parseIntParam(q.includeTotal) === 1;
-      const hasCursor = !!cursorData;
       const sortBy = filters.sortBy ?? 'date_desc';
+      const isDateSort = sortBy === 'date_desc';
+      const legacyLastSeenCursor =
+        !!cursorData && isDateSort && !cursorData.createdAt && !!cursorData.lastSeenAt;
+
       const orderBy =
         sortBy === 'price_asc'
           ? [{ price: 'asc' as const }, { lastSeenAt: 'desc' as const }, { id: 'desc' as const }]
@@ -671,7 +696,66 @@ export async function feedRoutes(fastify: FastifyInstance) {
                   { lastSeenAt: 'desc' as const },
                   { id: 'desc' as const },
                 ]
-              : [{ lastSeenAt: 'desc' as const }, { id: 'desc' as const }];
+              : legacyLastSeenCursor
+                ? [{ lastSeenAt: 'desc' as const }, { id: 'desc' as const }]
+                : [{ createdAt: 'desc' as const }, { id: 'desc' as const }];
+
+      const listingSelect = {
+        id: true,
+        title: true,
+        price: true,
+        currency: true,
+        bedrooms: true,
+        bathrooms: true,
+        areaTotal: true,
+        locationText: true,
+        heroImageUrl: true,
+        rawJson: true,
+        publisherRef: true,
+        source: true,
+        operationType: true,
+        createdAt: true,
+        lastSeenAt: true,
+        media: {
+          orderBy: { sortOrder: 'asc' as const },
+          take: 6,
+          select: { url: true, sortOrder: true },
+        },
+      } as const;
+
+      function buildFindWhere(base: Record<string, unknown>): Record<string, unknown> {
+        const fw = { ...base } as Record<string, unknown>;
+        if (cursorData) {
+          if (isDateSort && cursorData.createdAt) {
+            fw.OR = [
+              { createdAt: { lt: cursorData.createdAt } },
+              { createdAt: cursorData.createdAt, id: { lt: cursorData.id } },
+            ];
+          } else if (isDateSort && cursorData.lastSeenAt) {
+            fw.OR = [
+              { lastSeenAt: { lt: cursorData.lastSeenAt } },
+              { lastSeenAt: cursorData.lastSeenAt, id: { lt: cursorData.id } },
+            ];
+          } else if (cursorData.lastSeenAt) {
+            fw.OR = [
+              { lastSeenAt: { lt: cursorData.lastSeenAt } },
+              { lastSeenAt: cursorData.lastSeenAt, id: { lt: cursorData.id } },
+            ];
+          }
+        }
+        return fw;
+      }
+
+      const includeTotal = parseIntParam(q.includeTotal) === 1;
+      const hasCursor = !!cursorData;
+
+      let activeFilters = filters;
+      let baseWhere: Record<string, unknown> = {
+        status: 'ACTIVE',
+        swipeDecisions: { none: { userId: user.userId } },
+        ...filtersToWhere(activeFilters),
+      };
+      let findWhere = buildFindWhere(baseWhere);
 
       let total: number | null = null;
       if (hasCursor) {
@@ -684,45 +768,14 @@ export async function feedRoutes(fastify: FastifyInstance) {
         total = getCachedTotal(user.userId, filters as Record<string, unknown>) ?? null;
       }
 
-      const itemsRaw = await prisma.listing.findMany({
+      let itemsRaw = await prisma.listing.findMany({
         where: findWhere,
         take: limit + 1,
         orderBy,
-        select: {
-          id: true,
-          title: true,
-          price: true,
-          currency: true,
-          bedrooms: true,
-          bathrooms: true,
-          areaTotal: true,
-          locationText: true,
-          heroImageUrl: true,
-          rawJson: true,
-          publisherRef: true,
-          source: true,
-          operationType: true,
-          lastSeenAt: true,
-          media: {
-            orderBy: { sortOrder: 'asc' },
-            take: 6,
-            select: { url: true, sortOrder: true },
-          },
-        },
+        select: listingSelect,
       });
 
-      const hasMore = itemsRaw.length > limit;
-      const items = (hasMore ? itemsRaw.slice(0, limit) : itemsRaw)
-        .map((l) => feedItemWithRawJsonFallback(l))
-        .filter((i) => i.id != null && i.id !== '');
-      const last = items[items.length - 1];
-      const lastRaw = hasMore ? itemsRaw[limit - 1] : itemsRaw[itemsRaw.length - 1];
-      const nextCursor =
-        hasMore && lastRaw
-          ? encodeListingCursor({ lastSeenAt: lastRaw.lastSeenAt, id: last!.id })
-          : null;
-
-      const fallbackUsed = false;
+      let fallbackUsed = false;
       const hasRestrictiveFilters =
         filters.operationType != null ||
         (filters.propertyTypes?.length ?? 0) > 0 ||
@@ -733,37 +786,69 @@ export async function feedRoutes(fastify: FastifyInstance) {
         filters.areaMin != null ||
         (filters.locationText != null && filters.locationText !== '');
 
+      if (itemsRaw.length === 0 && !hasCursor && !feedAll && hasRestrictiveFilters) {
+        for (let step = 1; step <= 5; step++) {
+          const rf = relaxFeedFiltersAccum(filters, step);
+          const bw: Record<string, unknown> = {
+            status: 'ACTIVE',
+            swipeDecisions: { none: { userId: user.userId } },
+            ...filtersToWhere(rf),
+          };
+          const fw = buildFindWhere(bw);
+          const tryRaw = await prisma.listing.findMany({
+            where: fw,
+            take: limit + 1,
+            orderBy,
+            select: listingSelect,
+          });
+          if (tryRaw.length > 0) {
+            itemsRaw = tryRaw;
+            activeFilters = rf;
+            baseWhere = bw;
+            findWhere = fw;
+            fallbackUsed = true;
+            if (includeTotal) {
+              total = await prisma.listing.count({ where: bw });
+              setCachedTotal(user.userId, rf as Record<string, unknown>, total);
+            }
+            break;
+          }
+        }
+      }
+
+      const hasMore = itemsRaw.length > limit;
+      const items = (hasMore ? itemsRaw.slice(0, limit) : itemsRaw)
+        .map((l) => feedItemWithRawJsonFallback(l))
+        .filter((i) => i.id != null && i.id !== '');
+      const last = items[items.length - 1];
+      const lastRaw = hasMore ? itemsRaw[limit - 1] : itemsRaw[itemsRaw.length - 1];
+      const nextCursor =
+        hasMore && lastRaw && last
+          ? isDateSort && !legacyLastSeenCursor
+            ? encodeListingCursor({
+                createdAt: lastRaw.createdAt,
+                lastSeenAt: lastRaw.lastSeenAt,
+                id: last.id,
+              })
+            : encodeListingCursor({ lastSeenAt: lastRaw.lastSeenAt, id: last.id })
+          : null;
+
       if (items.length === 0 && !hasCursor && !feedAll && hasRestrictiveFilters) {
         const fallbackWhere = {
           status: 'ACTIVE' as const,
           swipeDecisions: { none: { userId: user.userId } },
         };
+        const catalogOrderBy = [{ createdAt: 'desc' as const }, { id: 'desc' as const }];
         const fallbackRaw = await prisma.listing.findMany({
           where: fallbackWhere,
           take: limit + 1,
-          orderBy: [{ lastSeenAt: 'desc' }, { id: 'desc' }],
-          select: {
-            id: true,
-            title: true,
-            price: true,
-            currency: true,
-            bedrooms: true,
-            bathrooms: true,
-            areaTotal: true,
-            locationText: true,
-            heroImageUrl: true,
-            rawJson: true,
-            publisherRef: true,
-            source: true,
-            operationType: true,
-            lastSeenAt: true,
-            media: {
-              orderBy: { sortOrder: 'asc' },
-              take: 6,
-              select: { url: true, sortOrder: true },
-            },
-          },
+          orderBy: catalogOrderBy,
+          select: listingSelect,
         });
+        let fbTotal: number | null = null;
+        if (includeTotal) {
+          fbTotal = await prisma.listing.count({ where: fallbackWhere });
+        }
         const fbHasMore = fallbackRaw.length > limit;
         const fbItems = (fbHasMore ? fallbackRaw.slice(0, limit) : fallbackRaw)
           .map((l) => feedItemWithRawJsonFallback(l))
@@ -772,11 +857,15 @@ export async function feedRoutes(fastify: FastifyInstance) {
         const fbLastRaw = fbHasMore ? fallbackRaw[limit - 1] : fallbackRaw[fallbackRaw.length - 1];
         const fbNextCursor =
           fbHasMore && fbLastRaw && fbLast
-            ? encodeListingCursor({ lastSeenAt: fbLastRaw.lastSeenAt, id: fbLast.id })
+            ? encodeListingCursor({
+                createdAt: fbLastRaw.createdAt,
+                lastSeenAt: fbLastRaw.lastSeenAt,
+                id: fbLast.id,
+              })
             : null;
         return {
           items: fbItems,
-          total: null,
+          total: fbTotal,
           limit,
           nextCursor: fbNextCursor,
           fallbackUsed: true,
@@ -934,7 +1023,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
       const itemsRaw = await prisma.listing.findMany({
         where: baseWhere,
         take: limit,
-        orderBy: [{ lastSeenAt: 'desc' }, { id: 'desc' }],
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         select: {
           id: true,
           lat: true,

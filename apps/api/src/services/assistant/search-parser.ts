@@ -207,17 +207,28 @@ function parseListingAgeDays(text: string): number | undefined {
   return undefined;
 }
 
+/** Corta barrios/localidades antes de precio u otros números (evita “en Funes hasta 150mil”). */
+function cleanLocationFragment(raw: string): string {
+  let s = raw.replace(/\s+/g, ' ').trim();
+  s = s.replace(
+    /\s+(hasta|desde|m[aá]ximo|m[aá]x\.?|presupuesto|menos\s+de|por\s+)\s*[\d.,].*$/i,
+    ''
+  );
+  s = s.replace(/\s+\d[\d.,]*\s*(k|mil|usd|u\$s|ars|pesos|d[oó]lares)\b.*$/i, '');
+  return trunc(s);
+}
+
 function parseLocation(text: string): string {
   const patterns = [
     /en\s+([A-Za-záéíóúÁÉÍÓÚñÑ\s]+?)(?:\s+(?:casa|depto|departamento|terreno|local|oficina)|,|\.|$)/i,
-    /en\s+([A-Za-záéíóúÁÉÍÓÚñÑ\s]+?)(?:\s|,|\.|$)/i,
+    /en\s+([A-Za-záéíóúÁÉÍÓÚñÑ\s]+?)(?=\s*[,.]|$|\s+\d|\s+hasta|\s+desde|\s+m[aá]x)/i,
     /(zona\s+[A-Za-záéíóúÁÉÍÓÚñÑ\s]+?)(?:\s|,|\.|$)/i,
     /(?:en\s+)?(Palermo|Nordelta|Microcentro|Rosario|CABA|Belgrano|Caballito|Villa\s+Crespo|Funes|Fisherton|Roldán|Córdoba|Mendoza|Pilar|Tigre|San\s+Isidro|Vicente\s+López)/i,
   ];
   for (const p of patterns) {
     const m = text.match(p);
     if (m?.[1]) {
-      const loc = trunc(m[1]);
+      const loc = cleanLocationFragment(m[1]);
       const stopWords = [
         'casa',
         'depto',
@@ -462,6 +473,11 @@ export function parseSearchText(text: string): {
   if (sortBy) filters.sortBy = sortBy;
   if (photosCountMin != null) filters.photosCountMin = photosCountMin;
   if (listingAgeDays != null) filters.listingAgeDays = listingAgeDays;
+
+  /** Listados: por defecto siempre más recientes primero salvo que el texto pida otro orden. */
+  if (hasRecognizedFilters(filters) && filters.sortBy == null) {
+    filters.sortBy = 'date_desc';
+  }
 
   const parts: string[] = [];
   if (operation) parts.push(operation === 'SALE' ? 'venta' : 'alquiler');
