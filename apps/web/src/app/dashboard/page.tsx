@@ -9,7 +9,11 @@ import { useToast } from '../../components/FunToast';
 
 const API_BASE = '/api';
 
-const EXAMPLE_QUERIES = ['PH 2 amb en Palermo', 'Casa en venta Funes', 'Depto alquiler Rosario centro'];
+const EXAMPLE_QUERIES = [
+  'PH 2 amb en Palermo',
+  'Casa en venta Funes',
+  'Depto alquiler Rosario centro',
+];
 
 export default function DashboardPage() {
   const router = useRouter();

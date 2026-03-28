@@ -81,7 +81,7 @@ export async function savedRoutes(fastify: FastifyInstance) {
           200: {
             type: 'object',
             properties: {
-                items: {
+              items: {
                 type: 'array',
                 items: {
                   type: 'object',

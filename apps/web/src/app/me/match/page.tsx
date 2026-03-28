@@ -112,9 +112,7 @@ export default function MyMatchPage() {
       return { id, card, base: v };
     });
 
-    const directCards = parsed
-      .filter((p) => p.card)
-      .map((p) => p.card as ListingCard);
+    const directCards = parsed.filter((p) => p.card).map((p) => p.card as ListingCard);
     const missingIds = parsed.filter((p) => !p.card).map((p) => p.id);
 
     const batchPayloads =
@@ -303,8 +301,8 @@ export default function MyMatchPage() {
             <span className="text-4xl block mb-4">🔥</span>
             <p className="text-[var(--mp-foreground)] font-medium">Todavía no hay nada acá</p>
             <p className="text-sm text-[var(--mp-muted)] mt-2 max-w-xs mx-auto leading-relaxed">
-              En Match usá “Me interesa” o “Guardar” y vas a ver todo acá, ordenado por lo último que
-              tocaste.
+              En Match usá “Me interesa” o “Guardar” y vas a ver todo acá, ordenado por lo último
+              que tocaste.
             </p>
             <Link
               href="/dashboard"
@@ -316,7 +314,10 @@ export default function MyMatchPage() {
         ) : (
           <ul className="space-y-5 list-none p-0 m-0">
             {items.map((card) => (
-              <li key={card.id} className="mp-surface overflow-hidden relative rounded-[var(--mp-radius-card)]">
+              <li
+                key={card.id}
+                className="mp-surface overflow-hidden relative rounded-[var(--mp-radius-card)]"
+              >
                 <button
                   type="button"
                   onClick={() => void handleRemoveFromList(card.id)}
