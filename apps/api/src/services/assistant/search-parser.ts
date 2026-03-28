@@ -1,4 +1,5 @@
 import type { SearchFilters } from '@matchprop/shared';
+import { canonicalizeAmenityToken } from '../../lib/amenity-filter.js';
 
 const LOCATION_MAX = 200;
 const TITLE_MAX = 100;
@@ -265,34 +266,56 @@ function parsePropertyType(text: string): string[] | undefined {
     : undefined;
 }
 
-/** Mapeo: término en texto → clave de amenity para filtros (busca en title/description). */
+/** Mapeo: término en texto → clave canónica (sinónimos vía canonicalizeAmenityToken + amenity-filter). */
 const AMENITY_PATTERNS: { pattern: RegExp; key: string }[] = [
   { pattern: /\b(pileta|pilta|piscina|piletas|piscinas)\b/i, key: 'pileta' },
-  { pattern: /\b(cochera|cocheras|garage|garages|estacionamiento)\b/i, key: 'cochera' },
+  {
+    pattern:
+      /\b(cochera|cocheras|garage|garages|estacionamiento|estacionamientos|playa\s+de\s+estacionamiento)\b/i,
+    key: 'cochera',
+  },
   { pattern: /\b(jard[ií]n|jardines|patio|patios)\b/i, key: 'jardín' },
-  { pattern: /\b(parrilla|parrillas|asador|asadores)\b/i, key: 'parrilla' },
+  {
+    pattern: /\b(parrilla|parrillas|asador|asadores|churrasquera|churrasqueras|bbq|barbacoa)\b/i,
+    key: 'parrilla',
+  },
   { pattern: /\b(quincho|quinchos)\b/i, key: 'quincho' },
-  { pattern: /\b(gimnasio|gimnasios)\b/i, key: 'gimnasio' },
+  { pattern: /\b(gimnasio|gimnasios|gym)\b/i, key: 'gimnasio' },
   { pattern: /\b(amueblad[oa]|amoblad[oa]|muebles)\b/i, key: 'amoblado' },
-  { pattern: /\b(aire\s*acondicionado|aa|ac)\b/i, key: 'aire acondicionado' },
-  { pattern: /\b(calefacci[oó]n|calefaccion)\b/i, key: 'calefacción' },
+  {
+    pattern:
+      /\b(aire\s*acondicionad[oa]s?|climatizad[oa]s?|fr[ií]o\s+calor|ac\s+split|\bsplits?\b)\b/i,
+    key: 'aire acondicionado',
+  },
+  { pattern: /\b(calefacci[oó]n|calefaccion|caldera|radiadores)\b/i, key: 'calefacción' },
   { pattern: /\b(chimenea|chimeneas)\b/i, key: 'chimenea' },
-  { pattern: /\b(seguridad|porter[ií]a|porteria|vigilancia)\b/i, key: 'seguridad' },
-  { pattern: /\b(ascensor|ascensores)\b/i, key: 'ascensor' },
-  { pattern: /\b(terraza|terrazas|balc[oó]n|balcon)\b/i, key: 'terraza' },
+  {
+    pattern: /\b(seguridad|porter[ií]a|porteria|encargado|vigilancia\s+privada)\b/i,
+    key: 'seguridad',
+  },
+  { pattern: /\b(ascensor|ascensores|elevador|elevadores)\b/i, key: 'ascensor' },
+  { pattern: /\b(terraza|terrazas|roof\s+garden|rooftop)\b/i, key: 'terraza' },
+  { pattern: /\b(balc[oó]n|balcon|balcones)\b/i, key: 'balcón' },
   { pattern: /\b(lavadero|lavaderos)\b/i, key: 'lavadero' },
-  { pattern: /\b(sum|sum)\b/i, key: 'SUM' },
+  {
+    pattern: /\b(SUM|sal[oó]n\s+de\s+usos\s+m[uú]ltiples|usos\s+m[uú]ltiples)\b/i,
+    key: 'SUM',
+  },
   { pattern: /\b(alarma|alarmas)\b/i, key: 'alarma' },
-  { pattern: /\b(baulera|bauleras|dep[oó]sito|deposito)\b/i, key: 'baulera' },
-  { pattern: /\b(solar|paneles\s*solares|energ[ií]a\s*solar)\b/i, key: 'energía solar' },
-  { pattern: /\b(mascotas?|pet\s*friendly)\b/i, key: 'mascotas' },
-  { pattern: /\b(churrasquera|churrasqueras)\b/i, key: 'parrilla' },
+  { pattern: /\b(baulera|bauleras|dep[oó]sito|deposito|bodega)\b/i, key: 'baulera' },
+  { pattern: /\b(paneles?\s+solares?|energ[ií]a\s+solar)\b/i, key: 'energía solar' },
+  { pattern: /\b(mascotas?|pet\s*friendly|acepta\s+mascotas)\b/i, key: 'mascotas' },
+  { pattern: /\b(hidromasaje|hidromasajes|jacuzzi|yacuzzi)\b/i, key: 'hidromasaje' },
+  { pattern: /\b(sauna|saunas)\b/i, key: 'sauna' },
+  { pattern: /\b(vigilancia|c[aá]maras?|circuito\s+cerrado)\b/i, key: 'vigilancia' },
+  { pattern: /\b(internet\s*wifi|wi-?fi|inal[aá]mbrico)\b/i, key: 'internet wifi' },
+  { pattern: /\b(solarium|sol[aá]rium)\b/i, key: 'solarium' },
 ];
 
 function parseAmenities(text: string): string[] {
   const found = new Set<string>();
   for (const { pattern, key } of AMENITY_PATTERNS) {
-    if (pattern.test(text)) found.add(key);
+    if (pattern.test(text)) found.add(canonicalizeAmenityToken(key));
   }
   return Array.from(found);
 }

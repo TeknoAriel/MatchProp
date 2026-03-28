@@ -5,6 +5,7 @@ import { prisma } from './prisma.js';
 import { encodeListingCursor, decodeListingCursor } from './cursor.js';
 import { getCachedTotal, setCachedTotal } from './feed-total-cache.js';
 import { extractFromRawJson } from './rawjson-fallback.js';
+import { amenityFiltersToAndList } from './amenity-filter.js';
 import type { SearchFilters } from '@matchprop/shared';
 
 /** Entrada alineada con filtros del GET /feed (filtersToWhere). */
@@ -95,18 +96,7 @@ export function filtersToWhere(f: FeedFiltersInput): Record<string, unknown> {
     ];
   }
   if (f.amenities?.length) {
-    const andList: Record<string, unknown>[] = [];
-    for (const amenity of f.amenities) {
-      const amenityNorm = String(amenity).trim();
-      if (!amenityNorm) continue;
-      andList.push({
-        OR: [
-          { description: { contains: amenityNorm, mode: 'insensitive' } },
-          { title: { contains: amenityNorm, mode: 'insensitive' } },
-          { details: { path: ['amenities'], array_contains: [amenityNorm] } },
-        ],
-      });
-    }
+    const andList = amenityFiltersToAndList(f.amenities);
     if (andList.length)
       where.AND = [...((where.AND as Record<string, unknown>[]) ?? []), ...andList];
   }
@@ -295,6 +285,7 @@ export async function executeFeed(params: {
       title: true,
       price: true,
       currency: true,
+      propertyType: true,
       bedrooms: true,
       bathrooms: true,
       areaTotal: true,
@@ -328,6 +319,7 @@ export async function executeFeed(params: {
       title,
       price: l.price ? Math.round(l.price) : null,
       currency: l.currency,
+      propertyType: l.propertyType,
       bedrooms: l.bedrooms,
       bathrooms: l.bathrooms,
       areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,

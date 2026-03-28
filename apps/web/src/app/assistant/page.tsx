@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { AssistantSearchResponse, ListingCard, SearchFilters } from '@matchprop/shared';
 import { ASSISTANT_BUILD } from '../../lib/build-id';
-import { filtersToHumanSummary } from '../../lib/filters-summary';
+import { filtersToHumanSummary, searchFiltersToChips } from '../../lib/filters-summary';
 import ActiveSearchBar from '../../components/ActiveSearchBar';
 import FilterChips from '../../components/FilterChips';
 import AssistantChatInput from '../../components/AssistantChatInput';
@@ -33,7 +33,7 @@ function mapFiltersToPreferenceBody(f: SearchFilters): Record<string, unknown> {
 const showDebug =
   process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_SHOW_DEBUG === '1';
 
-type FallbackMode = 'STRICT' | 'RELAX' | 'FEED';
+type FallbackMode = 'STRICT' | 'RELAX' | 'BROAD' | 'FEED';
 
 function normalizeCard(raw: unknown): ListingCard | null {
   if (!raw || typeof raw !== 'object') return null;
@@ -53,6 +53,7 @@ function normalizeCard(raw: unknown): ListingCard | null {
     publisherRef: typeof c.publisherRef === 'string' ? c.publisherRef : null,
     source: typeof c.source === 'string' ? c.source : 'API_PARTNER_1',
     operationType: typeof c.operationType === 'string' ? c.operationType : null,
+    propertyType: typeof c.propertyType === 'string' ? c.propertyType : null,
   };
 }
 
@@ -90,6 +91,7 @@ export default function AssistantPage() {
     >
   >({});
   const [contactingId, setContactingId] = useState<string | null>(null);
+  const [toast2, setToast2] = useState<string | null>(null);
   const router = useRouter();
   const {
     isSupported: voiceSupported,
@@ -162,7 +164,7 @@ export default function AssistantPage() {
     let finalMode = mode;
     if (items.length === 0) {
       const modes: FallbackMode[] =
-        mode === 'STRICT' ? ['RELAX', 'FEED'] : mode === 'RELAX' ? ['FEED'] : [];
+        mode === 'STRICT' ? ['RELAX', 'BROAD'] : mode === 'RELAX' ? ['BROAD'] : [];
       for (const nextMode of modes) {
         const fb = await fetch(`${API_BASE}/assistant/preview`, {
           method: 'POST',
@@ -236,31 +238,10 @@ export default function AssistantPage() {
       const filters = data.filters ?? {};
       try {
         if (Object.keys(filters).length > 0) {
-          // Buscar en paralelo: exactos (STRICT) y catálogo (FEED) para mostrar siempre algo
-          const [strictResult, feedResult] = await Promise.all([
-            fetchPreview(filters, null, 'STRICT'),
-            fetchPreview(filters, null, 'FEED'),
-          ]);
-          if (strictResult.items.length > 0) {
-            setPreviewItems(strictResult.items);
-            setPreviewNextCursor(strictResult.nextCursor);
-            setFallbackMode(strictResult.finalMode);
-          } else if (feedResult.items.length > 0) {
-            const relaxResult = await fetchPreview(filters, null, 'RELAX');
-            if (relaxResult.items.length > 0) {
-              setPreviewItems(relaxResult.items);
-              setPreviewNextCursor(relaxResult.nextCursor);
-              setFallbackMode(relaxResult.finalMode);
-            } else {
-              setPreviewItems(feedResult.items);
-              setPreviewNextCursor(feedResult.nextCursor);
-              setFallbackMode('FEED');
-            }
-          } else {
-            setPreviewItems(feedResult.items);
-            setPreviewNextCursor(feedResult.nextCursor);
-            setFallbackMode('FEED');
-          }
+          const preview = await fetchPreview(filters, null, 'STRICT');
+          setPreviewItems(preview.items);
+          setPreviewNextCursor(preview.nextCursor);
+          setFallbackMode(preview.finalMode);
           setPreviewLoaded(true);
           const pref = mapFiltersToPreferenceBody(filters);
           if (Object.keys(pref).length > 0) {
@@ -444,6 +425,7 @@ export default function AssistantPage() {
     (!result.filters || Object.keys(result.filters).length === 0);
 
   const humanSummary = filtersToHumanSummary(result?.filters);
+  const activeFilterChips = result ? searchFiltersToChips(result.filters) : [];
 
   useEffect(() => {
     const ids = previewItems.filter((c) => c.id).map((c) => c.id);
@@ -465,8 +447,6 @@ export default function AssistantPage() {
       )
       .catch(() => setListingsStatus({}));
   }, [previewItems]);
-
-  const [toast2, setToast2] = useState<string | null>(null);
 
   async function handleContactar(listingId: string) {
     if (contactingId) return;
@@ -610,6 +590,29 @@ export default function AssistantPage() {
             }}
             maxLength={500}
           />
+          {result && (
+            <div className="mt-3 pt-3 border-t border-[var(--mp-border)]/60">
+              <p className="text-xs font-medium text-[var(--mp-muted)] mb-2">
+                Filtros que activa esta búsqueda
+              </p>
+              {activeFilterChips.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {activeFilterChips.map((chip) => (
+                    <span
+                      key={chip.id}
+                      className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--mp-accent)]/12 text-[var(--mp-foreground)] border border-[var(--mp-accent)]/25"
+                    >
+                      {chip.label}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-[var(--mp-muted)]">
+                  Sin filtros estructurados todavía; probá sumar zona, tipo o precio en el texto.
+                </p>
+              )}
+            </div>
+          )}
           <p className="text-xs text-[var(--mp-muted)] mt-2">
             Podés refinar escribiendo de nuevo: &quot;con cochera&quot;, &quot;más barato&quot;,
             &quot;solo venta&quot;.
@@ -803,12 +806,19 @@ export default function AssistantPage() {
           <div className="mt-6">
             {fallbackMode === 'RELAX' && previewItems.length > 0 && (
               <p className="text-sm text-amber-700 mb-3">
-                No hubo resultados exactos. Mostrando propiedades similares.
+                No hubo resultados con todos los criterios. Mostramos propiedades similares (misma
+                zona y tipo; criterios numéricos más flexibles).
+              </p>
+            )}
+            {fallbackMode === 'BROAD' && previewItems.length > 0 && (
+              <p className="text-sm text-amber-700 mb-3">
+                Ampliamos la búsqueda: mismo tipo de inmueble y zona, sin otros filtros (precio,
+                ambientes, amenities).
               </p>
             )}
             {fallbackMode === 'FEED' && previewItems.length > 0 && (
               <p className="text-sm text-amber-700 mb-3">
-                Mostrando catálogo completo (sin filtros).
+                Catálogo general (sin aplicar los filtros de tu búsqueda).
               </p>
             )}
 

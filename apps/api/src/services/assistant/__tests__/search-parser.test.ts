@@ -250,4 +250,31 @@ describe('parseSearchText', () => {
     const r = parseSearchText('depto en venta publicado en Zonaprop');
     expect(r.filters.source).toBe('KITEPROP_DIFUSION_ZONAPROP');
   });
+
+  describe('amenidades (asistente)', () => {
+    it('detecta pileta, quincho y chimenea', () => {
+      const r = parseSearchText('casa con pileta, quincho y chimenea en Pilar');
+      expect(r.filters.amenities).toEqual(
+        expect.arrayContaining(['pileta', 'quincho', 'chimenea'])
+      );
+      expect(r.warnings).toEqual([]);
+    });
+
+    it('estacionamiento → cochera canónica', () => {
+      const r = parseSearchText('departamento con estacionamiento en Belgrano');
+      expect(r.filters.amenities).toContain('cochera');
+    });
+
+    it('separa terraza y balcón', () => {
+      const r = parseSearchText('semipiso con terraza y balcón');
+      expect(r.filters.amenities).toEqual(expect.arrayContaining(['terraza', 'balcón']));
+    });
+
+    it('SUM por nombre o sigla', () => {
+      const a = parseSearchText('edificio con SUM en Nuñez');
+      const b = parseSearchText('salón de usos múltiples');
+      expect(a.filters.amenities).toContain('SUM');
+      expect(b.filters.amenities).toContain('SUM');
+    });
+  });
 });
