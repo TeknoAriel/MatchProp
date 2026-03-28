@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState, useCallback } from 'react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { FixedSizeList as List } from 'react-window';
 import type { ListingCard } from '@matchprop/shared';
@@ -10,10 +10,8 @@ import { SkeletonList } from '../../../components/SkeletonLoader';
 import FilterChips from '../../../components/FilterChips';
 import InquiryModal from '../../../components/InquiryModal';
 import PlanErrorBlock from '../../../components/PlanErrorBlock';
-import BetaPremiumBanner from '../../../components/BetaPremiumBanner';
 import ShareModal from '../../../components/ShareModal';
 import ListingCardImageCarousel from '../../../components/ListingCardImageCarousel';
-import { MpSecondaryNav, SECONDARY_NAV_HUB } from '../../../components/MpSecondaryNav';
 
 const API_BASE = '/api';
 const PRODUCT_NAME = process.env.NEXT_PUBLIC_PRODUCT_NAME || 'MatchProp';
@@ -100,7 +98,6 @@ function FeedListPageContent() {
     >
   >({});
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const feedAllFromUrl = searchParams?.get('feed') === 'all';
   const isDemoMode = false;
@@ -551,39 +548,35 @@ function FeedListPageContent() {
     <main className="min-h-screen bg-[var(--mp-bg)]">
       <ActiveSearchBar />
       <div className="w-full">
-        {/* Header: título + nav compacta */}
-        <div className="flex flex-col gap-2 mb-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h1 className="text-lg font-bold text-[var(--mp-foreground)]">
-              {PRODUCT_NAME}{' '}
-              <span className="text-sm font-normal text-[var(--mp-muted)]">Lista</span>
-            </h1>
-            {items.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (isPremium === false) {
-                    setToast('Necesitás ser premium para compartir listas.');
-                    setTimeout(() => setToast(null), 4000);
-                    return;
-                  }
-                  setShareListOpen(true);
-                }}
-                className="text-xs font-semibold px-2.5 py-1 rounded-[var(--mp-radius-chip)] border border-[var(--mp-border)] bg-[var(--mp-card)] text-[var(--mp-foreground)] hover:border-[var(--mp-accent)]/35"
-              >
-                Compartir lista
-              </button>
-            )}
+        <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--mp-muted)] mb-1">
+              Comparar en contexto
+            </p>
+            <h1 className="text-xl font-bold text-[var(--mp-foreground)] tracking-tight">Lista</h1>
           </div>
-          <MpSecondaryNav items={SECONDARY_NAV_HUB} pathname={pathname} />
+          {items.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                if (isPremium === false) {
+                  setToast('Necesitás ser premium para compartir listas.');
+                  setTimeout(() => setToast(null), 4000);
+                  return;
+                }
+                setShareListOpen(true);
+              }}
+              className="text-xs font-medium text-[var(--mp-muted)] hover:text-[var(--mp-accent)] underline underline-offset-2"
+            >
+              Compartir esta vista
+            </button>
+          )}
         </div>
-
-        <BetaPremiumBanner className="mb-3" />
 
         {hasActiveSearch === false && (
           <div className="mb-3 p-3 rounded-xl border border-[var(--mp-border)] bg-[var(--mp-card)] text-sm text-[var(--mp-muted)]">
             Definí qué buscás para ver solo lo que te interesa.{' '}
-            <Link href="/assistant" className="text-[var(--mp-accent)] font-medium hover:underline">
+            <Link href="/dashboard" className="text-[var(--mp-accent)] font-medium hover:underline">
               Buscar
             </Link>
           </div>
@@ -639,7 +632,7 @@ function FeedListPageContent() {
                     : 'En local: ejecutá start (dev-up) para cargar datos.'}
                 </p>
                 <Link
-                  href="/assistant"
+                  href="/dashboard"
                   className="inline-block mt-4 px-4 py-2 rounded-xl text-sm font-medium bg-[var(--mp-accent)] text-white"
                 >
                   Ir a Buscar
@@ -686,7 +679,7 @@ function FeedListPageContent() {
                     : 'En local: ejecutá demo:data o ingest:run para cargar datos.'}
                 </p>
                 <Link
-                  href="/assistant"
+                  href="/dashboard"
                   className="inline-block mt-4 px-4 py-2 rounded-xl text-sm font-medium bg-[var(--mp-accent)] text-white"
                 >
                   Buscar

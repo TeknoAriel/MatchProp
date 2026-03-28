@@ -1,13 +1,12 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter, useParams, usePathname } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { ListingCard } from '@matchprop/shared';
 import FilterChips from '../../../components/FilterChips';
 import InquiryModal from '../../../components/InquiryModal';
 import ListingImage from '../../../components/ListingImage';
-import { MpSecondaryNav, SECONDARY_NAV_HUB } from '../../../components/MpSecondaryNav';
 import {
   CardToolbar,
   ToolbarBtn,
@@ -71,7 +70,6 @@ export default function SearchResultsPage() {
   const [inquiryListingId, setInquiryListingId] = useState<string | null>(null);
   const [nopeIds, setNopeIds] = useState<Set<string>>(new Set());
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     const ids = items.filter((c) => c.id).map((c) => c.id);
@@ -433,8 +431,6 @@ export default function SearchResultsPage() {
   return (
     <main className="min-h-screen p-4">
       <div className="max-w-lg mx-auto">
-        <MpSecondaryNav items={SECONDARY_NAV_HUB} pathname={pathname} />
-
         <h1 className="text-xl font-bold mb-4">Resultados</h1>
 
         <div className="mb-4 p-4 bg-white rounded-xl shadow-sm border border-slate-100/80">

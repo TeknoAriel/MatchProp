@@ -17,13 +17,6 @@ type ListingStatus = {
   lead: { status: string } | null;
 };
 
-function getMatchPriority(status?: ListingStatus): number {
-  if (status?.inLike) return 0;
-  if (status?.inFavorite) return 1;
-  if (status?.lead?.status === 'ACTIVE') return 2;
-  return 3;
-}
-
 function normalizeCard(
   raw: unknown
 ): (ListingCard & { media?: { url: string; sortOrder: number }[] }) | null {
@@ -56,6 +49,13 @@ function normalizeCard(
   };
 }
 
+type SavedRow = {
+  listingId: string;
+  listType: string;
+  savedAt?: string;
+  listing: unknown;
+};
+
 export default function MyMatchPage() {
   const router = useRouter();
   const [items, setItems] = useState<ListingCard[]>([]);
@@ -63,140 +63,124 @@ export default function MyMatchPage() {
   const [listingsStatus, setListingsStatus] = useState<Record<string, ListingStatus>>({});
   const [inquiryListingId, setInquiryListingId] = useState<string | null>(null);
 
-  const fetchFeed = useCallback(
-    async (searchId?: string | null): Promise<ListingCard[]> => {
-      const url = searchId
-        ? `${API_BASE}/feed?limit=100&includeTotal=1&searchId=${encodeURIComponent(searchId)}`
-        : `${API_BASE}/feed?limit=100&includeTotal=1`;
-      const res = await fetch(url, { credentials: 'include' });
-      if (res.status === 401) {
-        router.replace('/login');
-        return [];
-      }
-      if (!res.ok) return [];
-      const data = await res.json();
-      return (data.items ?? [])
-        .map(normalizeCard)
-        .filter((c: ListingCard | null): c is ListingCard => c !== null);
-    },
-    [router]
-  );
+  const loadSaved = useCallback(async () => {
+    const res = await fetch(`${API_BASE}/me/saved`, { credentials: 'include' });
+    if (res.status === 401) {
+      router.replace('/login');
+      return;
+    }
+    if (!res.ok) {
+      setItems([]);
+      setListingsStatus({});
+      setLoading(false);
+      return;
+    }
+    const data: { items?: SavedRow[] } = await res.json();
+    const rows = data.items ?? [];
 
-  const fetchSavedCards = useCallback(
-    async (listType: 'LATER' | 'FAVORITE'): Promise<ListingCard[]> => {
-      const res = await fetch(`${API_BASE}/me/saved?listType=${listType}`, {
-        credentials: 'include',
-      });
-      if (res.status === 401) {
-        router.replace('/login');
-        return [];
-      }
-      if (!res.ok) return [];
-      const data: unknown = await res.json();
-      const rawItems = (data as { items?: unknown[] } | null)?.items ?? [];
-      const parsed = rawItems.map((it) => {
-        if (!it || typeof it !== 'object')
-          return { listingId: '', listingRaw: undefined as unknown };
-        const obj = it as { listingId?: unknown; listing?: unknown };
-        return {
-          listingId: typeof obj.listingId === 'string' ? obj.listingId : '',
-          listingRaw: obj.listing,
-        };
-      });
-      const directCards = parsed
-        .map((p) => normalizeCard(p.listingRaw))
-        .filter((c: ListingCard | null): c is ListingCard => c !== null);
+    const agg = new Map<
+      string,
+      { savedAt: number; inLike: boolean; inFavorite: boolean; listingRaw: unknown }
+    >();
 
-      const missingIds = Array.from(
-        new Set(
-          parsed
-            .filter((p) => !normalizeCard(p.listingRaw) && p.listingId)
-            .map((p) => p.listingId)
-            .filter(Boolean)
-        )
-      );
-      const batchPayloads = await fetchListingsBatchByIds(API_BASE, missingIds);
-      const hydratedCards = batchPayloads
-        .map((payload) => normalizeCard(payload))
-        .filter((c): c is ListingCard => c !== null);
-      const byId = new Map<string, ListingCard>();
-      for (const c of [...directCards, ...hydratedCards]) byId.set(c.id, c);
-      return Array.from(byId.values());
-    },
-    [router]
-  );
-
-  useEffect(() => {
-    async function load() {
-      const [likesCards, favoritesCards] = await Promise.all([
-        fetchSavedCards('LATER'),
-        fetchSavedCards('FAVORITE'),
-      ]);
-
-      let feedCards: ListingCard[] = await fetchFeed();
-      if (feedCards.length === 0) {
-        const searchesRes = await fetch(`${API_BASE}/searches`, { credentials: 'include' });
-        if (searchesRes.ok) {
-          const searches = await searchesRes.json();
-          const first = Array.isArray(searches) ? searches[0] : null;
-          if (first?.id) {
-            await fetch(`${API_BASE}/me/active-search`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({ searchId: first.id }),
-            });
-            feedCards = await fetchFeed(first.id);
-          }
-        }
-      }
-
-      // Orden base: likes -> favoritos -> resto (de búsquedas activas).
-      const savedIds = new Set<string>([...likesCards, ...favoritesCards].map((c) => c.id));
-      const restCards = feedCards.filter((c) => !savedIds.has(c.id));
-      const combined = [...likesCards, ...favoritesCards, ...restCards];
-
-      if (combined.length === 0) {
-        setItems([]);
-        setListingsStatus({});
-        setLoading(false);
-        return;
-      }
-
-      const ids = combined.map((c) => c.id).filter(Boolean);
-      const baseStatus: Record<string, ListingStatus> = {};
-      for (const c of likesCards) {
-        baseStatus[c.id] = { inLike: true, inFavorite: false, inLists: [], lead: null };
-      }
-      for (const c of favoritesCards) {
-        baseStatus[c.id] = { inLike: false, inFavorite: true, inLists: [], lead: null };
-      }
-
-      try {
-        const r = await fetch(`${API_BASE}/listings/my-status-bulk?ids=${ids.join(',')}`, {
-          credentials: 'include',
+    for (const it of rows) {
+      const lid = it.listingId;
+      if (!lid) continue;
+      const t = it.savedAt ? new Date(it.savedAt).getTime() : 0;
+      const cur = agg.get(lid);
+      const isLater = it.listType === 'LATER';
+      const isFav = it.listType === 'FAVORITE';
+      if (!cur) {
+        agg.set(lid, {
+          savedAt: t,
+          inLike: isLater,
+          inFavorite: isFav,
+          listingRaw: it.listing,
         });
-        const data: { items?: Record<string, ListingStatus> } = r.ok ? await r.json() : {};
-        const status = data.items ?? {};
-        const stableOrder = new Map(combined.map((card, idx) => [card.id, idx]));
-        const ordered = [...combined].sort((a, b) => {
-          const pa = getMatchPriority(status[a.id] ?? baseStatus[a.id]);
-          const pb = getMatchPriority(status[b.id] ?? baseStatus[b.id]);
-          if (pa !== pb) return pa - pb;
-          return (stableOrder.get(a.id) ?? 0) - (stableOrder.get(b.id) ?? 0);
-        });
-
-        setItems(ordered);
-        setListingsStatus(status);
-      } catch {
-        setItems(combined);
-        setListingsStatus(baseStatus);
-      } finally {
-        setLoading(false);
+      } else {
+        cur.savedAt = Math.max(cur.savedAt, t);
+        if (isLater) cur.inLike = true;
+        if (isFav) cur.inFavorite = true;
+        if (!normalizeCard(cur.listingRaw) && it.listing) cur.listingRaw = it.listing;
       }
     }
-    load();
-  }, [fetchFeed, fetchSavedCards]);
+
+    const orderedIds = [...agg.entries()].sort((a, b) => b[1].savedAt - a[1].savedAt);
+
+    const parsed = orderedIds.map(([id, v]) => {
+      const card = normalizeCard(v.listingRaw);
+      return { id, card, base: v };
+    });
+
+    const directCards = parsed.filter((p) => p.card).map((p) => p.card as ListingCard);
+    const missingIds = parsed.filter((p) => !p.card).map((p) => p.id);
+
+    const batchPayloads =
+      missingIds.length > 0 ? await fetchListingsBatchByIds(API_BASE, missingIds) : [];
+    const hydrated = batchPayloads
+      .map((payload) => normalizeCard(payload))
+      .filter((c): c is ListingCard => c !== null);
+
+    const byId = new Map<string, ListingCard>();
+    for (const c of [...directCards, ...hydrated]) byId.set(c.id, c);
+
+    const combined: ListingCard[] = orderedIds
+      .map(([id]) => byId.get(id))
+      .filter((c): c is ListingCard => c != null);
+
+    if (combined.length === 0) {
+      setItems([]);
+      setListingsStatus({});
+      setLoading(false);
+      return;
+    }
+
+    const ids = combined.map((c) => c.id).filter(Boolean);
+    const baseStatus: Record<string, ListingStatus> = {};
+    for (const [lid, v] of agg) {
+      if (!byId.has(lid)) continue;
+      baseStatus[lid] = {
+        inLike: v.inLike,
+        inFavorite: v.inFavorite,
+        inLists: [],
+        lead: null,
+      };
+    }
+
+    try {
+      const r = await fetch(`${API_BASE}/listings/my-status-bulk?ids=${ids.join(',')}`, {
+        credentials: 'include',
+      });
+      const dataBulk: { items?: Record<string, ListingStatus> } = r.ok ? await r.json() : {};
+      const status = dataBulk.items ?? {};
+      const merged: Record<string, ListingStatus> = { ...baseStatus };
+      for (const id of ids) {
+        const s = status[id];
+        const b = baseStatus[id];
+        if (s && b) {
+          merged[id] = {
+            inLike: b.inLike || s.inLike,
+            inFavorite: b.inFavorite || s.inFavorite,
+            inLists: s.inLists ?? [],
+            lead: s.lead ?? null,
+          };
+        } else if (s) {
+          merged[id] = s;
+        }
+      }
+      setItems(combined);
+      setListingsStatus(merged);
+    } catch {
+      setItems(combined);
+      setListingsStatus(baseStatus);
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    void loadSaved();
+  }, [loadSaved]);
 
   async function handleToggleLike(listingId: string) {
     const inLike = listingsStatus[listingId]?.inLike ?? false;
@@ -224,10 +208,10 @@ export default function MyMatchPage() {
   async function handleRemoveFromList(listingId: string) {
     const st = listingsStatus[listingId];
     const parts: string[] = ['¿Quitar esta propiedad de Mis match?'];
-    if (st?.inLike) parts.push('Se quitará de tus likes.');
+    if (st?.inLike) parts.push('Se quitará de tus “me interesa”.');
     if (st?.inFavorite) parts.push('Se quitará de favoritos.');
     if (!st?.inLike && !st?.inFavorite) {
-      parts.push('Dejará de mostrarse en esta lista (marcada como no interesada).');
+      parts.push('Dejará de mostrarse aquí.');
     }
     if (!confirm(parts.join(' '))) return;
 
@@ -247,19 +231,6 @@ export default function MyMatchPage() {
         const res = await fetch(`${API_BASE}/me/saved/${listingId}?listType=FAVORITE`, {
           method: 'DELETE',
           credentials: 'include',
-        });
-        if (res.status === 401) {
-          router.replace('/login');
-          return;
-        }
-        if (!res.ok) return;
-      }
-      if (!st?.inLike && !st?.inFavorite) {
-        const res = await fetch(`${API_BASE}/swipes`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ listingId, decision: 'NOPE' }),
         });
         if (res.status === 401) {
           router.replace('/login');
@@ -305,48 +276,52 @@ export default function MyMatchPage() {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-4">
         <div className="w-8 h-8 border-2 border-[var(--mp-accent)] border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-[var(--mp-muted)] mt-3">Cargando tus matches...</p>
+        <p className="text-sm text-[var(--mp-muted)] mt-3">Cargando tus matches…</p>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen p-4 bg-[var(--mp-bg)]">
+    <main className="min-h-screen py-4 bg-[var(--mp-bg)]">
       <div className="max-w-lg mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-[var(--mp-foreground)]">Mis match</h1>
-            <p className="text-sm text-[var(--mp-muted)] mt-0.5">
-              Propiedades de tus búsquedas activas. Primero like 👍, luego favoritos ★.
-            </p>
-          </div>
-          <Link href="/dashboard" className="text-sm mp-link hover:underline">
-            ← Inicio
-          </Link>
+        <div className="mb-8">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--mp-muted)] mb-1">
+            Seguimiento
+          </p>
+          <h1 className="text-2xl font-bold text-[var(--mp-foreground)] tracking-tight">
+            Mis match
+          </h1>
+          <p className="text-sm text-[var(--mp-muted)] mt-2 leading-relaxed">
+            Propiedades que marcaste con me interesa o favoritos. Las más recientes arriba.
+          </p>
         </div>
 
         {items.length === 0 ? (
-          <div className="text-center py-12 mp-surface">
-            <span className="text-4xl block mb-3">🔥</span>
-            <p className="text-[var(--mp-foreground)] font-medium">Sin matches todavía</p>
-            <p className="text-sm text-[var(--mp-muted)] mt-2">
-              Creá una búsqueda y activala para ver propiedades que matchean.
+          <div className="text-center py-14 px-4 rounded-[var(--mp-radius-card)] border border-[var(--mp-border)] bg-[var(--mp-card)]">
+            <span className="text-4xl block mb-4">🔥</span>
+            <p className="text-[var(--mp-foreground)] font-medium">Todavía no hay nada acá</p>
+            <p className="text-sm text-[var(--mp-muted)] mt-2 max-w-xs mx-auto leading-relaxed">
+              En Match usá “Me interesa” o “Guardar” y vas a ver todo acá, ordenado por lo último
+              que tocaste.
             </p>
             <Link
-              href="/assistant"
-              className="mp-btn-primary inline-block mt-4 no-underline hover:no-underline"
+              href="/dashboard"
+              className="inline-flex items-center justify-center mt-6 min-h-[48px] px-6 rounded-full font-semibold bg-[var(--mp-accent)] text-white no-underline hover:opacity-[0.96]"
             >
-              Ir a Buscar
+              Definir búsqueda
             </Link>
           </div>
         ) : (
-          <div className="space-y-4">
+          <ul className="space-y-5 list-none p-0 m-0">
             {items.map((card) => (
-              <div key={card.id} className="mp-surface overflow-hidden relative">
+              <li
+                key={card.id}
+                className="mp-surface overflow-hidden relative rounded-[var(--mp-radius-card)]"
+              >
                 <button
                   type="button"
                   onClick={() => void handleRemoveFromList(card.id)}
-                  className="absolute top-1.5 right-1.5 z-10 min-h-[44px] min-w-[44px] rounded-full bg-black/55 text-white text-xl font-light leading-none flex items-center justify-center hover:bg-black/70 shadow-md [-webkit-tap-highlight-color:transparent]"
+                  className="absolute top-2 right-2 z-10 min-h-[44px] min-w-[44px] rounded-full bg-black/50 text-white text-xl font-light leading-none flex items-center justify-center hover:bg-black/65 shadow-md [-webkit-tap-highlight-color:transparent]"
                   aria-label="Quitar del listado"
                   title="Quitar del listado"
                 >
@@ -360,15 +335,15 @@ export default function MyMatchPage() {
                       alt={card.title ?? ''}
                     />
                   </div>
-                  <div className="p-3">
-                    <h2 className="font-medium truncate text-[var(--mp-foreground)]">
+                  <div className="p-4">
+                    <h2 className="font-semibold truncate text-[var(--mp-foreground)] text-base">
                       {card.title ?? 'Sin título'}
                     </h2>
                     <p
                       className={
                         card.price != null
-                          ? 'text-sm font-semibold text-[var(--mp-accent-hover)]'
-                          : 'text-sm text-[var(--mp-muted)]'
+                          ? 'text-sm font-semibold text-[var(--mp-accent-hover)] mt-1'
+                          : 'text-sm text-[var(--mp-muted)] mt-1'
                       }
                     >
                       {card.price != null
@@ -376,44 +351,44 @@ export default function MyMatchPage() {
                         : 'Consultar'}
                     </p>
                     {card.locationText && (
-                      <p className="text-xs text-[var(--mp-muted)] truncate">{card.locationText}</p>
+                      <p className="text-xs text-[var(--mp-muted)] truncate mt-1">
+                        {card.locationText}
+                      </p>
                     )}
                   </div>
                 </Link>
-                <div className="px-3 pb-3 flex gap-2 items-center">
+                <div className="px-4 pb-4 flex gap-2 items-center flex-wrap">
                   <button
                     type="button"
-                    onClick={() => handleToggleLike(card.id)}
-                    className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-[var(--mp-radius-chip)] text-lg ${
+                    onClick={() => void handleToggleLike(card.id)}
+                    className={`shrink-0 w-11 h-11 flex items-center justify-center rounded-full text-lg ${
                       listingsStatus[card.id]?.inLike
                         ? 'bg-green-600 text-white'
-                        : 'bg-[color-mix(in_srgb,var(--mp-muted)_16%,var(--mp-bg))] text-[var(--mp-muted)] hover:bg-[color-mix(in_srgb,var(--mp-muted)_22%,var(--mp-bg))]'
+                        : 'bg-[color-mix(in_srgb,var(--mp-muted)_14%,var(--mp-bg))] text-[var(--mp-muted)] hover:bg-[color-mix(in_srgb,var(--mp-muted)_20%,var(--mp-bg))]'
                     }`}
-                    title={listingsStatus[card.id]?.inLike ? 'En like' : 'Agregar a like'}
+                    title={listingsStatus[card.id]?.inLike ? 'En “me interesa”' : 'Me interesa'}
                   >
                     👍
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleToggleFavorite(card.id)}
-                    className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-[var(--mp-radius-chip)] text-lg ${
+                    onClick={() => void handleToggleFavorite(card.id)}
+                    className={`shrink-0 w-11 h-11 flex items-center justify-center rounded-full text-lg ${
                       listingsStatus[card.id]?.inFavorite
                         ? 'bg-amber-500 text-white'
-                        : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                        : 'bg-amber-100 text-amber-900 hover:bg-amber-200'
                     }`}
-                    title={
-                      listingsStatus[card.id]?.inFavorite ? 'En favoritos' : 'Agregar a favoritos'
-                    }
+                    title={listingsStatus[card.id]?.inFavorite ? 'En favoritos' : 'Favorito'}
                   >
                     ★
                   </button>
                   {listingsStatus[card.id]?.lead ? (
                     <div className="flex-1 flex items-center gap-1 min-w-0">
                       <span
-                        className={`flex-1 py-2 text-center text-sm rounded-[var(--mp-radius-chip)] font-medium ${
+                        className={`flex-1 py-2.5 text-center text-sm rounded-full font-medium ${
                           listingsStatus[card.id]?.lead?.status === 'ACTIVE'
                             ? 'bg-emerald-600 text-white'
-                            : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                            : 'bg-emerald-100 text-emerald-900 border border-emerald-200'
                         }`}
                       >
                         ✓{' '}
@@ -427,7 +402,7 @@ export default function MyMatchPage() {
                           e.preventDefault();
                           setInquiryListingId(card.id);
                         }}
-                        className="shrink-0 w-9 h-9 flex items-center justify-center rounded-[var(--mp-radius-chip)] bg-[color-mix(in_srgb,var(--mp-accent)_16%,var(--mp-card))] text-[var(--mp-accent-hover)] hover:bg-[color-mix(in_srgb,var(--mp-accent)_22%,var(--mp-card))]"
+                        className="shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--mp-accent)_14%,var(--mp-card))] text-[var(--mp-accent-hover)]"
                         title="Reenviar consulta"
                       >
                         ✉️
@@ -440,15 +415,15 @@ export default function MyMatchPage() {
                         e.preventDefault();
                         setInquiryListingId(card.id);
                       }}
-                      className="flex-1 py-2 bg-[var(--mp-accent)] text-white text-sm rounded-[var(--mp-radius-chip)] font-medium hover:bg-[var(--mp-accent-hover)]"
+                      className="flex-1 min-h-[44px] py-2.5 bg-[var(--mp-accent)] text-white text-sm rounded-full font-medium hover:bg-[var(--mp-accent-hover)]"
                     >
-                      Quiero que me contacten
+                      Consultar
                     </button>
                   )}
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
 
