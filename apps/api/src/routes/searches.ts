@@ -8,6 +8,7 @@ const FEED_LIMIT_DEFAULT = 20;
 const FEED_LIMIT_MAX = 50;
 const VALID_OPERATIONS = ['SALE', 'RENT'] as const;
 const VALID_PROPERTY_TYPES = ['HOUSE', 'APARTMENT', 'LAND', 'OFFICE', 'OTHER'] as const;
+const VALID_SORT = ['date_desc', 'price_asc', 'price_desc', 'area_desc'] as const;
 
 function parseIntParam(val: unknown): number | undefined {
   if (val === undefined || val === null || val === '') return undefined;
@@ -195,6 +196,7 @@ export async function searchesRoutes(fastify: FastifyInstance) {
             includeTotal: { type: 'integer', default: 0 },
             propertyTypes: { type: 'string' },
             operationType: { type: 'string', enum: ['SALE', 'RENT'] },
+            sortBy: { type: 'string', enum: [...VALID_SORT] },
           },
         },
         response: {
@@ -227,6 +229,7 @@ export async function searchesRoutes(fastify: FastifyInstance) {
         includeTotal?: number;
         propertyTypes?: string;
         operationType?: string;
+        sortBy?: string;
       };
 
       const row = await prisma.savedSearch.findFirst({
@@ -254,13 +257,22 @@ export async function searchesRoutes(fastify: FastifyInstance) {
         filters.operationType = q.operationType;
       }
 
+      const filtersForFeed = { ...filters };
+      delete (filtersForFeed as { sortBy?: unknown }).sortBy;
+      if (
+        typeof q.sortBy === 'string' &&
+        VALID_SORT.includes(q.sortBy as (typeof VALID_SORT)[number])
+      ) {
+        (filtersForFeed as { sortBy?: string }).sortBy = q.sortBy;
+      }
+
       try {
         const result = await executeFeed({
           userId: user.userId,
           limit,
           cursor: q.cursor ?? null,
           includeTotal,
-          filters,
+          filters: filtersForFeed,
         });
 
         if (result.error === 'INVALID_CURSOR') {

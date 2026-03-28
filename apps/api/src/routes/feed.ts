@@ -333,7 +333,6 @@ function mergeFilters(
         addressText: (p.addressText as string) ?? undefined,
         titleContains: (p.titleContains as string) ?? undefined,
         descriptionContains: (p.descriptionContains as string) ?? undefined,
-        sortBy: (p.sortBy as FeedFilters['sortBy']) ?? undefined,
         source: (p.source as string) ?? undefined,
         aptoCredito: p.aptoCredito === true ? true : undefined,
         amenities: Array.isArray(p.amenities) ? (p.amenities as string[]) : undefined,
@@ -359,7 +358,8 @@ function mergeFilters(
     addressText: overrides.addressText ?? base.addressText,
     titleContains: overrides.titleContains ?? base.titleContains,
     descriptionContains: overrides.descriptionContains ?? base.descriptionContains,
-    sortBy: overrides.sortBy ?? base.sortBy,
+    // Solo el querystring define orden explícito; sin sortBy en URL → date_desc en el handler (no heredar JSON guardado).
+    sortBy: overrides.sortBy,
     source: overrides.source ?? base.source,
     aptoCredito: overrides.aptoCredito ?? base.aptoCredito,
     amenities: overrides.amenities ?? base.amenities,

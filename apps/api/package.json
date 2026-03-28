@@ -14,7 +14,7 @@
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "typecheck:vercel": "tsc -p tsconfig.vercel.json --noEmit",
-    "test": "vitest run src/lib --exclude '**/*.int.test.ts' --config vitest.config.mts",
+    "test": "vitest run src/lib src/services/ingest/__tests__ --exclude '**/*.int.test.ts' --config vitest.config.mts",
     "test:all": "vitest run --config vitest.config.mts",
     "test:watch": "vitest --config vitest.config.mts",
     "load:feed": "k6 run loadtest/feed_read.js",

@@ -48,7 +48,9 @@ export async function runAlerts(opts: RunAlertsOptions = {}): Promise<void> {
   });
 
   for (const sub of subs) {
-    const filters = (sub.filtersJson ?? sub.savedSearch?.filtersJson ?? {}) as SearchFilters;
+    const rawFilters = (sub.filtersJson ?? sub.savedSearch?.filtersJson ?? {}) as SearchFilters;
+    const filters = { ...rawFilters };
+    delete (filters as { sortBy?: unknown }).sortBy;
     if (!filters || typeof filters !== 'object') {
       await prisma.alertSubscription.update({
         where: { id: sub.id },

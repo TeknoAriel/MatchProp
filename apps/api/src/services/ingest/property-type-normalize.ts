@@ -72,13 +72,11 @@ export function normalizeIngestPropertyType(raw: string | null | undefined): str
   const upper = t.toUpperCase().replace(/\s+/g, '_');
   if (CANON_SET.has(upper)) return upper;
 
-  const key = stripAccents(t)
-    .toLowerCase()
-    .replace(/[_-]+/g, ' ')
-    .trim()
-    .replace(/\s+/g, ' ');
+  const lower = stripAccents(t).toLowerCase().trim();
+  const key = lower.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
   const single = key.replace(/ /g, '');
-  const mapped = PHRASE_TO_TYPE[key] ?? PHRASE_TO_TYPE[single];
+  const snake = lower.replace(/\s+/g, '_').replace(/-+/g, '_');
+  const mapped = PHRASE_TO_TYPE[key] ?? PHRASE_TO_TYPE[single] ?? PHRASE_TO_TYPE[snake];
   if (mapped) return mapped;
 
   const firstToken = key.split(/\s+/)[0] ?? '';
