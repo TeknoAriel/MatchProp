@@ -543,10 +543,19 @@ export default function AssistantPage() {
           <p className="text-xs text-gray-400 mb-2">Assistant UI build: {ASSISTANT_BUILD}</p>
         )}
 
+        <p className="text-center text-xs text-[var(--mp-muted)] px-2">
+          <span className="font-semibold text-[var(--mp-foreground)]">Modo avanzado.</span> Búsqueda
+          rápida en el{' '}
+          <Link href="/dashboard" className="text-[var(--mp-accent)] font-semibold hover:underline">
+            inicio
+          </Link>
+          .
+        </p>
+
         {/* Hero: contá lo que necesitás */}
         <section className="text-center md:text-left">
           <h1 className="text-2xl md:text-3xl font-bold text-[var(--mp-foreground)] mb-2">
-            Contá lo que necesitás
+            Asistente avanzado
           </h1>
           <p className="text-[var(--mp-muted)] text-sm md:text-base max-w-lg">
             Escribí o hablá en lenguaje natural. Te mostramos los mejores matches según tus gustos.

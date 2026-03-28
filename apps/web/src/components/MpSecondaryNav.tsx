@@ -22,6 +22,9 @@ export function MpSecondaryNav({
       {items.map((it) => {
         const active = (() => {
           if (!pathname) return false;
+          if (it.href === '/dashboard') {
+            return pathname === '/dashboard' || pathname === '/dashboard/';
+          }
           if (it.href === '/feed') {
             return pathname === '/feed' || pathname === '/feed/';
           }
@@ -53,21 +56,19 @@ export function MpSecondaryNav({
   );
 }
 
-/** Enlaces típicos entre Match, búsquedas y alertas */
+/**
+ * Solo el núcleo del flujo (v3.2). Búsquedas, alertas y consultas → menú “Más” / sidebar.
+ */
 export const SECONDARY_NAV_HUB: SecondaryNavItem[] = [
+  { href: '/dashboard', label: 'Buscar', icon: '🔍' },
   { href: '/feed', label: 'Match', icon: '🎯' },
   { href: '/feed/list', label: 'Lista', icon: '📋' },
-  { href: '/assistant', label: 'Asistente', icon: '🔍' },
-  { href: '/searches', label: 'Búsquedas', icon: '📁' },
-  { href: '/alerts', label: 'Alertas', icon: '🔔' },
 ];
 
-/** Consultas + navegación al resto del producto */
+/** Desde consultas: mismo núcleo + Mis match */
 export const SECONDARY_NAV_LEADS: SecondaryNavItem[] = [
+  { href: '/dashboard', label: 'Buscar', icon: '🔍' },
   { href: '/feed', label: 'Match', icon: '🎯' },
   { href: '/feed/list', label: 'Lista', icon: '📋' },
-  { href: '/leads', label: 'Consultas', icon: '💬' },
-  { href: '/me/visits', label: 'Visitas', icon: '📅' },
-  { href: '/assistant', label: 'Buscar', icon: '🔍' },
-  { href: '/alerts', label: 'Alertas', icon: '🔔' },
+  { href: '/me/match', label: 'Mis match', icon: '🔥' },
 ];
