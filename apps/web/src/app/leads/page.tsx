@@ -7,6 +7,7 @@ import HacersePremiumButton from '../../components/HacersePremiumButton';
 import VisitScheduleModal from '../../components/VisitScheduleModal';
 import PremiumGraceBanner from '../../components/PremiumGraceBanner';
 import ListingImage from '../../components/ListingImage';
+import { ToolbarBtn, ToolbarLink, CardToolbar, ToolbarRow } from '../../components/MpCardToolbar';
 
 const API_BASE = '/api';
 const GRACE_PERIOD = process.env.NEXT_PUBLIC_PREMIUM_GRACE_PERIOD === '1';
@@ -134,28 +135,28 @@ export default function LeadsPage() {
             </p>
           </div>
         )}
-        <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+        <div className="flex justify-between items-start gap-3 mb-4 flex-wrap">
           <h1 className="text-xl font-bold text-slate-900">Mis consultas</h1>
-          <div className="flex gap-2 flex-wrap">
-            <Link
+          <ToolbarRow className="justify-end max-w-full">
+            <ToolbarLink
               href="/me/visits"
-              className="px-3 py-1.5 text-sm bg-emerald-100 text-emerald-800 rounded-lg hover:bg-emerald-200 font-medium"
-            >
-              Mis visitas
-            </Link>
-            <Link
+              icon="📅"
+              label="Visitas"
+              className="bg-emerald-100 text-emerald-800 !border-emerald-200 hover:bg-emerald-200"
+            />
+            <ToolbarLink
               href="/feed"
-              className="px-3 py-1.5 text-sm bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200"
-            >
-              Match
-            </Link>
-            <Link
+              icon="🎯"
+              label="Match"
+              className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
+            />
+            <ToolbarLink
               href="/assistant"
-              className="px-3 py-1.5 text-sm bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200"
-            >
-              Búsqueda
-            </Link>
-          </div>
+              icon="🔍"
+              label="Búsqueda"
+              className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
+            />
+          </ToolbarRow>
         </div>
 
         {leads.some((l) => l.status === 'ACTIVE') && (
@@ -307,59 +308,64 @@ export default function LeadsPage() {
                 const publisherName = group.publisherName ?? group.listing.publisherRef ?? '—';
 
                 return (
-                  <div
-                    key={group.listingId}
-                    className="block border rounded-lg overflow-hidden bg-white shadow-sm"
-                  >
-                    <div className="flex">
-                      <Link href={`/listing/${group.listingId}`} className="flex flex-1 min-w-0">
-                        <div className="w-24 h-24 shrink-0 overflow-hidden">
-                          <ListingImage
-                            src={listing.heroImageUrl}
-                            alt={listing.title ?? ''}
-                            fallbackClassName="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-200"
-                            fallbackIcon="🏠"
-                            fallbackText=""
-                          />
-                        </div>
-                        <div className="p-3 flex-1 min-w-0">
-                          <h2 className="font-medium truncate">{listing.title ?? 'Sin título'}</h2>
-                          <p className="text-sm text-gray-600">{priceText}</p>
-                          <p className="text-xs text-gray-500 truncate">{listing.locationText}</p>
-                          <div className="flex flex-wrap gap-1 mt-2 items-center">
-                            <span className="inline-block px-2 py-0.5 text-xs rounded bg-slate-100 text-slate-700">
-                              {group.leads.length} consulta{group.leads.length === 1 ? '' : 's'}
-                            </span>
-                            <span className="inline-block px-2 py-0.5 text-xs rounded bg-indigo-50 text-indigo-700">
-                              {publisherLabel}: {publisherName}
-                            </span>
-                            {group.latest?.source && (
-                              <span className="inline-block px-2 py-0.5 text-xs rounded bg-sky-50 text-sky-700">
-                                Origen: {group.latest.source}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </Link>
-                      <div className="p-3 flex flex-col gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setExpandedListingId(expanded ? null : group.listingId)}
-                          className="px-3 py-2 text-sm bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 font-medium"
-                        >
-                          {expanded ? 'Ocultar' : 'Ver'} consultas
-                        </button>
+                  <div key={group.listingId} className="mp-surface overflow-hidden">
+                    <Link href={`/listing/${group.listingId}`} className="flex min-w-0">
+                      <div className="w-24 h-24 shrink-0 overflow-hidden">
+                        <ListingImage
+                          src={listing.heroImageUrl}
+                          alt={listing.title ?? ''}
+                          fallbackClassName="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-200"
+                          fallbackIcon="🏠"
+                          fallbackText=""
+                        />
                       </div>
-                    </div>
+                      <div className="p-3 flex-1 min-w-0">
+                        <h2 className="font-medium truncate text-[var(--mp-foreground)]">
+                          {listing.title ?? 'Sin título'}
+                        </h2>
+                        <p className="text-sm text-[var(--mp-muted)]">{priceText}</p>
+                        <p className="text-xs text-[var(--mp-muted)] truncate">
+                          {listing.locationText}
+                        </p>
+                        <div className="flex flex-wrap gap-1 mt-2 items-center">
+                          <span className="inline-block px-2 py-0.5 text-xs rounded bg-slate-100 text-slate-700">
+                            {group.leads.length} consulta{group.leads.length === 1 ? '' : 's'}
+                          </span>
+                          <span className="inline-block px-2 py-0.5 text-xs rounded bg-indigo-50 text-indigo-700">
+                            {publisherLabel}: {publisherName}
+                          </span>
+                          {group.latest?.source && (
+                            <span className="inline-block px-2 py-0.5 text-xs rounded bg-sky-50 text-sky-700">
+                              Origen: {group.latest.source}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+
+                    <CardToolbar>
+                      <ToolbarLink
+                        href={`/listing/${group.listingId}`}
+                        icon="📄"
+                        label="Ficha"
+                        className="bg-sky-500 text-white !border-sky-600 hover:bg-sky-600"
+                      />
+                      <ToolbarBtn
+                        icon={expanded ? '▲' : '▼'}
+                        label={expanded ? 'Ocultar' : 'Consultas'}
+                        className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
+                        onClick={() => setExpandedListingId(expanded ? null : group.listingId)}
+                      />
+                    </CardToolbar>
 
                     {expanded && (
-                      <div className="border-t bg-slate-50/40 p-3 space-y-2">
+                      <div className="border-t border-[var(--mp-border)] bg-slate-50/40 p-3 space-y-2">
                         {group.leads.map((lead) => (
                           <div
                             key={lead.id}
-                            className="rounded-xl bg-white border border-slate-100 p-3"
+                            className="rounded-xl bg-white border border-slate-100 overflow-hidden"
                           >
-                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="p-3 pb-2">
                               <div className="flex flex-wrap gap-1 items-center">
                                 <span
                                   className={`inline-block px-2 py-0.5 text-xs rounded ${
@@ -394,60 +400,66 @@ export default function LeadsPage() {
                                   </span>
                                 )}
                               </div>
-                              <div className="flex gap-2 flex-wrap">
+                              {lead.lastDelivery &&
+                                lead.lastDelivery.status !== 'OK' &&
+                                lead.lastDelivery.kind === 'KITEPROP' &&
+                                lead.lastDelivery.userMessage && (
+                                  <p className="text-xs text-red-700 mt-2">
+                                    {lead.lastDelivery.userMessage}
+                                  </p>
+                                )}
+                            </div>
+                            {(lead.status === 'ACTIVE' || lead.status === 'PENDING') && (
+                              <CardToolbar>
                                 {lead.status === 'ACTIVE' && (
                                   <>
-                                    <Link
+                                    <ToolbarLink
                                       href={`/leads/${lead.id}/chat`}
-                                      className="px-3 py-1.5 text-sm font-medium bg-[var(--mp-accent)] text-white rounded-xl hover:opacity-90"
-                                    >
-                                      Chat
-                                    </Link>
-                                    <button
-                                      type="button"
+                                      icon="💬"
+                                      label="Chat"
+                                      className="bg-[var(--mp-accent)] text-white !border-[var(--mp-accent-hover)] hover:opacity-90"
+                                    />
+                                    <ToolbarBtn
+                                      icon="📆"
+                                      label="Agendar"
+                                      className="bg-emerald-600 text-white !border-emerald-700 hover:bg-emerald-700"
                                       onClick={() => setVisitModalLeadId(lead.id)}
-                                      className="px-3 py-1.5 text-sm font-medium bg-emerald-600 text-white rounded-xl hover:bg-emerald-700"
-                                    >
-                                      Agendar visita
-                                    </button>
-                                    <Link
+                                    />
+                                    <ToolbarLink
                                       href={`/leads/${lead.id}/visits`}
-                                      className="px-3 py-1.5 text-sm font-medium rounded-xl border border-[var(--mp-border)] bg-[var(--mp-card)] text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]"
-                                    >
-                                      Ver agenda
-                                    </Link>
+                                      icon="📋"
+                                      label="Agenda"
+                                      className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
+                                    />
                                   </>
                                 )}
                                 {lead.status === 'PENDING' && (
                                   <>
                                     {canActivate ? (
-                                      <button
+                                      <ToolbarBtn
+                                        icon="▶"
+                                        label={
+                                          activatingId === lead.id ? '…' : 'Activar'
+                                        }
+                                        disabled={!!activatingId}
+                                        className="bg-amber-600 text-white !border-amber-700 hover:bg-amber-700"
                                         onClick={(e) => {
                                           e.preventDefault();
-                                          handleActivate(lead.id);
+                                          void handleActivate(lead.id);
                                         }}
-                                        disabled={!!activatingId}
-                                        className="px-3 py-1.5 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 disabled:opacity-50"
-                                      >
-                                        {activatingId === lead.id
-                                          ? 'Activando...'
-                                          : 'Activar ahora'}
-                                      </button>
+                                      />
                                     ) : (
-                                      <HacersePremiumButton variant="secondary" />
+                                      <span className="inline-flex shrink-0">
+                                        <HacersePremiumButton
+                                          variant="secondary"
+                                          className="!min-h-[32px] !px-2 !py-1 !text-[11px] !rounded-[var(--mp-radius-chip)] !font-semibold"
+                                        />
+                                      </span>
                                     )}
                                   </>
                                 )}
-                              </div>
-                            </div>
-                            {lead.lastDelivery &&
-                              lead.lastDelivery.status !== 'OK' &&
-                              lead.lastDelivery.kind === 'KITEPROP' &&
-                              lead.lastDelivery.userMessage && (
-                                <p className="text-xs text-red-700 mt-2">
-                                  {lead.lastDelivery.userMessage}
-                                </p>
-                              )}
+                              </CardToolbar>
+                            )}
                           </div>
                         ))}
                       </div>

@@ -219,6 +219,58 @@ describe('Feed integration', () => {
     expect(body.message).not.toContain('!!!');
   });
 
+  it('sin sortBy en query no hereda sortBy de búsqueda activa; con sortBy=price_asc ordena por precio', async () => {
+    const user = await prisma.user.findUnique({
+      where: { email: TEST_USER_EMAIL },
+      select: { id: true },
+    });
+    if (!user) throw new Error('user missing');
+
+    const search = await prisma.savedSearch.create({
+      data: {
+        userId: user.id,
+        name: 'feed-sort-inherit-test',
+        filtersJson: { operationType: 'SALE', sortBy: 'price_asc' },
+        updatedAt: new Date(),
+      },
+    });
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { activeSearchId: search.id },
+    });
+    try {
+      const resDefault = await app.inject({
+        method: 'GET',
+        url: '/feed?limit=25',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const resPrice = await app.inject({
+        method: 'GET',
+        url: '/feed?limit=25&sortBy=price_asc',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      expect(resDefault.statusCode).toBe(200);
+      expect(resPrice.statusCode).toBe(200);
+      const a = resDefault.json() as { items: { id: string; price: number | null }[] };
+      const b = resPrice.json() as { items: { id: string; price: number | null }[] };
+      const pricesB = b.items.map((i) => i.price).filter((p): p is number => p != null);
+      for (let i = 1; i < pricesB.length; i++) {
+        expect(pricesB[i]!).toBeGreaterThanOrEqual(pricesB[i - 1]!);
+      }
+      if (a.items.length >= 3 && b.items.length >= 3) {
+        const idsA = a.items.map((i) => i.id).join(',');
+        const idsB = b.items.map((i) => i.id).join(',');
+        expect(idsA).not.toBe(idsB);
+      }
+    } finally {
+      await prisma.savedSearch.delete({ where: { id: search.id } }).catch(() => {});
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { activeSearchId: null },
+      });
+    }
+  });
+
   it('exclusión NOPE: listings con swipe NOPE no aparecen en feed', async () => {
     const res1 = await app.inject({
       method: 'GET',

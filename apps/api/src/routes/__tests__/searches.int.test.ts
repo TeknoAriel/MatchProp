@@ -169,6 +169,20 @@ describe('Searches integration', () => {
     expect(Array.isArray(body.items)).toBe(true);
   });
 
+  it('GET /searches/:id/results?sortBy=price_asc ordena precios no decreciente', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/searches/${searchId}/results?limit=20&sortBy=price_asc`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as { items: { price: number | null }[] };
+    const prices = body.items.map((i) => i.price).filter((p): p is number => p != null);
+    for (let i = 1; i < prices.length; i++) {
+      expect(prices[i]!).toBeGreaterThanOrEqual(prices[i - 1]!);
+    }
+  });
+
   it('paginación cursor sin duplicados', async () => {
     const res1 = await app.inject({
       method: 'GET',

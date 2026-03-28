@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { SavedSearchDTO } from '@matchprop/shared';
 import ActiveSearchBar from '../../components/ActiveSearchBar';
+import { ToolbarBtn, ToolbarLink, CardToolbar } from '../../components/MpCardToolbar';
 import { filtersToHumanSummary } from '../../lib/filters-summary';
 
 const API_BASE = '/api';
@@ -254,10 +255,7 @@ export default function SearchesPage() {
     return (
       <main className="min-h-screen p-4 flex flex-col items-center justify-center gap-4">
         <p className="text-amber-600">Sesión vencida.</p>
-        <Link
-          href="/login"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
+        <Link href="/login" className="mp-btn-primary no-underline hover:no-underline">
           Ir a iniciar sesión
         </Link>
       </main>
@@ -268,13 +266,10 @@ export default function SearchesPage() {
     return (
       <main className="min-h-screen p-4 flex flex-col items-center justify-center gap-4">
         <p className="text-amber-600">No hay conexión con la API.</p>
-        <Link
-          href="/status"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
+        <Link href="/status" className="mp-btn-primary no-underline hover:no-underline">
           Ver estado de conexión
         </Link>
-        <Link href="/login" className="text-sm text-blue-600 hover:underline">
+        <Link href="/login" className="text-sm mp-link hover:underline">
           Ir a login
         </Link>
       </main>
@@ -286,114 +281,109 @@ export default function SearchesPage() {
       <ActiveSearchBar />
       <div className="max-w-2xl mx-auto">
         <div className="flex gap-4 mb-6">
-          <Link href="/feed" className="text-sm text-sky-600 hover:underline">
+          <Link href="/feed" className="text-sm mp-link hover:underline">
             ← Feed
           </Link>
-          <Link href="/assistant" className="text-sm text-sky-600 hover:underline">
+          <Link href="/assistant" className="text-sm mp-link hover:underline">
             Asistente
           </Link>
-          <Link href="/alerts" className="text-sm text-sky-600 hover:underline">
+          <Link href="/alerts" className="text-sm mp-link hover:underline">
             Alertas
           </Link>
         </div>
 
         <h1 className="text-xl font-bold mb-4">Búsquedas guardadas</h1>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {items.map((s) => (
-            <div
-              key={s.id}
-              className="p-4 rounded-xl bg-[var(--mp-card)] shadow-sm border border-[var(--mp-border)]"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-medium text-[var(--mp-foreground)]">
-                    {s.name || 'Búsqueda sin nombre'}
-                  </h2>
-                  <p className="text-sm text-[var(--mp-muted)] mt-0.5 break-words">
-                    {s.queryText || filtersToHumanSummary(s.filters) || 'Sin criterios'}
-                  </p>
-                  <p className="text-xs text-[var(--mp-muted)] mt-1" suppressHydrationWarning>
-                    {typeof s.updatedAt === 'string'
-                      ? new Date(s.updatedAt).toLocaleDateString('es-AR', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                        })
-                      : ''}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleMatch(s.id)}
-                    className="px-3 py-1.5 text-sm font-medium rounded-lg bg-sky-500 text-white hover:bg-sky-600"
-                    title="Buscar en modo Match"
-                  >
-                    Match
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleEditOpen(s)}
-                    className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-                    title="Editar"
-                  >
-                    ✏️
-                  </button>
-                  {activeSearchId === s.id ? (
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                      Activa
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleSetActive(s.id)}
-                      className="px-2 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    >
-                      Activar
-                    </button>
-                  )}
-                  {deleteConfirmId === s.id ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(s.id)}
-                        className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
-                      >
-                        Confirmar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeleteConfirmId(null)}
-                        className="px-2 py-1 text-xs text-slate-600 hover:underline"
-                      >
-                        Cancelar
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setDeleteConfirmId(s.id)}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                      title="Eliminar"
-                    >
-                      🗑️
-                    </button>
-                  )}
-                </div>
+            <div key={s.id} className="mp-surface overflow-hidden">
+              <div className="p-4 pb-3">
+                <h2 className="font-medium text-[var(--mp-foreground)]">
+                  {s.name || 'Búsqueda sin nombre'}
+                </h2>
+                <p className="text-sm text-[var(--mp-muted)] mt-0.5 break-words">
+                  {s.queryText || filtersToHumanSummary(s.filters) || 'Sin criterios'}
+                </p>
+                <p className="text-xs text-[var(--mp-muted)] mt-1" suppressHydrationWarning>
+                  {typeof s.updatedAt === 'string'
+                    ? new Date(s.updatedAt).toLocaleDateString('es-AR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                      })
+                    : ''}
+                </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
-                className="mt-2 text-sm text-sky-600 hover:underline"
-              >
-                {expandedId === s.id ? 'Ocultar' : 'Ver'} alertas y resultados
-              </button>
+              <CardToolbar>
+                <ToolbarBtn
+                  icon="🎯"
+                  label="Match"
+                  title="Buscar en modo Match"
+                  className="bg-[var(--mp-accent)] text-white !border-[var(--mp-accent-hover)] hover:bg-[var(--mp-accent-hover)]"
+                  onClick={() => void handleMatch(s.id)}
+                />
+                <ToolbarLink
+                  href={`/searches/${s.id}`}
+                  icon="📋"
+                  label="Listado"
+                  className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
+                />
+                <ToolbarBtn
+                  icon="✏️"
+                  label="Editar"
+                  className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
+                  onClick={() => handleEditOpen(s)}
+                />
+                {activeSearchId === s.id ? (
+                  <span className="inline-flex items-center px-2 py-1 mp-pill-success">Activa</span>
+                ) : (
+                  <ToolbarBtn
+                    icon="▶"
+                    label="Activar"
+                    className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
+                    onClick={() => void handleSetActive(s.id)}
+                  />
+                )}
+                <ToolbarBtn
+                  icon={expandedId === s.id ? '▲' : '▼'}
+                  label="Alertas"
+                  className="bg-[color-mix(in_srgb,var(--mp-muted)_8%,var(--mp-card))] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[color-mix(in_srgb,var(--mp-muted)_14%,var(--mp-card))]"
+                  onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
+                />
+                <ToolbarLink
+                  href="/alerts"
+                  icon="🔔"
+                  label="Avisos"
+                  className="bg-[color-mix(in_srgb,var(--mp-muted)_10%,var(--mp-card))] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[color-mix(in_srgb,var(--mp-muted)_16%,var(--mp-card))]"
+                />
+                {deleteConfirmId === s.id ? (
+                  <>
+                    <ToolbarBtn
+                      icon="✓"
+                      label="Sí"
+                      className="bg-red-600 text-white !border-red-700 hover:bg-red-700"
+                      onClick={() => void handleDelete(s.id)}
+                    />
+                    <ToolbarBtn
+                      icon="✕"
+                      label="No"
+                      className="bg-[var(--mp-card)] text-[var(--mp-muted)] !border-[var(--mp-border)]"
+                      onClick={() => setDeleteConfirmId(null)}
+                    />
+                  </>
+                ) : (
+                  <ToolbarBtn
+                    icon="🗑"
+                    label="Borrar"
+                    className="bg-red-50 text-red-700 !border-red-200 hover:bg-red-100"
+                    onClick={() => setDeleteConfirmId(s.id)}
+                  />
+                )}
+              </CardToolbar>
 
               {expandedId === s.id && (
-                <div className="mt-3 space-y-3 pt-3 border-t border-[var(--mp-border)]">
+                <div className="px-4 pb-4 space-y-3 pt-2 border-t border-[var(--mp-border)] bg-[color-mix(in_srgb,var(--mp-bg)_40%,var(--mp-card))]">
                   <div>
                     <p className="text-sm font-medium text-[var(--mp-foreground)] mb-2">
                       Activar alertas
@@ -408,11 +398,7 @@ export default function SearchesPage() {
                               key={type}
                               type="button"
                               onClick={() => handleAlert(s.id, type, !isOn)}
-                              className={`px-2 py-1 text-xs rounded-full ${
-                                isOn
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                              }`}
+                              className={isOn ? 'mp-pill-alert-on' : 'mp-pill-muted'}
                             >
                               {ALERT_LABELS[type]} {isOn ? '✓' : ''}
                             </button>
@@ -446,7 +432,7 @@ export default function SearchesPage() {
                     )}
                     <Link
                       href={`/searches/${s.id}`}
-                      className="text-xs text-sky-600 hover:underline mt-1 inline-block"
+                      className="text-xs mp-link hover:underline mt-1 inline-block"
                     >
                       Ver resultados completos →
                     </Link>
@@ -458,9 +444,9 @@ export default function SearchesPage() {
         </div>
 
         {items.length === 0 && (
-          <p className="text-center text-gray-500 py-8">
+          <p className="text-center text-[var(--mp-muted)] py-8">
             No tenés búsquedas guardadas. Creá una desde el{' '}
-            <Link href="/assistant" className="text-sky-600 hover:underline">
+            <Link href="/assistant" className="mp-link hover:underline">
               asistente
             </Link>
             .
@@ -470,45 +456,45 @@ export default function SearchesPage() {
 
       {editingId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-5">
-            <h3 className="font-bold text-slate-900 mb-4">Editar búsqueda</h3>
+          <div className="mp-modal-panel max-w-md w-full p-5">
+            <h3 className="font-bold text-[var(--mp-foreground)] mb-4">Editar búsqueda</h3>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-slate-600 block mb-1">Nombre</label>
+                <label className="mp-input-label">Nombre</label>
                 <input
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl"
+                  className="mp-input"
                   placeholder="Ej: Casa 3 amb Funes"
                 />
               </div>
               <div>
-                <label className="text-xs text-slate-600 block mb-1">
+                <label className="mp-input-label">
                   Texto de búsqueda (opcional, min 3 caracteres)
                 </label>
                 <input
                   type="text"
                   value={editText}
                   onChange={(e) => setEditText(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl"
+                  className="mp-input"
                   placeholder="Ej: casa 3 dormitorios en Funes hasta 150000 USD"
                 />
               </div>
             </div>
-            <div className="flex gap-2 mt-4">
+            <div className="flex gap-2 mt-4 flex-wrap">
               <button
                 type="button"
                 onClick={handleEditSave}
                 disabled={editSaving}
-                className="px-4 py-2 bg-sky-500 text-white rounded-xl hover:bg-sky-600 disabled:opacity-50"
+                className="mp-btn-primary disabled:opacity-50"
               >
                 {editSaving ? 'Guardando...' : 'Guardar'}
               </button>
               <button
                 type="button"
                 onClick={() => setEditingId(null)}
-                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl"
+                className="px-4 py-2 text-[var(--mp-muted)] hover:bg-[var(--mp-bg)] rounded-[var(--mp-radius-chip)]"
               >
                 Cancelar
               </button>

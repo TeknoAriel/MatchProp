@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from './ThemeProvider';
 
+/** Iconos alineados entre sidebar y barra inferior móvil */
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Inicio', icon: '🏠' },
   { href: '/me/match', label: 'Mis match', icon: '🔥' },
@@ -27,9 +28,9 @@ const MAS_ITEMS = [
   { href: '/me/profile', label: 'Mi perfil', icon: '👤', desc: 'Datos y preferencias' },
 ];
 
-/** Tap target mínimo 44px para accesibilidad (25–70 años) */
+/** Tap target mínimo 44px; radio alineado a --mp-radius-chip */
 const NAV_LINK_CLASS =
-  'flex items-center gap-3 px-3 py-3 rounded-xl text-[15px] font-medium transition-colors min-h-[44px]';
+  'flex items-center gap-3 px-3 py-3 rounded-[var(--mp-radius-chip)] text-[15px] font-medium transition-colors min-h-[44px]';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -137,14 +138,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2">
             <Link
               href="/me/premium"
-              className="px-2 py-1.5 rounded-lg bg-[var(--mp-premium)] text-slate-900 text-sm font-medium"
+              className="px-2 py-1.5 rounded-[var(--mp-radius-chip)] bg-[var(--mp-premium)] text-slate-900 text-sm font-medium"
             >
               Premium
             </Link>
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 rounded-lg text-[var(--mp-muted)]"
+              className="p-2 rounded-[var(--mp-radius-chip)] text-[var(--mp-muted)] hover:bg-[var(--mp-bg)]"
             >
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
@@ -160,13 +161,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-[var(--mp-card)] border-t border-[var(--mp-border)] safe-area-pb">
           <div className="flex justify-around items-center h-16 px-1">
             <NavLink href="/dashboard" icon="🏠" label="Inicio" pathname={pathname} />
-            <NavLink href="/feed" icon="🔥" label="Match" pathname={pathname} />
+            <NavLink href="/feed" icon="🎯" label="Match" pathname={pathname} />
             <NavLink href="/feed/list" icon="📋" label="Lista" pathname={pathname} />
             <NavLink href="/me/saved" icon="⭐" label="Favoritos" pathname={pathname} />
             <button
               type="button"
               onClick={() => setMasOpen(true)}
-              className={`flex flex-col items-center justify-center flex-1 py-3 min-h-[52px] rounded-xl transition-colors active:scale-[0.98] ${
+              className={`flex flex-col items-center justify-center flex-1 py-3 min-h-[52px] rounded-[var(--mp-radius-chip)] transition-colors active:scale-[0.98] ${
                 MAS_ITEMS.some((m) => pathname === m.href || pathname?.startsWith(m.href + '/'))
                   ? 'text-[var(--mp-accent)] font-semibold'
                   : 'text-[var(--mp-muted)]'
@@ -186,7 +187,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               aria-hidden
               onClick={() => setMasOpen(false)}
             />
-            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 max-h-[70vh] rounded-t-2xl bg-[var(--mp-card)] border-t border-[var(--mp-border)] shadow-lg safe-area-pb">
+            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 max-h-[70vh] rounded-t-[var(--mp-radius-card)] bg-[var(--mp-card)] border-t border-[var(--mp-border)] shadow-mp-md safe-area-pb">
               <div className="p-4 pb-8">
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -196,7 +197,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   <button
                     type="button"
                     onClick={() => setMasOpen(false)}
-                    className="p-2 rounded-full text-[var(--mp-muted)] hover:bg-[var(--mp-bg)]"
+                    className="p-2 min-h-[44px] min-w-[44px] rounded-full text-[var(--mp-muted)] hover:bg-[var(--mp-bg)] flex items-center justify-center"
                     aria-label="Cerrar"
                   >
                     ✕
@@ -210,7 +211,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         key={item.href}
                         href={item.href}
                         onClick={() => setMasOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-xl min-h-[52px] ${
+                        className={`flex items-center gap-3 px-4 py-3 rounded-[var(--mp-radius-chip)] min-h-[52px] ${
                           active
                             ? 'bg-[var(--mp-accent)] text-white'
                             : 'text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]'
@@ -255,7 +256,7 @@ function NavLink({
   return (
     <Link
       href={href}
-      className={`flex flex-col items-center justify-center flex-1 py-3 min-h-[52px] rounded-xl transition-colors active:scale-[0.98] ${
+      className={`flex flex-col items-center justify-center flex-1 py-3 min-h-[52px] rounded-[var(--mp-radius-chip)] transition-colors active:scale-[0.98] ${
         active ? 'text-[var(--mp-accent)] font-semibold' : 'text-[var(--mp-muted)]'
       }`}
     >

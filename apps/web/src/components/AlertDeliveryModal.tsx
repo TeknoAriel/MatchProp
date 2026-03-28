@@ -57,30 +57,30 @@ export default function AlertDeliveryModal({ open, delivery, onClose }: AlertDel
       role="presentation"
     >
       <div
-        className="bg-[var(--mp-card)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto border border-emerald-200/60"
+        className="mp-modal-panel rounded-t-[var(--mp-radius-card)] sm:rounded-[var(--mp-radius-card)] w-full sm:max-w-md max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="delivery-modal-title"
       >
-        <div className="p-5 bg-gradient-to-br from-emerald-600 to-teal-800 text-white rounded-t-2xl sm:rounded-t-2xl">
+        <div className="mp-modal-header">
           <h2 id="delivery-modal-title" className="text-lg font-semibold">
             Aviso disparado
           </h2>
-          <p className="text-xs text-emerald-100 mt-1.5 flex items-center gap-1.5">
+          <p className="text-xs mp-modal-header-muted mt-1.5 flex items-center gap-1.5">
             <span aria-hidden>{typeInfo.icon}</span>
             {typeInfo.label}
           </p>
           <p className="font-semibold mt-3 line-clamp-2 leading-snug">
             {drow.listingTitle ?? drow.listingId}
           </p>
-          <p className="text-lg font-bold text-white mt-2">{priceText}</p>
+          <p className="text-lg font-bold mt-2">{priceText}</p>
           {drow.savedSearchName && (
-            <p className="text-xs text-emerald-100/90 mt-2 truncate">
+            <p className="text-xs mp-modal-header-muted mt-2 truncate">
               Búsqueda: {drow.savedSearchName}
             </p>
           )}
-          <p className="text-xs text-emerald-100/80 mt-2" suppressHydrationWarning>
+          <p className="text-xs mp-modal-header-muted mt-2" suppressHydrationWarning>
             {new Date(drow.createdAt).toLocaleString('es-AR', {
               day: '2-digit',
               month: '2-digit',
@@ -95,7 +95,7 @@ export default function AlertDeliveryModal({ open, delivery, onClose }: AlertDel
           <Link
             href={`/listing/${drow.listingId}`}
             onClick={onClose}
-            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-sky-500 text-white font-semibold hover:bg-sky-600"
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[var(--mp-radius-chip)] bg-[var(--mp-accent)] text-white font-semibold hover:bg-[var(--mp-accent-hover)]"
           >
             <span className="text-xl" aria-hidden>
               📄
@@ -105,7 +105,7 @@ export default function AlertDeliveryModal({ open, delivery, onClose }: AlertDel
           <Link
             href="/me/match"
             onClick={onClose}
-            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 border border-emerald-700"
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[var(--mp-radius-chip)] bg-emerald-600 text-white font-semibold hover:bg-emerald-700 !border-emerald-700"
           >
             <span className="text-xl" aria-hidden>
               💚
@@ -115,7 +115,7 @@ export default function AlertDeliveryModal({ open, delivery, onClose }: AlertDel
           <Link
             href="/feed"
             onClick={onClose}
-            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-700"
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[var(--mp-radius-chip)] bg-violet-600 text-white font-semibold hover:bg-violet-700"
           >
             <span className="text-xl" aria-hidden>
               💫
@@ -125,7 +125,7 @@ export default function AlertDeliveryModal({ open, delivery, onClose }: AlertDel
           <button
             type="button"
             onClick={() => void copyLink()}
-            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-white text-[var(--mp-foreground)] font-medium border border-[var(--mp-border)] hover:bg-slate-50"
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[var(--mp-radius-chip)] bg-[var(--mp-card)] text-[var(--mp-foreground)] font-medium border border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
           >
             <span className="text-xl" aria-hidden>
               🔗
@@ -135,7 +135,7 @@ export default function AlertDeliveryModal({ open, delivery, onClose }: AlertDel
           <Link
             href="/searches"
             onClick={onClose}
-            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-slate-100 text-[var(--mp-foreground)] font-medium border border-[var(--mp-border)] hover:bg-slate-200/80"
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-[var(--mp-radius-chip)] bg-[color-mix(in_srgb,var(--mp-muted)_10%,var(--mp-card))] text-[var(--mp-foreground)] font-medium border border-[var(--mp-border)] hover:bg-[color-mix(in_srgb,var(--mp-muted)_16%,var(--mp-card))]"
           >
             <span className="text-xl" aria-hidden>
               🔔

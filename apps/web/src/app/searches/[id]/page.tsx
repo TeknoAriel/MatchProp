@@ -27,6 +27,14 @@ const ALERT_LABELS: Record<AlertType, string> = {
   BACK_ON_MARKET: 'Volvió a estar activa',
 };
 
+const SORT_OPTIONS: { value: 'date_desc' | 'price_asc' | 'price_desc' | 'area_desc'; label: string }[] =
+  [
+    { value: 'date_desc', label: 'Más recientes' },
+    { value: 'price_asc', label: 'Precio ↑' },
+    { value: 'price_desc', label: 'Precio ↓' },
+    { value: 'area_desc', label: 'Más m²' },
+  ];
+
 export default function SearchResultsPage() {
   const params = useParams();
   const id = params.id as string;
@@ -46,6 +54,7 @@ export default function SearchResultsPage() {
   });
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<string | null>(null);
   const [operationFilter, setOperationFilter] = useState<'SALE' | 'RENT' | null>(null);
+  const [sortBy, setSortBy] = useState<(typeof SORT_OPTIONS)[number]['value']>('date_desc');
   const [listingsStatus, setListingsStatus] = useState<Record<string, ListingStatus>>({});
   const [addToListCard, setAddToListCard] = useState<ListingCard | null>(null);
   const [newListName, setNewListName] = useState('');
@@ -268,13 +277,15 @@ export default function SearchResultsPage() {
     async (
       cursor?: string | null,
       propType?: string | null,
-      operation?: 'SALE' | 'RENT' | null
+      operation?: 'SALE' | 'RENT' | null,
+      order?: (typeof SORT_OPTIONS)[number]['value']
     ) => {
       const params = new URLSearchParams();
       params.set('limit', '20');
       if (cursor) params.set('cursor', cursor);
       if (propType) params.set('propertyTypes', propType);
       if (operation) params.set('operationType', operation);
+      params.set('sortBy', order ?? 'date_desc');
       const res = await fetch(`${API_BASE}/searches/${id}/results?${params}`, {
         credentials: 'include',
       });
@@ -291,7 +302,7 @@ export default function SearchResultsPage() {
 
   useEffect(() => {
     setLoading(true);
-    fetchResults(null, propertyTypeFilter, operationFilter)
+    fetchResults(null, propertyTypeFilter, operationFilter, sortBy)
       .then((data) => {
         if (data) {
           setItems(data.items ?? []);
@@ -300,7 +311,7 @@ export default function SearchResultsPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [fetchResults, propertyTypeFilter, operationFilter]);
+  }, [fetchResults, propertyTypeFilter, operationFilter, sortBy]);
 
   useEffect(() => {
     fetch(`${API_BASE}/alerts/subscriptions`, { credentials: 'include' })
@@ -388,7 +399,7 @@ export default function SearchResultsPage() {
   async function loadMore() {
     if (!nextCursor || loadingMore) return;
     setLoadingMore(true);
-    const data = await fetchResults(nextCursor, propertyTypeFilter, operationFilter);
+    const data = await fetchResults(nextCursor, propertyTypeFilter, operationFilter, sortBy);
     if (data?.items?.length) {
       setItems((prev) => [...prev, ...data.items]);
       setNextCursor(data.nextCursor ?? null);
@@ -430,6 +441,22 @@ export default function SearchResultsPage() {
             onPropertyTypeChange={setPropertyTypeFilter}
             disabled={loading}
           />
+          <label className="mt-3 flex items-center gap-2 text-sm text-gray-700">
+            <span className="shrink-0">Orden</span>
+            <select
+              value={sortBy}
+              onChange={(e) =>
+                setSortBy(e.target.value as (typeof SORT_OPTIONS)[number]['value'])
+              }
+              className="flex-1 min-w-0 rounded-lg border border-slate-200 px-2 py-1.5 text-sm bg-white"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
         <div className="mb-4 p-3 rounded-xl bg-white shadow-sm border border-slate-100/80 space-y-2">

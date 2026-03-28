@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /**
  * Ejecutar: pnpm --filter api ingest:run -- --source=KITEPROP_EXTERNALSITE --limit=200
+ * Catálogo grande (p. ej. ~14k): repetir con --limit=2000 o subir el tope en parseArgs;
+ * el conector pagina con cursor hasta agotar.
  */
 import 'dotenv/config';
 import { runIngest } from '../services/ingest/index.js';
@@ -28,7 +30,7 @@ function parseArgs(): { source: ListingSource; limit: number } {
       }
     } else if (arg.startsWith('--limit=')) {
       const n = parseInt(arg.slice(8), 10);
-      if (!Number.isNaN(n) && n > 0) limit = Math.min(500, n);
+      if (!Number.isNaN(n) && n > 0) limit = Math.min(50000, n);
     }
   }
   return { source, limit };

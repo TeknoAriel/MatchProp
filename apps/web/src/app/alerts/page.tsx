@@ -1,6 +1,5 @@
 'use client';
 
-import type { ComponentProps } from 'react';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -8,6 +7,7 @@ import AlertSubscriptionModal from '../../components/AlertSubscriptionModal';
 import type { AlertSubscriptionForModal } from '../../components/AlertSubscriptionModal';
 import AlertDeliveryModal from '../../components/AlertDeliveryModal';
 import type { AlertDeliveryRow } from '../../components/AlertDeliveryModal';
+import { ToolbarBtn, ToolbarLink, CardToolbar } from '../../components/MpCardToolbar';
 
 const API_BASE = '/api';
 
@@ -24,51 +24,6 @@ const TYPE_LABELS: Record<string, { label: string; icon: string; color: string }
 type Subscription = AlertSubscriptionForModal;
 
 type AlertDelivery = AlertDeliveryRow;
-
-/** Botón compacto icono + etiqueta (primera pantalla) */
-function IconAction({
-  icon,
-  label,
-  className,
-  ...props
-}: { icon: string; label: string; className?: string } & ComponentProps<'button'>) {
-  return (
-    <button
-      type="button"
-      className={`flex flex-col items-center justify-center gap-1 min-h-[72px] px-2 py-2 rounded-xl border font-semibold text-[11px] leading-tight text-center transition-colors disabled:opacity-50 ${className ?? ''}`}
-      {...props}
-    >
-      <span className="text-2xl leading-none" aria-hidden>
-        {icon}
-      </span>
-      <span className="uppercase tracking-wide">{label}</span>
-    </button>
-  );
-}
-
-function IconLink({
-  icon,
-  label,
-  className,
-  href,
-}: {
-  icon: string;
-  label: string;
-  className?: string;
-  href: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`flex flex-col items-center justify-center gap-1 min-h-[72px] px-2 py-2 rounded-xl border font-semibold text-[11px] leading-tight text-center transition-colors ${className ?? ''}`}
-    >
-      <span className="text-2xl leading-none" aria-hidden>
-        {icon}
-      </span>
-      <span className="uppercase tracking-wide">{label}</span>
-    </Link>
-  );
-}
 
 export default function AlertsPage() {
   const router = useRouter();
@@ -193,10 +148,7 @@ export default function AlertsPage() {
         <div className="h-8 w-48 bg-slate-200 rounded-lg animate-pulse mb-6" />
         <div className="space-y-3">
           {[1, 2].map((k) => (
-            <div
-              key={k}
-              className="h-28 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] animate-pulse"
-            />
+            <div key={k} className="h-28 mp-surface animate-pulse" />
           ))}
         </div>
       </main>
@@ -216,34 +168,27 @@ export default function AlertsPage() {
 
   return (
     <main className="py-2">
-      {toast && (
-        <div className="mb-3 p-3 rounded-xl bg-emerald-50 text-emerald-900 border border-emerald-200 text-sm font-medium">
-          {toast}
-        </div>
-      )}
+      {toast && <div className="mb-3 mp-callout font-medium">{toast}</div>}
 
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[var(--mp-foreground)]">Mis alertas</h1>
           <p className="text-sm text-[var(--mp-muted)]">Recibí avisos cuando haya novedades</p>
         </div>
-        <Link
-          href="/searches"
-          className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-medium shadow-sm"
-        >
+        <Link href="/searches" className="mp-btn-primary-sm no-underline hover:no-underline">
           + Nueva
         </Link>
       </div>
 
       {deliveries.length > 0 && (
-        <div className="mb-8 p-4 rounded-2xl bg-gradient-to-b from-emerald-50/40 to-[var(--mp-card)] border border-emerald-200/70 shadow-sm">
+        <div className="mb-8">
           <h2 className="text-lg font-semibold text-[var(--mp-foreground)] mb-1">
             Resultado de alertas
           </h2>
           <p className="text-sm text-[var(--mp-muted)] mb-4">
-            Propiedades que dispararon tus alertas — acciones rápidas en cada ficha
+            Propiedades que dispararon tus alertas — mismas acciones que en tus búsquedas guardadas
           </p>
-          <ul className="space-y-4 mb-4">
+          <ul className="space-y-3 mb-4">
             {deliveries.map((d) => {
               const typeInfo = TYPE_LABELS[d.type] ?? {
                 label: d.type,
@@ -251,11 +196,8 @@ export default function AlertsPage() {
                 color: 'bg-gray-100 text-gray-800',
               };
               return (
-                <li
-                  key={d.id}
-                  className="rounded-2xl border border-emerald-200/60 bg-[var(--mp-card)] overflow-hidden shadow-sm"
-                >
-                  <div className="p-4 pb-3">
+                <li key={d.id} className="mp-surface overflow-hidden">
+                  <div className="p-4">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <span
                         className={`px-2.5 py-1 rounded-full text-xs font-medium ${typeInfo.color}`}
@@ -271,9 +213,9 @@ export default function AlertsPage() {
                         </span>
                         <button
                           type="button"
-                          aria-label="Acciones del aviso"
+                          aria-label="Más acciones"
                           onClick={() => setDeliveryModal(d)}
-                          className="ml-1 w-9 h-9 rounded-xl border border-[var(--mp-border)] bg-[var(--mp-bg)] text-[var(--mp-foreground)] text-lg leading-none hover:bg-emerald-50 hover:border-emerald-300"
+                          className="ml-0.5 min-h-[34px] min-w-[34px] rounded-[var(--mp-radius-chip)] border border-[var(--mp-border)] bg-[var(--mp-bg)] text-[var(--mp-foreground)] text-lg leading-none flex items-center justify-center hover:bg-[color-mix(in_srgb,var(--mp-muted)_8%,var(--mp-card))]"
                         >
                           ⋯
                         </button>
@@ -287,56 +229,49 @@ export default function AlertsPage() {
                         {d.savedSearchName}
                       </p>
                     )}
-                    <p className="text-base font-bold text-sky-700 mt-2">
+                    <p className="mp-price mt-2">
                       {d.listingPrice != null
                         ? `${d.listingCurrency ?? 'USD'} ${d.listingPrice.toLocaleString()}`
                         : 'Consultar'}
                     </p>
                   </div>
-                  <div className="px-3 pb-3 pt-0 space-y-2">
-                    <div className="grid grid-cols-3 gap-2">
-                      <IconLink
-                        href={`/listing/${d.listingId}`}
-                        icon="📄"
-                        label="Ficha"
-                        className="bg-sky-500 text-white border-sky-600 hover:bg-sky-600"
-                      />
-                      <IconLink
-                        href="/me/match"
-                        icon="💚"
-                        label="Match"
-                        className="bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700"
-                      />
-                      <IconLink
-                        href="/feed"
-                        icon="💫"
-                        label="Deck"
-                        className="bg-violet-600 text-white border-violet-700 hover:bg-violet-700"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <IconAction
-                        icon="🔗"
-                        label="Copiar link"
-                        className="bg-white text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-50"
-                        onClick={() => void copyListingLink(d.listingId)}
-                      />
-                      <IconLink
-                        href="/searches"
-                        icon="🔔"
-                        label="Búsquedas"
-                        className="bg-slate-100 text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-200/80"
-                      />
-                    </div>
-                  </div>
+                  <CardToolbar>
+                    <ToolbarLink
+                      href={`/listing/${d.listingId}`}
+                      icon="📄"
+                      label="Ficha"
+                      className="bg-sky-500 text-white border-sky-600 hover:bg-sky-600"
+                    />
+                    <ToolbarLink
+                      href="/me/match"
+                      icon="💚"
+                      label="Match"
+                      className="bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700"
+                    />
+                    <ToolbarLink
+                      href="/feed"
+                      icon="💫"
+                      label="Deck"
+                      className="bg-violet-600 text-white border-violet-700 hover:bg-violet-700"
+                    />
+                    <ToolbarBtn
+                      icon="🔗"
+                      label="Copiar"
+                      className="bg-[var(--mp-card)] text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
+                      onClick={() => void copyListingLink(d.listingId)}
+                    />
+                    <ToolbarLink
+                      href="/searches"
+                      icon="🔔"
+                      label="Búsquedas"
+                      className="bg-[color-mix(in_srgb,var(--mp-muted)_10%,var(--mp-card))] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[color-mix(in_srgb,var(--mp-muted)_16%,var(--mp-card))]"
+                    />
+                  </CardToolbar>
                 </li>
               );
             })}
           </ul>
-          <Link
-            href="/me/match"
-            className="text-sm font-semibold text-emerald-700 hover:text-emerald-800 inline-flex items-center gap-1"
-          >
+          <Link href="/me/match" className="mp-link text-sm inline-flex items-center gap-1">
             Ver todo en Mis match →
           </Link>
         </div>
@@ -344,7 +279,7 @@ export default function AlertsPage() {
 
       {items.length === 0 ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center border border-[var(--mp-border)] bg-[color-mix(in_srgb,var(--mp-accent)_10%,var(--mp-card))]">
             <span className="text-3xl">🔔</span>
           </div>
           <h3 className="font-medium text-[var(--mp-foreground)] mb-2">No tenés alertas activas</h3>
@@ -353,13 +288,13 @@ export default function AlertsPage() {
           </p>
           <Link
             href="/searches"
-            className="inline-block px-6 py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700"
+            className="mp-btn-primary inline-block no-underline hover:no-underline px-6"
           >
             Ver mis búsquedas
           </Link>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {items.map((sub) => {
             const typeInfo = TYPE_LABELS[sub.type] ?? {
               label: sub.type,
@@ -367,17 +302,8 @@ export default function AlertsPage() {
               color: 'bg-gray-100 text-gray-800',
             };
 
-            const activeCard = sub.isEnabled;
-
             return (
-              <div
-                key={sub.id}
-                className={`rounded-2xl border overflow-hidden transition-shadow ${
-                  activeCard
-                    ? 'border-emerald-300/80 bg-gradient-to-b from-emerald-50/70 via-white to-[var(--mp-card)] shadow-md shadow-emerald-900/10'
-                    : 'bg-gray-50 border-gray-200 opacity-90'
-                }`}
-              >
+              <div key={sub.id} className="mp-surface overflow-hidden">
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <span
@@ -386,20 +312,14 @@ export default function AlertsPage() {
                       {typeInfo.icon} {typeInfo.label}
                     </span>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span
-                        className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                          sub.isEnabled
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-slate-200 text-slate-600'
-                        }`}
-                      >
+                      <span className={sub.isEnabled ? 'mp-pill-success' : 'mp-pill-muted'}>
                         {sub.isEnabled ? 'Activa' : 'Pausada'}
                       </span>
                       <button
                         type="button"
-                        aria-label="Acciones de alerta"
+                        aria-label="Más acciones"
                         onClick={() => setSubModal(sub)}
-                        className="w-9 h-9 rounded-xl border border-emerald-200/80 bg-white/90 text-[var(--mp-foreground)] text-lg leading-none hover:bg-emerald-50 shadow-sm"
+                        className="min-h-[34px] min-w-[34px] rounded-[var(--mp-radius-chip)] border border-[var(--mp-border)] bg-[var(--mp-bg)] text-[var(--mp-foreground)] text-lg leading-none flex items-center justify-center hover:bg-[color-mix(in_srgb,var(--mp-muted)_8%,var(--mp-card))]"
                       >
                         ⋯
                       </button>
@@ -417,103 +337,85 @@ export default function AlertsPage() {
 
                   <p className="text-xs text-[var(--mp-muted)] mt-2">
                     {sub.lastRunAt && (
-                      <>Última corrida: {new Date(sub.lastRunAt).toLocaleDateString('es-AR')}</>
+                      <>Última: {new Date(sub.lastRunAt).toLocaleDateString('es-AR')}</>
                     )}
                   </p>
                 </div>
 
-                <div className="px-3 pb-4 pt-0 space-y-2">
-                  <button
-                    type="button"
+                <CardToolbar>
+                  <ToolbarBtn
+                    icon={sub.isEnabled ? '⏸' : '▶'}
+                    label={togglingId === sub.id ? '…' : sub.isEnabled ? 'Pausar' : 'Activar'}
                     disabled={togglingId === sub.id}
                     onClick={() => toggleEnabled(sub)}
-                    className={`w-full py-3 px-4 rounded-xl font-bold text-sm border flex items-center justify-center gap-2 transition-colors ${
+                    className={
                       sub.isEnabled
-                        ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm'
-                        : 'bg-white text-emerald-800 border-emerald-300 hover:bg-emerald-50'
-                    } disabled:opacity-60`}
-                  >
-                    <span className="text-xl" aria-hidden>
-                      {sub.isEnabled ? '⏸' : '▶'}
-                    </span>
-                    {togglingId === sub.id
-                      ? 'Guardando…'
-                      : sub.isEnabled
-                        ? 'Pausar alerta'
-                        : 'Activar alerta'}
-                  </button>
-
+                        ? 'bg-emerald-600 text-white !border-emerald-700 hover:bg-emerald-700'
+                        : 'bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]'
+                    }
+                  />
                   {sub.savedSearchId ? (
                     <>
-                      <div className="grid grid-cols-3 gap-2">
-                        <IconAction
-                          icon="📋"
-                          label="Listado"
-                          className="bg-white text-emerald-900 border-emerald-200 hover:bg-emerald-50"
-                          onClick={() => void verResultados(sub)}
-                        />
-                        <IconAction
-                          icon="💫"
-                          label="Deck"
-                          className="bg-violet-600 text-white border-violet-700 hover:bg-violet-700"
-                          onClick={() => void irAlDeck(sub)}
-                        />
-                        <IconLink
-                          href={`/searches/${sub.savedSearchId}`}
-                          icon="✏️"
-                          label="Editar"
-                          className="bg-white text-emerald-900 border-emerald-200 hover:bg-emerald-50"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <IconLink
-                          href="/assistant"
-                          icon="🔍"
-                          label="Asistente"
-                          className="bg-sky-50 text-sky-900 border-sky-200 hover:bg-sky-100"
-                        />
-                        <IconLink
-                          href="/searches"
-                          icon="📂"
-                          label="Búsquedas"
-                          className="bg-slate-100 text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-200/80"
-                        />
-                      </div>
+                      <ToolbarBtn
+                        icon="📋"
+                        label="Listado"
+                        className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
+                        onClick={() => void verResultados(sub)}
+                      />
+                      <ToolbarBtn
+                        icon="💫"
+                        label="Deck"
+                        className="bg-violet-600 text-white border-violet-700 hover:bg-violet-700"
+                        onClick={() => void irAlDeck(sub)}
+                      />
+                      <ToolbarLink
+                        href={`/searches/${sub.savedSearchId}`}
+                        icon="✏️"
+                        label="Editar"
+                        className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
+                      />
+                      <ToolbarLink
+                        href="/assistant"
+                        icon="🔍"
+                        label="Asistente"
+                        className="bg-[color-mix(in_srgb,var(--mp-accent)_12%,var(--mp-card))] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[color-mix(in_srgb,var(--mp-accent)_18%,var(--mp-card))]"
+                      />
+                      <ToolbarLink
+                        href="/searches"
+                        icon="📂"
+                        label="Búsquedas"
+                        className="bg-[color-mix(in_srgb,var(--mp-muted)_10%,var(--mp-card))] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[color-mix(in_srgb,var(--mp-muted)_16%,var(--mp-card))]"
+                      />
                     </>
                   ) : (
-                    <IconLink
+                    <ToolbarLink
                       href="/searches"
                       icon="📂"
-                      label="Ver búsquedas"
-                      className="w-full bg-slate-100 text-[var(--mp-foreground)] border-[var(--mp-border)] hover:bg-slate-200/80"
+                      label="Búsquedas"
+                      className="bg-[color-mix(in_srgb,var(--mp-muted)_10%,var(--mp-card))] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[color-mix(in_srgb,var(--mp-muted)_16%,var(--mp-card))]"
                     />
                   )}
-
-                  <button
-                    type="button"
+                  <ToolbarBtn
+                    icon="🗑"
+                    label="Eliminar"
+                    className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
                     onClick={() => {
                       if (!confirm('¿Eliminar esta alerta?')) return;
                       void deleteSub(sub.id);
                     }}
-                    className="w-full py-2.5 px-3 rounded-xl bg-red-50 text-red-700 border border-red-100 font-semibold text-sm hover:bg-red-100 flex items-center justify-center gap-2"
-                  >
-                    <span className="text-lg" aria-hidden>
-                      🗑️
-                    </span>
-                    Eliminar alerta
-                  </button>
-                </div>
+                  />
+                </CardToolbar>
               </div>
             );
           })}
         </div>
       )}
 
-      <div className="mt-8 p-4 rounded-2xl bg-emerald-50/80 border border-emerald-100">
-        <p className="text-sm text-emerald-900">
-          <strong className="text-emerald-800">💡 Tip:</strong> Podés tener alertas de distintos
-          tipos para la misma búsqueda: nuevas publicaciones, bajas de precio o propiedades que
-          vuelven al mercado. Usá <strong>Listado</strong> para revisar en tabla o{' '}
+      <div className="mt-8 mp-callout">
+        <p className="text-sm">
+          <strong className="text-[var(--mp-foreground)]">💡 Tip:</strong> Podés tener alertas de
+          distintos tipos para la misma búsqueda: nuevas publicaciones, bajas de precio o
+          propiedades que vuelven al mercado. Usá <strong>Listado</strong> para revisar en tabla o{' '}
           <strong>Deck</strong> para decidir con swipe.
         </p>
       </div>
