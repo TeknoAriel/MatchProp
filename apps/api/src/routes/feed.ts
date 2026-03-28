@@ -260,6 +260,17 @@ function parseFeedQuery(q: Record<string, unknown>): FeedFilters {
   };
 }
 
+/** Solo enum válido en DB; descarta strings viejos o basura del JSON guardado */
+function sanitizeSavedPropertyTypes(raw: unknown): string[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const arr = raw.filter(
+    (v): v is string =>
+      typeof v === 'string' &&
+      VALID_PROPERTY_TYPES.includes(v as (typeof VALID_PROPERTY_TYPES)[number])
+  );
+  return arr.length ? arr : undefined;
+}
+
 function mergeFilters(
   pref: {
     operation?: string | null;
@@ -281,11 +292,13 @@ function mergeFilters(
   const base = p
     ? {
         operationType: (p.operation ?? p.operationType) as string | undefined,
-        propertyTypes: Array.isArray(p.propertyTypes)
-          ? (p.propertyTypes as string[])
-          : Array.isArray(p.propertyType)
-            ? (p.propertyType as string[])
-            : undefined,
+        propertyTypes: sanitizeSavedPropertyTypes(
+          Array.isArray(p.propertyTypes)
+            ? p.propertyTypes
+            : Array.isArray(p.propertyType)
+              ? p.propertyType
+              : undefined
+        ),
         priceMin:
           typeof p.priceMin === 'number'
             ? p.priceMin
@@ -320,7 +333,6 @@ function mergeFilters(
         addressText: (p.addressText as string) ?? undefined,
         titleContains: (p.titleContains as string) ?? undefined,
         descriptionContains: (p.descriptionContains as string) ?? undefined,
-        sortBy: (p.sortBy as FeedFilters['sortBy']) ?? undefined,
         source: (p.source as string) ?? undefined,
         aptoCredito: p.aptoCredito === true ? true : undefined,
         amenities: Array.isArray(p.amenities) ? (p.amenities as string[]) : undefined,
@@ -328,9 +340,10 @@ function mergeFilters(
         listingAgeDays: typeof p.listingAgeDays === 'number' ? p.listingAgeDays : undefined,
       }
     : {};
+  const mergedTypes = overrides.propertyTypes ?? base.propertyTypes;
   return {
     operationType: overrides.operationType ?? base.operationType,
-    propertyTypes: overrides.propertyTypes ?? base.propertyTypes,
+    propertyTypes: sanitizeSavedPropertyTypes(mergedTypes),
     priceMin: overrides.priceMin ?? base.priceMin,
     priceMax: overrides.priceMax ?? base.priceMax,
     currency: overrides.currency ?? base.currency,
@@ -345,7 +358,8 @@ function mergeFilters(
     addressText: overrides.addressText ?? base.addressText,
     titleContains: overrides.titleContains ?? base.titleContains,
     descriptionContains: overrides.descriptionContains ?? base.descriptionContains,
-    sortBy: overrides.sortBy ?? base.sortBy,
+    // Solo el querystring define orden explícito; sin sortBy en URL → date_desc en el handler (no heredar JSON guardado).
+    sortBy: overrides.sortBy,
     source: overrides.source ?? base.source,
     aptoCredito: overrides.aptoCredito ?? base.aptoCredito,
     amenities: overrides.amenities ?? base.amenities,

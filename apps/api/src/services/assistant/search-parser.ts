@@ -252,13 +252,45 @@ function parseCurrency(text: string): string | undefined {
   return undefined;
 }
 
+/**
+ * Tipos de propiedad con límites de palabra y menos falsos positivos:
+ * - "con oficina" / "con local" en una casa no cuentan como OFFICE.
+ * - "localidad" no dispara OFFICE (\blocal\b no matchea dentro de localidad).
+ * - "loteo" no cuenta como LAND.
+ * - OFFICE: local comercial, oficina explícita, consultorio, planta libre, o "busco local".
+ */
 function parsePropertyType(text: string): string[] | undefined {
-  const lower = text.toLowerCase();
+  const stripped = text
+    .replace(/\bcon\s+oficinas?\b/gi, ' ')
+    .replace(/\bcon\s+un\s+oficinas?\b/gi, ' ')
+    .replace(/\bcon\s+locales?\s+chicos?\b/gi, ' ')
+    .replace(/\bcon\s+local\b/gi, ' ');
+  const lower = stripped.toLowerCase();
   const found: string[] = [];
-  if (/casa|house/i.test(lower)) found.push('HOUSE');
-  if (/departamento|depto|apartment|ph/i.test(lower)) found.push('APARTMENT');
-  if (/terreno|lote|land/i.test(lower)) found.push('LAND');
-  if (/local|oficina|office|comercial/i.test(lower)) found.push('OFFICE');
+
+  const hasHouse =
+    /\b(casas?|chalets?|chalet|viviendas?\s+unifamiliares?|vivienda\s+unifamiliar|houses?)\b/i.test(
+      lower
+    );
+  const hasApt = /\b(departamentos?|deptos?|\bdepto\b|apartments?|\bph\b|p\.h\.)\b/i.test(lower);
+  const hasLand =
+    /\b(terrenos?|lotes?|lands?)\b/i.test(lower) &&
+    !/\b(loteo|lotificaci[oó]n|loteamiento)\b/i.test(lower);
+  const hasOffice =
+    /\b(local(?:es)?\s+comercial(?:es)?|planta\s+libre|consultorios?|offices?)\b/i.test(lower) ||
+    /\boficinas?\s+(en\s+)?(venta|alquiler|alquiler\s+temporal)\b/i.test(lower) ||
+    /\b(locales?)\s+(en\s+)?(venta|alquiler)\b/i.test(lower) ||
+    /\b(venta|alquiler)\s+(de\s+)?(un\s+)?(local|locales|oficina|oficinas)\b/i.test(lower) ||
+    /\b(busco|buscamos|quiero|necesito|solo|únicamente|unicamente)\s+(un\s+)?(local|oficina|locales|oficinas)\b/i.test(
+      lower
+    ) ||
+    (/\b(local|locales)\b/i.test(lower) && /\b(comercial|showroom|galería|galeria)\b/i.test(lower));
+
+  if (hasHouse) found.push('HOUSE');
+  if (hasApt) found.push('APARTMENT');
+  if (hasLand) found.push('LAND');
+  if (hasOffice) found.push('OFFICE');
+
   return found.length
     ? [...new Set(found)].filter((t) =>
         VALID_PROPERTY_TYPES.includes(t as (typeof VALID_PROPERTY_TYPES)[number])

@@ -3,14 +3,29 @@
  * - VITEST: desactiva under-pressure (evita 503 en tests).
  * - APP_URL: base para magic links (evita Invalid URL si link fuera relativo).
  * - KITEPROP_EXTERNALSITE_MODE: fixture evita fetch a internet en ingest.
- * - DATABASE_URL: en CI se inyecta por el workflow; en local se lee apps/api/.env si falta.
+ * - DATABASE_URL: CI la inyecta; en local se cargan .env del paquete api (no depender de process.cwd:
+ *   desde la raíz del monorepo `pnpm --filter api test:all` dejaba cwd=MatchProp y fallaba Prisma).
  */
 import { config as loadEnv } from 'dotenv';
-import { resolve } from 'path';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
 
-if (!process.env.DATABASE_URL) {
+const apiPackageRoot = dirname(fileURLToPath(import.meta.url));
+
+function loadDatabaseUrlFromEnvFiles() {
+  if (process.env.DATABASE_URL) return;
+  loadEnv({ path: resolve(apiPackageRoot, '.env') });
+  if (process.env.DATABASE_URL) return;
+  loadEnv({ path: resolve(apiPackageRoot, '.env.local') });
+  if (process.env.DATABASE_URL) return;
+  loadEnv({ path: resolve(process.cwd(), 'apps/api/.env') });
+  if (process.env.DATABASE_URL) return;
+  loadEnv({ path: resolve(process.cwd(), 'apps/api/.env.local') });
+  if (process.env.DATABASE_URL) return;
   loadEnv({ path: resolve(process.cwd(), '.env') });
 }
+
+loadDatabaseUrlFromEnvFiles();
 
 process.env.VITEST = 'true';
 process.env.APP_URL = process.env.APP_URL || 'http://localhost:3000';

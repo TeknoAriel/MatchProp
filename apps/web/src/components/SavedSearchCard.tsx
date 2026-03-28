@@ -57,7 +57,7 @@ export default function SavedSearchCard({
   const expanded = expandedId === s.id;
 
   return (
-    <div className="p-4 rounded-xl bg-[var(--mp-card)] shadow-sm border border-[var(--mp-border)]">
+    <div className="p-4 mp-surface">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <h2 className="font-medium text-[var(--mp-foreground)]">
@@ -81,7 +81,7 @@ export default function SavedSearchCard({
           <button
             type="button"
             onClick={() => onMatch(s.id)}
-            className="px-3 py-1.5 text-sm font-medium rounded-lg bg-sky-500 text-white hover:bg-sky-600"
+            className="mp-btn-primary-sm"
             title="Buscar en modo Match"
           >
             Match
@@ -89,21 +89,15 @@ export default function SavedSearchCard({
           <button
             type="button"
             onClick={() => onEditOpen(s)}
-            className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+            className="mp-btn-ghost"
             title="Editar"
           >
             ✏️
           </button>
           {activeSearchId === s.id ? (
-            <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">
-              Activa
-            </span>
+            <span className="mp-pill-success">Activa</span>
           ) : (
-            <button
-              type="button"
-              onClick={() => onSetActive(s.id)}
-              className="px-2 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
-            >
+            <button type="button" onClick={() => onSetActive(s.id)} className="mp-pill-muted">
               Activar
             </button>
           )}
@@ -140,7 +134,7 @@ export default function SavedSearchCard({
       <button
         type="button"
         onClick={() => onToggleExpand(s.id)}
-        className="mt-2 text-sm text-sky-600 hover:underline"
+        className="mt-2 mp-link hover:underline"
       >
         {expanded ? 'Ocultar' : 'Ver'} alertas y resultados
       </button>
@@ -158,11 +152,7 @@ export default function SavedSearchCard({
                     key={type}
                     type="button"
                     onClick={() => onAlert(s.id, type, !isOn)}
-                    className={`px-2 py-1 text-xs rounded-full ${
-                      isOn
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
-                    }`}
+                    className={isOn ? 'mp-pill-alert-on' : 'mp-pill-muted'}
                   >
                     {ALERT_LABELS[type]} {isOn ? '✓' : ''}
                   </button>
@@ -193,7 +183,7 @@ export default function SavedSearchCard({
             )}
             <Link
               href={`/searches/${s.id}`}
-              className="text-xs text-sky-600 hover:underline mt-1 inline-block"
+              className="text-xs mp-link hover:underline mt-1 inline-block"
             >
               Ver resultados completos →
             </Link>
@@ -226,45 +216,43 @@ export function EditSearchModal({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-[var(--mp-card)] rounded-2xl shadow-xl max-w-md w-full p-5 border border-[var(--mp-border)]">
+      <div className="mp-modal-panel max-w-md w-full p-5">
         <h3 className="font-bold text-[var(--mp-foreground)] mb-4">Editar búsqueda</h3>
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-[var(--mp-muted)] block mb-1">Nombre</label>
+            <label className="mp-input-label">Nombre</label>
             <input
               type="text"
               value={editName}
               onChange={(e) => onEditName(e.target.value)}
-              className="w-full px-3 py-2 border border-[var(--mp-border)] rounded-xl bg-[var(--mp-bg)] text-[var(--mp-foreground)]"
+              className="mp-input"
               placeholder="Ej: Casa 3 amb Funes"
             />
           </div>
           <div>
-            <label className="text-xs text-[var(--mp-muted)] block mb-1">
-              Texto de búsqueda (opcional, min 3 caracteres)
-            </label>
+            <label className="mp-input-label">Texto de búsqueda (opcional, min 3 caracteres)</label>
             <input
               type="text"
               value={editText}
               onChange={(e) => onEditText(e.target.value)}
-              className="w-full px-3 py-2 border border-[var(--mp-border)] rounded-xl bg-[var(--mp-bg)] text-[var(--mp-foreground)]"
+              className="mp-input"
               placeholder="Ej: casa 3 dormitorios en Funes hasta 150000 USD"
             />
           </div>
         </div>
-        <div className="flex gap-2 mt-4">
+        <div className="flex gap-2 mt-4 flex-wrap">
           <button
             type="button"
             onClick={onSave}
             disabled={editSaving}
-            className="px-4 py-2 bg-sky-500 text-white rounded-xl hover:bg-sky-600 disabled:opacity-50"
+            className="mp-btn-primary disabled:opacity-50"
           >
             {editSaving ? 'Guardando...' : 'Guardar'}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-[var(--mp-muted)] hover:bg-[var(--mp-bg)] rounded-xl"
+            className="px-4 py-2 text-[var(--mp-muted)] hover:bg-[var(--mp-bg)] rounded-[var(--mp-radius-chip)]"
           >
             Cancelar
           </button>

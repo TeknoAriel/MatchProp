@@ -381,7 +381,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <main className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-sky-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[var(--mp-accent)] border-t-transparent rounded-full animate-spin" />
       </main>
     );
   }
@@ -410,7 +410,7 @@ export default function DashboardPage() {
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             placeholder="Ej: casa 3 dormitorios en Funes hasta 150mil USD"
             disabled={searching || isListening}
-            className="w-full px-4 py-4 pr-24 text-base rounded-2xl border-2 border-[var(--mp-border)] bg-[var(--mp-card)] text-[var(--mp-foreground)] placeholder:text-[var(--mp-muted)] focus:border-sky-500 focus:outline-none transition-colors disabled:opacity-60"
+            className="w-full px-4 py-4 pr-24 text-base rounded-[var(--mp-radius-card)] border-2 border-[var(--mp-border)] bg-[var(--mp-card)] text-[var(--mp-foreground)] placeholder:text-[var(--mp-muted)] focus:border-[var(--mp-accent)] focus:outline-none transition-colors disabled:opacity-60"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
             {voiceSupported && (
@@ -418,10 +418,10 @@ export default function DashboardPage() {
                 type="button"
                 onClick={isListening ? stopVoice : startVoice}
                 disabled={searching}
-                className={`p-2.5 rounded-xl transition-all ${
+                className={`p-2.5 rounded-[var(--mp-radius-chip)] transition-all ${
                   isListening
                     ? 'bg-red-500 text-white animate-pulse'
-                    : 'bg-[var(--mp-bg)] text-[var(--mp-muted)] hover:bg-sky-100 hover:text-sky-600'
+                    : 'bg-[var(--mp-bg)] text-[var(--mp-muted)] hover:bg-[color-mix(in_srgb,var(--mp-accent)_12%,var(--mp-bg))] hover:text-[var(--mp-accent-hover)]'
                 }`}
               >
                 🎤
@@ -431,7 +431,7 @@ export default function DashboardPage() {
               type="button"
               onClick={() => handleSearch()}
               disabled={searching || !searchText.trim() || searchText.length < 3}
-              className="p-2.5 rounded-xl bg-sky-500 text-white hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-2.5 rounded-[var(--mp-radius-chip)] bg-[var(--mp-accent)] text-white hover:bg-[var(--mp-accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {searching ? (
                 <span className="w-5 h-5 block border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -443,7 +443,7 @@ export default function DashboardPage() {
         </div>
 
         {isListening && (
-          <p className="mt-2 text-sm text-sky-600 flex items-center gap-2">
+          <p className="mt-2 text-sm text-[var(--mp-accent)] flex items-center gap-2 font-medium">
             <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
             Escuchando... Decí lo que buscás
           </p>
@@ -457,7 +457,7 @@ export default function DashboardPage() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">Mis búsquedas</h2>
-            <Link href="/searches" className="text-sm text-sky-600 hover:underline">
+            <Link href="/searches" className="text-sm mp-link hover:underline">
               Ver todas
             </Link>
           </div>
@@ -477,7 +477,7 @@ export default function DashboardPage() {
       {/* Mis match — botón alargado: likes → favoritos → resultados búsquedas */}
       <Link
         href="/me/match"
-        className="block w-full p-4 mb-6 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/25 hover:shadow-xl transition-shadow md:hidden"
+        className="block w-full p-4 mb-6 rounded-[var(--mp-radius-card)] bg-gradient-to-r from-[var(--mp-accent)] to-[var(--mp-accent-hover)] text-white shadow-mp-md hover:shadow-mp-md transition-shadow md:hidden"
       >
         <div className="flex items-center justify-between">
           <div>
@@ -493,7 +493,7 @@ export default function DashboardPage() {
       {/* Mis alertas — destacado */}
       <Link
         href="/alerts"
-        className="block w-full p-4 mb-6 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25 hover:shadow-xl transition-shadow md:hidden"
+        className="block w-full p-4 mb-6 rounded-[var(--mp-radius-card)] bg-gradient-to-r from-[var(--mp-premium)] to-[var(--mp-premium-hover)] text-slate-900 shadow-mp-md hover:shadow-mp-md transition-shadow md:hidden"
       >
         <div className="flex items-center justify-between">
           <div>
@@ -509,7 +509,7 @@ export default function DashboardPage() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">Alertas activas</h2>
-            <Link href="/alerts" className="text-sm text-sky-600 hover:underline">
+            <Link href="/alerts" className="text-sm mp-link hover:underline">
               Ver todas
             </Link>
           </div>
@@ -523,11 +523,11 @@ export default function DashboardPage() {
                 <Link
                   key={alert.id}
                   href="/alerts"
-                  className="block p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] hover:border-sky-300 hover:shadow-sm transition-all"
+                  className="block p-4 mp-surface mp-surface-interactive"
                 >
                   <div className="flex items-center justify-between">
                     <div className="min-w-0 flex-1">
-                      <span className="text-xs font-medium text-sky-600">
+                      <span className="text-xs font-medium text-[var(--mp-accent-hover)]">
                         {typeInfo.icon} {typeInfo.label}
                       </span>
                       <p className="text-sm text-[var(--mp-foreground)] truncate mt-0.5">
@@ -537,7 +537,7 @@ export default function DashboardPage() {
                         {alert.isEnabled ? '✓ Activa' : '⏸ Pausada'}
                       </p>
                     </div>
-                    <span className="ml-3 text-sky-500">→</span>
+                    <span className="ml-3 text-[var(--mp-accent)]">→</span>
                   </div>
                 </Link>
               );
@@ -549,7 +549,7 @@ export default function DashboardPage() {
       {/* Empty state + Motivational */}
       {searches.length === 0 && alerts.length === 0 && (
         <div className="text-center py-8">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center">
+          <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center border border-[var(--mp-border)] bg-[color-mix(in_srgb,var(--mp-accent)_12%,var(--mp-card))]">
             <span className="text-4xl animate-float">🏠</span>
           </div>
           <h3 className="font-semibold text-lg text-[var(--mp-foreground)] mb-2">
@@ -565,45 +565,27 @@ export default function DashboardPage() {
       {/* Accesos rápidos — solo en mobile (web tiene sidebar) */}
       <div className="md:hidden mt-8 pt-6 border-t border-[var(--mp-border)]">
         <div className="grid grid-cols-2 gap-3">
-          <Link
-            href="/feed"
-            className="p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] hover:border-sky-300 transition-colors text-center"
-          >
+          <Link href="/feed" className="p-4 mp-surface mp-surface-interactive text-center">
             <span className="text-2xl block mb-1">🔥</span>
             <span className="text-sm font-medium text-[var(--mp-foreground)]">Match</span>
           </Link>
-          <Link
-            href="/searches"
-            className="p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] hover:border-sky-300 transition-colors text-center"
-          >
+          <Link href="/searches" className="p-4 mp-surface mp-surface-interactive text-center">
             <span className="text-2xl block mb-1">📁</span>
             <span className="text-sm font-medium text-[var(--mp-foreground)]">Búsquedas</span>
           </Link>
-          <Link
-            href="/alerts"
-            className="p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] hover:border-sky-300 transition-colors text-center"
-          >
+          <Link href="/alerts" className="p-4 mp-surface mp-surface-interactive text-center">
             <span className="text-2xl block mb-1">🔔</span>
             <span className="text-sm font-medium text-[var(--mp-foreground)]">Alertas</span>
           </Link>
-          <Link
-            href="/feed/list"
-            className="p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] hover:border-sky-300 transition-colors text-center"
-          >
+          <Link href="/feed/list" className="p-4 mp-surface mp-surface-interactive text-center">
             <span className="text-2xl block mb-1">📋</span>
             <span className="text-sm font-medium text-[var(--mp-foreground)]">Lista</span>
           </Link>
-          <Link
-            href="/search/map"
-            className="p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] hover:border-sky-300 transition-colors text-center"
-          >
+          <Link href="/search/map" className="p-4 mp-surface mp-surface-interactive text-center">
             <span className="text-2xl block mb-1">🗺️</span>
             <span className="text-sm font-medium text-[var(--mp-foreground)]">Mapa</span>
           </Link>
-          <Link
-            href="/me/saved"
-            className="p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] hover:border-sky-300 transition-colors text-center"
-          >
+          <Link href="/me/saved" className="p-4 mp-surface mp-surface-interactive text-center">
             <span className="text-2xl block mb-1">⭐</span>
             <span className="text-sm font-medium text-[var(--mp-foreground)]">Favoritos</span>
           </Link>

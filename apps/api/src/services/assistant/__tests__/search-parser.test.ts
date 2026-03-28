@@ -49,6 +49,23 @@ describe('parseSearchText', () => {
     expect(r.filters.propertyType).toContain('HOUSE');
   });
 
+  it('casa con oficina no mezcla OFFICE (oficina como amenity)', () => {
+    const r = parseSearchText('casa con oficina en Rosario 3 dormitorios');
+    expect(r.filters.propertyType).toContain('HOUSE');
+    expect(r.filters.propertyType).not.toContain('OFFICE');
+  });
+
+  it('"localidad" no dispara tipo OFFICE', () => {
+    const r = parseSearchText('departamento en localidad Fisherton');
+    expect(r.filters.propertyType).toContain('APARTMENT');
+    expect(r.filters.propertyType).not.toContain('OFFICE');
+  });
+
+  it('local comercial sí es OFFICE', () => {
+    const r = parseSearchText('local comercial en venta Rosario');
+    expect(r.filters.propertyType).toContain('OFFICE');
+  });
+
   it('texto vacío devuelve filtros vacíos', () => {
     const r = parseSearchText('   ');
     expect(Object.keys(r.filters)).toHaveLength(0);

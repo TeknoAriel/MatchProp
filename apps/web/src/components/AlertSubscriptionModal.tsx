@@ -40,7 +40,7 @@ function ModalActionBtn({
   return (
     <button
       type="button"
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-left transition-colors disabled:opacity-50 ${className}`}
+      className={`w-full flex items-center gap-3 px-4 py-3 rounded-[var(--mp-radius-chip)] font-medium text-left transition-colors disabled:opacity-50 ${className}`}
       {...props}
     >
       {children}
@@ -78,17 +78,17 @@ export default function AlertSubscriptionModal({
       role="presentation"
     >
       <div
-        className="bg-[var(--mp-card)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto border border-emerald-200/60"
+        className="mp-modal-panel rounded-t-[var(--mp-radius-card)] sm:rounded-[var(--mp-radius-card)] w-full sm:max-w-md max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="alert-modal-title"
       >
-        <div className="p-5 bg-gradient-to-br from-emerald-600 to-emerald-800 text-white rounded-t-2xl sm:rounded-t-2xl">
+        <div className="mp-modal-header">
           <h2 id="alert-modal-title" className="text-lg font-semibold">
             Gestionar alerta
           </h2>
-          <p className="text-xs text-emerald-100 mt-1.5 flex items-center gap-1.5">
+          <p className="text-xs mp-modal-header-muted mt-1.5 flex items-center gap-1.5">
             <span aria-hidden>{typeInfo.icon}</span>
             {typeInfo.label}
           </p>
@@ -96,11 +96,11 @@ export default function AlertSubscriptionModal({
             {sub.savedSearchName ?? 'Búsqueda guardada'}
           </p>
           {(sub.savedSearchQueryText ?? '').trim() && (
-            <p className="text-sm text-emerald-50/90 mt-1.5 line-clamp-3 leading-snug">
+            <p className="text-sm mp-modal-header-muted mt-1.5 line-clamp-3 leading-snug">
               {sub.savedSearchQueryText}
             </p>
           )}
-          <p className="text-xs text-emerald-100/90 mt-3 flex flex-wrap gap-x-2 gap-y-0.5">
+          <p className="text-xs mp-modal-header-muted mt-3 flex flex-wrap gap-x-2 gap-y-0.5">
             <span>{sub.isEnabled ? '● Activa' : '○ Pausada'}</span>
             {sub.lastRunAt && (
               <span suppressHydrationWarning>
@@ -129,7 +129,7 @@ export default function AlertSubscriptionModal({
                   void onVerResultados(sub);
                   onClose();
                 }}
-                className="bg-sky-500 text-white hover:bg-sky-600 border border-sky-600"
+                className="bg-[var(--mp-accent)] text-white hover:bg-[var(--mp-accent-hover)] !border-[var(--mp-accent-hover)]"
               >
                 <span className="text-xl shrink-0" aria-hidden>
                   📋
@@ -153,7 +153,7 @@ export default function AlertSubscriptionModal({
               <Link
                 href={`/searches/${sub.savedSearchId}`}
                 onClick={onClose}
-                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-white text-emerald-900 border border-emerald-200 font-medium hover:bg-emerald-50"
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-[var(--mp-radius-chip)] bg-[var(--mp-card)] text-[var(--mp-foreground)] border border-[var(--mp-border)] font-medium hover:bg-[var(--mp-bg)]"
               >
                 <span className="text-xl shrink-0" aria-hidden>
                   ✏️
@@ -166,7 +166,7 @@ export default function AlertSubscriptionModal({
           <Link
             href="/searches"
             onClick={onClose}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-slate-100 text-[var(--mp-foreground)] border border-[var(--mp-border)] font-medium hover:bg-slate-200/80"
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-[var(--mp-radius-chip)] bg-[color-mix(in_srgb,var(--mp-muted)_10%,var(--mp-card))] text-[var(--mp-foreground)] border border-[var(--mp-border)] font-medium hover:bg-[color-mix(in_srgb,var(--mp-muted)_16%,var(--mp-card))]"
           >
             <span className="text-xl shrink-0" aria-hidden>
               📂

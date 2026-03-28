@@ -3,6 +3,8 @@ import type { SourceConnector } from './types.js';
 import { upsertListing } from './upsert.js';
 
 const EVENT_TYPE = 'INGEST_RUN_REQUESTED';
+/** Tope por job (CLI puede pedir más; ingest:cron sigue usando 200 en su llamada). */
+const INGEST_BATCH_MAX = 8000;
 
 export async function processIngestEvent(
   eventId: string,
@@ -17,7 +19,7 @@ export async function processIngestEvent(
 
   const payload = ev.payload as { source?: string; limit?: number; cursor?: string };
   const source = payload?.source ?? 'KITEPROP_EXTERNALSITE';
-  const limit = Math.min(200, Math.max(1, payload?.limit ?? 200));
+  const limit = Math.min(INGEST_BATCH_MAX, Math.max(1, payload?.limit ?? 200));
   const connector = getConnector(source);
   if (!connector) {
     await prisma.outboxEvent.update({

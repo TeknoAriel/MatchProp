@@ -1,12 +1,19 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import type { ListingCard } from '@matchprop/shared';
 import FilterChips from '../../../components/FilterChips';
 import InquiryModal from '../../../components/InquiryModal';
 import ListingImage from '../../../components/ListingImage';
+import { MpSecondaryNav, SECONDARY_NAV_HUB } from '../../../components/MpSecondaryNav';
+import {
+  CardToolbar,
+  ToolbarBtn,
+  ToolbarLink,
+  ToolbarRow,
+} from '../../../components/MpCardToolbar';
 
 type ListingStatus = {
   inFavorite: boolean;
@@ -27,6 +34,16 @@ const ALERT_LABELS: Record<AlertType, string> = {
   BACK_ON_MARKET: 'Volvió a estar activa',
 };
 
+const SORT_OPTIONS: {
+  value: 'date_desc' | 'price_asc' | 'price_desc' | 'area_desc';
+  label: string;
+}[] = [
+  { value: 'date_desc', label: 'Más recientes' },
+  { value: 'price_asc', label: 'Precio ↑' },
+  { value: 'price_desc', label: 'Precio ↓' },
+  { value: 'area_desc', label: 'Más m²' },
+];
+
 export default function SearchResultsPage() {
   const params = useParams();
   const id = params.id as string;
@@ -46,12 +63,15 @@ export default function SearchResultsPage() {
   });
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<string | null>(null);
   const [operationFilter, setOperationFilter] = useState<'SALE' | 'RENT' | null>(null);
+  const [sortBy, setSortBy] = useState<(typeof SORT_OPTIONS)[number]['value']>('date_desc');
   const [listingsStatus, setListingsStatus] = useState<Record<string, ListingStatus>>({});
   const [addToListCard, setAddToListCard] = useState<ListingCard | null>(null);
   const [newListName, setNewListName] = useState('');
   const [customLists, setCustomLists] = useState<{ id: string; name: string; count: number }[]>([]);
   const [inquiryListingId, setInquiryListingId] = useState<string | null>(null);
+  const [nopeIds, setNopeIds] = useState<Set<string>>(new Set());
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const ids = items.filter((c) => c.id).map((c) => c.id);
@@ -77,41 +97,41 @@ export default function SearchResultsPage() {
     }));
   }
 
-  async function handleToggleLike(listingId: string) {
-    const s = listingsStatus[listingId];
-    const inLike = s?.inLike ?? false;
+  async function handleSwipeNope(listingId: string) {
     try {
-      if (inLike) {
-        const del = await fetch(`${API_BASE}/me/saved/${listingId}?listType=LATER`, {
-          method: 'DELETE',
-          credentials: 'include',
-        });
-        if (del.ok) {
-          setListingsStatus((prev) => ({
-            ...prev,
-            [listingId]: {
-              ...(prev[listingId] ?? { inFavorite: false, inLike: false, inLists: [], lead: null }),
-              inLike: false,
-            },
-          }));
-        }
-      } else {
-        const res = await fetch(`${API_BASE}/saved`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ listingId, listType: 'LATER' }),
-        });
-        if (res.ok) {
-          setListingsStatus((prev) => ({
-            ...prev,
-            [listingId]: {
-              ...(prev[listingId] ?? { inFavorite: false, inLike: false, inLists: [], lead: null }),
-              inLike: true,
-            },
-          }));
-        }
-      }
+      await fetch(`${API_BASE}/swipes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ listingId, decision: 'NOPE' }),
+      });
+      setNopeIds((prev) => new Set(prev).add(listingId));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function handleSwipeLike(listingId: string) {
+    try {
+      await fetch(`${API_BASE}/saved`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ listingId, listType: 'LATER' }),
+      });
+      await fetch(`${API_BASE}/swipes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ listingId, decision: 'LIKE' }),
+      });
+      setListingsStatus((prev) => ({
+        ...prev,
+        [listingId]: {
+          ...(prev[listingId] ?? { inFavorite: false, inLike: false, inLists: [], lead: null }),
+          inLike: true,
+        },
+      }));
     } catch {
       /* ignore */
     }
@@ -268,13 +288,15 @@ export default function SearchResultsPage() {
     async (
       cursor?: string | null,
       propType?: string | null,
-      operation?: 'SALE' | 'RENT' | null
+      operation?: 'SALE' | 'RENT' | null,
+      order?: (typeof SORT_OPTIONS)[number]['value']
     ) => {
       const params = new URLSearchParams();
       params.set('limit', '20');
       if (cursor) params.set('cursor', cursor);
       if (propType) params.set('propertyTypes', propType);
       if (operation) params.set('operationType', operation);
+      params.set('sortBy', order ?? 'date_desc');
       const res = await fetch(`${API_BASE}/searches/${id}/results?${params}`, {
         credentials: 'include',
       });
@@ -291,7 +313,7 @@ export default function SearchResultsPage() {
 
   useEffect(() => {
     setLoading(true);
-    fetchResults(null, propertyTypeFilter, operationFilter)
+    fetchResults(null, propertyTypeFilter, operationFilter, sortBy)
       .then((data) => {
         if (data) {
           setItems(data.items ?? []);
@@ -300,7 +322,7 @@ export default function SearchResultsPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [fetchResults, propertyTypeFilter, operationFilter]);
+  }, [fetchResults, propertyTypeFilter, operationFilter, sortBy]);
 
   useEffect(() => {
     fetch(`${API_BASE}/alerts/subscriptions`, { credentials: 'include' })
@@ -388,7 +410,7 @@ export default function SearchResultsPage() {
   async function loadMore() {
     if (!nextCursor || loadingMore) return;
     setLoadingMore(true);
-    const data = await fetchResults(nextCursor, propertyTypeFilter, operationFilter);
+    const data = await fetchResults(nextCursor, propertyTypeFilter, operationFilter, sortBy);
     if (data?.items?.length) {
       setItems((prev) => [...prev, ...data.items]);
       setNextCursor(data.nextCursor ?? null);
@@ -411,14 +433,7 @@ export default function SearchResultsPage() {
   return (
     <main className="min-h-screen p-4">
       <div className="max-w-lg mx-auto">
-        <div className="flex gap-4 mb-4">
-          <Link href="/feed" className="text-sm text-blue-600 hover:underline">
-            ← Volver al feed swipe
-          </Link>
-          <Link href="/searches" className="text-sm text-blue-600 hover:underline">
-            Búsquedas
-          </Link>
-        </div>
+        <MpSecondaryNav items={SECONDARY_NAV_HUB} pathname={pathname} />
 
         <h1 className="text-xl font-bold mb-4">Resultados</h1>
 
@@ -430,6 +445,20 @@ export default function SearchResultsPage() {
             onPropertyTypeChange={setPropertyTypeFilter}
             disabled={loading}
           />
+          <label className="mt-3 flex items-center gap-2 text-sm text-gray-700">
+            <span className="shrink-0">Orden</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as (typeof SORT_OPTIONS)[number]['value'])}
+              className="flex-1 min-w-0 rounded-lg border border-slate-200 px-2 py-1.5 text-sm bg-white"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
         <div className="mb-4 p-3 rounded-xl bg-white shadow-sm border border-slate-100/80 space-y-2">
@@ -471,8 +500,8 @@ export default function SearchResultsPage() {
           </Link>
         </div>
 
-        <div className="mb-4 p-3 rounded-xl bg-white shadow-sm border border-slate-100/80">
-          <p className="text-sm font-medium text-gray-700 mb-2">Ver resultados en</p>
+        <div className="mb-4 p-3 rounded-xl bg-[var(--mp-card)] shadow-sm border border-[var(--mp-border)]">
+          <p className="text-sm font-medium text-[var(--mp-foreground)] mb-2">Ver resultados en</p>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -485,7 +514,7 @@ export default function SearchResultsPage() {
                 });
                 router.push('/feed');
               }}
-              className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+              className="px-3 py-2 rounded-[var(--mp-radius-chip)] text-sm font-semibold bg-[var(--mp-accent)] text-white border border-[var(--mp-accent-hover)] hover:opacity-[0.96]"
             >
               Modo Match
             </button>
@@ -500,7 +529,7 @@ export default function SearchResultsPage() {
                 });
                 router.push('/feed/list');
               }}
-              className="px-3 py-2 bg-slate-100 text-slate-800 rounded-lg text-sm font-medium hover:bg-slate-200"
+              className="px-3 py-2 rounded-[var(--mp-radius-chip)] text-sm font-semibold border border-[var(--mp-border)] bg-[var(--mp-bg)] text-[var(--mp-foreground)] hover:border-[var(--mp-accent)]/35"
             >
               Modo lista
             </button>
@@ -508,123 +537,123 @@ export default function SearchResultsPage() {
         </div>
 
         <div className="space-y-4">
-          {items.map((card) =>
-            card?.id ? (
-              <div
-                key={card.id}
-                className="rounded-xl overflow-hidden bg-white shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all"
-              >
-                {(listingsStatus[card.id]?.inLists?.length ?? 0) > 0 && (
-                  <div className="px-3 py-2 flex flex-wrap gap-1.5 bg-slate-50/80">
-                    {(listingsStatus[card.id]?.inLists ?? []).map((l) => (
-                      <span
-                        key={l.id}
-                        className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-medium"
-                      >
-                        📁 {l.name}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleRemoveFromList(l.id, card.id);
-                          }}
-                          className="ml-0.5 hover:bg-emerald-200 rounded p-0.5"
-                          aria-label={`Quitar de ${l.name}`}
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-                <Link
-                  href={`/listing/${card.id}`}
-                  className="block hover:bg-slate-50/50 transition-colors"
+          {items
+            .filter((card) => card?.id && !nopeIds.has(card.id))
+            .map((card) =>
+              card?.id ? (
+                <div
+                  key={card.id}
+                  className="rounded-xl overflow-hidden bg-white shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all"
                 >
-                  <div className="aspect-video bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
-                    <ListingImage src={card.heroImageUrl} alt={card.title ?? ''} />
-                  </div>
-                  <div className="p-3">
-                    <h2 className="font-medium truncate">{card.title ?? 'Sin título'}</h2>
-                    <p className="text-sm text-gray-600">
-                      {card.price != null
-                        ? `${card.currency ?? 'USD'} ${card.price.toLocaleString()}`
-                        : 'Consultar'}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">{card.locationText ?? ''}</p>
-                  </div>
-                </Link>
-                <div className="px-3 pb-3 flex gap-2 items-center flex-wrap border-t border-gray-100">
-                  <button
-                    type="button"
-                    onClick={() => handleToggleLike(card.id)}
-                    className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-lg ${
-                      listingsStatus[card.id]?.inLike
-                        ? 'bg-green-600 text-white'
-                        : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
-                    }`}
-                    title={listingsStatus[card.id]?.inLike ? 'En like' : 'Agregar a like'}
-                  >
-                    👍
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleFavorite(card.id)}
-                    className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-lg ${
-                      listingsStatus[card.id]?.inFavorite
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                    }`}
-                    title={
-                      listingsStatus[card.id]?.inFavorite ? 'En favoritos' : 'Agregar a favoritos'
-                    }
-                  >
-                    ★
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleAgregarALista(card)}
-                    className="shrink-0 px-3 py-2 rounded-lg text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  >
-                    + Lista
-                  </button>
-                  {listingsStatus[card.id]?.lead ? (
-                    <div className="flex-1 flex items-center gap-1">
-                      <span
-                        className={`flex-1 py-2 text-center text-sm rounded-xl font-medium ${
-                          listingsStatus[card.id]?.lead?.status === 'ACTIVE'
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                        }`}
-                      >
-                        ✓{' '}
-                        {listingsStatus[card.id]?.lead?.status === 'ACTIVE'
-                          ? 'Esperando respuesta'
-                          : 'Consulta enviada'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setInquiryListingId(card.id)}
-                        className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200"
-                        title="Enviar otra consulta"
-                      >
-                        ✉️
-                      </button>
+                  {(listingsStatus[card.id]?.inLists?.length ?? 0) > 0 && (
+                    <div className="px-3 py-2 flex flex-wrap gap-1.5 bg-slate-50/80">
+                      {(listingsStatus[card.id]?.inLists ?? []).map((l) => (
+                        <span
+                          key={l.id}
+                          className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-medium"
+                        >
+                          📁 {l.name}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleRemoveFromList(l.id, card.id);
+                            }}
+                            className="ml-0.5 hover:bg-emerald-200 rounded p-0.5"
+                            aria-label={`Quitar de ${l.name}`}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setInquiryListingId(card.id)}
-                      className="flex-1 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700"
-                    >
-                      Quiero que me contacten
-                    </button>
                   )}
+                  <Link
+                    href={`/listing/${card.id}`}
+                    className="block hover:bg-slate-50/50 transition-colors"
+                  >
+                    <div className="aspect-video bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
+                      <ListingImage src={card.heroImageUrl} alt={card.title ?? ''} />
+                    </div>
+                    <div className="p-3">
+                      <h2 className="font-medium truncate">{card.title ?? 'Sin título'}</h2>
+                      <p className="text-sm text-gray-600">
+                        {card.price != null
+                          ? `${card.currency ?? 'USD'} ${card.price.toLocaleString()}`
+                          : 'Consultar'}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">{card.locationText ?? ''}</p>
+                    </div>
+                  </Link>
+                  <CardToolbar>
+                    <ToolbarRow className="w-full justify-between gap-2">
+                      <ToolbarBtn
+                        icon="👎"
+                        label="Descartar"
+                        variant="danger"
+                        onClick={() => void handleSwipeNope(card.id)}
+                      />
+                      <ToolbarLink href={`/listing/${card.id}`} icon="📄" label="Ficha" />
+                      <ToolbarBtn
+                        icon="💚"
+                        label="Me interesa"
+                        variant="primary"
+                        onClick={() => void handleSwipeLike(card.id)}
+                      />
+                    </ToolbarRow>
+                    <ToolbarRow className="w-full items-center">
+                      <ToolbarBtn
+                        icon="★"
+                        label={listingsStatus[card.id]?.inFavorite ? 'Guardada' : 'Favorito'}
+                        variant={listingsStatus[card.id]?.inFavorite ? 'primary' : 'default'}
+                        onClick={() => handleToggleFavorite(card.id)}
+                        title={
+                          listingsStatus[card.id]?.inFavorite
+                            ? 'Quitar favorito'
+                            : 'Agregar a favoritos'
+                        }
+                      />
+                      <ToolbarBtn
+                        icon="+"
+                        label="Lista"
+                        onClick={() => handleAgregarALista(card)}
+                      />
+                      {listingsStatus[card.id]?.lead ? (
+                        <div className="flex flex-1 min-w-[140px] items-center gap-1">
+                          <span
+                            className={`flex-1 py-2 px-2 text-center text-[11px] rounded-[var(--mp-radius-chip)] font-semibold border ${
+                              listingsStatus[card.id]?.lead?.status === 'ACTIVE'
+                                ? 'bg-[var(--mp-accent)] text-white border-[var(--mp-accent-hover)]'
+                                : 'bg-[var(--mp-bg)] text-[var(--mp-foreground)] border-[var(--mp-border)]'
+                            }`}
+                          >
+                            {listingsStatus[card.id]?.lead?.status === 'ACTIVE'
+                              ? 'Esperando respuesta'
+                              : 'Consulta enviada'}
+                          </span>
+                          <ToolbarBtn
+                            icon="✉️"
+                            label="Otra"
+                            className="min-w-[36px] px-2"
+                            onClick={() => setInquiryListingId(card.id)}
+                            title="Enviar otra consulta"
+                          />
+                        </div>
+                      ) : (
+                        <ToolbarBtn
+                          icon="✉️"
+                          label="Contacto"
+                          variant="primary"
+                          className="flex-1 min-w-[120px] justify-center"
+                          onClick={() => setInquiryListingId(card.id)}
+                        />
+                      )}
+                    </ToolbarRow>
+                  </CardToolbar>
                 </div>
-              </div>
-            ) : null
-          )}
+              ) : null
+            )}
         </div>
 
         {addToListCard && (

@@ -110,7 +110,7 @@ export default function ListingCardMini({
 
   return (
     <div
-      className={`rounded-2xl overflow-hidden bg-white border border-slate-100 shadow-md hover:shadow-lg hover:border-slate-200 transition-all ${showShareButton || onContact || onRemove || onToggleFavorite || onToggleLike || onAddToList ? 'flex flex-col' : ''}`}
+      className={`mp-surface mp-surface-interactive overflow-hidden ${showShareButton || onContact || onRemove || onToggleFavorite || onToggleLike || onAddToList ? 'flex flex-col' : ''}`}
     >
       {/* Badges: listas guardadas (arriba) */}
       {inLists.length > 0 && (
@@ -118,7 +118,7 @@ export default function ListingCardMini({
           {inLists.map((l) => (
             <span
               key={l.id}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-medium"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[var(--mp-radius-chip)] bg-emerald-100 text-emerald-800 text-xs font-medium"
             >
               📁 {l.name}
             </span>
@@ -126,7 +126,7 @@ export default function ListingCardMini({
         </div>
       )}
       <Link href={href} className="block flex-1">
-        <div className="aspect-video bg-slate-200 relative overflow-hidden group">
+        <div className="mp-listing-media bg-[var(--mp-bg)] relative overflow-hidden group">
           {showImage ? (
             <img
               src={currentImage!.url}
@@ -136,7 +136,7 @@ export default function ListingCardMini({
               onError={() => setImgError(true)}
             />
           ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200">
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--mp-muted)] bg-gradient-to-br from-[var(--mp-bg)] to-[color-mix(in_srgb,var(--mp-muted)_14%,var(--mp-bg))]">
               <span className="text-4xl mb-2">🏠</span>
               <span className="text-xs">Sin imagen</span>
             </div>
@@ -214,10 +214,10 @@ export default function ListingCardMini({
           )}
         </div>
         <div className={compact ? 'p-3' : 'p-4'}>
-          <h2 className="font-bold text-slate-900 truncate text-lg">{title}</h2>
-          <p className="text-lg font-semibold text-blue-700 mt-1">{priceText}</p>
+          <h2 className="font-bold text-[var(--mp-foreground)] truncate text-lg">{title}</h2>
+          <p className="text-lg font-semibold mt-1 text-[var(--mp-accent-hover)]">{priceText}</p>
           {listing.locationText && (
-            <p className="text-sm text-slate-600 truncate mt-1">{listing.locationText}</p>
+            <p className="text-sm text-[var(--mp-muted)] truncate mt-1">{listing.locationText}</p>
           )}
           {hasIncompleteData && (
             <p className="text-xs text-amber-700 mt-1">
@@ -226,13 +226,15 @@ export default function ListingCardMini({
           )}
           <div className="flex gap-3 mt-3 flex-wrap">
             {listing.bedrooms != null && (
-              <span className="text-sm text-slate-600">{listing.bedrooms} dorm</span>
+              <span className="text-sm text-[var(--mp-muted)]">{listing.bedrooms} dorm</span>
             )}
             {listing.bathrooms != null && (
-              <span className="text-sm text-slate-600">{listing.bathrooms} baños</span>
+              <span className="text-sm text-[var(--mp-muted)]">{listing.bathrooms} baños</span>
             )}
             {listing.areaTotal != null && (
-              <span className="text-sm text-slate-600">{Math.round(listing.areaTotal)} m²</span>
+              <span className="text-sm text-[var(--mp-muted)]">
+                {Math.round(listing.areaTotal)} m²
+              </span>
             )}
           </div>
         </div>
@@ -243,7 +245,7 @@ export default function ListingCardMini({
         onToggleFavorite ||
         onToggleLike ||
         onAddToList) && (
-        <div className="px-4 pb-3 pt-3 border-t border-slate-100 space-y-2 flex flex-col gap-2">
+        <div className="px-4 pb-3 pt-3 border-t border-[var(--mp-border)] space-y-2 flex flex-col gap-2">
           <div className="flex gap-2 items-center flex-wrap">
             {onToggleLike && (
               <button
@@ -252,10 +254,10 @@ export default function ListingCardMini({
                   e.preventDefault();
                   onToggleLike();
                 }}
-                className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-lg ${
+                className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-[var(--mp-radius-chip)] text-lg ${
                   inLike
                     ? 'bg-green-600 text-white'
-                    : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                    : 'bg-[color-mix(in_srgb,var(--mp-muted)_16%,var(--mp-bg))] text-[var(--mp-muted)] hover:bg-[color-mix(in_srgb,var(--mp-muted)_22%,var(--mp-bg))]'
                 }`}
                 title={inLike ? 'En like' : 'Agregar a like'}
               >
@@ -269,7 +271,7 @@ export default function ListingCardMini({
                   e.preventDefault();
                   onToggleFavorite();
                 }}
-                className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-lg ${
+                className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-[var(--mp-radius-chip)] text-lg ${
                   inFavorite
                     ? 'bg-emerald-600 text-white'
                     : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
@@ -286,7 +288,7 @@ export default function ListingCardMini({
                   e.preventDefault();
                   onAddToList();
                 }}
-                className="shrink-0 px-3 py-2 rounded-lg text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200"
+                className="shrink-0 px-3 py-2 rounded-[var(--mp-radius-chip)] text-sm font-medium bg-[color-mix(in_srgb,var(--mp-muted)_10%,var(--mp-card))] text-[var(--mp-foreground)] hover:bg-[color-mix(in_srgb,var(--mp-muted)_16%,var(--mp-card))]"
               >
                 + Lista
               </button>
@@ -294,7 +296,7 @@ export default function ListingCardMini({
             {hasLead ? (
               <div className="flex-1 flex items-center gap-1 min-w-0">
                 <span
-                  className={`flex-1 py-2 text-center text-sm rounded-xl font-medium ${
+                  className={`flex-1 py-2 text-center text-sm rounded-[var(--mp-radius-chip)] font-medium ${
                     leadStatus === 'ACTIVE'
                       ? 'bg-emerald-600 text-white'
                       : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
@@ -309,7 +311,7 @@ export default function ListingCardMini({
                       e.preventDefault();
                       onContact();
                     }}
-                    className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200"
+                    className="shrink-0 w-9 h-9 flex items-center justify-center rounded-[var(--mp-radius-chip)] bg-[color-mix(in_srgb,var(--mp-accent)_16%,var(--mp-card))] text-[var(--mp-accent-hover)] hover:bg-[color-mix(in_srgb,var(--mp-accent)_22%,var(--mp-card))]"
                     title="Reenviar consulta"
                   >
                     ✉️
@@ -323,7 +325,7 @@ export default function ListingCardMini({
                   e.preventDefault();
                   onContact();
                 }}
-                className="flex-1 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors min-w-0"
+                className="flex-1 py-2 bg-[var(--mp-accent)] text-white text-sm font-medium rounded-[var(--mp-radius-chip)] hover:bg-[var(--mp-accent-hover)] transition-colors min-w-0"
               >
                 Quiero que me contacten
               </button>
@@ -333,7 +335,7 @@ export default function ListingCardMini({
             <button
               type="button"
               onClick={onRemove}
-              className="w-full py-2 text-slate-700 text-sm hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors font-medium"
+              className="w-full py-2 text-[var(--mp-muted)] text-sm hover:text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)] rounded-[var(--mp-radius-chip)] transition-colors font-medium"
             >
               Quitar de esta lista
             </button>
@@ -341,7 +343,7 @@ export default function ListingCardMini({
           {showShareButton && (
             <Link
               href="/me/premium"
-              className="flex items-center gap-2 text-sm text-slate-700 hover:text-slate-900 transition-colors font-medium"
+              className="flex items-center gap-2 text-sm text-[var(--mp-foreground)] hover:opacity-90 transition-colors font-medium"
               title="Compartir ficha — requiere Premium"
             >
               <span>📤</span>

@@ -1,6 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import type { NormalizedListing, ListingDetailsFromIngest } from './types.js';
+import { normalizeIngestPropertyType } from './property-type-normalize.js';
 import { onListingCreated } from '../crm-push/on-listing-created.js';
 
 const LOCATION_TEXT_MAX = 200;
@@ -75,6 +76,8 @@ export async function upsertListing(
   const locationText = truncateLocation(norm.locationText ?? norm.addressText);
   const details = extractDetailsFromRaw(rawJson ?? null, norm);
 
+  const propertyTypeCanon = normalizeIngestPropertyType(norm.propertyType);
+
   const existing = await prisma.listing.findUnique({
     where: {
       source_externalId: { source: norm.source, externalId: norm.externalId },
@@ -97,7 +100,7 @@ export async function upsertListing(
       title: norm.title ?? null,
       description: norm.description ?? null,
       operationType: norm.operationType ?? null,
-      propertyType: norm.propertyType ?? null,
+      propertyType: propertyTypeCanon,
       currency: norm.currency ?? null,
       price: norm.price ?? null,
       bedrooms: norm.bedrooms ?? null,
@@ -122,7 +125,7 @@ export async function upsertListing(
       title: norm.title ?? undefined,
       description: norm.description ?? undefined,
       operationType: norm.operationType ?? undefined,
-      propertyType: norm.propertyType ?? undefined,
+      propertyType: propertyTypeCanon ?? undefined,
       currency: norm.currency ?? undefined,
       price: norm.price ?? undefined,
       bedrooms: norm.bedrooms ?? undefined,
