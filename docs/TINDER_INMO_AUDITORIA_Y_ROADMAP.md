@@ -16,16 +16,16 @@ Documento vivo: define la promesa de producto, el estado real del código y un p
 
 ### 2.1 Discovery (`apps/web/src/app/feed/page.tsx`)
 
-| Aspecto | Qué hay hoy |
-|--------|-------------|
-| Deck | **Una sola** `ListingCard` (`queue[0]`). No hay stack 2D con parallax ni preview de la siguiente. |
-| Swipe | Botones **Nope** / **Like** + POST `/swipes` + en Like también POST `/saved` con `LATER`. |
-| Ficha | Tap en card → `router.push(/listing/:id)` → **salida inmediata** del flujo tipo deck. |
-| Continuidad | Precarga con `limit=20`, `loadMore` al quedar ≤1 card; cursor en feed API. |
-| Feedback | Toasts, vibración, celebración cada **5 likes** (mensaje tipo “matches” — **no es match bilateral**). |
-| Rewind | `handleUndo` **solo reinserta** la card en cola local; **no revierte** `SwipeDecision` en servidor → el ítem puede quedar excluido del feed real al refrescar. |
-| Estrella | Botón ★ = **Favorito** (`FAVORITE`), no “Super Like” con semántica propia. |
-| Densidad | Header con links (Lista, Favoritos, Consultas), barra de búsqueda activa, chips de filtro, CTA asistente → **mucho chrome** para un “modo inmersivo”. |
+| Aspecto     | Qué hay hoy                                                                                                                                                    |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deck        | **Una sola** `ListingCard` (`queue[0]`). No hay stack 2D con parallax ni preview de la siguiente.                                                              |
+| Swipe       | Botones **Nope** / **Like** + POST `/swipes` + en Like también POST `/saved` con `LATER`.                                                                      |
+| Ficha       | Tap en card → `router.push(/listing/:id)` → **salida inmediata** del flujo tipo deck.                                                                          |
+| Continuidad | Precarga con `limit=20`, `loadMore` al quedar ≤1 card; cursor en feed API.                                                                                     |
+| Feedback    | Toasts, vibración, celebración cada **5 likes** (mensaje tipo “matches” — **no es match bilateral**).                                                          |
+| Rewind      | `handleUndo` **solo reinserta** la card en cola local; **no revierte** `SwipeDecision` en servidor → el ítem puede quedar excluido del feed real al refrescar. |
+| Estrella    | Botón ★ = **Favorito** (`FAVORITE`), no “Super Like” con semántica propia.                                                                                     |
+| Densidad    | Header con links (Lista, Favoritos, Consultas), barra de búsqueda activa, chips de filtro, CTA asistente → **mucho chrome** para un “modo inmersivo”.          |
 
 ### 2.2 Componente visual (`SwipeCard.tsx`)
 
@@ -39,12 +39,12 @@ Documento vivo: define la promesa de producto, el estado real del código y un p
 
 ### 2.4 Backend
 
-| Recurso | Comportamiento |
-|--------|----------------|
-| `POST /swipes` | Upsert `SwipeDecision` LIKE/NOPE. |
-| Feed | Excluye listings con decisión del usuario (`swipeDecisions: { none }` en `feed-engine`). |
-| Afinidad | `preview-affinity.ts`: reorden por tipo según **favoritos + likes** en **preview del asistente** solamente. |
-| Leads / consultas | `InquiryModal`, `Lead`, flujo comercial existente. |
+| Recurso           | Comportamiento                                                                                              |
+| ----------------- | ----------------------------------------------------------------------------------------------------------- |
+| `POST /swipes`    | Upsert `SwipeDecision` LIKE/NOPE.                                                                           |
+| Feed              | Excluye listings con decisión del usuario (`swipeDecisions: { none }` en `feed-engine`).                    |
+| Afinidad          | `preview-affinity.ts`: reorden por tipo según **favoritos + likes** en **preview del asistente** solamente. |
+| Leads / consultas | `InquiryModal`, `Lead`, flujo comercial existente.                                                          |
 
 ### 2.5 “Mis match” (`/me/match`)
 
@@ -54,17 +54,17 @@ Documento vivo: define la promesa de producto, el estado real del código y un p
 
 ## 3. Gap analysis — ¿cumple la promesa “Tinder inmobiliario”?
 
-| Promesa percibida | Estado | Gap |
-|-------------------|--------|-----|
-| “Descubro en segundos” | Parcial | Un card ayuda; falta gesto + stack + menos distracciones. |
-| Decisión binaria clara | Sí (Nope/Like) | Tercera y cuarta acción (★ favorito, + lista) **rompen** el binario puro. |
-| Sensación de mazo | No | Una sola card; no hay “siguiente debajo”. |
-| Super Like / interés fuerte | No | ★ es favorito, no señal prioritaria con límite ni CTA distinto. |
-| Rewind | Parcial | UX local sin sync servidor → **no confiable**. |
-| Match con significado | No | Celebración por contador; no hay **definición de match** inmobiliario. |
-| Post-match guiado | Débil | Usuario salta a ficha o listas; no hay **pasos**: guardar / comparar / consultar. |
-| Ranking por afinidad | Parcial | Asistente sí; **deck principal** ordena por feed estándar (fecha/precio/etc.). |
-| Evitar fatiga | Parcial | Un card reduce densidad; listado y ficha larga **reintroducen** fatiga. |
+| Promesa percibida           | Estado         | Gap                                                                               |
+| --------------------------- | -------------- | --------------------------------------------------------------------------------- |
+| “Descubro en segundos”      | Parcial        | Un card ayuda; falta gesto + stack + menos distracciones.                         |
+| Decisión binaria clara      | Sí (Nope/Like) | Tercera y cuarta acción (★ favorito, + lista) **rompen** el binario puro.         |
+| Sensación de mazo           | No             | Una sola card; no hay “siguiente debajo”.                                         |
+| Super Like / interés fuerte | No             | ★ es favorito, no señal prioritaria con límite ni CTA distinto.                   |
+| Rewind                      | Parcial        | UX local sin sync servidor → **no confiable**.                                    |
+| Match con significado       | No             | Celebración por contador; no hay **definición de match** inmobiliario.            |
+| Post-match guiado           | Débil          | Usuario salta a ficha o listas; no hay **pasos**: guardar / comparar / consultar. |
+| Ranking por afinidad        | Parcial        | Asistente sí; **deck principal** ordena por feed estándar (fecha/precio/etc.).    |
+| Evitar fatiga               | Parcial        | Un card reduce densidad; listado y ficha larga **reintroducen** fatiga.           |
 
 **Conclusión:** hay **swipe y cola**, pero la **metáfora Tinder no está cerrada** en UI, estado emocional (“match”), ni continuidad técnica (rewind).
 
@@ -117,18 +117,18 @@ Flujo objetivo:
 
 ## 6. Tabla comparativa — Mecánica Tinder vs MatchProp
 
-| Mecánica Tinder | MatchProp hoy | Dirección deseada |
-|-----------------|---------------|-------------------|
-| Stack de cards | 1 card | 2–3 visibles + sombra/offset |
-| Swipe gestual | Solo botones | Drag + botones (accesibilidad) |
-| Like | Like + guarda LATER | Like claro; opcional unificar naming “Guardar en Mis intereses” |
-| Nope | Sí | Sí + opción “Ocultar 7 días” (futuro) |
-| Super Like | No (★ = favorito) | Super Like con cupo diario + prioridad en “Mis match” / notificación interna |
-| Rewind | No server | DELETE o PATCH swipe + undo sync |
-| Match mutuo | N/A | Sustituir por **Match comercial** (consulta) o **Match de búsqueda** (encaje filtros) |
-| Chat post-match | N/A | **Consulta / WhatsApp / visita** como “chat” comercial |
-| Boost / ranking | No en deck | Afinidad + búsqueda activa en orden del feed |
-| Perfil (detalle) | Ficha aparte | Sheet primero, ficha después |
+| Mecánica Tinder  | MatchProp hoy       | Dirección deseada                                                                     |
+| ---------------- | ------------------- | ------------------------------------------------------------------------------------- |
+| Stack de cards   | 1 card              | 2–3 visibles + sombra/offset                                                          |
+| Swipe gestual    | Solo botones        | Drag + botones (accesibilidad)                                                        |
+| Like             | Like + guarda LATER | Like claro; opcional unificar naming “Guardar en Mis intereses”                       |
+| Nope             | Sí                  | Sí + opción “Ocultar 7 días” (futuro)                                                 |
+| Super Like       | No (★ = favorito)   | Super Like con cupo diario + prioridad en “Mis match” / notificación interna          |
+| Rewind           | No server           | DELETE o PATCH swipe + undo sync                                                      |
+| Match mutuo      | N/A                 | Sustituir por **Match comercial** (consulta) o **Match de búsqueda** (encaje filtros) |
+| Chat post-match  | N/A                 | **Consulta / WhatsApp / visita** como “chat” comercial                                |
+| Boost / ranking  | No en deck          | Afinidad + búsqueda activa en orden del feed                                          |
+| Perfil (detalle) | Ficha aparte        | Sheet primero, ficha después                                                          |
 
 ---
 
@@ -160,26 +160,26 @@ Flujo objetivo:
 
 ## 8. Cambios de UX/UI (por área)
 
-| Área | Cambio |
-|------|--------|
-| `/feed` | Layout full-bleed; botones flotantes; stack; opción ocultar top nav en scroll |
-| `SwipeCard` | Ratio 3:4 o fullscreen móvil; menos título en primera vista; indicador “foto 2/6” |
-| Post-acción | Sheet con CTAs claros; no depender de `/listing` para decidir |
-| `/feed/list` | Renombrar mentalmente a “Inventario” o “Ver todas”; icono secundario |
-| `/me/match` | Kanban liviano: Interesado → Favorito → Consulta |
-| Asistente | Transición explícita “Llevame al deck” con filtros aplicados |
+| Área         | Cambio                                                                            |
+| ------------ | --------------------------------------------------------------------------------- |
+| `/feed`      | Layout full-bleed; botones flotantes; stack; opción ocultar top nav en scroll     |
+| `SwipeCard`  | Ratio 3:4 o fullscreen móvil; menos título en primera vista; indicador “foto 2/6” |
+| Post-acción  | Sheet con CTAs claros; no depender de `/listing` para decidir                     |
+| `/feed/list` | Renombrar mentalmente a “Inventario” o “Ver todas”; icono secundario              |
+| `/me/match`  | Kanban liviano: Interesado → Favorito → Consulta                                  |
+| Asistente    | Transición explícita “Llevame al deck” con filtros aplicados                      |
 
 ---
 
 ## 9. Backend y lógica
 
-| Tema | Trabajo |
-|------|---------|
-| Rewind | `DELETE /swipes/:listingId` o `POST /swipes/undo` (último en ventana de tiempo) |
-| Super Like | Nuevo enum o tabla `SuperLike` con `userId`, `listingId`, `createdAt`; cupo por día en `User` o Redis |
-| Match semántico | Job o flag: listing cumple `activeSearch` → evento `SearchMatch` (analytics + UI badge) |
-| Feed order | Parámetro `sort=affinity` o reorden server-side top-N tras query (similar a assistant preview) |
-| Idempotencia | Mantener upsert actual; rewind debe borrar o marcar “undone” |
+| Tema            | Trabajo                                                                                               |
+| --------------- | ----------------------------------------------------------------------------------------------------- |
+| Rewind          | `DELETE /swipes/:listingId` o `POST /swipes/undo` (último en ventana de tiempo)                       |
+| Super Like      | Nuevo enum o tabla `SuperLike` con `userId`, `listingId`, `createdAt`; cupo por día en `User` o Redis |
+| Match semántico | Job o flag: listing cumple `activeSearch` → evento `SearchMatch` (analytics + UI badge)               |
+| Feed order      | Parámetro `sort=affinity` o reorden server-side top-N tras query (similar a assistant preview)        |
+| Idempotencia    | Mantener upsert actual; rewind debe borrar o marcar “undone”                                          |
 
 ---
 
