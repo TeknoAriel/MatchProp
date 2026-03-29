@@ -33,10 +33,37 @@ else
     echo "✓ Los commits de $BRANCH están en main"
     BRANCH_IN_MAIN=true
   else
-    echo "⚠ La rama $BRANCH NO está mergeada en main"
-    echo "  Main:   $MAIN_SHA"
-    echo "  Branch: $BRANCH_SHA"
-    echo "  Ver PR: https://github.com/TeknoAriel/MatchProp/pulls"
+    # Squash/rebase merge: el tip de la rama no es ancestro de main, pero el PR cerrado
+    # tiene merge_commit_sha == main (API pública, sin token; rate limit bajo).
+    merged_via_gh_api=false
+    origin_url=$(git remote get-url origin 2>/dev/null || true)
+    if [[ "$origin_url" =~ github\.com[:/]([^/]+)/([^/.]+) ]]; then
+      gh_owner="${BASH_REMATCH[1]}"
+      gh_repo="${BASH_REMATCH[2]%.git}"
+      api="https://api.github.com/repos/${gh_owner}/${gh_repo}/pulls?state=closed&head=${gh_owner}:${BRANCH}&per_page=5"
+      if curl -sS --connect-timeout 10 "$api" 2>/dev/null | python3 -c "
+import sys, json
+main = sys.argv[1]
+try:
+    pulls = json.load(sys.stdin)
+except json.JSONDecodeError:
+    sys.exit(1)
+for p in pulls:
+    if p.get('merged_at') and p.get('merge_commit_sha') == main:
+        sys.exit(0)
+sys.exit(1)
+" "$MAIN_SHA" 2>/dev/null; then
+        echo "✓ Rama $BRANCH integrada en main (merge vía PR; squash/rebase)"
+        merged_via_gh_api=true
+        BRANCH_IN_MAIN=true
+      fi
+    fi
+    if [ "$merged_via_gh_api" != "true" ]; then
+      echo "⚠ La rama $BRANCH NO está mergeada en main"
+      echo "  Main:   $MAIN_SHA"
+      echo "  Branch: $BRANCH_SHA"
+      echo "  Ver PR: https://github.com/TeknoAriel/MatchProp/pulls"
+    fi
   fi
 fi
 
