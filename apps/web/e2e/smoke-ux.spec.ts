@@ -33,7 +33,7 @@ test.describe('smoke:ux', () => {
     await page.waitForURL(/\/(dashboard|feed)/, { timeout: 25000 });
 
     await page.goto('/assistant');
-    await expect(page.getByRole('heading', { name: 'Buscar' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: /Asistente avanzado|Buscar/ })).toBeVisible({
       timeout: 10000,
     });
 
@@ -65,12 +65,16 @@ test.describe('smoke:ux', () => {
         .or(page.getByText(/Sin búsqueda activa|No hay resultados|Crear búsqueda/))
     ).toBeVisible({ timeout: 10000 });
 
-    // Volver al assistant y guardar (re-ejecutar búsqueda con un ejemplo para tener botón Guardar)
+    // Volver al assistant y guardar (re-enviar la misma búsqueda por texto; ya no hay chips de ejemplo)
     await page.goto('/assistant');
-    await expect(page.getByRole('heading', { name: 'Buscar' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: /Asistente avanzado|Buscar/ })).toBeVisible({
       timeout: 5000,
     });
-    await page.getByRole('button', { name: 'Comprar depto 2 dorm Rosario hasta 120k USD' }).click();
+    const textareaAgain = page.locator('textarea').first();
+    await textareaAgain.click();
+    await textareaAgain.fill('');
+    await textareaAgain.pressSequentially(searchText, { delay: 20 });
+    await page.getByRole('button', { name: 'Enviar búsqueda' }).click();
     await expect(page.getByText('Resumen').first()).toBeVisible({ timeout: 15000 });
     await page.getByRole('button', { name: 'Guardar' }).click();
     await expect(
