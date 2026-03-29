@@ -44,7 +44,9 @@ test.describe('smoke:ux', () => {
     await textarea.pressSequentially(searchText, { delay: 20 });
     await page.getByRole('button', { name: 'Enviar búsqueda' }).click();
 
-    await expect(page.getByText('Resumen').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('heading', { name: /Tu búsqueda|Resumen/i })).toBeVisible({
+      timeout: 15000,
+    });
     await expect(page.getByRole('button', { name: 'Guardar' })).toBeVisible();
 
     await page.getByRole('link', { name: 'Ver listado' }).click();
@@ -75,7 +77,9 @@ test.describe('smoke:ux', () => {
     await textareaAgain.fill('');
     await textareaAgain.pressSequentially(searchText, { delay: 20 });
     await page.getByRole('button', { name: 'Enviar búsqueda' }).click();
-    await expect(page.getByText('Resumen').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('heading', { name: /Tu búsqueda|Resumen/i })).toBeVisible({
+      timeout: 15000,
+    });
     await page.getByRole('button', { name: 'Guardar' }).click();
     await expect(
       page
@@ -322,7 +326,9 @@ test.describe('smoke:ux', () => {
     await page.goto('/assistant');
     await page.locator('textarea').first().fill('Depto 2 dorm Rosario hasta 120k USD');
     await page.getByRole('button', { name: 'Enviar búsqueda' }).click();
-    await expect(page.getByText('Resumen').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('heading', { name: /Tu búsqueda|Resumen/i })).toBeVisible({
+      timeout: 15000,
+    });
     await page.getByRole('link', { name: 'Ver listado' }).first().click();
     await page.waitForTimeout(5000);
     const hasResultados = await page.getByRole('heading', { name: 'Resultados' }).isVisible();
@@ -349,7 +355,9 @@ test.describe('smoke:ux', () => {
     await page.goto('/assistant');
     await page.locator('textarea').first().fill('Casa 3 dorm Funes');
     await page.getByRole('button', { name: 'Enviar búsqueda' }).click();
-    await expect(page.getByText('Resumen').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('heading', { name: /Tu búsqueda|Resumen/i })).toBeVisible({
+      timeout: 15000,
+    });
     await page.getByRole('button', { name: 'Guardar' }).click();
     await expect(
       page
