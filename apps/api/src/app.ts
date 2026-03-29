@@ -23,6 +23,7 @@ import { savedRoutes } from './routes/saved.js';
 import { listsRoutes } from './routes/lists.js';
 import { leadRoutes } from './routes/leads.js';
 import { listingRoutes } from './routes/listings.js';
+import { publicListingRoutes } from './routes/public-listings.js';
 import { assistantRoutes } from './routes/assistant.js';
 import { searchesRoutes } from './routes/searches.js';
 import { alertsRoutes } from './routes/alerts.js';
@@ -248,6 +249,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   await fastify.register(savedRoutes);
   await fastify.register(listsRoutes);
   await fastify.register(leadRoutes);
+  await fastify.register(publicListingRoutes);
   await fastify.register(listingRoutes);
   await fastify.register(assistantRoutes, { prefix: '/assistant' });
   await fastify.register(searchesRoutes);
