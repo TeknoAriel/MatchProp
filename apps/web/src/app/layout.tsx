@@ -11,6 +11,7 @@ const PRODUCT_NAME = process.env.NEXT_PUBLIC_PRODUCT_NAME || 'MatchProp';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://match-prop-web.vercel.app';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(APP_URL),
   title: { default: PRODUCT_NAME, template: `%s | ${PRODUCT_NAME}` },
   description:
     'Buscá y encontrá tu próximo inmueble. Match tipo Tinder, listas, alertas y consultas directas con inmobiliarias.',
