@@ -464,8 +464,8 @@ export default function DashboardPage() {
                   Mis búsquedas
                 </h2>
                 <p className="text-xs text-[var(--mp-muted)] mt-1">
-                  Activá una búsqueda y abrí match; las alertas se gestionan desde cada búsqueda o en
-                  Alertas.
+                  Activá una búsqueda y abrí match; las alertas se gestionan desde cada búsqueda o
+                  en Alertas.
                 </p>
               </div>
               <Link
@@ -524,7 +524,10 @@ export default function DashboardPage() {
             {sortedSearches.length > 5 && (
               <p className="text-xs text-[var(--mp-muted)] mt-3">
                 Mostrando 5 de {sortedSearches.length}.{' '}
-                <Link href="/searches" className="text-[var(--mp-accent)] font-medium hover:underline">
+                <Link
+                  href="/searches"
+                  className="text-[var(--mp-accent)] font-medium hover:underline"
+                >
                   Ver todas y alertas
                 </Link>
               </p>

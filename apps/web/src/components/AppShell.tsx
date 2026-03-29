@@ -49,7 +49,12 @@ const MAS_SECTIONS: { title: string; subtitle?: string; items: readonly MasEntry
         icon: '⭐',
         desc: 'Listas personalizadas y destacados',
       },
-      { href: '/searches', label: 'Búsquedas guardadas', icon: '📁', desc: 'Activar, editar, alertas' },
+      {
+        href: '/searches',
+        label: 'Búsquedas guardadas',
+        icon: '📁',
+        desc: 'Activar, editar, alertas',
+      },
     ],
   },
   {
