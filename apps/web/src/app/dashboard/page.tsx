@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { SavedSearchDTO, SearchFilters } from '@matchprop/shared';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { useToast } from '../../components/FunToast';
+import { WelcomeMessage, TipBanner } from '../../components/FunTips';
 import { recordEngagement } from '../../lib/userEngagementClient';
 import { useUserLevel } from '../../hooks/useUserLevel';
 import { filtersToHumanSummary } from '../../lib/filters-summary';
@@ -24,12 +25,6 @@ type ActiveSearchPayload = {
   filters: SearchFilters;
 };
 
-const EXAMPLE_QUERIES = [
-  'PH 2 amb en Palermo',
-  'Casa en venta Funes',
-  'Depto alquiler Rosario centro',
-];
-
 export default function DashboardPage() {
   const router = useRouter();
   const { level, stats } = useUserLevel();
@@ -38,6 +33,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [searching, setSearching] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [showTip, setShowTip] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const { showSuccess } = useToast();
 
@@ -83,6 +80,15 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchSearches().finally(() => setLoading(false));
   }, [fetchSearches]);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/me/profile`, { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.profile?.firstName) setUserName(data.profile.firstName as string);
+      })
+      .catch(() => {});
+  }, []);
 
   const syncActiveSearch = useCallback(() => {
     fetch(`${API_BASE}/me/active-search`, { credentials: 'include' })
@@ -200,6 +206,17 @@ export default function DashboardPage() {
       <div className="-mx-4 md:-mx-6 mb-4">
         <ActiveSearchBar sticky={false} />
       </div>
+      <div className="mb-4">
+        <WelcomeMessage name={userName} as="h2" />
+        <p className="text-sm text-[var(--mp-muted)] mt-1 max-w-xl">
+          Describí lo que buscás; la IA arma filtros y te llevamos al match.
+        </p>
+      </div>
+      {showTip && (level === 'NEW' || level === 'ACTIVE') && (
+        <div className="mb-6">
+          <TipBanner onDismiss={() => setShowTip(false)} />
+        </div>
+      )}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--mp-accent)] mb-2">
@@ -334,25 +351,6 @@ export default function DashboardPage() {
           </p>
         )}
 
-        <p className="mt-4 text-xs text-[var(--mp-muted)] leading-relaxed">
-          Ideas rápidas:{' '}
-          {EXAMPLE_QUERIES.map((q, i) => (
-            <span key={q}>
-              {i > 0 ? ' · ' : null}
-              <button
-                type="button"
-                className="text-[var(--mp-foreground)] font-medium hover:text-[var(--mp-accent)] hover:underline"
-                onClick={() => {
-                  setSearchText(q);
-                  inputRef.current?.focus();
-                }}
-              >
-                {q}
-              </button>
-            </span>
-          ))}
-        </p>
-
         <Link
           href="/assistant"
           className="mt-6 flex items-center gap-3 w-full p-4 rounded-[var(--mp-radius-card)] border border-[var(--mp-border)] bg-[var(--mp-card)] hover:border-[color-mix(in_srgb,var(--mp-accent)_35%,var(--mp-border))] transition-colors text-left"
@@ -451,6 +449,91 @@ export default function DashboardPage() {
             </Link>
           )}
         </div>
+
+        {sortedSearches.length > 0 && (
+          <section
+            className="mt-10 pt-8 border-t border-[var(--mp-border)]"
+            aria-labelledby="dashboard-saved-heading"
+          >
+            <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
+              <div>
+                <h2
+                  id="dashboard-saved-heading"
+                  className="text-lg font-semibold text-[var(--mp-foreground)]"
+                >
+                  Mis búsquedas
+                </h2>
+                <p className="text-xs text-[var(--mp-muted)] mt-1">
+                  Activá una búsqueda y abrí match; las alertas se gestionan desde cada búsqueda o
+                  en Alertas.
+                </p>
+              </div>
+              <Link
+                href="/searches"
+                className="text-sm font-semibold text-[var(--mp-accent)] hover:underline shrink-0"
+              >
+                Gestionar todo →
+              </Link>
+            </div>
+            <ul className="space-y-2">
+              {sortedSearches.slice(0, 5).map((s) => {
+                const isActive = activeSearch?.id === s.id;
+                return (
+                  <li
+                    key={s.id}
+                    className="flex flex-wrap items-center gap-2 justify-between rounded-[var(--mp-radius-card)] border border-[var(--mp-border)] bg-[var(--mp-card)] px-3 py-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-[var(--mp-foreground)] truncate">
+                        {s.name || s.queryText?.slice(0, 56) || 'Sin nombre'}
+                      </p>
+                      {isActive && (
+                        <span className="inline-block mt-1 text-[10px] font-bold uppercase tracking-wide text-[var(--mp-accent)]">
+                          Activa ahora
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2 shrink-0">
+                      {!isActive && (
+                        <button
+                          type="button"
+                          onClick={() => void handleSetActive(s.id)}
+                          className="min-h-[40px] px-3 rounded-full text-xs font-semibold border border-[var(--mp-border)] text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]"
+                        >
+                          Activar
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => void handleGoToMatch(s.id)}
+                        className="min-h-[40px] px-4 rounded-full text-xs font-semibold bg-[var(--mp-accent)] text-white border border-[var(--mp-accent-hover)] hover:opacity-[0.96]"
+                      >
+                        Ir a Match
+                      </button>
+                      <Link
+                        href={`/searches/${s.id}`}
+                        className="inline-flex items-center min-h-[40px] px-3 rounded-full text-xs font-medium text-[var(--mp-accent)] hover:underline"
+                      >
+                        Detalle
+                      </Link>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            {sortedSearches.length > 5 && (
+              <p className="text-xs text-[var(--mp-muted)] mt-3">
+                Mostrando 5 de {sortedSearches.length}.{' '}
+                <Link
+                  href="/searches"
+                  className="text-[var(--mp-accent)] font-medium hover:underline"
+                >
+                  Ver todas y alertas
+                </Link>
+              </p>
+            )}
+          </section>
+        )}
       </div>
     </main>
   );
