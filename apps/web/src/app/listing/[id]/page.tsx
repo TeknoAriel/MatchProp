@@ -7,6 +7,7 @@ import ShareModal from '../../../components/ShareModal';
 import ReverseMatchingMiniDashboard from '../../../components/ReverseMatchingMiniDashboard';
 import InquiryModal from '../../../components/InquiryModal';
 import PremiumGraceBanner from '../../../components/PremiumGraceBanner';
+import { recordEngagement, recordListingOpenSessionOnce } from '../../../lib/userEngagementClient';
 
 const API_BASE = '/api';
 const GRACE_PERIOD = process.env.NEXT_PUBLIC_PREMIUM_GRACE_PERIOD === '1';
@@ -111,6 +112,11 @@ export default function ListingDetailPage() {
 
   useEffect(() => {
     if (invalidId || !listing) return;
+    recordListingOpenSessionOnce(id);
+  }, [id, invalidId, listing]);
+
+  useEffect(() => {
+    if (invalidId || !listing) return;
     Promise.all([
       fetch(`${API_BASE}/me`, { credentials: 'include' }).then((r) => (r.ok ? r.json() : null)),
       fetch(`${API_BASE}/me/profile`, { credentials: 'include' }).then((r) =>
@@ -166,7 +172,10 @@ export default function ListingDetailPage() {
           body: JSON.stringify({ listingId: id, listType: 'LATER' }),
         };
     const res = await fetch(url, opts);
-    if (res.ok) setMyStatus((s) => (s ? { ...s, inLike: !inLike } : s));
+    if (res.ok) {
+      if (!inLike) recordEngagement('save');
+      setMyStatus((s) => (s ? { ...s, inLike: !inLike } : s));
+    }
   }
 
   async function handleToggleFavorite() {
@@ -182,7 +191,10 @@ export default function ListingDetailPage() {
           body: JSON.stringify({ listingId: id, listType: 'FAVORITE' }),
         };
     const res = await fetch(url, opts);
-    if (res.ok) setMyStatus((s) => (s ? { ...s, inFavorite: !inFav } : s));
+    if (res.ok) {
+      if (!inFav) recordEngagement('save');
+      setMyStatus((s) => (s ? { ...s, inFavorite: !inFav } : s));
+    }
   }
 
   async function handleAddToList(listId: string) {

@@ -12,6 +12,8 @@ import InquiryModal from '../../../components/InquiryModal';
 import PlanErrorBlock from '../../../components/PlanErrorBlock';
 import ShareModal from '../../../components/ShareModal';
 import ListingCardImageCarousel from '../../../components/ListingCardImageCarousel';
+import { recordEngagement } from '../../../lib/userEngagementClient';
+import { ACTIVE_SEARCH_CHANGED_EVENT } from '../../../lib/activeSearchEvents';
 
 const API_BASE = '/api';
 const PRODUCT_NAME = process.env.NEXT_PUBLIC_PRODUCT_NAME || 'MatchProp';
@@ -102,12 +104,22 @@ function FeedListPageContent() {
   const feedAllFromUrl = searchParams?.get('feed') === 'all';
   const isDemoMode = false;
 
-  useEffect(() => {
+  const syncActiveSearchFlag = useCallback(() => {
     fetch(`${API_BASE}/me/active-search`, { credentials: 'include' })
       .then((res) => (res.ok ? res.json() : { search: null }))
       .then((data: { search: unknown }) => setHasActiveSearch(data.search != null))
       .catch(() => setHasActiveSearch(false));
   }, []);
+
+  useEffect(() => {
+    syncActiveSearchFlag();
+  }, [syncActiveSearchFlag]);
+
+  useEffect(() => {
+    const onChange = () => syncActiveSearchFlag();
+    window.addEventListener(ACTIVE_SEARCH_CHANGED_EVENT, onChange);
+    return () => window.removeEventListener(ACTIVE_SEARCH_CHANGED_EVENT, onChange);
+  }, [syncActiveSearchFlag]);
 
   useEffect(() => {
     Promise.all([
@@ -285,6 +297,7 @@ function FeedListPageContent() {
         return;
       }
       if (res.ok) {
+        recordEngagement('save');
         setListingsStatus((prev) => ({
           ...prev,
           [listingId]: {
@@ -332,6 +345,7 @@ function FeedListPageContent() {
         return;
       }
       if (res.ok) {
+        recordEngagement('save');
         const list = customLists.find((l) => l.id === listId);
         if (addToListCard && list) {
           setListingsStatus((prev) => ({
@@ -384,6 +398,7 @@ function FeedListPageContent() {
         };
     const res = await fetch(url, opts);
     if (res.ok) {
+      if (!inLike) recordEngagement('save');
       setListingsStatus((prev) => ({
         ...prev,
         [listingId]: {
@@ -411,6 +426,7 @@ function FeedListPageContent() {
         };
     const res = await fetch(url, opts);
     if (res.ok) {
+      if (!inFav) recordEngagement('save');
       setListingsStatus((prev) => ({
         ...prev,
         [listingId]: {
@@ -546,7 +562,9 @@ function FeedListPageContent() {
 
   return (
     <main className="min-h-screen bg-[var(--mp-bg)]">
-      <ActiveSearchBar />
+      <div className="-mx-4 md:-mx-6 shrink-0">
+        <ActiveSearchBar />
+      </div>
       <div className="w-full">
         <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
           <div>

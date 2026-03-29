@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { SavedSearchDTO } from '@matchprop/shared';
 import ActiveSearchBar from '../../components/ActiveSearchBar';
+import { notifyActiveSearchChanged } from '../../lib/activeSearchEvents';
 import { ToolbarBtn, ToolbarLink, CardToolbar } from '../../components/MpCardToolbar';
 import { filtersToHumanSummary } from '../../lib/filters-summary';
 
@@ -119,7 +120,10 @@ export default function SearchesPage() {
       body: JSON.stringify({ searchId }),
     });
     if (res.status === 401) router.replace('/login');
-    else if (res.ok) setActiveSearchId(searchId);
+    else if (res.ok) {
+      notifyActiveSearchChanged();
+      setActiveSearchId(searchId);
+    }
   }
 
   async function handleMatch(searchId: string) {
@@ -277,9 +281,11 @@ export default function SearchesPage() {
   }
 
   return (
-    <main className="min-h-screen p-4">
-      <ActiveSearchBar />
-      <div className="max-w-2xl mx-auto">
+    <main className="min-h-screen">
+      <div className="-mx-4 md:-mx-6 shrink-0">
+        <ActiveSearchBar sticky={false} />
+      </div>
+      <div className="p-4 max-w-2xl mx-auto">
         <h1 className="text-xl font-bold mb-4">Búsquedas guardadas</h1>
 
         <div className="space-y-3">

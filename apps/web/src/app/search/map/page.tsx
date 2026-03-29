@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { ListingCard } from '@matchprop/shared';
 import 'leaflet/dist/leaflet.css';
+import ActiveSearchBar from '../../../components/ActiveSearchBar';
 
 const API_BASE = '/api';
 
@@ -158,6 +159,9 @@ export default function SearchMapPage() {
 
   return (
     <main className="h-[calc(100vh-4rem)] md:h-screen flex flex-col bg-[var(--mp-bg)]">
+      <div className="shrink-0 -mx-4 md:-mx-6">
+        <ActiveSearchBar sticky={false} />
+      </div>
       {/* Header */}
       <div className="shrink-0 px-4 py-3 bg-[var(--mp-card)] border-b border-[var(--mp-border)] flex items-center justify-between">
         <div>

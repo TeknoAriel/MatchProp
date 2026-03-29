@@ -6,6 +6,7 @@ import { encodeListingCursor, decodeListingCursor } from './cursor.js';
 import { getCachedTotal, setCachedTotal } from './feed-total-cache.js';
 import { extractFromRawJson } from './rawjson-fallback.js';
 import { amenityFiltersToAndList } from './amenity-filter.js';
+import { locationTextToPrismaClause } from './location-filter.js';
 import type { SearchFilters } from '@matchprop/shared';
 
 /** Entrada alineada con filtros del GET /feed (filtersToWhere). */
@@ -75,7 +76,10 @@ export function filtersToWhere(f: FeedFiltersInput): Record<string, unknown> {
     where.areaTotal = af;
   }
   if (f.areaCoveredMin != null) where.areaCovered = { gte: f.areaCoveredMin };
-  if (f.locationText) where.locationText = { contains: f.locationText, mode: 'insensitive' };
+  if (f.locationText) {
+    const loc = locationTextToPrismaClause(f.locationText);
+    if (loc) where.AND = [...((where.AND as Record<string, unknown>[]) ?? []), loc];
+  }
   if (f.addressText) where.addressText = { contains: f.addressText, mode: 'insensitive' };
   if (f.titleContains) where.title = { contains: f.titleContains, mode: 'insensitive' };
   if (f.descriptionContains)
@@ -194,7 +198,10 @@ export function toFeedFiltersInput(filters: FeedFiltersInput | SearchFilters): F
   };
 }
 
-function orderByForSort(sortBy: FeedFiltersInput['sortBy']) {
+function orderByForSort(
+  sortBy: FeedFiltersInput['sortBy'],
+  opts?: { legacyLastSeenCursor?: boolean }
+) {
   const s = sortBy ?? 'date_desc';
   if (s === 'price_asc')
     return [{ price: 'asc' as const }, { lastSeenAt: 'desc' as const }, { id: 'desc' as const }];
@@ -206,7 +213,8 @@ function orderByForSort(sortBy: FeedFiltersInput['sortBy']) {
       { lastSeenAt: 'desc' as const },
       { id: 'desc' as const },
     ];
-  return [{ lastSeenAt: 'desc' as const }, { id: 'desc' as const }];
+  if (opts?.legacyLastSeenCursor) return [{ lastSeenAt: 'desc' as const }, { id: 'desc' as const }];
+  return [{ createdAt: 'desc' as const }, { id: 'desc' as const }];
 }
 
 /**
@@ -255,11 +263,28 @@ export async function executeFeed(params: {
   };
 
   const findWhere = { ...baseWhere } as Record<string, unknown>;
+  const sortKey = filters.sortBy ?? 'date_desc';
+  const isDateSort = sortKey === 'date_desc';
+  const legacyLastSeenCursor =
+    !!cursorData && isDateSort && !cursorData.createdAt && !!cursorData.lastSeenAt;
+
   if (cursorData) {
-    findWhere.OR = [
-      { lastSeenAt: { lt: cursorData.lastSeenAt } },
-      { lastSeenAt: cursorData.lastSeenAt, id: { lt: cursorData.id } },
-    ];
+    if (isDateSort && cursorData.createdAt) {
+      findWhere.OR = [
+        { createdAt: { lt: cursorData.createdAt } },
+        { createdAt: cursorData.createdAt, id: { lt: cursorData.id } },
+      ];
+    } else if (isDateSort && cursorData.lastSeenAt) {
+      findWhere.OR = [
+        { lastSeenAt: { lt: cursorData.lastSeenAt } },
+        { lastSeenAt: cursorData.lastSeenAt, id: { lt: cursorData.id } },
+      ];
+    } else if (cursorData.lastSeenAt) {
+      findWhere.OR = [
+        { lastSeenAt: { lt: cursorData.lastSeenAt } },
+        { lastSeenAt: cursorData.lastSeenAt, id: { lt: cursorData.id } },
+      ];
+    }
   }
 
   const hasCursor = !!cursorData;
@@ -274,7 +299,7 @@ export async function executeFeed(params: {
     total = getCachedTotal(userId, filters as Record<string, unknown>) ?? null;
   }
 
-  const orderBy = orderByForSort(filters.sortBy);
+  const orderBy = orderByForSort(filters.sortBy, { legacyLastSeenCursor });
 
   const itemsRaw = await prisma.listing.findMany({
     where: findWhere,
@@ -295,6 +320,7 @@ export async function executeFeed(params: {
       publisherRef: true,
       source: true,
       operationType: true,
+      createdAt: true,
       lastSeenAt: true,
       media: {
         orderBy: { sortOrder: 'asc' },
@@ -334,7 +360,13 @@ export async function executeFeed(params: {
   const last = items[items.length - 1];
   const nextCursor =
     hasMore && lastRaw && last
-      ? encodeListingCursor({ lastSeenAt: lastRaw.lastSeenAt, id: last.id })
+      ? isDateSort && !legacyLastSeenCursor
+        ? encodeListingCursor({
+            createdAt: lastRaw.createdAt,
+            lastSeenAt: lastRaw.lastSeenAt,
+            id: last.id,
+          })
+        : encodeListingCursor({ lastSeenAt: lastRaw.lastSeenAt, id: last.id })
       : null;
 
   return { items, total, limit, nextCursor };

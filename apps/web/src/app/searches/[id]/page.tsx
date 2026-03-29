@@ -13,6 +13,9 @@ import {
   ToolbarLink,
   ToolbarRow,
 } from '../../../components/MpCardToolbar';
+import { recordEngagement } from '../../../lib/userEngagementClient';
+import ActiveSearchBar from '../../../components/ActiveSearchBar';
+import { notifyActiveSearchChanged } from '../../../lib/activeSearchEvents';
 
 type ListingStatus = {
   inFavorite: boolean;
@@ -97,12 +100,13 @@ export default function SearchResultsPage() {
 
   async function handleSwipeNope(listingId: string) {
     try {
-      await fetch(`${API_BASE}/swipes`, {
+      const res = await fetch(`${API_BASE}/swipes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ listingId, decision: 'NOPE' }),
       });
+      if (res.ok) recordEngagement('swipe');
       setNopeIds((prev) => new Set(prev).add(listingId));
     } catch {
       /* ignore */
@@ -117,12 +121,13 @@ export default function SearchResultsPage() {
         credentials: 'include',
         body: JSON.stringify({ listingId, listType: 'LATER' }),
       });
-      await fetch(`${API_BASE}/swipes`, {
+      const resSwipe = await fetch(`${API_BASE}/swipes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ listingId, decision: 'LIKE' }),
       });
+      if (resSwipe.ok) recordEngagement('swipe');
       setListingsStatus((prev) => ({
         ...prev,
         [listingId]: {
@@ -161,6 +166,7 @@ export default function SearchResultsPage() {
           body: JSON.stringify({ listingId, listType: 'FAVORITE' }),
         });
         if (res.ok) {
+          recordEngagement('save');
           setListingsStatus((prev) => ({
             ...prev,
             [listingId]: {
@@ -193,6 +199,7 @@ export default function SearchResultsPage() {
       body: JSON.stringify({ listingId, listType: 'FAVORITE' }),
     });
     if (res.ok) {
+      recordEngagement('save');
       setListingsStatus((prev) => ({
         ...prev,
         [listingId]: {
@@ -314,6 +321,7 @@ export default function SearchResultsPage() {
     fetchResults(null, propertyTypeFilter, operationFilter, sortBy)
       .then((data) => {
         if (data) {
+          recordEngagement('search');
           setItems(data.items ?? []);
           setNextCursor(data.nextCursor ?? null);
         }
@@ -418,11 +426,16 @@ export default function SearchResultsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center p-4">
-        <div className="max-w-md w-full space-y-4">
-          <div className="h-48 bg-gray-200 rounded-xl animate-pulse" />
-          <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
-          <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2" />
+      <main className="min-h-screen">
+        <div className="-mx-4 md:-mx-6 shrink-0">
+          <ActiveSearchBar sticky={false} />
+        </div>
+        <div className="flex flex-col items-center justify-center p-4">
+          <div className="max-w-md w-full space-y-4">
+            <div className="h-48 bg-gray-200 rounded-xl animate-pulse" />
+            <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
+            <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2" />
+          </div>
         </div>
       </main>
     );
@@ -508,6 +521,7 @@ export default function SearchResultsPage() {
                   credentials: 'include',
                   body: JSON.stringify({ searchId: id }),
                 });
+                notifyActiveSearchChanged();
                 router.push('/feed');
               }}
               className="px-3 py-2 rounded-[var(--mp-radius-chip)] text-sm font-semibold bg-[var(--mp-accent)] text-white border border-[var(--mp-accent-hover)] hover:opacity-[0.96]"
@@ -523,6 +537,7 @@ export default function SearchResultsPage() {
                   credentials: 'include',
                   body: JSON.stringify({ searchId: id }),
                 });
+                notifyActiveSearchChanged();
                 router.push('/feed/list');
               }}
               className="px-3 py-2 rounded-[var(--mp-radius-chip)] text-sm font-semibold border border-[var(--mp-border)] bg-[var(--mp-bg)] text-[var(--mp-foreground)] hover:border-[var(--mp-accent)]/35"

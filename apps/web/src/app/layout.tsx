@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '../components/ThemeProvider';
 import { ToastProvider } from '../components/FunToast';
+import { UserEngagementProvider } from '../components/UserEngagementProvider';
 import AppShell from '../components/AppShell';
 import { BuildStamp } from '../components/BuildStamp';
 
@@ -43,7 +44,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className="antialiased min-h-screen overflow-x-hidden">
         <ThemeProvider>
           <ToastProvider>
-            <AppShell>{children}</AppShell>
+            <UserEngagementProvider>
+              <AppShell>{children}</AppShell>
+            </UserEngagementProvider>
             <BuildStamp />
           </ToastProvider>
         </ThemeProvider>

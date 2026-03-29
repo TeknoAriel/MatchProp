@@ -28,7 +28,15 @@ export default function SwipeCard({
 }: SwipeCardProps) {
   const priceText =
     card.price != null ? `${card.currency ?? 'USD'} ${card.price.toLocaleString()}` : 'Consultar';
-  const zoneText = card.locationText ?? (card.bedrooms != null ? `${card.bedrooms} amb` : '');
+  const loc = card.locationText?.trim() ?? '';
+  const dims = [
+    card.bedrooms != null ? `${card.bedrooms} amb` : null,
+    card.areaTotal != null ? `${Math.round(card.areaTotal)} m²` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const zoneText =
+    [loc, dims].filter(Boolean).join(' · ') || dims || loc || 'Ubicación a confirmar';
 
   const [dragDx, setDragDx] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -115,7 +123,7 @@ export default function SwipeCard({
               dragDx < -16 ? 'opacity-100' : 'opacity-0'
             }`}
           >
-            Descartar
+            Pasar
           </span>
           <span
             className={`rounded-full px-2 py-1 border border-emerald-400/80 bg-emerald-500/15 text-emerald-800 transition-opacity ${
@@ -149,6 +157,7 @@ export default function SwipeCard({
             heroImageUrl={card.heroImageUrl}
             media={card.media}
             alt={card.title ?? ''}
+            controlsAlwaysVisible
             carouselButtonClass="opacity-0 group-hover:opacity-100 transition-opacity"
           />
           <div
@@ -176,6 +185,9 @@ export default function SwipeCard({
           <h2 className="font-semibold text-lg truncate text-[var(--mp-foreground)]">
             {card.title ?? 'Sin título'}
           </h2>
+          {(card.heroImageUrl || card.media?.length) && dims ? (
+            <p className="text-sm text-[var(--mp-muted)] truncate mt-0.5">{dims}</p>
+          ) : null}
           {!card.heroImageUrl && !card.media?.length && (
             <p className="text-sm text-[var(--mp-muted)] truncate mt-0.5">
               {priceText} · {zoneText}
@@ -183,7 +195,7 @@ export default function SwipeCard({
           )}
           {swipeEnabled && (
             <p className="text-xs text-[var(--mp-muted)] mt-2">
-              Deslizá: izq. descartar · der. me interesa
+              Deslizá: izq. pasar · der. me interesa
             </p>
           )}
         </div>

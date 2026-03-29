@@ -15,6 +15,8 @@ interface ListingCardImageCarouselProps {
   fallbackClassName?: string;
   /** Clases para los botones prev/next (por defecto visibles al hover) */
   carouselButtonClass?: string;
+  /** En móvil / match: controles siempre visibles (acceso real al carrusel). */
+  controlsAlwaysVisible?: boolean;
 }
 
 /** Carrusel de imágenes para cards de propiedades. Muestra flechas y dots cuando hay múltiples fotos. */
@@ -25,6 +27,7 @@ export default function ListingCardImageCarousel({
   className = 'w-full h-full object-cover',
   fallbackClassName = 'w-full h-full flex flex-col items-center justify-center text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200',
   carouselButtonClass = 'opacity-0 group-hover:opacity-100 transition-opacity',
+  controlsAlwaysVisible = false,
 }: ListingCardImageCarouselProps) {
   const [imgError, setImgError] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
@@ -38,6 +41,7 @@ export default function ListingCardImageCarousel({
   const currentImage = images[imageIndex];
   const hasMultiple = images.length > 1;
   const showImage = !!currentImage?.url && !imgError;
+  const btnClass = controlsAlwaysVisible && hasMultiple ? 'opacity-95' : carouselButtonClass;
 
   if (!currentImage) {
     return (
@@ -74,7 +78,7 @@ export default function ListingCardImageCarousel({
               setImgError(false);
               setImageIndex((i) => (i <= 0 ? images.length - 1 : i - 1));
             }}
-            className={`absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md ${carouselButtonClass}`}
+            className={`absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md ${btnClass}`}
             aria-label="Imagen anterior"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,7 +98,7 @@ export default function ListingCardImageCarousel({
               setImgError(false);
               setImageIndex((i) => (i >= images.length - 1 ? 0 : i + 1));
             }}
-            className={`absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md ${carouselButtonClass}`}
+            className={`absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md ${btnClass}`}
             aria-label="Siguiente imagen"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
