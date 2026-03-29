@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import HacersePremiumButton from '../../components/HacersePremiumButton';
 import VisitScheduleModal from '../../components/VisitScheduleModal';
 import PremiumGraceBanner from '../../components/PremiumGraceBanner';
 import ListingImage from '../../components/ListingImage';
-import { CardToolbar, ToolbarBtn, ToolbarLink } from '../../components/MpCardToolbar';
+import { CardToolbar, ToolbarBtn, ToolbarLink, mpToolbarBtnBase } from '../../components/MpCardToolbar';
 import { MpSecondaryNav, SECONDARY_NAV_LEADS } from '../../components/MpSecondaryNav';
+import { formatVisitShortEs } from '../../lib/datetime-local';
 
 const API_BASE = '/api';
 const GRACE_PERIOD = process.env.NEXT_PUBLIC_PREMIUM_GRACE_PERIOD === '1';
@@ -41,11 +42,43 @@ type Lead = {
   lastDelivery: LastDelivery | null;
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  PENDING: 'Pendiente',
-  ACTIVE: 'Activa',
-  CLOSED: 'Cerrada',
+type MeVisitRow = {
+  id: string;
+  scheduledAt: string;
+  status: string;
+  leadId: string;
 };
+
+type ListingSavedMeta = {
+  inFavorite: boolean;
+  inLike: boolean;
+  inLists: { id: string; name: string }[];
+};
+
+function mergeVisitsByLead(arr: MeVisitRow[]): Record<string, MeVisitRow[]> {
+  const m: Record<string, MeVisitRow[]> = {};
+  for (const v of arr) {
+    const bucket = m[v.leadId];
+    if (bucket) bucket.push(v);
+    else m[v.leadId] = [v];
+  }
+  return m;
+}
+
+/** Próxima visita futura, o la más reciente pasada, para mostrar en la botonera. */
+function pickDisplayVisit(visits: MeVisitRow[]): MeVisitRow | null {
+  const sched = visits.filter((v) => v.status === 'SCHEDULED');
+  if (sched.length === 0) return null;
+  const now = Date.now();
+  const upcoming = sched
+    .filter((v) => new Date(v.scheduledAt).getTime() >= now)
+    .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+  if (upcoming.length) return upcoming[0] ?? null;
+  const past = sched
+    .filter((v) => new Date(v.scheduledAt).getTime() < now)
+    .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime());
+  return past[0] ?? null;
+}
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -58,11 +91,20 @@ export default function LeadsPage() {
   const [filterOwnerType, setFilterOwnerType] = useState<'ALL' | 'OWNER' | 'INMOBILIARIA'>('ALL');
   const [filterSource, setFilterSource] = useState<'ALL' | 'ASSISTANT' | 'MANUAL'>('ALL');
   const [filterPublisher, setFilterPublisher] = useState('');
+  const [visitsByLeadId, setVisitsByLeadId] = useState<Record<string, MeVisitRow[]>>({});
+  const [listingSaved, setListingSaved] = useState<Record<string, ListingSavedMeta>>({});
   const router = useRouter();
   const pathname = usePathname();
 
   const isPremium = premiumUntil && new Date(premiumUntil) > new Date();
   const canActivate = isPremium || GRACE_PERIOD;
+
+  const refreshVisits = useCallback(() => {
+    fetch(`${API_BASE}/me/visits?limit=100`, { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((arr: MeVisitRow[]) => setVisitsByLeadId(mergeVisitsByLead(Array.isArray(arr) ? arr : [])))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -79,6 +121,30 @@ export default function LeadsPage() {
       if (meData === null || (meData && !meData.id)) router.replace('/login');
     });
   }, [router]);
+
+  useEffect(() => {
+    if (!leads.length) {
+      setVisitsByLeadId({});
+      setListingSaved({});
+      return;
+    }
+    const ac = new AbortController();
+    const ids = [...new Set(leads.map((l) => l.listingId))];
+    fetch(`${API_BASE}/listings/my-status-bulk?ids=${ids.join(',')}`, {
+      credentials: 'include',
+      signal: ac.signal,
+    })
+      .then((r) => (r.ok ? r.json() : { items: {} }))
+      .then((d) => setListingSaved(d.items ?? {}))
+      .catch(() => {});
+    fetch(`${API_BASE}/me/visits?limit=100`, { credentials: 'include', signal: ac.signal })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((arr: MeVisitRow[]) =>
+        setVisitsByLeadId(mergeVisitsByLead(Array.isArray(arr) ? arr : []))
+      )
+      .catch(() => {});
+    return () => ac.abort();
+  }, [leads]);
 
   async function handleActivate(leadId: string) {
     if (activatingId) return;
@@ -102,6 +168,7 @@ export default function LeadsPage() {
       setLeads((prev) =>
         prev.map((l) => (l.id === leadId ? { ...l, status: data.status ?? 'ACTIVE' } : l))
       );
+      refreshVisits();
       if (GRACE_PERIOD && !isPremium) {
         setShowGraceToast(true);
         setTimeout(() => setShowGraceToast(false), 8000);
@@ -142,15 +209,15 @@ export default function LeadsPage() {
           <MpSecondaryNav items={SECONDARY_NAV_LEADS} pathname={pathname} />
         </div>
 
-        {leads.some((l) => l.status === 'ACTIVE') && (
-          <div className="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200">
-            <p className="text-sm font-medium text-emerald-800">
-              Tenés consultas activas. Coordiná visitas desde cada una con &quot;Agendar
-              visita&quot;.
+        {leads.length > 0 && (
+          <div className="mb-4 p-4 rounded-xl bg-sky-50 border border-sky-200">
+            <p className="text-sm font-medium text-sky-900">
+              Tus consultas quedan registradas como enviadas. Coordiná la visita con &quot;Agendar
+              visita&quot; o revisá la agenda de cada consulta.
             </p>
             <Link
               href="/me/visits"
-              className="inline-block mt-2 text-sm text-emerald-700 hover:underline font-medium"
+              className="inline-block mt-2 text-sm text-sky-800 hover:underline font-medium"
             >
               Ver todas mis visitas →
             </Link>
@@ -181,8 +248,8 @@ export default function LeadsPage() {
                   <div className="p-3 flex-1 min-w-0">
                     <p className="font-medium truncate text-slate-900">Depto 2 amb Palermo</p>
                     <p className="text-sm text-slate-600">USD 120.000</p>
-                    <span className="inline-block mt-2 px-2 py-0.5 text-xs rounded bg-amber-50 text-amber-800">
-                      Pendiente
+                    <span className="inline-block mt-2 px-2 py-0.5 text-xs rounded bg-slate-100 text-slate-700">
+                      Enviada
                     </span>
                   </div>
                 </div>
@@ -194,7 +261,6 @@ export default function LeadsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Filtros */}
             <div className="p-3 rounded-2xl bg-white border border-slate-100 shadow-sm flex flex-col gap-2">
               <div className="flex gap-2 flex-wrap">
                 <select
@@ -265,7 +331,6 @@ export default function LeadsPage() {
                   if (filterSource === 'ALL') return true;
                   if (filterSource === 'ASSISTANT')
                     return g.leads.some((l) => l.source === 'ASSISTANT');
-                  // Manual: cualquier source que no sea assistant (incluye FEED/LIST/DETAIL/DEMO/null)
                   return g.leads.some((l) => l.source !== 'ASSISTANT');
                 })
                 .filter((g) => {
@@ -289,6 +354,18 @@ export default function LeadsPage() {
                 const publisherLabel =
                   group.ownerKind === 'OWNER' ? 'Dueño directo' : 'Inmobiliaria';
                 const publisherName = group.publisherName ?? group.listing.publisherRef ?? '—';
+                const sortedLeads = [...group.leads].sort(
+                  (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                );
+                const newest = sortedLeads[0]!;
+                const chatLead = sortedLeads.find((l) => l.status === 'ACTIVE') ?? newest;
+                const scheduleLead = chatLead;
+                const allVisitsFlat = group.leads.flatMap((l) => visitsByLeadId[l.id] ?? []);
+                const displayVisit = pickDisplayVisit(allVisitsFlat);
+                const agendaHref = displayVisit
+                  ? `/leads/${displayVisit.leadId}/visits`
+                  : `/leads/${scheduleLead.id}/visits`;
+                const saved = listingSaved[group.listingId];
 
                 return (
                   <div key={group.listingId} className="mp-surface overflow-hidden">
@@ -322,15 +399,83 @@ export default function LeadsPage() {
                               Origen: {group.latest.source}
                             </span>
                           )}
+                          {saved?.inFavorite && (
+                            <span className="inline-block px-2 py-0.5 text-xs rounded bg-amber-50 text-amber-900">
+                              Favorito
+                            </span>
+                          )}
+                          {saved?.inLike && (
+                            <span className="inline-block px-2 py-0.5 text-xs rounded bg-rose-50 text-rose-800">
+                              Like
+                            </span>
+                          )}
+                          {saved?.inLists?.length ? (
+                            <span
+                              className="inline-block px-2 py-0.5 text-xs rounded bg-violet-50 text-violet-800 max-w-full truncate"
+                              title={saved.inLists.map((x) => x.name).join(', ')}
+                            >
+                              Listas: {saved.inLists.map((x) => x.name).join(', ')}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     </Link>
 
                     <CardToolbar>
+                      {chatLead.status === 'ACTIVE' ? (
+                        <ToolbarLink
+                          href={`/leads/${chatLead.id}/chat`}
+                          icon="💬"
+                          label="Chat"
+                          className="flex-[2] min-w-[4.75rem] bg-[var(--mp-accent)] text-white !border-[var(--mp-accent-hover)] hover:opacity-90"
+                        />
+                      ) : (
+                        <ToolbarBtn
+                          icon="💬"
+                          label="Chat"
+                          disabled
+                          className="flex-[2] min-w-[4.75rem] opacity-50"
+                          title="Con premium podés chatear cuando la consulta esté habilitada."
+                        />
+                      )}
+                      <ToolbarBtn
+                        icon="📆"
+                        label="Agendar visita"
+                        disabled={scheduleLead.status !== 'ACTIVE'}
+                        title={
+                          scheduleLead.status !== 'ACTIVE'
+                            ? 'Habilitá la consulta (premium) para agendar.'
+                            : undefined
+                        }
+                        className="bg-emerald-600 text-white !border-emerald-700 hover:bg-emerald-700 disabled:opacity-50"
+                        onClick={() => {
+                          if (scheduleLead.status === 'ACTIVE') setVisitModalLeadId(scheduleLead.id);
+                        }}
+                      />
+                      {displayVisit ? (
+                        <Link
+                          href={agendaHref}
+                          className={`${mpToolbarBtnBase} bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)] max-w-[12.5rem]`}
+                        >
+                          <span className="text-sm leading-none shrink-0" aria-hidden>
+                            📋
+                          </span>
+                          <span className="truncate text-left leading-tight">
+                            Agendada {formatVisitShortEs(new Date(displayVisit.scheduledAt))} ver
+                          </span>
+                        </Link>
+                      ) : (
+                        <ToolbarLink
+                          href={agendaHref}
+                          icon="📋"
+                          label="Agenda"
+                          className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
+                        />
+                      )}
                       <ToolbarLink
                         href={`/listing/${group.listingId}`}
                         icon="📄"
-                        label="Ficha"
+                        label="Ver ficha"
                         className="bg-sky-500 text-white !border-sky-600 hover:bg-sky-600"
                       />
                       <ToolbarBtn
@@ -352,14 +497,12 @@ export default function LeadsPage() {
                               <div className="flex flex-wrap gap-1 items-center">
                                 <span
                                   className={`inline-block px-2 py-0.5 text-xs rounded ${
-                                    lead.status === 'ACTIVE'
-                                      ? 'bg-green-100 text-green-800'
-                                      : lead.status === 'CLOSED'
-                                        ? 'bg-gray-100 text-gray-600'
-                                        : 'bg-amber-50 text-amber-800'
+                                    lead.status === 'CLOSED'
+                                      ? 'bg-gray-100 text-gray-600'
+                                      : 'bg-slate-100 text-slate-800'
                                   }`}
                                 >
-                                  {STATUS_LABEL[lead.status] ?? lead.status}
+                                  {lead.status === 'CLOSED' ? 'Cerrada' : 'Enviada'}
                                 </span>
                                 <span className="inline-block px-2 py-0.5 text-xs rounded bg-slate-100 text-slate-700">
                                   {lead.source ?? 'MANUAL'}
@@ -392,54 +535,28 @@ export default function LeadsPage() {
                                   </p>
                                 )}
                             </div>
-                            {(lead.status === 'ACTIVE' || lead.status === 'PENDING') && (
-                              <CardToolbar>
-                                {lead.status === 'ACTIVE' && (
-                                  <>
-                                    <ToolbarLink
-                                      href={`/leads/${lead.id}/chat`}
-                                      icon="💬"
-                                      label="Chat"
-                                      className="bg-[var(--mp-accent)] text-white !border-[var(--mp-accent-hover)] hover:opacity-90"
+                            {lead.status === 'PENDING' && (
+                              <div className="px-3 pb-3 flex flex-wrap gap-2 items-center border-t border-slate-100 pt-2">
+                                {canActivate ? (
+                                  <ToolbarBtn
+                                    icon="▶"
+                                    label={activatingId === lead.id ? '…' : 'Habilitar chat y visitas'}
+                                    disabled={!!activatingId}
+                                    className="bg-amber-600 text-white !border-amber-700 hover:bg-amber-700"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      void handleActivate(lead.id);
+                                    }}
+                                  />
+                                ) : (
+                                  <span className="inline-flex shrink-0">
+                                    <HacersePremiumButton
+                                      variant="secondary"
+                                      className="!min-h-[32px] !px-2 !py-1 !text-[11px] !rounded-[var(--mp-radius-chip)] !font-semibold"
                                     />
-                                    <ToolbarBtn
-                                      icon="📆"
-                                      label="Agendar"
-                                      className="bg-emerald-600 text-white !border-emerald-700 hover:bg-emerald-700"
-                                      onClick={() => setVisitModalLeadId(lead.id)}
-                                    />
-                                    <ToolbarLink
-                                      href={`/leads/${lead.id}/visits`}
-                                      icon="📋"
-                                      label="Agenda"
-                                      className="bg-[var(--mp-card)] text-[var(--mp-foreground)] !border-[var(--mp-border)] hover:bg-[var(--mp-bg)]"
-                                    />
-                                  </>
+                                  </span>
                                 )}
-                                {lead.status === 'PENDING' && (
-                                  <>
-                                    {canActivate ? (
-                                      <ToolbarBtn
-                                        icon="▶"
-                                        label={activatingId === lead.id ? '…' : 'Activar'}
-                                        disabled={!!activatingId}
-                                        className="bg-amber-600 text-white !border-amber-700 hover:bg-amber-700"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          void handleActivate(lead.id);
-                                        }}
-                                      />
-                                    ) : (
-                                      <span className="inline-flex shrink-0">
-                                        <HacersePremiumButton
-                                          variant="secondary"
-                                          className="!min-h-[32px] !px-2 !py-1 !text-[11px] !rounded-[var(--mp-radius-chip)] !font-semibold"
-                                        />
-                                      </span>
-                                    )}
-                                  </>
-                                )}
-                              </CardToolbar>
+                              </div>
                             )}
                           </div>
                         ))}
@@ -460,7 +577,10 @@ export default function LeadsPage() {
             open={!!visitModalLeadId}
             onClose={() => setVisitModalLeadId(null)}
             leadId={visitModalLeadId}
-            onScheduled={() => setVisitModalLeadId(null)}
+            onScheduled={() => {
+              refreshVisits();
+              setVisitModalLeadId(null);
+            }}
           />
         )}
       </div>

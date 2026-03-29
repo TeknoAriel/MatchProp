@@ -21,7 +21,7 @@ export default function MyVisitsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    fetch(`${API_BASE}/me/visits`, { credentials: 'include' })
+    fetch(`${API_BASE}/me/visits?limit=100`, { credentials: 'include' })
       .then((res) => {
         if (res.status === 401) {
           router.replace('/login');
@@ -30,7 +30,15 @@ export default function MyVisitsPage() {
         return res.json();
       })
       .then((data) => {
-        setVisits(Array.isArray(data) ? data : []);
+        const raw = Array.isArray(data) ? data : [];
+        const now = Date.now();
+        const upcoming = raw
+          .filter((v) => new Date(v.scheduledAt).getTime() >= now)
+          .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+        const past = raw
+          .filter((v) => new Date(v.scheduledAt).getTime() < now)
+          .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime());
+        setVisits([...upcoming, ...past]);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -56,7 +64,7 @@ export default function MyVisitsPage() {
             href="/leads"
             className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
           >
-            Consultas
+            Mis consultas enviadas
           </Link>
         </div>
 
@@ -74,13 +82,10 @@ export default function MyVisitsPage() {
                     contacten&quot;)
                   </li>
                   <li>
-                    Andá a <strong>Consultas</strong> y activá la consulta cuando la inmobiliaria
-                    responda
+                    En <strong>Mis consultas</strong> usá <strong>Agendar visita</strong> o la
+                    agenda de esa consulta
                   </li>
-                  <li>
-                    En cada consulta activa, hacé clic en <strong>Agendar visita</strong>
-                  </li>
-                  <li>Elegí fecha y hora. La visita aparecerá acá</li>
+                  <li>Elegí fecha y hora. La visita aparecerá acá (también las pasadas)</li>
                 </ol>
               </div>
               <Link
@@ -104,7 +109,7 @@ export default function MyVisitsPage() {
                 <p className="font-semibold text-slate-900">Vie 15 Mar · 10:00</p>
                 <p className="text-sm text-slate-600 mt-1">Depto 2 amb Palermo</p>
                 <span className="inline-block mt-2 px-2 py-0.5 text-xs rounded-full bg-slate-100 text-slate-500">
-                  Ejemplo · SCHEDULED
+                  Ejemplo · Agendada
                 </span>
               </div>
             </div>
@@ -129,7 +134,7 @@ export default function MyVisitsPage() {
                   </p>
                   <p className="text-sm text-slate-600 mt-1">{v.listingTitle ?? 'Propiedad'}</p>
                   <span className="inline-block mt-2 text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                    {v.status}
+                    {v.status === 'SCHEDULED' ? 'Agendada' : v.status}
                   </span>
                 </Link>
               </li>

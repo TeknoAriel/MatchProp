@@ -127,11 +127,13 @@ export function WelcomeMessage({
     `¡Qué bueno verte${name ? `, ${name}` : ''}! ✨`,
   ];
 
-  const [greeting, setGreeting] = useState('');
+  const [greeting, setGreeting] = useState('¡Hola! 👋');
 
   useEffect(() => {
     const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
     setGreeting(randomGreeting ?? '¡Hola! 👋');
+    // Pool depende de name; no incluimos greetings para no re-randomizar cada render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name]);
 
   return (

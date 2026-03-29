@@ -9,6 +9,7 @@ import { filtersToHumanSummary, searchFiltersToChips } from '../../lib/filters-s
 import ActiveSearchBar from '../../components/ActiveSearchBar';
 import FilterChips from '../../components/FilterChips';
 import AssistantChatInput from '../../components/AssistantChatInput';
+import SaveActiveSearchModal from '../../components/SaveActiveSearchModal';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import ListingImage from '../../components/ListingImage';
 import { ASSISTANT_INPUT_PLACEHOLDER_EXAMPLE } from '../../lib/assistant-examples';
@@ -72,7 +73,7 @@ function AssistantPageContent() {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AssistantSearchResponse | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [previewItems, setPreviewItems] = useState<ListingCard[]>([]);
@@ -388,50 +389,6 @@ function AssistantPageContent() {
     }
   }
 
-  async function handleSave() {
-    if (!result) return;
-    setSaving(true);
-    setError(null);
-    try {
-      const res = await fetch(`${API_BASE}/searches`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          name: text.trim().slice(0, 50) || 'Búsqueda',
-          text: text.trim() || undefined,
-          filters: result.filters ?? {},
-        }),
-      });
-      if (res.status === 401) {
-        router.replace('/login');
-        return;
-      }
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setError(err.message ?? 'Error al guardar');
-        return;
-      }
-      const data = (await res.json()) as { id: string };
-      setSavedId(data.id);
-      const activeRes = await fetch(`${API_BASE}/me/active-search`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ searchId: data.id }),
-      });
-      if (activeRes.ok) {
-        notifyActiveSearchChanged();
-        setToast('Guardada y activa');
-        setTimeout(() => setToast(null), 4000);
-      }
-    } catch {
-      setError('Error de conexión');
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function handleActivateAlerts() {
     if (!savedId) return;
     try {
@@ -572,6 +529,22 @@ function AssistantPageContent() {
 
   return (
     <main className="min-h-screen pb-8">
+      {result ? (
+        <SaveActiveSearchModal
+          open={saveModalOpen}
+          onClose={() => setSaveModalOpen(false)}
+          savedSearchId={savedId}
+          initialName={text.trim().slice(0, 100) || 'Mi búsqueda'}
+          initialText={text.trim()}
+          initialFilters={result.filters ?? {}}
+          onSuccess={({ id }) => {
+            setSavedId(id);
+            notifyActiveSearchChanged();
+            setToast('Guardada y activa');
+            setTimeout(() => setToast(null), 4000);
+          }}
+        />
+      ) : null}
       <div className="-mx-4 md:-mx-6 shrink-0">
         <ActiveSearchBar sticky={false} />
       </div>
@@ -825,11 +798,11 @@ function AssistantPageContent() {
                     Match
                   </Link>
                   <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="px-4 py-2 rounded-xl text-sm font-medium bg-[var(--mp-bg)] text-[var(--mp-foreground)] border border-[var(--mp-border)] disabled:opacity-50"
+                    type="button"
+                    onClick={() => setSaveModalOpen(true)}
+                    className="px-4 py-2 rounded-xl text-sm font-medium bg-[var(--mp-bg)] text-[var(--mp-foreground)] border border-[var(--mp-border)]"
                   >
-                    {saving ? '...' : 'Guardar'}
+                    Guardar
                   </button>
                   <button
                     onClick={handleActivateAlerts}

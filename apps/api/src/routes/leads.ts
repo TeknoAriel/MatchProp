@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { envFlag } from '../config.js';
 import {
@@ -16,6 +16,33 @@ import {
 import { kitepropUserMessage } from '../services/kiteprop/error-messages.js';
 import { trackEvent } from '../lib/analytics.js';
 import { filterPii } from '../lib/anti-pii.js';
+
+async function resolveActivationReason(
+  userId: string,
+  request: FastifyRequest
+): Promise<ActivationReason | null> {
+  const dbUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { premiumUntil: true, role: true },
+  });
+  const premiumFree =
+    envFlag('DEMO_MODE') ||
+    envFlag('PREMIUM_FREE') ||
+    envFlag('PREMIUM_GRACE_PERIOD') ||
+    process.env.NODE_ENV === 'development';
+  const simPremium =
+    (process.env.NODE_ENV === 'development' || envFlag('DEMO_MODE')) &&
+    ((request.cookies as Record<string, string> | undefined)?.['matchprop_premium_sim'] === '1' ||
+      (request.headers['x-premium-sim'] as string) === '1');
+
+  if (dbUser?.role === 'ADMIN') return ActivationReason.MANUAL_ADMIN;
+  if (premiumFree) return ActivationReason.PREMIUM_USER;
+  if (dbUser?.premiumUntil && new Date(dbUser.premiumUntil) > new Date()) {
+    return ActivationReason.PREMIUM_USER;
+  }
+  if (simPremium) return ActivationReason.PREMIUM_USER;
+  return null;
+}
 
 export async function leadRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', fastify.authenticate);
@@ -67,6 +94,9 @@ export async function leadRoutes(fastify: FastifyInstance) {
       const channel = (body.channel as LeadChannel) ?? LeadChannel.FORM;
       const source = (body.source as LeadSource) ?? null;
 
+      const activationReason = await resolveActivationReason(user.userId, request);
+      const startActive = !!activationReason;
+
       const lead = await prisma.lead.create({
         data: {
           userId: user.userId,
@@ -75,7 +105,9 @@ export async function leadRoutes(fastify: FastifyInstance) {
           channel,
           source,
           message: body.message ?? null,
-          status: LeadStatus.PENDING,
+          status: startActive ? LeadStatus.ACTIVE : LeadStatus.PENDING,
+          activationReason: activationReason ?? undefined,
+          activatedAt: startActive ? new Date() : null,
           targetPublisherRef: listing.publisherRef,
         },
       });
@@ -93,6 +125,12 @@ export async function leadRoutes(fastify: FastifyInstance) {
         userId: user.userId,
         payload: { leadId: lead.id },
       });
+      if (startActive) {
+        await trackEvent('lead_activated', {
+          userId: user.userId,
+          payload: { leadId: lead.id, activationReason, autoOnCreate: true },
+        });
+      }
 
       return reply.status(201).send({
         id: lead.id,
@@ -244,32 +282,7 @@ export async function leadRoutes(fastify: FastifyInstance) {
         throw fastify.httpErrors.badRequest('No se puede activar un lead cerrado');
       }
 
-      let reason: ActivationReason | null = null;
-      const dbUser = await prisma.user.findUnique({
-        where: { id: user.userId },
-        select: { premiumUntil: true, role: true },
-      });
-      const premiumFree =
-        envFlag('DEMO_MODE') ||
-        envFlag('PREMIUM_FREE') ||
-        envFlag('PREMIUM_GRACE_PERIOD') ||
-        process.env.NODE_ENV === 'development';
-      const simPremium =
-        (process.env.NODE_ENV === 'development' || envFlag('DEMO_MODE')) &&
-        ((request.cookies as Record<string, string> | undefined)?.['matchprop_premium_sim'] ===
-          '1' ||
-          (request.headers['x-premium-sim'] as string) === '1');
-
-      if (dbUser?.role === 'ADMIN') {
-        reason = ActivationReason.MANUAL_ADMIN;
-      } else if (premiumFree) {
-        reason = ActivationReason.PREMIUM_USER;
-      } else if (dbUser?.premiumUntil && new Date(dbUser.premiumUntil) > new Date()) {
-        reason = ActivationReason.PREMIUM_USER;
-      } else if (simPremium) {
-        reason = ActivationReason.PREMIUM_USER;
-      }
-      // PAID_BY_AGENCY: por ahora se activa manualmente vía otro endpoint (T2 dice "manual endpoint org")
+      const reason = await resolveActivationReason(user.userId, request);
 
       if (!reason) {
         throw fastify.httpErrors.forbidden(
@@ -499,14 +512,12 @@ export async function leadRoutes(fastify: FastifyInstance) {
       const user = request.user as { userId: string };
       const q = request.query as { limit?: number };
       const limit = Math.min(50, Math.max(1, q.limit ?? 20));
-      const now = new Date();
       const visits = await prisma.visit.findMany({
         where: {
           lead: { userId: user.userId, status: LeadStatus.ACTIVE },
-          scheduledAt: { gte: now },
           status: 'SCHEDULED',
         },
-        orderBy: { scheduledAt: 'asc' },
+        orderBy: { scheduledAt: 'desc' },
         take: limit,
         include: {
           lead: { include: { listing: { select: { id: true, title: true } } } },

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { toDatetimeLocalValue } from '../../../../lib/datetime-local';
 
 const API_BASE = '/api';
 const GRACE_PERIOD = process.env.NEXT_PUBLIC_PREMIUM_GRACE_PERIOD === '1';
@@ -112,7 +113,9 @@ export default function LeadVisitsPage() {
     return (
       <main className="min-h-screen p-4">
         <div className="max-w-lg mx-auto">
-          <p className="text-amber-800">Activá el lead para agendar visitas</p>
+          <p className="text-amber-800">
+            Habilitá la consulta con premium para agendar visitas y chatear.
+          </p>
           <Link href="/leads" className="text-blue-600 underline mt-2 inline-block">
             Volver a consultas
           </Link>
@@ -121,10 +124,9 @@ export default function LeadVisitsPage() {
     );
   }
 
-  const minDate = new Date();
-  minDate.setDate(minDate.getDate() + 1);
-  minDate.setHours(0, 0, 0, 0);
-  const minStr = minDate.toISOString().slice(0, 16);
+  const minDt = new Date();
+  minDt.setMinutes(minDt.getMinutes() + 1);
+  const minStr = toDatetimeLocalValue(minDt);
 
   function getPresetSlots() {
     const now = new Date();
@@ -166,7 +168,6 @@ export default function LeadVisitsPage() {
 
   async function quickAgendar(dt: Date) {
     if (dt <= new Date() || sending) return;
-    setScheduledAt(dt.toISOString().slice(0, 16));
     setSending(true);
     setError(null);
     try {
@@ -232,8 +233,45 @@ export default function LeadVisitsPage() {
           </div>
         </div>
 
+        <h2 className="font-semibold text-[var(--mp-foreground)] mb-3">Visitas agendadas</h2>
+        {visits.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-[var(--mp-border)] bg-[var(--mp-bg)]/50 py-6 px-4 text-center mb-6">
+            <span className="text-3xl block mb-2">📅</span>
+            <p className="text-[var(--mp-muted)] font-medium">Todavía no hay visitas para esta consulta.</p>
+            <p className="text-sm text-[var(--mp-muted)] mt-1">
+              Más abajo podés elegir un horario sugerido o cargar fecha y hora.
+            </p>
+          </div>
+        ) : (
+          <ul className="space-y-2 mb-6">
+            {visits.map((v) => (
+              <li
+                key={v.id}
+                className="rounded-xl border border-[var(--mp-border)] bg-[var(--mp-card)] p-4 shadow-sm"
+              >
+                <p className="font-medium text-[var(--mp-foreground)]">
+                  {new Date(v.scheduledAt).toLocaleString('es-AR', {
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+                <p className="text-sm text-[var(--mp-muted)] mt-0.5">
+                  {v.status === 'SCHEDULED' ? 'Agendada' : v.status}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+
         <div className="mb-6 p-4 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] shadow-sm">
-          <h2 className="font-semibold text-[var(--mp-foreground)] mb-3">Horarios sugeridos</h2>
+          <h2 className="font-semibold text-[var(--mp-foreground)] mb-3">Agendar otra visita</h2>
+          <p className="text-sm text-[var(--mp-muted)] mb-3">
+            Los horarios deben ser futuros (zona horaria de tu dispositivo).
+          </p>
+          <h3 className="text-sm font-medium text-[var(--mp-foreground)] mb-2">Horarios sugeridos</h3>
           <div className="flex flex-wrap gap-2 mb-4">
             {presets.map((p) => (
               <button
@@ -247,7 +285,7 @@ export default function LeadVisitsPage() {
               </button>
             ))}
           </div>
-          <h2 className="font-semibold text-[var(--mp-foreground)] mb-3">O elegí fecha y hora</h2>
+          <h3 className="text-sm font-medium text-[var(--mp-foreground)] mb-2">O elegí fecha y hora</h3>
           <div className="flex gap-2 items-center flex-wrap">
             <input
               type="datetime-local"
@@ -267,40 +305,9 @@ export default function LeadVisitsPage() {
           {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
         </div>
 
-        <h2 className="font-semibold text-[var(--mp-foreground)] mb-3">Visitas agendadas</h2>
-        {visits.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[var(--mp-border)] bg-[var(--mp-bg)]/50 py-8 px-4 text-center">
-            <span className="text-3xl block mb-2">📅</span>
-            <p className="text-[var(--mp-muted)] font-medium">Sin visitas agendadas</p>
-            <p className="text-sm text-[var(--mp-muted)] mt-1">
-              Elegí un horario sugerido arriba o ingresá fecha y hora para coordinar con la
-              inmobiliaria.
-            </p>
-          </div>
-        ) : (
-          <ul className="space-y-2">
-            {visits.map((v) => (
-              <li
-                key={v.id}
-                className="rounded-xl border border-[var(--mp-border)] bg-[var(--mp-card)] p-4 shadow-sm"
-              >
-                <p className="font-medium text-[var(--mp-foreground)]">
-                  {new Date(v.scheduledAt).toLocaleString('es-AR', {
-                    weekday: 'short',
-                    day: 'numeric',
-                    month: 'short',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
-                <p className="text-sm text-[var(--mp-muted)] mt-0.5">{v.status}</p>
-              </li>
-            ))}
-          </ul>
-        )}
         <Link
           href="/me/visits"
-          className="inline-block mt-4 text-sm font-medium text-[var(--mp-accent)] hover:underline"
+          className="inline-block text-sm font-medium text-[var(--mp-accent)] hover:underline"
         >
           Ver todas mis visitas →
         </Link>

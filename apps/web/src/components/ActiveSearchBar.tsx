@@ -7,6 +7,7 @@ import { notifyActiveSearchChanged, ACTIVE_SEARCH_CHANGED_EVENT } from '../lib/a
 import { buildBuscandoLine } from '../lib/active-search-label';
 import { useUserLevel } from '../hooks/useUserLevel';
 import type { SearchFilters, UserEngagementStats, UserLevel } from '@matchprop/shared';
+import SaveActiveSearchModal from './SaveActiveSearchModal';
 
 const API_BASE = '/api';
 
@@ -54,7 +55,8 @@ export default function ActiveSearchBar({ sticky = true, className = '' }: Activ
   const { level, stats } = useUserLevel();
   const [search, setSearch] = useState<ActiveSearchState>(null);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<'clear' | 'new' | null>(null);
+  const [busy, setBusy] = useState<'clear' | 'new' | 'delete' | null>(null);
+  const [saveOpen, setSaveOpen] = useState(false);
   const lastTipKeyRef = useRef<string | null>(null);
   const [stableTipText, setStableTipText] = useState<string | null>(null);
 
@@ -128,6 +130,32 @@ export default function ActiveSearchBar({ sticky = true, className = '' }: Activ
     }
   }
 
+  async function handleEliminarGuardada() {
+    if (!search?.id) return;
+    const ok = window.confirm(
+      '¿Borrar esta búsqueda guardada? Se quita como activa y se elimina de tu lista. No podés deshacer.'
+    );
+    if (!ok) return;
+    setBusy('delete');
+    try {
+      const res = await fetch(`${API_BASE}/searches/${search.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (res.status === 401) {
+        router.replace('/login');
+        return;
+      }
+      if (res.ok) {
+        setSearch(null);
+        notifyActiveSearchChanged();
+        await load(true);
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
+
   const adjustHref = hasSearch ? '/assistant?focus=input&from=active' : '/assistant?focus=input';
 
   const cont = continuityLine(level, stats, hasSearch);
@@ -156,6 +184,15 @@ export default function ActiveSearchBar({ sticky = true, className = '' }: Activ
     <div
       className={`${stickyClass} bg-[var(--mp-card)]/95 backdrop-blur-md border-b border-[var(--mp-border)] shadow-sm transition-[box-shadow,background-color] duration-300 ease-out ${className}`}
     >
+      <SaveActiveSearchModal
+        open={saveOpen}
+        onClose={() => setSaveOpen(false)}
+        savedSearchId={search?.id ?? null}
+        initialName={search?.name?.trim() ?? ''}
+        initialText={search?.queryText?.trim() ?? ''}
+        initialFilters={(search?.filters ?? {}) as SearchFilters}
+        onSuccess={() => load(true)}
+      />
       <div className="max-w-2xl mx-auto px-4 md:px-6 py-2 min-h-[52px] flex flex-col justify-center gap-1">
         {!search ? (
           <div className="flex flex-wrap items-center gap-2 gap-y-1.5">
@@ -167,7 +204,19 @@ export default function ActiveSearchBar({ sticky = true, className = '' }: Activ
                 Sin búsqueda activa
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+            <div
+              className="flex flex-wrap items-center gap-1.5 shrink-0"
+              role="toolbar"
+              aria-label="Acciones de búsqueda"
+            >
+              <button
+                type="button"
+                disabled
+                title="Activá una búsqueda para guardar o duplicar"
+                className="min-h-[36px] px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--mp-muted)] border border-[var(--mp-border)] opacity-50 cursor-not-allowed"
+              >
+                Guardar
+              </button>
               <Link
                 href="/dashboard"
                 className="min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--mp-accent)] text-white border border-[var(--mp-accent-hover)] hover:opacity-[0.96] transition-opacity"
@@ -217,6 +266,13 @@ export default function ActiveSearchBar({ sticky = true, className = '' }: Activ
                 role="toolbar"
                 aria-label="Acciones de búsqueda activa"
               >
+                <button
+                  type="button"
+                  onClick={() => setSaveOpen(true)}
+                  className="min-h-[36px] px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[var(--mp-accent)] text-white border border-[var(--mp-accent-hover)] hover:opacity-[0.96] transition-opacity"
+                >
+                  Guardar
+                </button>
                 <Link
                   href={adjustHref}
                   className="min-h-[36px] px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--mp-accent)] hover:bg-[color-mix(in_srgb,var(--mp-accent)_10%,transparent)] transition-colors"
@@ -228,10 +284,21 @@ export default function ActiveSearchBar({ sticky = true, className = '' }: Activ
                     type="button"
                     onClick={() => void handleLimpiar()}
                     disabled={busy !== null}
-                    title="Quitar búsqueda activa (seguís en esta pantalla)"
-                    className="min-h-[36px] px-2.5 py-1.5 rounded-lg text-xs text-[var(--mp-muted)] hover:text-red-600 hover:bg-red-500/5 disabled:opacity-50 transition-colors"
+                    title="Quitar como búsqueda activa (la búsqueda sigue en Mis búsquedas)"
+                    className="min-h-[36px] px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--mp-muted)] hover:text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)] disabled:opacity-50 transition-colors"
                   >
-                    {busy === 'clear' ? '…' : 'Limpiar'}
+                    {busy === 'clear' ? '…' : 'Quitar'}
+                  </button>
+                )}
+                {(level === 'ACTIVE' || level === 'ADVANCED') && (
+                  <button
+                    type="button"
+                    onClick={() => void handleEliminarGuardada()}
+                    disabled={busy !== null}
+                    title="Eliminar esta búsqueda guardada"
+                    className="min-h-[36px] px-2.5 py-1.5 rounded-lg text-xs font-medium text-red-600/90 hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+                  >
+                    {busy === 'delete' ? '…' : 'Eliminar'}
                   </button>
                 )}
                 {level === 'ADVANCED' && (

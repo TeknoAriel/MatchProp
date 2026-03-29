@@ -45,9 +45,9 @@ const MAS_SECTIONS: { title: string; subtitle?: string; items: readonly MasEntry
     items: [
       {
         href: '/me/saved',
-        label: 'Listas y favoritos',
+        label: 'Guardados',
         icon: '⭐',
-        desc: 'Listas personalizadas y destacados',
+        desc: 'Me gusta, favoritos, listas y búsquedas',
       },
       {
         href: '/searches',

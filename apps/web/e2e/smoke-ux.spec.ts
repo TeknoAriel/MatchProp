@@ -61,10 +61,15 @@ test.describe('smoke:ux', () => {
     await page.goto('/feed/list');
     await expect(
       page
-        .getByText('Alertas')
+        .getByText('Buscando')
+        .or(page.getByText('Alertas'))
         .or(page.getByText('Cambiar búsqueda'))
         .or(page.locator('a[href^="/listing/"]'))
-        .or(page.getByText(/Sin búsqueda activa|No hay resultados|Crear búsqueda/))
+        .or(
+          page.getByText(
+            /Sin búsqueda activa|No hay resultados|Crear búsqueda|Comparar en contexto/
+          )
+        )
     ).toBeVisible({ timeout: 10000 });
 
     // Volver al assistant y guardar (re-enviar la misma búsqueda por texto; ya no hay chips de ejemplo)
@@ -123,7 +128,7 @@ test.describe('smoke:ux', () => {
       const linkSearches = page.locator('a[href^="/searches/"]').first();
       await expect(linkSearches).toBeVisible();
       await page.goto('/leads');
-      await expect(page.getByRole('heading', { name: /Mis consultas/ })).toBeVisible({
+      await expect(page.getByRole('heading', { name: /Mis consultas|Consultas/ })).toBeVisible({
         timeout: 5000,
       });
       const activeBadge = page.getByText('ACTIVE').first();
@@ -141,10 +146,12 @@ test.describe('smoke:ux', () => {
     await expect(page.getByRole('heading', { name: /Lista/ })).toBeVisible({ timeout: 5000 });
     await expect(
       page
-        .getByText('Sin búsqueda activa')
+        .getByText('Buscando')
+        .or(page.getByText('Sin búsqueda activa'))
         .or(page.getByText('Crear búsqueda'))
         .or(page.locator('text=Alertas'))
         .or(page.locator('text=Cambiar búsqueda'))
+        .or(page.getByText('Comparar en contexto'))
     ).toBeVisible({ timeout: 5000 });
     const hasListings = await page.locator('a[href^="/listing/"]').first().isVisible();
     const hasEmpty = await page.getByText(/No hay resultados/).isVisible();
