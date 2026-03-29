@@ -8,6 +8,8 @@ import AlertSubscriptionModal from '../../components/AlertSubscriptionModal';
 import type { AlertSubscriptionForModal } from '../../components/AlertSubscriptionModal';
 import AlertDeliveryModal from '../../components/AlertDeliveryModal';
 import type { AlertDeliveryRow } from '../../components/AlertDeliveryModal';
+import { recordEngagement } from '../../lib/userEngagementClient';
+import { notifyActiveSearchChanged } from '../../lib/activeSearchEvents';
 
 const API_BASE = '/api';
 
@@ -113,6 +115,7 @@ export default function AlertsPage() {
       credentials: 'include',
       body: JSON.stringify({ searchId }),
     });
+    notifyActiveSearchChanged();
     router.push(path);
   }
 
@@ -143,12 +146,13 @@ export default function AlertsPage() {
 
   async function handleDeliveryNope(listingId: string) {
     try {
-      await fetch(`${API_BASE}/swipes`, {
+      const res = await fetch(`${API_BASE}/swipes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ listingId, decision: 'NOPE' }),
       });
+      if (res.ok) recordEngagement('swipe');
       setDeliveries((prev) => prev.filter((d) => d.listingId !== listingId));
       setToast('Descartada');
       setTimeout(() => setToast(null), 2500);
@@ -166,12 +170,13 @@ export default function AlertsPage() {
         credentials: 'include',
         body: JSON.stringify({ listingId, listType: 'LATER' }),
       });
-      await fetch(`${API_BASE}/swipes`, {
+      const resSwipe = await fetch(`${API_BASE}/swipes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ listingId, decision: 'LIKE' }),
       });
+      if (resSwipe.ok) recordEngagement('swipe');
       setToast('Guardada en tus match');
       setTimeout(() => setToast(null), 2500);
     } catch {

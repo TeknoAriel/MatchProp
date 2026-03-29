@@ -8,6 +8,8 @@ import ActiveSearchBar from '../../components/ActiveSearchBar';
 import SwipeCard from '../../components/SwipeCard';
 import { useToast, getRandomMessage } from '../../components/FunToast';
 import { useCelebration } from '../../components/Celebration';
+import { recordEngagement } from '../../lib/userEngagementClient';
+import { ACTIVE_SEARCH_CHANGED_EVENT } from '../../lib/activeSearchEvents';
 
 const API_BASE = '/api';
 const SWIPE_DEBOUNCE_MS = 400;
@@ -35,12 +37,22 @@ function FeedPageContent() {
   const searchParams = useSearchParams();
   const feedAllFromUrl = searchParams?.get('feed') === 'all';
 
-  useEffect(() => {
+  const syncActiveSearchFlag = useCallback(() => {
     fetch(`${API_BASE}/me/active-search`, { credentials: 'include' })
       .then((res) => (res.ok ? res.json() : { search: null }))
       .then((data: { search: unknown }) => setHasActiveSearch(data.search != null))
       .catch(() => setHasActiveSearch(false));
   }, []);
+
+  useEffect(() => {
+    syncActiveSearchFlag();
+  }, [syncActiveSearchFlag]);
+
+  useEffect(() => {
+    const onChange = () => syncActiveSearchFlag();
+    window.addEventListener(ACTIVE_SEARCH_CHANGED_EVENT, onChange);
+    return () => window.removeEventListener(ACTIVE_SEARCH_CHANGED_EVENT, onChange);
+  }, [syncActiveSearchFlag]);
 
   const useFeedAll = feedAllFromUrl || hasActiveSearch === false;
 
@@ -143,6 +155,7 @@ function FeedPageContent() {
               throw new Error(body?.message ?? 'Swipe falló');
             });
         }
+        recordEngagement('swipe');
       })
       .catch((err) => {
         setQueue((prev) => [card, ...prev]);
@@ -180,6 +193,7 @@ function FeedPageContent() {
         setTimeout(() => setToast(null), 3000);
         return;
       }
+      recordEngagement('save');
       showSuccess('Guardado en favoritos', '⭐');
     } finally {
       setStarSaving(false);
@@ -245,7 +259,9 @@ function FeedPageContent() {
 
   return (
     <main className="min-h-screen flex flex-col bg-[var(--mp-bg)]">
-      <ActiveSearchBar />
+      <div className="-mx-4 md:-mx-6 shrink-0">
+        <ActiveSearchBar />
+      </div>
       <div className="w-full flex-1 flex flex-col pt-4">
         {toast && (
           <div className="mb-4 p-3 rounded-xl bg-[var(--mp-premium)]/20 text-slate-800 border border-[var(--mp-premium)]/40 text-sm">
@@ -281,14 +297,16 @@ function FeedPageContent() {
                   onClick={() => handleSwipe(currentCard.id, 'NOPE')}
                   disabled={swipeDisabled}
                   className="flex-1 min-h-[52px] py-3 rounded-full text-base font-semibold border border-rose-300/90 bg-rose-50/90 text-rose-900 hover:bg-rose-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Pasar propiedad"
                 >
-                  👎 Descartar
+                  👎 Pasar
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSwipe(currentCard.id, 'LIKE')}
                   disabled={swipeDisabled}
                   className="flex-1 min-h-[52px] py-3 rounded-full text-base font-semibold bg-[var(--mp-accent)] text-white border border-[var(--mp-accent-hover)] hover:opacity-[0.96] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Me interesa"
                 >
                   👍 Me interesa
                 </button>

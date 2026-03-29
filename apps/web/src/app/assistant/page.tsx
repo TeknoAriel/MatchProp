@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import type { AssistantSearchResponse, ListingCard, SearchFilters } from '@matchprop/shared';
 import { ASSISTANT_BUILD } from '../../lib/build-id';
@@ -12,6 +12,9 @@ import AssistantChatInput from '../../components/AssistantChatInput';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import ListingImage from '../../components/ListingImage';
 import { ASSISTANT_EXAMPLES } from '../../lib/assistant-examples';
+import { recordEngagement } from '../../lib/userEngagementClient';
+import { notifyActiveSearchChanged } from '../../lib/activeSearchEvents';
+import { buildBuscandoLine } from '../../lib/active-search-label';
 
 const API_BASE = '/api';
 
@@ -62,7 +65,10 @@ function normalizePreviewItems(raw: unknown): ListingCard[] {
   return raw.map(normalizeCard).filter((c): c is ListingCard => c !== null);
 }
 
-export default function AssistantPage() {
+function AssistantPageContent() {
+  const searchParams = useSearchParams();
+  const chatInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const [adjustContextBanner, setAdjustContextBanner] = useState<string | null>(null);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AssistantSearchResponse | null>(null);
@@ -122,18 +128,48 @@ export default function AssistantPage() {
     }
   }, [voiceListening, voiceTranscript, voiceInterim]);
 
-  // Persistencia: cargar active-search al montar para prefill queryText
   useEffect(() => {
+    const fromActive = searchParams.get('from') === 'active';
+
     fetch(`${API_BASE}/me/active-search`, { credentials: 'include' })
       .then((res) => (res.ok ? res.json() : { search: null }))
-      .then((data: { search?: { queryText?: string | null } }) => {
-        const q = data.search?.queryText;
-        if (q && typeof q === 'string' && q.trim()) {
-          setText(q.trim());
+      .then(
+        (data: {
+          search?: {
+            name?: string;
+            queryText?: string | null;
+            filters?: SearchFilters;
+          } | null;
+        }) => {
+          if (!fromActive) setAdjustContextBanner(null);
+          const s = data.search;
+          if (!s) {
+            return;
+          }
+          const q = s.queryText;
+          if (q && typeof q === 'string' && q.trim()) {
+            setText((t) => (t.trim() ? t : q.trim()));
+          }
+          if (fromActive) {
+            const line = buildBuscandoLine({
+              name: typeof s.name === 'string' ? s.name : '',
+              queryText: s.queryText ?? null,
+              filters: (s.filters ?? {}) as SearchFilters,
+            });
+            setAdjustContextBanner(`Estás buscando ${line}. ¿Qué querés cambiar?`);
+          }
         }
-      })
+      )
       .catch(() => {});
-  }, []);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (searchParams.get('focus') !== 'input') return;
+    const id = window.requestAnimationFrame(() => {
+      chatInputRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [searchParams]);
 
   async function fetchPreview(
     filters: SearchFilters,
@@ -233,6 +269,7 @@ export default function AssistantPage() {
         return;
       }
       const data = (await res.json()) as AssistantSearchResponse;
+      recordEngagement('search');
       setResult(data);
       setSavedId(null);
       const filters = data.filters ?? {};
@@ -282,6 +319,7 @@ export default function AssistantPage() {
             credentials: 'include',
             body: JSON.stringify({ searchId: id }),
           });
+          notifyActiveSearchChanged();
           setSavedId(id);
         }
       } catch {
@@ -383,6 +421,7 @@ export default function AssistantPage() {
         body: JSON.stringify({ searchId: data.id }),
       });
       if (activeRes.ok) {
+        notifyActiveSearchChanged();
         setToast('Guardada y activa');
         setTimeout(() => setToast(null), 4000);
       }
@@ -503,6 +542,7 @@ export default function AssistantPage() {
         });
         if (res.status === 401) router.replace('/login');
         else if (res.ok) {
+          recordEngagement('save');
           setListingsStatus((prev) => ({
             ...prev,
             [listingId]: {
@@ -536,9 +576,11 @@ export default function AssistantPage() {
   const showRelaxHint = previewLoaded && previewItems.length === 0 && hasFilters;
 
   return (
-    <main className="min-h-screen p-4 pb-8">
-      <ActiveSearchBar />
-      <div className="max-w-xl mx-auto space-y-5">
+    <main className="min-h-screen pb-8">
+      <div className="-mx-4 md:-mx-6 shrink-0">
+        <ActiveSearchBar sticky={false} />
+      </div>
+      <div className="px-4 pt-4 max-w-xl mx-auto space-y-5">
         {showDebug && (
           <p className="text-xs text-gray-400 mb-2">Assistant UI build: {ASSISTANT_BUILD}</p>
         )}
@@ -585,7 +627,24 @@ export default function AssistantPage() {
 
         {/* Input principal */}
         <section className="rounded-2xl border-2 border-[var(--mp-accent)]/30 bg-[var(--mp-card)] p-4 shadow-sm">
+          {adjustContextBanner && (
+            <div
+              role="status"
+              className="mb-3 flex gap-2 items-start rounded-xl border border-[var(--mp-accent)]/30 bg-[color-mix(in_srgb,var(--mp-accent)_8%,var(--mp-card))] px-3 py-2.5 text-sm text-[var(--mp-foreground)] transition-opacity duration-300"
+            >
+              <p className="flex-1 min-w-0 leading-snug">{adjustContextBanner}</p>
+              <button
+                type="button"
+                onClick={() => setAdjustContextBanner(null)}
+                className="shrink-0 min-h-[36px] min-w-[36px] rounded-lg text-[var(--mp-muted)] hover:text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)] transition-colors"
+                aria-label="Cerrar mensaje"
+              >
+                ✕
+              </button>
+            </div>
+          )}
           <AssistantChatInput
+            textAreaRef={chatInputRef}
             value={text}
             onChange={setText}
             onSend={() => handleBuscar()}
@@ -1007,5 +1066,19 @@ export default function AssistantPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function AssistantPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen flex items-center justify-center pb-8 bg-[var(--mp-bg)]">
+          <div className="w-8 h-8 border-2 border-[var(--mp-accent)] border-t-transparent rounded-full animate-spin" />
+        </main>
+      }
+    >
+      <AssistantPageContent />
+    </Suspense>
   );
 }

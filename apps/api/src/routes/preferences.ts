@@ -1,5 +1,11 @@
 import { FastifyInstance } from 'fastify';
+import {
+  mergeUserEngagementStats,
+  parseUserEngagementStats,
+  type UserEngagementStats,
+} from '@matchprop/shared';
 import { prisma } from '../lib/prisma.js';
+import { patchEngagementStatsSchema } from '../schemas/engagement.js';
 import { upsertPreferenceSchema } from '../schemas/preference.js';
 
 export async function preferenceRoutes(fastify: FastifyInstance) {
@@ -26,6 +32,11 @@ export async function preferenceRoutes(fastify: FastifyInstance) {
               bathroomsMin: { type: 'integer' },
               areaMin: { type: 'integer' },
               locationText: { type: 'string' },
+              engagementStats: {
+                type: 'object',
+                nullable: true,
+                additionalProperties: true,
+              },
             },
           },
         },
@@ -123,6 +134,54 @@ export async function preferenceRoutes(fastify: FastifyInstance) {
         update: body,
       });
       return pref;
+    }
+  );
+
+  fastify.patch(
+    '/preferences/engagement',
+    {
+      schema: {
+        tags: ['Preferences'],
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: 'object',
+          required: ['swipes', 'searches', 'listingOpens', 'saves'],
+          properties: {
+            swipes: { type: 'integer', minimum: 0 },
+            searches: { type: 'integer', minimum: 0 },
+            listingOpens: { type: 'integer', minimum: 0 },
+            saves: { type: 'integer', minimum: 0 },
+          },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              swipes: { type: 'integer' },
+              searches: { type: 'integer' },
+              listingOpens: { type: 'integer' },
+              saves: { type: 'integer' },
+            },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const user = request.user as { userId: string };
+      const body = patchEngagementStatsSchema.parse(request.body) as UserEngagementStats;
+      const incoming = parseUserEngagementStats(body);
+      const existing = await prisma.preference.findUnique({
+        where: { userId: user.userId },
+        select: { engagementStats: true },
+      });
+      const prev = parseUserEngagementStats(existing?.engagementStats ?? null);
+      const merged = mergeUserEngagementStats(prev, incoming);
+      await prisma.preference.upsert({
+        where: { userId: user.userId },
+        create: { userId: user.userId, engagementStats: merged as object },
+        update: { engagementStats: merged as object },
+      });
+      return merged;
     }
   );
 }

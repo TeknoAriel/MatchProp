@@ -7,6 +7,7 @@ import type { ListingCard } from '@matchprop/shared';
 import ListingCardImageCarousel from '../../../components/ListingCardImageCarousel';
 import InquiryModal from '../../../components/InquiryModal';
 import { fetchListingsBatchByIds } from '../../../lib/fetch-listings-batch';
+import { recordEngagement } from '../../../lib/userEngagementClient';
 
 const API_BASE = '/api';
 
@@ -195,6 +196,7 @@ export default function MyMatchPage() {
         };
     const res = await fetch(url, opts);
     if (res.ok) {
+      if (!inLike) recordEngagement('save');
       setListingsStatus((prev) => ({
         ...prev,
         [listingId]: {
@@ -262,6 +264,7 @@ export default function MyMatchPage() {
         };
     const res = await fetch(url, opts);
     if (res.ok) {
+      if (!inFav) recordEngagement('save');
       setListingsStatus((prev) => ({
         ...prev,
         [listingId]: {

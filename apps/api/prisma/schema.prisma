@@ -342,6 +342,8 @@ model Preference {
   bathroomsMin   Int?
   areaMin        Int?
   locationText   String?
+  /// Snapshot opcional de engagement (swipes, searches, listingOpens, saves) para usuarios logueados
+  engagementStats Json?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

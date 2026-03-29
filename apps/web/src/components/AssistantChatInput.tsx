@@ -1,5 +1,7 @@
 'use client';
 
+import type { Ref } from 'react';
+
 interface AssistantChatInputProps {
   value: string;
   onChange: (v: string) => void;
@@ -10,6 +12,7 @@ interface AssistantChatInputProps {
   voiceListening?: boolean;
   onVoiceClick?: () => void;
   maxLength?: number;
+  textAreaRef?: Ref<HTMLTextAreaElement>;
 }
 
 /** Barra de chat moderna para IA Assistant - estilo WhatsApp/iMessage */
@@ -23,11 +26,13 @@ export default function AssistantChatInput({
   voiceListening = false,
   onVoiceClick,
   maxLength = 500,
+  textAreaRef,
 }: AssistantChatInputProps) {
   return (
     <div className="flex gap-2 items-end p-3 rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] shadow-sm">
       <div className="flex-1 relative">
         <textarea
+          ref={textAreaRef}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}

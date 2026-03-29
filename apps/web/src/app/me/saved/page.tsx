@@ -13,6 +13,8 @@ import InquiryModal from '../../../components/InquiryModal';
 import BetaPremiumBanner from '../../../components/BetaPremiumBanner';
 import { fetchListingsBatchByIds } from '../../../lib/fetch-listings-batch';
 
+import { notifyActiveSearchChanged } from '../../../lib/activeSearchEvents';
+
 const API_BASE = '/api';
 
 interface CustomList {
@@ -136,7 +138,10 @@ function SavedPageContent() {
         body: JSON.stringify({ searchId }),
       });
       if (res.status === 401) router.replace('/login');
-      else if (res.ok) router.push(view === 'list' ? '/feed/list' : '/feed');
+      else if (res.ok) {
+        notifyActiveSearchChanged();
+        router.push(view === 'list' ? '/feed/list' : '/feed');
+      }
     } finally {
       setLoadingSearch(null);
     }

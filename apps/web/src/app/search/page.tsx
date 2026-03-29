@@ -7,6 +7,8 @@ import type { ListingCard, SearchFilters } from '@matchprop/shared';
 import { filtersToHumanSummary } from '../../lib/filters-summary';
 import InquiryModal from '../../components/InquiryModal';
 import ListingImage from '../../components/ListingImage';
+import { recordEngagement } from '../../lib/userEngagementClient';
+import { notifyActiveSearchChanged } from '../../lib/activeSearchEvents';
 
 const API_BASE = '/api';
 const PROPERTY_TYPES = ['APARTMENT', 'HOUSE', 'LAND', 'OFFICE', 'OTHER'] as const;
@@ -188,6 +190,7 @@ export default function ManualSearchPage() {
           body: JSON.stringify({ listingId, listType: 'LATER' }),
         });
         if (res.ok) {
+          recordEngagement('save');
           setListingsStatus((prev) => ({
             ...prev,
             [listingId]: {
@@ -228,6 +231,7 @@ export default function ManualSearchPage() {
           body: JSON.stringify({ listingId, listType: 'FAVORITE' }),
         });
         if (res.ok) {
+          recordEngagement('save');
           setListingsStatus((prev) => ({
             ...prev,
             [listingId]: {
@@ -260,6 +264,7 @@ export default function ManualSearchPage() {
       body: JSON.stringify({ listingId, listType }),
     });
     if (res.ok) {
+      recordEngagement('save');
       setListingsStatus((prev) => ({
         ...prev,
         [listingId]: {
@@ -282,6 +287,7 @@ export default function ManualSearchPage() {
       body: JSON.stringify({ listingId: addToListCard.id }),
     });
     if (res.ok) {
+      recordEngagement('save');
       const list = customLists.find((l) => l.id === listId);
       if (list) {
         setListingsStatus((prev) => ({
@@ -317,6 +323,7 @@ export default function ManualSearchPage() {
       body: JSON.stringify({ listingId: addToListCard.id }),
     });
     if (addRes.ok) {
+      recordEngagement('save');
       setListingsStatus((prev) => ({
         ...prev,
         [addToListCard.id]: {
@@ -423,6 +430,7 @@ export default function ManualSearchPage() {
     try {
       const data = await fetchResults(null);
       if (data) {
+        recordEngagement('search');
         const arr = Array.isArray(data.items) ? data.items : [];
         setItems(
           arr.map(normalizeCard).filter((c: ListingCard | null): c is ListingCard => c !== null)
@@ -452,6 +460,7 @@ export default function ManualSearchPage() {
       }
       const data = res.ok ? await res.json() : null;
       if (data?.items?.length) {
+        recordEngagement('search');
         setItems(
           data.items
             .map(normalizeCard)
@@ -498,6 +507,7 @@ export default function ManualSearchPage() {
         credentials: 'include',
         body: JSON.stringify({ searchId: id }),
       });
+      notifyActiveSearchChanged();
       setToast('Búsqueda guardada');
       setTimeout(() => setToast(null), 3000);
     } catch {
