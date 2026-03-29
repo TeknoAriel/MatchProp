@@ -7,7 +7,7 @@ import { useTheme } from './ThemeProvider';
 
 /**
  * Flujo principal (masterplan v3.2): una acción clara por nivel.
- * "Más" agrupa herramientas por sección (no lista plana).
+ * "Más" abre el centro de control (secciones claras, sin mezclar IA con cuenta).
  */
 const NAV_PRIMARY = [
   { href: '/dashboard', label: 'Buscar', icon: '🔍' },
@@ -18,21 +18,30 @@ const NAV_PRIMARY = [
 
 type MasEntry = { href: string; label: string; icon: string; desc: string };
 
-const MAS_SECTIONS: { title: string; items: readonly MasEntry[] }[] = [
+/** Centro de control: pocas secciones con nombres accionables (no sinónimos ambiguos). */
+const MAS_SECTIONS: { title: string; subtitle?: string; items: readonly MasEntry[] }[] = [
   {
-    title: 'Buscar mejor',
+    title: 'Potenciá la búsqueda',
+    subtitle: 'IA, filtros clásicos y mapa',
     items: [
       {
         href: '/assistant',
         label: 'Asistente avanzado',
         icon: '🛠️',
-        desc: 'Filtros finos y vista previa',
+        desc: 'Lenguaje natural y vista previa',
       },
-      { href: '/search/map', label: 'Mapa', icon: '🗺️', desc: 'Propiedades en el mapa' },
+      {
+        href: '/search',
+        label: 'Búsqueda por filtros',
+        icon: '⚙️',
+        desc: 'Tipo, precio, amenities y orden',
+      },
+      { href: '/search/map', label: 'Mapa', icon: '🗺️', desc: 'Ubicación en el mapa' },
     ],
   },
   {
-    title: 'Organizar',
+    title: 'Tu biblioteca',
+    subtitle: 'Lo que guardaste y reutilizás',
     items: [
       {
         href: '/me/saved',
@@ -40,20 +49,30 @@ const MAS_SECTIONS: { title: string; items: readonly MasEntry[] }[] = [
         icon: '⭐',
         desc: 'Listas personalizadas y destacados',
       },
-      { href: '/searches', label: 'Búsquedas guardadas', icon: '📁', desc: 'Gestionar búsquedas' },
+      { href: '/searches', label: 'Búsquedas guardadas', icon: '📁', desc: 'Activar, editar, alertas' },
     ],
   },
   {
-    title: 'Gestión',
+    title: 'Seguimiento',
+    subtitle: 'Alertas, mensajes y agenda',
     items: [
-      { href: '/alerts', label: 'Alertas', icon: '🔔', desc: 'Avisos de novedades' },
-      { href: '/leads', label: 'Consultas', icon: '💬', desc: 'Contactos con inmobiliarias' },
-      { href: '/me/visits', label: 'Visitas', icon: '📅', desc: 'Agenda de visitas' },
+      { href: '/alerts', label: 'Alertas', icon: '🔔', desc: 'Novedades y bajas de precio' },
+      { href: '/leads', label: 'Consultas', icon: '💬', desc: 'Inmobiliarias y respuestas' },
+      { href: '/me/visits', label: 'Visitas', icon: '📅', desc: 'Visitas agendadas' },
     ],
   },
   {
     title: 'Cuenta',
-    items: [{ href: '/me/profile', label: 'Perfil', icon: '👤', desc: 'Datos y preferencias' }],
+    subtitle: 'Perfil y avisos',
+    items: [
+      {
+        href: '/me/notifications',
+        label: 'Notificaciones',
+        icon: '📣',
+        desc: 'Avisos en la app',
+      },
+      { href: '/me/profile', label: 'Perfil', icon: '👤', desc: 'Datos y preferencias' },
+    ],
   },
 ] as const;
 
@@ -85,6 +104,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   const secondaryActive = MAS_FLAT.some((item) => navItemActive(pathname, item.href));
+
+  useEffect(() => {
+    if (secondaryActive) setToolsOpen(true);
+  }, [secondaryActive]);
 
   const isPublic =
     pathname?.startsWith('/login') ||
@@ -157,9 +180,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="mt-2 space-y-3 pl-1 ml-2 border-l-2 border-[var(--mp-border)]">
                   {MAS_SECTIONS.map((section) => (
                     <div key={section.title}>
-                      <p className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--mp-muted)]">
-                        {section.title}
-                      </p>
+                      <div className="px-3 py-1">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--mp-muted)]">
+                          {section.title}
+                        </p>
+                        {section.subtitle ? (
+                          <p className="text-[10px] text-[var(--mp-muted)]/85 leading-snug mt-0.5">
+                            {section.subtitle}
+                          </p>
+                        ) : null}
+                      </div>
                       <div className="space-y-0.5">
                         {section.items.map((item) => {
                           const active = navItemActive(pathname, item.href);
@@ -294,8 +324,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <div className="p-4 pb-8">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">Más</h2>
-                    <p className="text-xs text-[var(--mp-muted)]">Herramientas y gestión</p>
+                    <h2 className="text-lg font-semibold text-[var(--mp-foreground)]">
+                      Centro de control
+                    </h2>
+                    <p className="text-xs text-[var(--mp-muted)]">
+                      Búsqueda avanzada, biblioteca y seguimiento
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -309,9 +343,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="space-y-5">
                   {MAS_SECTIONS.map((section) => (
                     <div key={section.title}>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--mp-muted)] mb-2 px-1">
-                        {section.title}
-                      </p>
+                      <div className="mb-2 px-1">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--mp-muted)]">
+                          {section.title}
+                        </p>
+                        {section.subtitle ? (
+                          <p className="text-[11px] text-[var(--mp-muted)] leading-snug mt-0.5">
+                            {section.subtitle}
+                          </p>
+                        ) : null}
+                      </div>
                       <div className="space-y-0.5">
                         {section.items.map((item) => {
                           const active = navItemActive(pathname, item.href);

@@ -107,7 +107,13 @@ export function MotivationalBanner() {
   );
 }
 
-export function WelcomeMessage({ name }: { name?: string | null }) {
+export function WelcomeMessage({
+  name,
+  as: Tag = 'h1',
+}: {
+  name?: string | null;
+  as?: 'h1' | 'h2' | 'p';
+}) {
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return '¡Buenos días';
@@ -128,7 +134,9 @@ export function WelcomeMessage({ name }: { name?: string | null }) {
     setGreeting(randomGreeting ?? '¡Hola! 👋');
   }, [name]);
 
-  return <h1 className="text-2xl font-bold text-[var(--mp-foreground)]">{greeting}</h1>;
+  return (
+    <Tag className="text-xl md:text-2xl font-bold text-[var(--mp-foreground)]">{greeting}</Tag>
+  );
 }
 
 export function StreakCounter({ days }: { days: number }) {
