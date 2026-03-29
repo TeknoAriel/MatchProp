@@ -49,6 +49,27 @@ describe('parseSearchText', () => {
     expect(r.filters.propertyType).toContain('HOUSE');
   });
 
+  it('casa o departamento (orden inverso) mantiene ambos tipos', () => {
+    const r = parseSearchText('casa o departamento en Palermo');
+    expect(r.filters.propertyType).toEqual(expect.arrayContaining(['HOUSE', 'APARTMENT']));
+    expect(r.filters.propertyType).toHaveLength(2);
+  });
+
+  it('sin "o" explícito elige un solo tipo (evita mezclar resultados)', () => {
+    const r = parseSearchText('local comercial venta depto no aplica');
+    expect(r.filters.propertyType?.length).toBe(1);
+  });
+
+  it('monoambiente cuenta como departamento', () => {
+    const r = parseSearchText('Monoambiente con balcón en CABA');
+    expect(r.filters.propertyType).toEqual(['APARTMENT']);
+  });
+
+  it('cochera en venta sin vivienda → OTHER', () => {
+    const r = parseSearchText('Cochera fija cubierta en venta, Belgrano');
+    expect(r.filters.propertyType).toEqual(['OTHER']);
+  });
+
   it('casa con oficina no mezcla OFFICE (oficina como amenity)', () => {
     const r = parseSearchText('casa con oficina en Rosario 3 dormitorios');
     expect(r.filters.propertyType).toContain('HOUSE');

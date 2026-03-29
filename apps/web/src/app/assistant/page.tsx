@@ -11,7 +11,7 @@ import FilterChips from '../../components/FilterChips';
 import AssistantChatInput from '../../components/AssistantChatInput';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import ListingImage from '../../components/ListingImage';
-import { ASSISTANT_EXAMPLES } from '../../lib/assistant-examples';
+import { ASSISTANT_INPUT_PLACEHOLDER_EXAMPLE } from '../../lib/assistant-examples';
 import { recordEngagement } from '../../lib/userEngagementClient';
 import { notifyActiveSearchChanged } from '../../lib/activeSearchEvents';
 import { buildBuscandoLine } from '../../lib/active-search-label';
@@ -568,11 +568,6 @@ function AssistantPageContent() {
     await navigator.clipboard.writeText(humanSummary);
   }
 
-  const handleExampleClick = (example: string) => {
-    setText(example);
-    handleBuscar(example);
-  };
-
   const showRelaxHint = previewLoaded && previewItems.length === 0 && hasFilters;
 
   return (
@@ -649,7 +644,7 @@ function AssistantPageContent() {
             onChange={setText}
             onSend={() => handleBuscar()}
             loading={loading}
-            placeholder="Ej: departamento 3 ambientes en Palermo, hasta 150k USD"
+            placeholder={ASSISTANT_INPUT_PLACEHOLDER_EXAMPLE}
             voiceSupported={!!voiceSupported}
             voiceListening={!!voiceListening}
             onVoiceClick={() => {
@@ -686,26 +681,6 @@ function AssistantPageContent() {
             &quot;solo venta&quot;.
           </p>
         </section>
-
-        {/* Ejemplos como chips */}
-        {ASSISTANT_EXAMPLES.length > 0 && (
-          <div>
-            <p className="text-xs font-medium text-[var(--mp-muted)] mb-2">Probá con:</p>
-            <div className="flex flex-wrap gap-2">
-              {ASSISTANT_EXAMPLES.map((ex) => (
-                <button
-                  key={ex}
-                  type="button"
-                  onClick={() => handleExampleClick(ex)}
-                  disabled={loading}
-                  className="px-3 py-2 rounded-xl text-sm bg-[var(--mp-bg)] border border-[var(--mp-border)] text-[var(--mp-foreground)] hover:border-[var(--mp-accent)]/50 hover:bg-[var(--mp-accent)]/5 transition-colors disabled:opacity-50"
-                >
-                  {ex}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Acceso rápido compacto */}
         <section className="flex flex-wrap gap-2">
