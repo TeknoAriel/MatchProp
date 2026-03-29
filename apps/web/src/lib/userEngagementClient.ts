@@ -35,9 +35,7 @@ function writeLocal(stats: UserEngagementStats) {
   try {
     const normalized = parseUserEngagementStats(stats);
     window.localStorage.setItem(USER_ENGAGEMENT_STORAGE_KEY, JSON.stringify(normalized));
-    window.dispatchEvent(
-      new CustomEvent(USER_ENGAGEMENT_CHANGED_EVENT, { detail: normalized })
-    );
+    window.dispatchEvent(new CustomEvent(USER_ENGAGEMENT_CHANGED_EVENT, { detail: normalized }));
   } catch {
     /* quota / private mode */
   }

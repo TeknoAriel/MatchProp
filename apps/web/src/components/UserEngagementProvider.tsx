@@ -56,7 +56,10 @@ export function UserEngagementProvider({ children }: { children: ReactNode }) {
 
   const recordSwipe = useCallback(() => recordInteraction('swipe'), [recordInteraction]);
   const recordSearch = useCallback(() => recordInteraction('search'), [recordInteraction]);
-  const recordListingOpen = useCallback(() => recordInteraction('listingOpen'), [recordInteraction]);
+  const recordListingOpen = useCallback(
+    () => recordInteraction('listingOpen'),
+    [recordInteraction]
+  );
   const recordSave = useCallback(() => recordInteraction('save'), [recordInteraction]);
 
   const value = useMemo<UserLevelContextValue>(() => {

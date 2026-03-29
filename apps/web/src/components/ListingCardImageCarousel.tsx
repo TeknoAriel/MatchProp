@@ -41,10 +41,7 @@ export default function ListingCardImageCarousel({
   const currentImage = images[imageIndex];
   const hasMultiple = images.length > 1;
   const showImage = !!currentImage?.url && !imgError;
-  const btnClass =
-    controlsAlwaysVisible && hasMultiple
-      ? 'opacity-95'
-      : carouselButtonClass;
+  const btnClass = controlsAlwaysVisible && hasMultiple ? 'opacity-95' : carouselButtonClass;
 
   if (!currentImage) {
     return (

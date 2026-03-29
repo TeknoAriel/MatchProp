@@ -35,7 +35,8 @@ export default function SwipeCard({
   ]
     .filter(Boolean)
     .join(' · ');
-  const zoneText = [loc, dims].filter(Boolean).join(' · ') || dims || (loc || 'Ubicación a confirmar');
+  const zoneText =
+    [loc, dims].filter(Boolean).join(' · ') || dims || loc || 'Ubicación a confirmar';
 
   const [dragDx, setDragDx] = useState(0);
   const [isDragging, setIsDragging] = useState(false);

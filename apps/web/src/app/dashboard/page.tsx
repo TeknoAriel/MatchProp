@@ -178,7 +178,9 @@ export default function DashboardPage() {
   });
   const recentTop3 = sortedSearches.slice(0, 3);
   const searchSummaryLine = activeSearch
-    ? [activeSearch.name?.trim(), filtersToHumanSummary(activeSearch.filters)].filter(Boolean).join(' · ') ||
+    ? [activeSearch.name?.trim(), filtersToHumanSummary(activeSearch.filters)]
+        .filter(Boolean)
+        .join(' · ') ||
       activeSearch.queryText?.trim() ||
       null
     : null;
@@ -227,25 +229,37 @@ export default function DashboardPage() {
           className="mb-6 flex flex-wrap gap-x-4 gap-y-2 text-[13px] text-[var(--mp-muted)] border-b border-[var(--mp-border)] pb-4"
           aria-label="Accesos rápidos"
         >
-          <Link href="/me/saved" className="font-medium text-[var(--mp-foreground)] hover:text-[var(--mp-accent)]">
+          <Link
+            href="/me/saved"
+            className="font-medium text-[var(--mp-foreground)] hover:text-[var(--mp-accent)]"
+          >
             Guardados
           </Link>
           <span className="text-[var(--mp-border)]" aria-hidden>
             ·
           </span>
-          <Link href="/searches" className="font-medium text-[var(--mp-foreground)] hover:text-[var(--mp-accent)]">
+          <Link
+            href="/searches"
+            className="font-medium text-[var(--mp-foreground)] hover:text-[var(--mp-accent)]"
+          >
             Búsquedas
           </Link>
           <span className="text-[var(--mp-border)]" aria-hidden>
             ·
           </span>
-          <Link href="/feed" className="font-medium text-[var(--mp-foreground)] hover:text-[var(--mp-accent)]">
+          <Link
+            href="/feed"
+            className="font-medium text-[var(--mp-foreground)] hover:text-[var(--mp-accent)]"
+          >
             Match
           </Link>
           <span className="text-[var(--mp-border)]" aria-hidden>
             ·
           </span>
-          <Link href="/feed/list" className="font-medium text-[var(--mp-foreground)] hover:text-[var(--mp-accent)]">
+          <Link
+            href="/feed/list"
+            className="font-medium text-[var(--mp-foreground)] hover:text-[var(--mp-accent)]"
+          >
             Lista
           </Link>
         </nav>

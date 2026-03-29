@@ -29,8 +29,7 @@ function stableTipKey(stats: UserEngagementStats, hasSearch: boolean): string | 
 }
 
 const TIP_BY_KEY: Record<string, string> = {
-  high_swipes_low_saves:
-    'Muchas vistas, pocos guardados: probá afinar precio o zona con Ajustar.',
+  high_swipes_low_saves: 'Muchas vistas, pocos guardados: probá afinar precio o zona con Ajustar.',
   many_saves: 'Tenés varios guardados: revisalos en ⭐ cuando quieras.',
   balanced: 'Buen ritmo: el asistente puede afinar filtros si querés más precisión.',
 };
@@ -129,9 +128,7 @@ export default function ActiveSearchBar({ sticky = true, className = '' }: Activ
     }
   }
 
-  const adjustHref = hasSearch
-    ? '/assistant?focus=input&from=active'
-    : '/assistant?focus=input';
+  const adjustHref = hasSearch ? '/assistant?focus=input&from=active' : '/assistant?focus=input';
 
   const cont = continuityLine(level, stats, hasSearch);
   const subline =
@@ -261,9 +258,7 @@ export default function ActiveSearchBar({ sticky = true, className = '' }: Activ
             {subline && (
               <p
                 className={`text-[11px] leading-snug truncate pl-0.5 transition-opacity duration-300 ${
-                  subline.kind === 'tip'
-                    ? 'text-[var(--mp-accent)]/90'
-                    : 'text-[var(--mp-muted)]'
+                  subline.kind === 'tip' ? 'text-[var(--mp-accent)]/90' : 'text-[var(--mp-muted)]'
                 }`}
                 title={subline.text}
               >
@@ -271,7 +266,10 @@ export default function ActiveSearchBar({ sticky = true, className = '' }: Activ
                 {subline.text}
               </p>
             )}
-            <div className="h-px rounded-full bg-[var(--mp-border)] overflow-hidden opacity-80" aria-hidden>
+            <div
+              className="h-px rounded-full bg-[var(--mp-border)] overflow-hidden opacity-80"
+              aria-hidden
+            >
               <div
                 className="h-full bg-[var(--mp-accent)]/45 transition-[width] duration-500 ease-out"
                 style={{
