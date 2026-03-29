@@ -38,7 +38,7 @@ export default function AssistantChatInput({
           placeholder={placeholder}
           maxLength={maxLength}
           rows={2}
-          className="w-full p-3 pr-12 rounded-xl min-h-[48px] max-h-32 resize-none bg-[var(--mp-bg)] border border-[var(--mp-border)] text-[var(--mp-foreground)] placeholder:text-[var(--mp-muted)] focus:ring-2 focus:ring-[var(--mp-accent)] focus:border-transparent outline-none text-sm"
+          className="w-full p-3 pr-12 rounded-xl min-h-[48px] max-h-32 resize-none bg-[var(--mp-bg)] border border-[var(--mp-border)] text-[var(--mp-foreground)] placeholder:text-neutral-400/80 dark:placeholder:text-neutral-500 focus:ring-2 focus:ring-[var(--mp-accent)] focus:border-transparent outline-none text-sm"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();

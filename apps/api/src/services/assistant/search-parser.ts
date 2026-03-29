@@ -263,12 +263,34 @@ function parseCurrency(text: string): string | undefined {
   return undefined;
 }
 
+/** "depto o casa", "casa o ph", etc.: el usuario quiere OR explícito en el feed. */
+function hasExplicitPropertyTypeOr(lower: string): boolean {
+  return /\b(departamentos?|deptos?|depto|casa|casas|ph\b|terrenos?|lotes?|chalets?|local(?:es)?\s+comercial|oficinas?)\s+o\s+(departamentos?|deptos?|depto|casa|casas|ph\b|terrenos?|lotes?|chalets?|local|locales|oficinas?)\b/i.test(
+    lower
+  );
+}
+
+function firstMatchIndex(s: string, re: RegExp): number {
+  const m = re.exec(s);
+  return m?.index != null ? m.index : Number.POSITIVE_INFINITY;
+}
+
+const TYPE_PRIORITY: (typeof VALID_PROPERTY_TYPES)[number][] = [
+  'LAND',
+  'OFFICE',
+  'OTHER',
+  'HOUSE',
+  'APARTMENT',
+];
+
 /**
  * Tipos de propiedad con límites de palabra y menos falsos positivos:
  * - "con oficina" / "con local" en una casa no cuentan como OFFICE.
  * - "localidad" no dispara OFFICE (\blocal\b no matchea dentro de localidad).
  * - "loteo" no cuenta como LAND.
  * - OFFICE: local comercial, oficina explícita, consultorio, planta libre, o "busco local".
+ * - Si el texto sugiere varios tipos sin un "o" explícito, se elige uno (primer match) para
+ *   no mezclar resultados en el feed (Prisma usa `in` = OR).
  */
 function parsePropertyType(text: string): string[] | undefined {
   const stripped = text
@@ -283,7 +305,10 @@ function parsePropertyType(text: string): string[] | undefined {
     /\b(casas?|chalets?|chalet|viviendas?\s+unifamiliares?|vivienda\s+unifamiliar|houses?)\b/i.test(
       lower
     );
-  const hasApt = /\b(departamentos?|deptos?|\bdepto\b|apartments?|\bph\b|p\.h\.)\b/i.test(lower);
+  const hasApt =
+    /\b(departamentos?|deptos?|\bdepto\b|apartments?|\bph\b|p\.h\.|monoambientes?|mono\s*ambientes?|semipisos?|lofts?|duplex\b)\b/i.test(
+      lower
+    ) || /\bpiso\s+(alto|bajo|\d+)\b/i.test(lower);
   const hasLand =
     /\b(terrenos?|lotes?|lands?)\b/i.test(lower) &&
     !/\b(loteo|lotificaci[oó]n|loteamiento)\b/i.test(lower);
@@ -297,16 +322,64 @@ function parsePropertyType(text: string): string[] | undefined {
     ) ||
     (/\b(local|locales)\b/i.test(lower) && /\b(comercial|showroom|galería|galeria)\b/i.test(lower));
 
+  const dwellingMention =
+    /\b(departamentos?|deptos?|\bdepto\b|monoambientes?|mono\s*ambientes?|semipisos?|lofts?|casas?|ph\b|terrenos?|lotes?|locales?\s+comercial|oficinas?|duplex\b)\b/i.test(
+      lower
+    ) || /\bpiso\s+(alto|bajo|\d+)\b/i.test(lower);
+
+  const hasParkingListing =
+    /\bcocheras?\b/i.test(lower) &&
+    /\b(venta|alquiler|en\s+venta|en\s+alquiler)\b/i.test(lower) &&
+    !dwellingMention;
+
+  const hasIndustrial =
+    /\b(galp[oó]n|galpones)\b/i.test(lower) &&
+    !/\b(casa|departamento|deptos?|\bdepto\b|ph\b)\b/i.test(lower);
+
   if (hasHouse) found.push('HOUSE');
   if (hasApt) found.push('APARTMENT');
   if (hasLand) found.push('LAND');
   if (hasOffice) found.push('OFFICE');
+  if (hasParkingListing || hasIndustrial) found.push('OTHER');
 
-  return found.length
-    ? [...new Set(found)].filter((t) =>
-        VALID_PROPERTY_TYPES.includes(t as (typeof VALID_PROPERTY_TYPES)[number])
-      )
-    : undefined;
+  let unique = [...new Set(found)].filter((t) =>
+    VALID_PROPERTY_TYPES.includes(t as (typeof VALID_PROPERTY_TYPES)[number])
+  ) as string[];
+
+  if (unique.length > 1 && !hasExplicitPropertyTypeOr(lower)) {
+    const reByType: Record<string, RegExp> = {
+      LAND: /\b(terrenos?|lotes?|lands?)\b/i,
+      OFFICE:
+        /\b(local(?:es)?\s+comercial(?:es)?|planta\s+libre|consultorios?|offices?|oficinas?)\b/i,
+      OTHER: /\b(cocheras?|galp[oó]n|galpones)\b/i,
+      HOUSE:
+        /\b(casas?|chalets?|chalet|viviendas?\s+unifamiliares?|vivienda\s+unifamiliar|houses?)\b/i,
+      APARTMENT:
+        /\b(departamentos?|deptos?|\bdepto\b|apartments?|\bph\b|p\.h\.|monoambientes?|mono\s*ambientes?|semipisos?|lofts?|duplex\b|piso\s+(alto|bajo|\d+))\b/i,
+    };
+    let best: { t: string; idx: number } | null = null;
+    for (const t of unique) {
+      const re = reByType[t];
+      if (!re) continue;
+      const idx = firstMatchIndex(lower, re);
+      if (!best || idx < best.idx) best = { t, idx };
+      else if (best && idx === best.idx) {
+        const pa = TYPE_PRIORITY.indexOf(t as (typeof VALID_PROPERTY_TYPES)[number]);
+        const pb = TYPE_PRIORITY.indexOf(best.t as (typeof VALID_PROPERTY_TYPES)[number]);
+        if (pa >= 0 && pb >= 0 && pa < pb) best = { t, idx };
+      }
+    }
+    if (best && best.idx < Number.POSITIVE_INFINITY) {
+      unique = [best.t];
+    } else {
+      const pick =
+        TYPE_PRIORITY.find((t) => unique.includes(t)) ??
+        (unique[0] as (typeof VALID_PROPERTY_TYPES)[number]);
+      unique = [pick];
+    }
+  }
+
+  return unique.length ? unique : undefined;
 }
 
 /** Mapeo: término en texto → clave canónica (sinónimos vía canonicalizeAmenityToken + amenity-filter). */

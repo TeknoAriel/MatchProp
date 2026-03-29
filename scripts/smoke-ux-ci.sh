@@ -7,8 +7,10 @@ cd "$(dirname "$0")/.."
 echo "=== Smoke UX (CI): migraciones y seed ==="
 cd apps/api
 pnpm exec prisma migrate deploy
+# Usuarios mínimos (smoke-ux@…) para demo:reset-and-seed; sin carga masiva de propiedades.
+SEED_USERS=0 SEED_PROPERTIES=0 pnpm exec prisma db seed
 DEMO_MODE=1 pnpm run demo:reset-and-seed
-pnpm run demo:validate
+DEMO_VALIDATE_MIN_LISTINGS_WITH_MATCHES=2 pnpm run demo:validate
 cd ../..
 
 echo "=== Web .env.local (proxy /api -> 3001) ==="

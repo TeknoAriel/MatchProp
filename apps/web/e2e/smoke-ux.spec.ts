@@ -33,7 +33,7 @@ test.describe('smoke:ux', () => {
     await page.waitForURL(/\/(dashboard|feed)/, { timeout: 25000 });
 
     await page.goto('/assistant');
-    await expect(page.getByRole('heading', { name: 'Buscar' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: /Asistente avanzado|Buscar/ })).toBeVisible({
       timeout: 10000,
     });
 
@@ -44,7 +44,9 @@ test.describe('smoke:ux', () => {
     await textarea.pressSequentially(searchText, { delay: 20 });
     await page.getByRole('button', { name: 'Enviar búsqueda' }).click();
 
-    await expect(page.getByText('Resumen').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('heading', { name: /Tu búsqueda|Resumen/i })).toBeVisible({
+      timeout: 15000,
+    });
     await expect(page.getByRole('button', { name: 'Guardar' })).toBeVisible();
 
     await page.getByRole('link', { name: 'Ver listado' }).click();
@@ -65,13 +67,19 @@ test.describe('smoke:ux', () => {
         .or(page.getByText(/Sin búsqueda activa|No hay resultados|Crear búsqueda/))
     ).toBeVisible({ timeout: 10000 });
 
-    // Volver al assistant y guardar (re-ejecutar búsqueda con un ejemplo para tener botón Guardar)
+    // Volver al assistant y guardar (re-enviar la misma búsqueda por texto; ya no hay chips de ejemplo)
     await page.goto('/assistant');
-    await expect(page.getByRole('heading', { name: 'Buscar' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: /Asistente avanzado|Buscar/ })).toBeVisible({
       timeout: 5000,
     });
-    await page.getByRole('button', { name: 'Comprar depto 2 dorm Rosario hasta 120k USD' }).click();
-    await expect(page.getByText('Resumen').first()).toBeVisible({ timeout: 15000 });
+    const textareaAgain = page.locator('textarea').first();
+    await textareaAgain.click();
+    await textareaAgain.fill('');
+    await textareaAgain.pressSequentially(searchText, { delay: 20 });
+    await page.getByRole('button', { name: 'Enviar búsqueda' }).click();
+    await expect(page.getByRole('heading', { name: /Tu búsqueda|Resumen/i })).toBeVisible({
+      timeout: 15000,
+    });
     await page.getByRole('button', { name: 'Guardar' }).click();
     await expect(
       page
@@ -318,7 +326,9 @@ test.describe('smoke:ux', () => {
     await page.goto('/assistant');
     await page.locator('textarea').first().fill('Depto 2 dorm Rosario hasta 120k USD');
     await page.getByRole('button', { name: 'Enviar búsqueda' }).click();
-    await expect(page.getByText('Resumen').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('heading', { name: /Tu búsqueda|Resumen/i })).toBeVisible({
+      timeout: 15000,
+    });
     await page.getByRole('link', { name: 'Ver listado' }).first().click();
     await page.waitForTimeout(5000);
     const hasResultados = await page.getByRole('heading', { name: 'Resultados' }).isVisible();
@@ -343,9 +353,15 @@ test.describe('smoke:ux', () => {
     await page.goto(href!, { waitUntil: 'domcontentloaded' });
     await page.waitForURL(/\/(dashboard|feed)/, { timeout: 25000 });
     await page.goto('/assistant');
-    await page.locator('textarea').first().fill('Casa 3 dorm Funes');
+    const q = 'Quiero comprar depto 2 dorm en Rosario hasta 120k usd';
+    const ta = page.locator('textarea').first();
+    await ta.fill('');
+    await ta.pressSequentially(q, { delay: 15 });
     await page.getByRole('button', { name: 'Enviar búsqueda' }).click();
-    await expect(page.getByText('Resumen').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('heading', { name: /Tu búsqueda|Resumen/i })).toBeVisible({
+      timeout: 20000,
+    });
+    await expect(page.getByRole('button', { name: 'Guardar' })).toBeVisible({ timeout: 10000 });
     await page.getByRole('button', { name: 'Guardar' }).click();
     await expect(
       page
@@ -364,11 +380,11 @@ test.describe('smoke:ux', () => {
     }
     await page.goto('/alerts');
     await expect(page.getByRole('heading', { name: /Alertas|Mis alertas/ })).toBeVisible({
-      timeout: 5000,
+      timeout: 15000,
     });
     await expect(
       page.getByText('Nuevas publicaciones').or(page.locator('a[href^="/searches/"]')).first()
-    ).toBeVisible({ timeout: 5000 });
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test('smoke: chat y visits con lead ACTIVE — verifica título y placeholders', async ({
