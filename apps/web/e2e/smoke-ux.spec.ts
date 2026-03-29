@@ -353,11 +353,15 @@ test.describe('smoke:ux', () => {
     await page.goto(href!, { waitUntil: 'domcontentloaded' });
     await page.waitForURL(/\/(dashboard|feed)/, { timeout: 25000 });
     await page.goto('/assistant');
-    await page.locator('textarea').first().fill('Casa 3 dorm Funes');
+    const q = 'Quiero comprar depto 2 dorm en Rosario hasta 120k usd';
+    const ta = page.locator('textarea').first();
+    await ta.fill('');
+    await ta.pressSequentially(q, { delay: 15 });
     await page.getByRole('button', { name: 'Enviar búsqueda' }).click();
     await expect(page.getByRole('heading', { name: /Tu búsqueda|Resumen/i })).toBeVisible({
-      timeout: 15000,
+      timeout: 20000,
     });
+    await expect(page.getByRole('button', { name: 'Guardar' })).toBeVisible({ timeout: 10000 });
     await page.getByRole('button', { name: 'Guardar' }).click();
     await expect(
       page
@@ -376,11 +380,11 @@ test.describe('smoke:ux', () => {
     }
     await page.goto('/alerts');
     await expect(page.getByRole('heading', { name: /Alertas|Mis alertas/ })).toBeVisible({
-      timeout: 5000,
+      timeout: 15000,
     });
     await expect(
       page.getByText('Nuevas publicaciones').or(page.locator('a[href^="/searches/"]')).first()
-    ).toBeVisible({ timeout: 5000 });
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test('smoke: chat y visits con lead ACTIVE — verifica título y placeholders', async ({

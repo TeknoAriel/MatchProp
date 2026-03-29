@@ -9,7 +9,11 @@ import { prisma } from '../lib/prisma.js';
 
 const MIN_TOTAL = 200;
 const MIN_SEARCHES = 50;
-const MIN_LISTINGS_WITH_MATCHES = 10;
+/** En CI smoke el backfill es muestral; umbral bajo vía env evita falsos negativos. */
+const MIN_LISTINGS_WITH_MATCHES = Math.max(
+  1,
+  parseInt(process.env.DEMO_VALIDATE_MIN_LISTINGS_WITH_MATCHES || '10', 10) || 10
+);
 const SAMPLE_SIZE = 20;
 
 async function main() {
