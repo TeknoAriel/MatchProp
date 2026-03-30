@@ -67,12 +67,12 @@ Plan con **hitos**, **sprints** y **tareas** para los próximos 3 meses. Alinead
 **Duración:** 2 semanas  
 **Objetivo:** Páginas públicas indexables, landing mejorada.
 
-| #   | Tarea                    | DoD                                                                                       | Estado                                     |
-| --- | ------------------------ | ----------------------------------------------------------------------------------------- | ------------------------------------------ |
-| 4.1 | Meta tags y sitemap      | `generateMetadata` en `/listing/[id]`; `GET /public/listings/*` sin PII; sitemap con fichas | Hecho (medición Lighthouse pendiente)      |
-| 4.2 | Landing pública          | Página de inicio optimizada para SEO; CTAs claros                                       | Pendiente                                  |
-| 4.3 | Búsquedas por zona (SEO) | Rutas `/buscar/{zona}` indexables; sin auth                                               | Hecho                                      |
-| 4.4 | Próximo corte SEO        | Ver [TAREAS_Y_MEJORAS.md](./TAREAS_Y_MEJORAS.md) § Sprint 4 siguiente                     | Cola                                       |
+| #   | Tarea                    | DoD                                                                                         | Estado                                |
+| --- | ------------------------ | ------------------------------------------------------------------------------------------- | ------------------------------------- |
+| 4.1 | Meta tags y sitemap      | `generateMetadata` en `/listing/[id]`; `GET /public/listings/*` sin PII; sitemap con fichas | Hecho (medición Lighthouse pendiente) |
+| 4.2 | Landing pública          | Página de inicio optimizada para SEO; CTAs claros                                           | Pendiente                             |
+| 4.3 | Búsquedas por zona (SEO) | Rutas `/buscar/{zona}` indexables; sin auth                                                 | Hecho                                 |
+| 4.4 | Próximo corte SEO        | Ver [TAREAS_Y_MEJORAS.md](./TAREAS_Y_MEJORAS.md) § Sprint 4 siguiente                       | Cola                                  |
 
 **Gates:** Lighthouse SEO > 90; sitemap válido.
 

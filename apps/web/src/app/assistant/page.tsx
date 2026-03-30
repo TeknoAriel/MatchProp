@@ -243,9 +243,7 @@ function AssistantPageContent() {
     }
     setError(null);
     const previousFilters =
-      !startFreshNextRef.current &&
-      result?.filters &&
-      Object.keys(result.filters).length > 0
+      !startFreshNextRef.current && result?.filters && Object.keys(result.filters).length > 0
         ? result.filters
         : undefined;
     if (startFreshNextRef.current) startFreshNextRef.current = false;

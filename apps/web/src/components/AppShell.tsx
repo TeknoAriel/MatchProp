@@ -88,12 +88,12 @@ const ADMIN_MAS_ITEM: MasEntry = {
   desc: 'Admin: asistente IA, importadores, API, pagos',
 };
 
-function masSectionsForRole(role: string | null): readonly { title: string; subtitle?: string; items: readonly MasEntry[] }[] {
+function masSectionsForRole(
+  role: string | null
+): readonly { title: string; subtitle?: string; items: readonly MasEntry[] }[] {
   if (role !== 'ADMIN') return MAS_SECTIONS;
   return MAS_SECTIONS.map((section) =>
-    section.title === 'Cuenta'
-      ? { ...section, items: [...section.items, ADMIN_MAS_ITEM] }
-      : section
+    section.title === 'Cuenta' ? { ...section, items: [...section.items, ADMIN_MAS_ITEM] } : section
   );
 }
 

@@ -14,7 +14,9 @@ async function main() {
   for (const source of SOURCES) {
     console.log(`Ingest: source=${source} limit=${LIMIT}`);
     const result = await runIngest({ source, limit: LIMIT });
-    console.log(`Done ${source}: ${result.inserted} listings, nextCursor=${result.nextCursor ?? 'null'}`);
+    console.log(
+      `Done ${source}: ${result.inserted} listings, nextCursor=${result.nextCursor ?? 'null'}`
+    );
   }
 }
 

@@ -22,7 +22,9 @@ export function BetaBanner() {
             Enviar feedback
           </a>
         ) : (
-          <span className="text-amber-900/90">Contanos qué te gustaría mejorar desde Configuraciones o soporte.</span>
+          <span className="text-amber-900/90">
+            Contanos qué te gustaría mejorar desde Configuraciones o soporte.
+          </span>
         )}
       </span>
     </div>

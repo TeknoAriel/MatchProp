@@ -22,8 +22,7 @@ export type FeedListingCardInput = {
 
 /** Aplica rawJson fallback cuando heroImageUrl o title faltan en el listing. */
 export function feedItemWithRawJsonFallback(l: FeedListingCardInput) {
-  let heroImageUrl =
-    l.heroImageUrl ?? (l.media?.length ? pickHeroUrlFromMedia(l.media) : null);
+  let heroImageUrl = l.heroImageUrl ?? (l.media?.length ? pickHeroUrlFromMedia(l.media) : null);
   let title = l.title;
   let media = l.media;
   if ((!heroImageUrl || !title?.trim()) && l.rawJson) {

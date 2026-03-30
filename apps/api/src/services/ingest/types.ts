@@ -48,9 +48,7 @@ export interface FetchBatchResult {
 export interface SourceConnector {
   source: ListingSource;
   fetchBatch(params: { cursor?: string | null; limit: number }): Promise<FetchBatchResult>;
-  normalize(
-    raw: RawListing
-  ): NormalizedListing & {
+  normalize(raw: RawListing): NormalizedListing & {
     mediaUrls?: { url: string; sortOrder: number; type?: string | null }[];
   };
 }

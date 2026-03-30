@@ -83,7 +83,10 @@ export function mergeLlmPatchOntoDeterministic(
     if (!filled(v)) continue;
     if (k === 'amenities' && Array.isArray(v)) {
       out.amenities = [
-        ...new Set([...(out.amenities ?? []), ...v.map((x) => canonicalizeAmenityToken(String(x)))]),
+        ...new Set([
+          ...(out.amenities ?? []),
+          ...v.map((x) => canonicalizeAmenityToken(String(x))),
+        ]),
       ];
       continue;
     }

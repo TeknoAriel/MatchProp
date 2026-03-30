@@ -51,8 +51,15 @@ export async function publicListingRoutes(fastify: FastifyInstance) {
       const q = request.query as { limit?: number | string };
       const raw = q.limit;
       const parsed =
-        typeof raw === 'string' ? parseInt(raw, 10) : typeof raw === 'number' ? raw : SITEMAP_IDS_MAX;
-      const take = Math.min(SITEMAP_IDS_MAX, Math.max(1, Number.isFinite(parsed) ? parsed : SITEMAP_IDS_MAX));
+        typeof raw === 'string'
+          ? parseInt(raw, 10)
+          : typeof raw === 'number'
+            ? raw
+            : SITEMAP_IDS_MAX;
+      const take = Math.min(
+        SITEMAP_IDS_MAX,
+        Math.max(1, Number.isFinite(parsed) ? parsed : SITEMAP_IDS_MAX)
+      );
       const rows = await prisma.listing.findMany({
         where: { status: 'ACTIVE' },
         select: { id: true, updatedAt: true },

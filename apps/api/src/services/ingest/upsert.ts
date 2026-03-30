@@ -112,9 +112,7 @@ export async function upsertListing(
       lng: norm.lng ?? null,
       addressText: norm.addressText ?? null,
       locationText,
-      heroImageUrl: norm.mediaUrls?.length
-        ? pickHeroUrlFromMedia(norm.mediaUrls)
-        : null,
+      heroImageUrl: norm.mediaUrls?.length ? pickHeroUrlFromMedia(norm.mediaUrls) : null,
       photosCount: norm.mediaUrls?.length ?? 0,
       updatedAtSource: norm.updatedAtSource ?? null,
       lastSyncedAt: now,
@@ -139,9 +137,7 @@ export async function upsertListing(
       lng: norm.lng ?? undefined,
       addressText: norm.addressText ?? undefined,
       locationText: locationText ?? undefined,
-      heroImageUrl: norm.mediaUrls?.length
-        ? pickHeroUrlFromMedia(norm.mediaUrls)
-        : undefined,
+      heroImageUrl: norm.mediaUrls?.length ? pickHeroUrlFromMedia(norm.mediaUrls) : undefined,
       photosCount: norm.mediaUrls?.length ?? 0,
       updatedAtSource: norm.updatedAtSource ?? undefined,
       lastSyncedAt: now,

@@ -105,12 +105,6 @@ export default function ListingMediaView({
   }
 
   return (
-    <img
-      src={item.url}
-      alt={alt}
-      className={className}
-      loading="lazy"
-      onError={onImageError}
-    />
+    <img src={item.url} alt={alt} className={className} loading="lazy" onError={onImageError} />
   );
 }

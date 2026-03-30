@@ -1,6 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { interpretSearchQuery, loadIntentLlmConfig } from '../services/assistant/search-interpreter.js';
+import {
+  interpretSearchQuery,
+  loadIntentLlmConfig,
+} from '../services/assistant/search-interpreter.js';
 import { chatCompletion } from '../services/assistant/conversational.js';
 import { normalizeFilters, searchFiltersSchema } from '../schemas/search.js';
 import { executeFeed } from '../lib/feed-engine.js';
@@ -132,10 +135,7 @@ export async function assistantRoutes(fastify: FastifyInstance) {
         void _prevQ;
 
         // No loguear texto completo (PII). Solo longitud.
-        request.log.info(
-          { textLen: text.length, hasPrevious: !!prevRaw },
-          'assistant/search'
-        );
+        request.log.info({ textLen: text.length, hasPrevious: !!prevRaw }, 'assistant/search');
 
         let result;
         try {

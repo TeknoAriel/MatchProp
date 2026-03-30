@@ -63,7 +63,10 @@ export function applyRefinementCommands(
     next.propertyType = ['HOUSE'];
   }
 
-  if (/\balquiler\b|\balquilar\b|\brentar\b/i.test(lower) && !/comprar|venta\s+(?!con)/i.test(lower)) {
+  if (
+    /\balquiler\b|\balquilar\b|\brentar\b/i.test(lower) &&
+    !/comprar|venta\s+(?!con)/i.test(lower)
+  ) {
     next.operationType = 'RENT';
   }
 
@@ -102,7 +105,10 @@ export function applyRefinementCommands(
   return next;
 }
 
-export function mergeCarriedAndParsed(carried: SearchFilters, parsed: SearchFilters): SearchFilters {
+export function mergeCarriedAndParsed(
+  carried: SearchFilters,
+  parsed: SearchFilters
+): SearchFilters {
   const out: SearchFilters = { ...carried };
   for (const [key, v] of Object.entries(parsed)) {
     if (v === undefined || v === null) continue;

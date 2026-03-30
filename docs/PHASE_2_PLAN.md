@@ -14,12 +14,12 @@ MatchProp conecta **oferta y demanda** inmobiliaria: búsqueda activa + descubri
 
 ## Criterios “verde” para cerrar beta (Fase 1 operativa)
 
-| Área | Criterio |
-|------|----------|
-| Calidad | `pnpm build:shared`, `pnpm -r run typecheck`, `pnpm --filter api test:all` verdes |
-| Búsqueda | Parser + intérprete alineados a `SearchFilters`; tope **20 átomos** por búsqueda texto/voz (`search-filter-cap`) |
-| Admin | Rol `ADMIN` ve **Configuración** (sidebar / header móvil / Más) y `/me/settings` responde |
-| Producción | Tras cada entrega: `bash scripts/verify-deploy-status.sh` confirma commit en main y prod |
+| Área       | Criterio                                                                                                         |
+| ---------- | ---------------------------------------------------------------------------------------------------------------- |
+| Calidad    | `pnpm build:shared`, `pnpm -r run typecheck`, `pnpm --filter api test:all` verdes                                |
+| Búsqueda   | Parser + intérprete alineados a `SearchFilters`; tope **20 átomos** por búsqueda texto/voz (`search-filter-cap`) |
+| Admin      | Rol `ADMIN` ve **Configuración** (sidebar / header móvil / Más) y `/me/settings` responde                        |
+| Producción | Tras cada entrega: `bash scripts/verify-deploy-status.sh` confirma commit en main y prod                         |
 
 ---
 
@@ -40,12 +40,12 @@ Tomado de [TAREAS_Y_MEJORAS.md](./TAREAS_Y_MEJORAS.md), [backlog.md](./backlog.m
 
 ## Plan de trabajo Fase 2 (alineado al masterplan)
 
-| Orden | Bloque | Contenido | Referencia |
-|------|--------|-----------|------------|
-| 0 | Spec | Alinear UX de búsquedas guardadas, mis match y alertas | SPEC_BUSQUEDAS_Y_MATCH |
-| 1 | H4 Crecimiento | Onboarding, funnel `trackEvent`, notificaciones | Q3 Sprints 7–8 |
-| 2 | H5 Operación | Health, admin operativo, performance, Lighthouse | Q3 Sprints 9–10 |
-| 3 | H6 Avanzado | Reverse-matching UX, pulido monetización B2B/B2C | Q3 Sprints 11–12 |
+| Orden | Bloque         | Contenido                                              | Referencia             |
+| ----- | -------------- | ------------------------------------------------------ | ---------------------- |
+| 0     | Spec           | Alinear UX de búsquedas guardadas, mis match y alertas | SPEC_BUSQUEDAS_Y_MATCH |
+| 1     | H4 Crecimiento | Onboarding, funnel `trackEvent`, notificaciones        | Q3 Sprints 7–8         |
+| 2     | H5 Operación   | Health, admin operativo, performance, Lighthouse       | Q3 Sprints 9–10        |
+| 3     | H6 Avanzado    | Reverse-matching UX, pulido monetización B2B/B2C       | Q3 Sprints 11–12       |
 
 **Reglas de ejecución:** un cambio por sprint cerrado con deploy automático; DoD = tests + typecheck + documentación tocada actualizada; priorizar [FOCO_2026.md](./FOCO_2026.md) si hay conflicto de scope.
 

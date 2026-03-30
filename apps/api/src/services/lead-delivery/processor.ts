@@ -101,8 +101,11 @@ export async function processLeadCreatedEvent(
   }
 
   const wasActive = lead.status === LeadStatus.ACTIVE;
-  const finalStatus =
-    delivered ? LeadStatus.ACTIVE : wasActive ? LeadStatus.ACTIVE : LeadStatus.PENDING;
+  const finalStatus = delivered
+    ? LeadStatus.ACTIVE
+    : wasActive
+      ? LeadStatus.ACTIVE
+      : LeadStatus.PENDING;
   await prisma.lead.update({
     where: { id: leadId },
     data: { status: finalStatus },

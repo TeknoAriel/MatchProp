@@ -450,8 +450,7 @@ function filtersToWhere(f: FeedFilters): Record<string, unknown> {
         ],
       });
     }
-    if (andKw.length)
-      where.AND = [...((where.AND as Record<string, unknown>[]) ?? []), ...andKw];
+    if (andKw.length) where.AND = [...((where.AND as Record<string, unknown>[]) ?? []), ...andKw];
   }
   if (f.minLat != null || f.maxLat != null || f.minLng != null || f.maxLng != null) {
     const latCond: { not?: null; gte?: number; lte?: number } = { not: null };
@@ -774,14 +773,10 @@ export async function feedRoutes(fastify: FastifyInstance) {
           ? Math.floor(cursorData.relaxStep)
           : null;
       const relaxStepFromCursor =
-        relaxStepRaw != null && relaxStepRaw >= 1
-          ? Math.min(relaxStepRaw, relaxMaxStep)
-          : null;
+        relaxStepRaw != null && relaxStepRaw >= 1 ? Math.min(relaxStepRaw, relaxMaxStep) : null;
 
       let activeFilters =
-        relaxStepFromCursor != null
-          ? relaxFeedFiltersAccum(filters, relaxStepFromCursor)
-          : filters;
+        relaxStepFromCursor != null ? relaxFeedFiltersAccum(filters, relaxStepFromCursor) : filters;
       /** Se reenvía en nextCursor para que la página siguiente use los mismos filtros efectivos. */
       let cursorRelaxStepForNext: number | null = relaxStepFromCursor;
 

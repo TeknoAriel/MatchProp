@@ -237,7 +237,9 @@ export default function LeadVisitsPage() {
         {visits.length === 0 ? (
           <div className="rounded-xl border border-dashed border-[var(--mp-border)] bg-[var(--mp-bg)]/50 py-6 px-4 text-center mb-6">
             <span className="text-3xl block mb-2">📅</span>
-            <p className="text-[var(--mp-muted)] font-medium">Todavía no hay visitas para esta consulta.</p>
+            <p className="text-[var(--mp-muted)] font-medium">
+              Todavía no hay visitas para esta consulta.
+            </p>
             <p className="text-sm text-[var(--mp-muted)] mt-1">
               Más abajo podés elegir un horario sugerido o cargar fecha y hora.
             </p>
@@ -271,7 +273,9 @@ export default function LeadVisitsPage() {
           <p className="text-sm text-[var(--mp-muted)] mb-3">
             Los horarios deben ser futuros (zona horaria de tu dispositivo).
           </p>
-          <h3 className="text-sm font-medium text-[var(--mp-foreground)] mb-2">Horarios sugeridos</h3>
+          <h3 className="text-sm font-medium text-[var(--mp-foreground)] mb-2">
+            Horarios sugeridos
+          </h3>
           <div className="flex flex-wrap gap-2 mb-4">
             {presets.map((p) => (
               <button
@@ -285,7 +289,9 @@ export default function LeadVisitsPage() {
               </button>
             ))}
           </div>
-          <h3 className="text-sm font-medium text-[var(--mp-foreground)] mb-2">O elegí fecha y hora</h3>
+          <h3 className="text-sm font-medium text-[var(--mp-foreground)] mb-2">
+            O elegí fecha y hora
+          </h3>
           <div className="flex gap-2 items-center flex-wrap">
             <input
               type="datetime-local"

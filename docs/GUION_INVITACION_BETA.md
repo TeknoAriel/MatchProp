@@ -18,7 +18,7 @@ Hola [nombre],
 
 Te invitamos a probar **MatchProp** en **versión beta**:
 
-**Entrá acá:** https://matchprop.beta.vercel.app  
+**Entrá acá:** https://matchprop.beta.vercel.app
 
 Podés usarla desde el **celular** (recomendado) o desde la **computadora**. Si te gusta tenerla a mano, en el móvil podés **“Agregar a pantalla de inicio”** desde el menú del navegador y usarla como una app.
 
@@ -35,7 +35,7 @@ Estimado/a [nombre],
 
 Le escribimos para invitarle a participar del **programa beta** de **MatchProp**, nuestra plataforma para buscar propiedades con una experiencia simple (inspirada en el “swipe” y listas guardadas).
 
-**Acceso web y móvil:** https://matchprop.beta.vercel.app  
+**Acceso web y móvil:** https://matchprop.beta.vercel.app
 
 Le pedimos que pruebe los flujos principales (registro o inicio de sesión, búsqueda, feed o listado, guardados y consulta a la inmobiliaria si aplica) y nos envíe observaciones por el canal acordado [indicar: formulario, email, issues].
 

@@ -43,7 +43,7 @@ Regla: **no duplicar** la misma tarea en detalle en ambos; en `backlog` va la é
 | ------------------------ | -------------------------------------------------------------------------------------- | --------------------------------------------- |
 | **Analytics trackEvent** | Modelo/helper `trackEvent` sin PII; eventos mínimos (vistas, guardados, activaciones). | Endpoint o servicio; sin exponer PII en logs. |
 | **Virtualización lista** | Lista larga en feed/list con virtualización para mejor performance.                    | Scroll fluido con muchos ítems.               |
-| **Portal SEO**           | Páginas públicas indexables (fichas, zonas, sitemap dinámico).                          | **Parcial:** ver § Sprint 4 siguiente.        |
+| **Portal SEO**           | Páginas públicas indexables (fichas, zonas, sitemap dinámico).                         | **Parcial:** ver § Sprint 4 siguiente.        |
 | **Dashboard analytics**  | Vistas básicas para admin (leads, alertas, matches).                                   | Solo lectura; datos agregados.                |
 
 ### Mejoras técnicas

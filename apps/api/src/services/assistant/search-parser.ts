@@ -11,16 +11,14 @@ const VALID_PROPERTY_TYPES = ['HOUSE', 'APARTMENT', 'LAND', 'OFFICE', 'OTHER'] a
  * Sinónimos y abreviaturas → forma que matchean las regex del parser (depto, pileta, etc.).
  */
 function normalizeSearchDialect(text: string): string {
-  return (
-    text
-      .replace(/\bdepar(?=[\s,.]|$)/gi, 'depto')
-      .replace(/\bdepars\b/gi, 'deptos')
-      .replace(/\bdpto\b/gi, 'depto')
-      .replace(/\bdptos\b/gi, 'deptos')
-      .replace(/\bmonoambiente\b/gi, 'monoambiente')
-      .replace(/\bpool\b/gi, 'piscina')
-      .replace(/\bswimming\s*pool\b/gi, 'piscina')
-  );
+  return text
+    .replace(/\bdepar(?=[\s,.]|$)/gi, 'depto')
+    .replace(/\bdepars\b/gi, 'deptos')
+    .replace(/\bdpto\b/gi, 'depto')
+    .replace(/\bdptos\b/gi, 'deptos')
+    .replace(/\bmonoambiente\b/gi, 'monoambiente')
+    .replace(/\bpool\b/gi, 'piscina')
+    .replace(/\bswimming\s*pool\b/gi, 'piscina');
 }
 
 /** Origen del aviso (enum Prisma ListingSource). */

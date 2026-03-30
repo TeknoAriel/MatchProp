@@ -7,7 +7,12 @@ import HacersePremiumButton from '../../components/HacersePremiumButton';
 import VisitScheduleModal from '../../components/VisitScheduleModal';
 import PremiumGraceBanner from '../../components/PremiumGraceBanner';
 import ListingImage from '../../components/ListingImage';
-import { CardToolbar, ToolbarBtn, ToolbarLink, mpToolbarBtnBase } from '../../components/MpCardToolbar';
+import {
+  CardToolbar,
+  ToolbarBtn,
+  ToolbarLink,
+  mpToolbarBtnBase,
+} from '../../components/MpCardToolbar';
 import { MpSecondaryNav, SECONDARY_NAV_LEADS } from '../../components/MpSecondaryNav';
 import { formatVisitShortEs } from '../../lib/datetime-local';
 
@@ -102,7 +107,9 @@ export default function LeadsPage() {
   const refreshVisits = useCallback(() => {
     fetch(`${API_BASE}/me/visits?limit=100`, { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : []))
-      .then((arr: MeVisitRow[]) => setVisitsByLeadId(mergeVisitsByLead(Array.isArray(arr) ? arr : [])))
+      .then((arr: MeVisitRow[]) =>
+        setVisitsByLeadId(mergeVisitsByLead(Array.isArray(arr) ? arr : []))
+      )
       .catch(() => {});
   }, []);
 
@@ -449,7 +456,8 @@ export default function LeadsPage() {
                         }
                         className="bg-emerald-600 text-white !border-emerald-700 hover:bg-emerald-700 disabled:opacity-50"
                         onClick={() => {
-                          if (scheduleLead.status === 'ACTIVE') setVisitModalLeadId(scheduleLead.id);
+                          if (scheduleLead.status === 'ACTIVE')
+                            setVisitModalLeadId(scheduleLead.id);
                         }}
                       />
                       {displayVisit ? (
@@ -540,7 +548,9 @@ export default function LeadsPage() {
                                 {canActivate ? (
                                   <ToolbarBtn
                                     icon="▶"
-                                    label={activatingId === lead.id ? '…' : 'Habilitar chat y visitas'}
+                                    label={
+                                      activatingId === lead.id ? '…' : 'Habilitar chat y visitas'
+                                    }
                                     disabled={!!activatingId}
                                     className="bg-amber-600 text-white !border-amber-700 hover:bg-amber-700"
                                     onClick={(e) => {

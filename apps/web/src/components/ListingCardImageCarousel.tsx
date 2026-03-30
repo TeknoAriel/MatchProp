@@ -48,7 +48,9 @@ function MediaSlide({
   }
   if (broken) {
     return (
-      <div className={`${imgClassName} ${compactFallbackClass} flex flex-col items-center justify-center`}>
+      <div
+        className={`${imgClassName} ${compactFallbackClass} flex flex-col items-center justify-center`}
+      >
         <span className="text-2xl mb-1">🏠</span>
         <span className="text-[10px]">Sin vista</span>
       </div>

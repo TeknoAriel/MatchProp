@@ -11,11 +11,11 @@
 
 ## 2. Elección de modelo (por qué no solo LLM ni solo reglas)
 
-| Enfoque | Pros | Contras |
-|--------|------|--------|
-| Solo reglas | Rápido, barato, testeable, control total sobre WHERE | Frágil ante frases muy libres o errores de voz |
-| Solo LLM | Flexible semánticamente | Costo, latencia, alucinaciones en enums, más difícil de testear |
-| **Híbrido (elegido)** | Reglas cubren la mayoría del tráfico y fijan límites; LLM opcional completa huecos y notas | Requiere merge disciplinado y feature flag por config |
+| Enfoque               | Pros                                                                                       | Contras                                                         |
+| --------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| Solo reglas           | Rápido, barato, testeable, control total sobre WHERE                                       | Frágil ante frases muy libres o errores de voz                  |
+| Solo LLM              | Flexible semánticamente                                                                    | Costo, latencia, alucinaciones en enums, más difícil de testear |
+| **Híbrido (elegido)** | Reglas cubren la mayoría del tráfico y fijan límites; LLM opcional completa huecos y notas | Requiere merge disciplinado y feature flag por config           |
 
 **Decisión:** **reglas duras primero** + **LLM opcional** (OpenAI-compatible JSON) cuando `AssistantConfig` está habilitada con API key. Anthropic queda fuera del intent JSON en esta iteración (el chat sigue disponible).
 
@@ -31,16 +31,16 @@
 
 ## 4. Archivos clave
 
-| Ruta | Rol |
-|------|-----|
-| `apps/api/src/services/assistant/search-parser.ts` | Reglas + amenities + ubicación + precio + `extractSoftPreferences` |
-| `apps/api/src/services/assistant/search-refinement.ts` | Comandos de refinamiento sobre `previousFilters` |
-| `apps/api/src/services/assistant/search-interpreter.ts` | Orquestación + `loadIntentLlmConfig` |
-| `apps/api/src/services/assistant/intent-llm.ts` | Llamada JSON al proveedor OpenAI-compatible |
-| `apps/api/src/services/assistant/build-search-intent.ts` | `SearchIntent` desde filtros |
-| `apps/api/src/services/assistant/preview-soft-rank.ts` | Ranking por señales blandas en título/zona |
-| `apps/api/src/routes/assistant.ts` | `previousFilters` en body; `softPreferences` en preview |
-| `apps/web/src/app/assistant/page.tsx` | Refinamiento automático, “desde cero”, soft en preview |
+| Ruta                                                     | Rol                                                                |
+| -------------------------------------------------------- | ------------------------------------------------------------------ |
+| `apps/api/src/services/assistant/search-parser.ts`       | Reglas + amenities + ubicación + precio + `extractSoftPreferences` |
+| `apps/api/src/services/assistant/search-refinement.ts`   | Comandos de refinamiento sobre `previousFilters`                   |
+| `apps/api/src/services/assistant/search-interpreter.ts`  | Orquestación + `loadIntentLlmConfig`                               |
+| `apps/api/src/services/assistant/intent-llm.ts`          | Llamada JSON al proveedor OpenAI-compatible                        |
+| `apps/api/src/services/assistant/build-search-intent.ts` | `SearchIntent` desde filtros                                       |
+| `apps/api/src/services/assistant/preview-soft-rank.ts`   | Ranking por señales blandas en título/zona                         |
+| `apps/api/src/routes/assistant.ts`                       | `previousFilters` en body; `softPreferences` en preview            |
+| `apps/web/src/app/assistant/page.tsx`                    | Refinamiento automático, “desde cero”, soft en preview             |
 
 ## 5. Dataset y amenities
 

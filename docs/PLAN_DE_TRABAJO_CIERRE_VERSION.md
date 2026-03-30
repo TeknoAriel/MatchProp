@@ -27,11 +27,11 @@
 
 No es un sprint de código nuevo: es **operación y producto**.
 
-| Paso | Documento / acción |
-|------|-------------------|
-| Definir alcance beta, URLs, canal de feedback | [BETA_PROGRAMA_CIERRE_ETAPA.md](./BETA_PROGRAMA_CIERRE_ETAPA.md) |
-| Deploy estable + checklist env | [REVISION_FINAL_PRE_DEPLOY.md](./REVISION_FINAL_PRE_DEPLOY.md), [PROD.md](./PROD.md) |
-| Franja “Versión beta” en la web (opcional) | `NEXT_PUBLIC_BETA=1` en `apps/web` (ver `.env.example`) |
+| Paso                                          | Documento / acción                                                                   |
+| --------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Definir alcance beta, URLs, canal de feedback | [BETA_PROGRAMA_CIERRE_ETAPA.md](./BETA_PROGRAMA_CIERRE_ETAPA.md)                     |
+| Deploy estable + checklist env                | [REVISION_FINAL_PRE_DEPLOY.md](./REVISION_FINAL_PRE_DEPLOY.md), [PROD.md](./PROD.md) |
+| Franja “Versión beta” en la web (opcional)    | `NEXT_PUBLIC_BETA=1` en `apps/web` (ver `.env.example`)                              |
 
 ---
 
@@ -134,12 +134,12 @@ pnpm smoke:ux
 
 ## Resumen
 
-| Qué                                  | Estado                                                                                                            |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| Plan a seguir                        | **archive/SPRINT_SIGUIENTE_100_OPERATIVO.md** (4 etapas)                                                         |
-| Etapas 1–4 (código y documentación)  | **Completadas** para esta versión                                                                                 |
-| Beta / feedback                      | **BETA_PROGRAMA_CIERRE_ETAPA.md** + `NEXT_PUBLIC_BETA` opcional                                                   |
-| Fuera de esta versión                | Wallet B2B, Mercado Pago, Portal SEO, dashboards (documentados como siguientes hitos)                             |
+| Qué                                 | Estado                                                                                |
+| ----------------------------------- | ------------------------------------------------------------------------------------- |
+| Plan a seguir                       | **archive/SPRINT_SIGUIENTE_100_OPERATIVO.md** (4 etapas)                              |
+| Etapas 1–4 (código y documentación) | **Completadas** para esta versión                                                     |
+| Beta / feedback                     | **BETA_PROGRAMA_CIERRE_ETAPA.md** + `NEXT_PUBLIC_BETA` opcional                       |
+| Fuera de esta versión               | Wallet B2B, Mercado Pago, Portal SEO, dashboards (documentados como siguientes hitos) |
 
 ---
 

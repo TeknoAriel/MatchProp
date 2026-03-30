@@ -52,7 +52,11 @@ async function fetchPublicListing(id: string): Promise<PublicListingSeo | null> 
   }
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
   const { id } = await params;
   if (!id || INVALID_IDS.has(id)) {
     return { title: 'Propiedad', robots: { index: false, follow: true } };

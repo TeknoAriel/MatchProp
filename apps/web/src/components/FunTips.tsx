@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 const TIPS = [
   {
@@ -121,20 +121,21 @@ export function WelcomeMessage({
     return '¡Buenas noches';
   };
 
-  const greetings = [
-    `${getGreeting()}${name ? `, ${name}` : ''}! 👋`,
-    `¡Hola${name ? ` ${name}` : ''}! ¿Listo para buscar? 🏠`,
-    `¡Qué bueno verte${name ? `, ${name}` : ''}! ✨`,
-  ];
+  const greetings = useMemo(
+    () => [
+      `${getGreeting()}${name ? `, ${name}` : ''}! 👋`,
+      `¡Hola${name ? ` ${name}` : ''}! ¿Listo para buscar? 🏠`,
+      `¡Qué bueno verte${name ? `, ${name}` : ''}! ✨`,
+    ],
+    [name]
+  );
 
   const [greeting, setGreeting] = useState('¡Hola! 👋');
 
   useEffect(() => {
     const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
     setGreeting(randomGreeting ?? '¡Hola! 👋');
-    // Pool depende de name; no incluimos greetings para no re-randomizar cada render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name]);
+  }, [greetings]);
 
   return (
     <Tag className="text-xl md:text-2xl font-bold text-[var(--mp-foreground)]">{greeting}</Tag>

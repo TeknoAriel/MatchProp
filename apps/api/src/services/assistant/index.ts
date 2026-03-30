@@ -1,4 +1,3 @@
-import { parseSearchText } from './search-parser.js';
 import type { AssistantProvider, AssistantSearchResponse } from './provider.js';
 import { interpretSearchQuery } from './search-interpreter.js';
 

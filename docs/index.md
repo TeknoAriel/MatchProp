@@ -17,29 +17,29 @@
 
 ## Estrategia y planificación
 
-| Documento                                                  | Descripción                                                                |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------- |
-| [masterplan.md](./masterplan.md)                           | Masterplan v3.0 (frozen) — Epics E1–E8, non-negotiables, DoD               |
-| [FOCO_2026.md](./FOCO_2026.md)                             | Foco trimestral — prioridades explícitas (complementa al masterplan)       |
-| [ALINEACION_MASTERPLAN.md](./ALINEACION_MASTERPLAN.md)     | Estado actual vs masterplan — Epics, UX, Settings, deploy, validación      |
-| [TAREAS_Y_MEJORAS.md](./TAREAS_Y_MEJORAS.md)               | Próximas tareas priorizadas y mejoras técnicas                             |
-| [alignment-checklist.md](./alignment-checklist.md)         | Checklist alineación Masterplan ↔ repo (estado DONE/PARTIAL/NOT STARTED)   |
-| [backlog.md](./backlog.md)                                 | Backlog maestro — Epics, tickets MVP/Next/Later, sprints 8–9               |
-| [PLAN_DE_TRABAJO.md](./PLAN_DE_TRABAJO.md)                 | Plan Sprints 1–6 (completado) — hitos, tareas, referencias                 |
-| [PLAN_DE_TRABAJO_2026_Q3.md](./PLAN_DE_TRABAJO_2026_Q3.md) | Plan Q3 2026 (Sprints 7–12) — onboarding, notificaciones, operación        |
-| [ASISTENTE_IA_ARQUITECTURA.md](./ASISTENTE_IA_ARQUITECTURA.md) | Asistente de búsqueda: pipeline texto/voz → filtros → feed + LLM opcional |
-| [SPEC_BUSQUEDAS_Y_MATCH.md](./SPEC_BUSQUEDAS_Y_MATCH.md)   | Spec: Búsquedas guardadas, Mis match, Mis alertas (prioridad pre-Sprint 7) |
-| [gap-check.md](./gap-check.md)                             | Auditoría de brechas — gaps funcionales, técnicos, riesgos                 |
+| Documento                                                      | Descripción                                                                |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| [masterplan.md](./masterplan.md)                               | Masterplan v3.0 (frozen) — Epics E1–E8, non-negotiables, DoD               |
+| [FOCO_2026.md](./FOCO_2026.md)                                 | Foco trimestral — prioridades explícitas (complementa al masterplan)       |
+| [ALINEACION_MASTERPLAN.md](./ALINEACION_MASTERPLAN.md)         | Estado actual vs masterplan — Epics, UX, Settings, deploy, validación      |
+| [TAREAS_Y_MEJORAS.md](./TAREAS_Y_MEJORAS.md)                   | Próximas tareas priorizadas y mejoras técnicas                             |
+| [alignment-checklist.md](./alignment-checklist.md)             | Checklist alineación Masterplan ↔ repo (estado DONE/PARTIAL/NOT STARTED)   |
+| [backlog.md](./backlog.md)                                     | Backlog maestro — Epics, tickets MVP/Next/Later, sprints 8–9               |
+| [PLAN_DE_TRABAJO.md](./PLAN_DE_TRABAJO.md)                     | Plan Sprints 1–6 (completado) — hitos, tareas, referencias                 |
+| [PLAN_DE_TRABAJO_2026_Q3.md](./PLAN_DE_TRABAJO_2026_Q3.md)     | Plan Q3 2026 (Sprints 7–12) — onboarding, notificaciones, operación        |
+| [ASISTENTE_IA_ARQUITECTURA.md](./ASISTENTE_IA_ARQUITECTURA.md) | Asistente de búsqueda: pipeline texto/voz → filtros → feed + LLM opcional  |
+| [SPEC_BUSQUEDAS_Y_MATCH.md](./SPEC_BUSQUEDAS_Y_MATCH.md)       | Spec: Búsquedas guardadas, Mis match, Mis alertas (prioridad pre-Sprint 7) |
+| [gap-check.md](./gap-check.md)                                 | Auditoría de brechas — gaps funcionales, técnicos, riesgos                 |
 
 ---
 
 ## Cierre de versión y beta
 
-| Documento                                                      | Descripción                                                                           |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| [PLAN_DE_TRABAJO_CIERRE_VERSION.md](./PLAN_DE_TRABAJO_CIERRE_VERSION.md) | Etapas 1–4 cerradas + fase beta (comandos de verificación)              |
-| [BETA_PROGRAMA_CIERRE_ETAPA.md](./BETA_PROGRAMA_CIERRE_ETAPA.md)       | Invitar beta: checklist, flujos a probar, canal de feedback            |
-| [REVISION_FINAL_PRE_DEPLOY.md](./REVISION_FINAL_PRE_DEPLOY.md)          | Checklist antes de cada deploy a producción                             |
+| Documento                                                                | Descripción                                                 |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| [PLAN_DE_TRABAJO_CIERRE_VERSION.md](./PLAN_DE_TRABAJO_CIERRE_VERSION.md) | Etapas 1–4 cerradas + fase beta (comandos de verificación)  |
+| [BETA_PROGRAMA_CIERRE_ETAPA.md](./BETA_PROGRAMA_CIERRE_ETAPA.md)         | Invitar beta: checklist, flujos a probar, canal de feedback |
+| [REVISION_FINAL_PRE_DEPLOY.md](./REVISION_FINAL_PRE_DEPLOY.md)           | Checklist antes de cada deploy a producción                 |
 
 ---
 

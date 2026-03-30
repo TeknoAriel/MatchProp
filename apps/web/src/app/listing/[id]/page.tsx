@@ -411,7 +411,8 @@ export default function ListingDetailPage() {
                   onClick={() => setImageIndex(idx)}
                   className={`flex-shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all ${idx === imageIndex ? 'border-blue-500 ring-2 ring-blue-200' : 'border-transparent opacity-70 hover:opacity-100'}`}
                 >
-                  {inferClientMediaKind(img.url, img.type) === 'PHOTO' && !failedImages.has(img.url) ? (
+                  {inferClientMediaKind(img.url, img.type) === 'PHOTO' &&
+                  !failedImages.has(img.url) ? (
                     <img
                       src={img.url}
                       alt=""

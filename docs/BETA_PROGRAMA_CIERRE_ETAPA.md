@@ -8,10 +8,10 @@
 
 ## 1. Qué sprints / etapas quedan cerradas con esta fase
 
-| Bloque | Documento | Significado “cerrado” |
-|--------|-----------|------------------------|
-| **Etapas 1–4** (UX, calidad, Stripe B2C, pre-deploy) | [archive/SPRINT_SIGUIENTE_100_OPERATIVO.md](./archive/SPRINT_SIGUIENTE_100_OPERATIVO.md) | Producto usable end-to-end; gates técnicos documentados (`pre-deploy:verify`, `smoke:ux`, `REVISION_FINAL_PRE_DEPLOY.md`). |
-| **Alineación masterplan (core)** | `masterplan.md`, `AUDITORIA_FULLSTACK.md` | E1–E6 y gran parte de E7/E8 operativos; pendientes explícitos solo en backlog (Wallet B2B, Mercado Pago, SEO amplio, dashboards). |
+| Bloque                                               | Documento                                                                                | Significado “cerrado”                                                                                                             |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Etapas 1–4** (UX, calidad, Stripe B2C, pre-deploy) | [archive/SPRINT_SIGUIENTE_100_OPERATIVO.md](./archive/SPRINT_SIGUIENTE_100_OPERATIVO.md) | Producto usable end-to-end; gates técnicos documentados (`pre-deploy:verify`, `smoke:ux`, `REVISION_FINAL_PRE_DEPLOY.md`).        |
+| **Alineación masterplan (core)**                     | `masterplan.md`, `AUDITORIA_FULLSTACK.md`                                                | E1–E6 y gran parte de E7/E8 operativos; pendientes explícitos solo en backlog (Wallet B2B, Mercado Pago, SEO amplio, dashboards). |
 
 **No forma parte de este cierre (siguiente oleada de producto):**
 
@@ -118,12 +118,12 @@ Plantilla mínima que les pedís:
 
 ## Referencias
 
-| Documento | Uso |
-|-----------|-----|
+| Documento                                                                | Uso                                                  |
+| ------------------------------------------------------------------------ | ---------------------------------------------------- |
 | [PLAN_DE_TRABAJO_CIERRE_VERSION.md](./PLAN_DE_TRABAJO_CIERRE_VERSION.md) | Cierre técnico de versión y comandos de verificación |
-| [REVISION_FINAL_PRE_DEPLOY.md](./REVISION_FINAL_PRE_DEPLOY.md) | Checklist antes de cada deploy |
-| [PROD.md](./PROD.md) | Variables y demo off |
-| [PRUEBA-NAVEGADOR.md](./PRUEBA-NAVEGADOR.md) | Escenarios manuales detallados |
+| [REVISION_FINAL_PRE_DEPLOY.md](./REVISION_FINAL_PRE_DEPLOY.md)           | Checklist antes de cada deploy                       |
+| [PROD.md](./PROD.md)                                                     | Variables y demo off                                 |
+| [PRUEBA-NAVEGADOR.md](./PRUEBA-NAVEGADOR.md)                             | Escenarios manuales detallados                       |
 
 ---
 
