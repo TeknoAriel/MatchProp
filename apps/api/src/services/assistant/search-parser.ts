@@ -177,7 +177,8 @@ function parseSortBy(
 ): 'date_desc' | 'price_asc' | 'price_desc' | 'area_desc' | undefined {
   const lower = text.toLowerCase();
   if (
-    /\bm[aá]s\s+barat[oa]s?|ordenar\s+por\s+precio\s+asc|precio\s+asc|menor\s+precio/i.test(lower)
+    /\bm[aá]s\s+barat[oa]s?|\bbarat[oa]s?\b|\beconom/i.test(lower) ||
+    /ordenar\s+por\s+precio\s+asc|precio\s+asc|menor\s+precio/i.test(lower)
   )
     return 'price_asc';
   if (/\bm[aá]s\s+car[oa]s?|precio\s+desc|mayor\s+precio/i.test(lower)) return 'price_desc';
@@ -220,6 +221,7 @@ function cleanLocationFragment(raw: string): string {
 
 function parseLocation(text: string): string {
   const patterns = [
+    /(?:por|en)\s+(?:el\s+)?(centro|macrocentro|microcentro|zona\s+norte|zona\s+sur)\b/i,
     /en\s+([A-Za-záéíóúÁÉÍÓÚñÑ\s]+?)(?:\s+(?:casa|depto|departamento|terreno|local|oficina)|,|\.|$)/i,
     /en\s+([A-Za-záéíóúÁÉÍÓÚñÑ\s]+?)(?=\s*[,.]|$|\s+\d|\s+hasta|\s+desde|\s+m[aá]x)/i,
     /(zona\s+[A-Za-záéíóúÁÉÍÓÚñÑ\s]+?)(?:\s|,|\.|$)/i,
@@ -251,10 +253,30 @@ function parseLocation(text: string): string {
 
 function parseOperation(text: string): 'SALE' | 'RENT' | undefined {
   const lower = text.toLowerCase();
-  if (/comprar|venta|vender|for\s*sale|buy/i.test(lower) && !/alquiler|rent|arriendo/i.test(lower))
-    return 'SALE';
-  if (/alquiler|rent|arriendo|alquilar/i.test(lower)) return 'RENT';
+  const rentish = /alquiler|rent|arriendo|alquilar|temporal/i.test(lower);
+  const saleish =
+    /comprar|venta|vender|for\s*sale|\bbuy\b|invertir|inversi[oó]n|compra\b/i.test(lower) ||
+    /\bmi\s+casa\b|\bcasa\s+propia\b|\bser\s+propietario\b|\bpropietarios?\b/i.test(lower) ||
+    (!rentish && /\bmudarme\b|\bmudanza\b/.test(lower));
+  if (saleish && !rentish) return 'SALE';
+  if (rentish) return 'RENT';
   return undefined;
+}
+
+/** Señales blandas detectadas por reglas (no siempre se traducen a WHERE). */
+export function extractSoftPreferences(text: string): string[] {
+  const lower = text.toLowerCase();
+  const out = new Set<string>();
+  if (/\bfamilia|hijos|niñ[oa]s?|chicos\b/.test(lower)) out.add('familia');
+  if (/\bluminos/.test(lower)) out.add('luminoso');
+  if (/\bmodern[oa]s?\b/.test(lower)) out.add('moderno');
+  if (/\btranquil[oa]s?\b/.test(lower)) out.add('tranquilo');
+  if (/\bverde\b|vegetaci|arbol/.test(lower)) out.add('verde');
+  if (/\bchic[oa]s?\b|\bpequeñ[oa]s?\b|\bcompact[oa]s?\b/.test(lower)) out.add('compacto');
+  if (/\bpremium\b|\balta\s+gama\b|\blujos[oa]s?\b/.test(lower)) out.add('premium');
+  if (/\bcerca\s+de\s+todo\b|ubicaci[oó]n\s+central/.test(lower)) out.add('ubicación céntrica');
+  if (/\bmudarme\s+ya\b|\burgente\b|\brapido\b|\brápido\b/.test(lower)) out.add('urgente');
+  return [...out];
 }
 
 function parseCurrency(text: string): string | undefined {
@@ -477,6 +499,7 @@ export function parseSearchText(text: string): {
   filters: SearchFilters;
   explanation: string;
   warnings: string[];
+  softPreferences: string[];
 } {
   const t = text.trim();
   if (!t) {
@@ -486,6 +509,7 @@ export function parseSearchText(text: string): {
       warnings: [
         'No entendí criterios específicos. Probá con "departamento en Palermo" o "casa hasta 100k USD".',
       ],
+      softPreferences: [],
     };
   }
 
@@ -513,6 +537,7 @@ export function parseSearchText(text: string): {
   const source = parseSource(t);
   const propertyType = parsePropertyType(t);
   const amenities = parseAmenities(t);
+  const softPreferences = extractSoftPreferences(t);
   const aptoCredito = parseAptoCredito(t);
   const sortBy = parseSortBy(t);
   const photosCountMin = parsePhotosCountMin(t);
@@ -620,5 +645,5 @@ export function parseSearchText(text: string): {
     );
   }
 
-  return { filters, explanation, warnings };
+  return { filters, explanation, warnings, softPreferences };
 }

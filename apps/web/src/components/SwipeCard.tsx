@@ -158,7 +158,6 @@ export default function SwipeCard({
             media={card.media}
             alt={card.title ?? ''}
             controlsAlwaysVisible
-            carouselButtonClass="opacity-0 group-hover:opacity-100 transition-opacity"
           />
           <div
             className="absolute inset-0 mp-card-gradient pointer-events-none"

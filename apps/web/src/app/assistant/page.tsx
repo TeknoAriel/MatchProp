@@ -69,6 +69,7 @@ function normalizePreviewItems(raw: unknown): ListingCard[] {
 function AssistantPageContent() {
   const searchParams = useSearchParams();
   const chatInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const startFreshNextRef = useRef(false);
   const [adjustContextBanner, setAdjustContextBanner] = useState<string | null>(null);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -99,6 +100,8 @@ function AssistantPageContent() {
   >({});
   const [contactingId, setContactingId] = useState<string | null>(null);
   const [toast2, setToast2] = useState<string | null>(null);
+  /** Señales blandas del último intent (preview / “cargar más”). */
+  const [lastSoftRank, setLastSoftRank] = useState<string[]>([]);
   const router = useRouter();
   const {
     isSupported: voiceSupported,
@@ -175,14 +178,17 @@ function AssistantPageContent() {
   async function fetchPreview(
     filters: SearchFilters,
     cursor?: string | null,
-    mode: FallbackMode = 'STRICT'
+    mode: FallbackMode = 'STRICT',
+    softPreferences?: string[]
   ): Promise<{ items: ListingCard[]; nextCursor: string | null; finalMode: FallbackMode }> {
     const body: {
       filters: SearchFilters;
       cursor?: string;
       limit?: number;
       fallbackMode?: FallbackMode;
+      softPreferences?: string[];
     } = { filters, limit: 10, fallbackMode: mode };
+    if (softPreferences?.length) body.softPreferences = softPreferences;
     if (cursor) body.cursor = cursor;
     const res = await fetch(`${API_BASE}/assistant/preview`, {
       method: 'POST',
@@ -207,7 +213,12 @@ function AssistantPageContent() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ filters, limit: 10, fallbackMode: nextMode }),
+          body: JSON.stringify({
+            filters,
+            limit: 10,
+            fallbackMode: nextMode,
+            ...(softPreferences?.length ? { softPreferences } : {}),
+          }),
         });
         if (fb.ok) {
           const fbData = (await fb.json()) as { items?: unknown[]; nextCursor?: string | null };
@@ -231,6 +242,14 @@ function AssistantPageContent() {
       return;
     }
     setError(null);
+    const previousFilters =
+      !startFreshNextRef.current &&
+      result?.filters &&
+      Object.keys(result.filters).length > 0
+        ? result.filters
+        : undefined;
+    if (startFreshNextRef.current) startFreshNextRef.current = false;
+
     setResult(null);
     setPreviewItems([]);
     setPreviewNextCursor(null);
@@ -238,13 +257,17 @@ function AssistantPageContent() {
     setFallbackMode('STRICT');
     setPropertyTypeFilter(null);
     setOperationFilter(null);
+
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/assistant/search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ text: q }),
+        body: JSON.stringify({
+          text: q,
+          ...(previousFilters ? { previousFilters } : {}),
+        }),
       });
       if (res.status === 401) {
         router.replace('/login');
@@ -274,9 +297,14 @@ function AssistantPageContent() {
       setResult(data);
       setSavedId(null);
       const filters = data.filters ?? {};
+      const softRank = [
+        ...(data.intent?.softPreferences ?? []),
+        ...(data.intent?.lifestyleSignals ?? []),
+      ];
+      setLastSoftRank(softRank);
       try {
         if (Object.keys(filters).length > 0) {
-          const preview = await fetchPreview(filters, null, 'STRICT');
+          const preview = await fetchPreview(filters, null, 'STRICT', softRank);
           setPreviewItems(preview.items);
           setPreviewNextCursor(preview.nextCursor);
           setFallbackMode(preview.finalMode);
@@ -291,7 +319,7 @@ function AssistantPageContent() {
             }).catch(() => {});
           }
         } else {
-          const { items, nextCursor: nc } = await fetchPreview({}, null, 'FEED');
+          const { items, nextCursor: nc } = await fetchPreview({}, null, 'FEED', softRank);
           setPreviewItems(items);
           setPreviewNextCursor(nc);
           setFallbackMode('FEED');
@@ -372,7 +400,12 @@ function AssistantPageContent() {
     setError(null);
 
     try {
-      const { items, nextCursor, finalMode } = await fetchPreview(filters, cursor, useMode);
+      const { items, nextCursor, finalMode } = await fetchPreview(
+        filters,
+        cursor,
+        useMode,
+        lastSoftRank
+      );
       if (isLoadMore) {
         setPreviewItems((prev) => [...prev, ...items]);
       } else {
@@ -565,11 +598,11 @@ function AssistantPageContent() {
         {/* Hero: contá lo que necesitás */}
         <section className="text-center md:text-left">
           <h1 className="text-2xl md:text-3xl font-bold text-[var(--mp-foreground)] mb-2">
-            Asistente avanzado
+            Asistente de búsqueda
           </h1>
           <p className="text-[var(--mp-muted)] text-sm md:text-base max-w-lg">
-            Escribí o hablá en lenguaje natural. Te mostramos los mejores matches según tus gustos.
-            Cuanto más nos contás, mejor afinamos.
+            Interpretamos tu intención (texto o voz), traducimos a filtros reales del catálogo y te
+            mostramos resultados rankeados. Podés refinar en mensajes cortos sin empezar de cero.
           </p>
         </section>
 
@@ -649,10 +682,25 @@ function AssistantPageContent() {
               )}
             </div>
           )}
-          <p className="text-xs text-[var(--mp-muted)] mt-2">
-            Podés refinar escribiendo de nuevo: &quot;con cochera&quot;, &quot;más barato&quot;,
-            &quot;solo venta&quot;.
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
+            <p className="text-xs text-[var(--mp-muted)]">
+              Refiná con frases cortas: &quot;con cochera&quot;, &quot;más barato&quot;, &quot;solo
+              depto&quot;.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                startFreshNextRef.current = true;
+                setResult(null);
+                setPreviewItems([]);
+                setPreviewNextCursor(null);
+                setLastSoftRank([]);
+              }}
+              className="text-xs font-medium text-[var(--mp-accent)] hover:underline shrink-0"
+            >
+              Nueva búsqueda desde cero
+            </button>
+          </div>
         </section>
 
         {/* Acceso rápido compacto */}
@@ -750,6 +798,30 @@ function AssistantPageContent() {
                   {w}
                 </p>
               ))}
+
+            {result.intent?.interpretationNotes?.length ? (
+              <ul className="text-xs text-[var(--mp-muted)] list-disc pl-4 space-y-0.5">
+                {result.intent.interpretationNotes.map((n, i) => (
+                  <li key={i}>{n}</li>
+                ))}
+              </ul>
+            ) : null}
+            {result.intent &&
+            (result.intent.softPreferences?.length || result.intent.lifestyleSignals?.length) ? (
+              <p className="text-xs text-[var(--mp-muted)]">
+                <span className="font-medium text-[var(--mp-foreground)]">Señales suaves</span>{' '}
+                (priorizan títulos similares, no excluyen propiedades):{' '}
+                {[
+                  ...(result.intent.softPreferences ?? []),
+                  ...(result.intent.lifestyleSignals ?? []),
+                ].join(', ')}
+              </p>
+            ) : null}
+            {result.intent?.usedLlm ? (
+              <p className="text-xs text-emerald-700">
+                Capa de lenguaje natural activa (API configurada en Integraciones → Asistente IA).
+              </p>
+            ) : null}
 
             {hasFilters && (
               <>

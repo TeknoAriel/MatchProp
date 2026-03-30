@@ -19,7 +19,7 @@ const API_BASE = '/api';
 const PRODUCT_NAME = process.env.NEXT_PUBLIC_PRODUCT_NAME || 'MatchProp';
 
 type ListingCardWithMedia = ListingCard & {
-  media?: { url: string; sortOrder: number }[];
+  media?: { url: string; sortOrder: number; type?: string }[];
 };
 
 /** Normaliza un item del feed para evitar undefined/null que rompan la UI (listados). */
@@ -28,17 +28,22 @@ function normalizeCard(raw: unknown): ListingCardWithMedia | null {
   const c = raw as Record<string, unknown>;
   const id = typeof c.id === 'string' ? c.id : null;
   if (!id) return null;
-  const media: { url: string; sortOrder: number }[] | undefined = Array.isArray(c.media)
+  const media: { url: string; sortOrder: number; type?: string }[] | undefined = Array.isArray(
+    c.media
+  )
     ? c.media
         .map((m) => {
           if (!m || typeof m !== 'object') return null;
           const mm = m as Record<string, unknown>;
           const url = typeof mm.url === 'string' && mm.url ? mm.url : null;
           const sortOrder = typeof mm.sortOrder === 'number' ? mm.sortOrder : 0;
+          const typ = typeof mm.type === 'string' && mm.type.trim() ? mm.type.trim() : undefined;
           if (!url) return null;
-          return { url, sortOrder };
+          const row: { url: string; sortOrder: number; type?: string } = { url, sortOrder };
+          if (typ) row.type = typ;
+          return row;
         })
-        .filter((x): x is { url: string; sortOrder: number } => x !== null)
+        .filter((x): x is { url: string; sortOrder: number; type?: string } => x !== null)
     : undefined;
   return {
     id,
@@ -757,6 +762,7 @@ function FeedListPageContent() {
                           heroImageUrl={card.heroImageUrl}
                           media={(card as ListingCardWithMedia).media}
                           alt={card.title ?? ''}
+                          controlsAlwaysVisible
                         />
                       </div>
                       <div className="p-3">
@@ -1042,6 +1048,7 @@ function FeedListPageContent() {
                         heroImageUrl={card.heroImageUrl}
                         media={(card as ListingCardWithMedia).media}
                         alt={card.title ?? ''}
+                        controlsAlwaysVisible
                       />
                     </div>
                     <div className="p-3">

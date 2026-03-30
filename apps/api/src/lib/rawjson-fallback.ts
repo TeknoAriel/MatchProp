@@ -1,3 +1,5 @@
+import { inferMediaTypeFromUrl, pickHeroUrlFromMedia } from './media-url-kind.js';
+
 /**
  * Extrae imagen y título desde rawJson cuando heroImageUrl/title están vacíos.
  * Soporta formatos de Kiteprop (photos, imagenes, images), Toctoc (fotos), Zonaprop, iCasas, etc.
@@ -5,7 +7,7 @@
 export function extractFromRawJson(raw: unknown): {
   heroImageUrl: string | null;
   title: string | null;
-  mediaUrls: { url: string; sortOrder: number }[];
+  mediaUrls: { url: string; sortOrder: number; type?: string }[];
 } {
   if (!raw || typeof raw !== 'object') {
     return { heroImageUrl: null, title: null, mediaUrls: [] };
@@ -20,12 +22,16 @@ export function extractFromRawJson(raw: unknown): {
     null;
 
   // Imágenes: múltiples formatos conocidos
-  let mediaUrls: { url: string; sortOrder: number }[] = [];
+  let mediaUrls: { url: string; sortOrder: number; type?: string }[] = [];
 
   function addFromStringArray(arr: unknown[]): boolean {
     const valid = arr
       .filter((p): p is string => typeof p === 'string' && p.length > 0)
-      .map((url, i) => ({ url: String(url), sortOrder: i }));
+      .map((url, i) => {
+        const u = String(url);
+        const kind = inferMediaTypeFromUrl(u);
+        return { url: u, sortOrder: i, type: kind };
+      });
     if (valid.length) {
       mediaUrls = valid;
       return true;
@@ -33,14 +39,41 @@ export function extractFromRawJson(raw: unknown): {
     return false;
   }
 
-  function addFromObjectArray(arr: { url?: string; orden?: number; order?: number }[]): boolean {
+  function addFromObjectArray(
+    arr: {
+      url?: string;
+      orden?: number;
+      order?: number;
+      type?: string;
+      tipo?: string;
+      mediaType?: string;
+    }[]
+  ): boolean {
     const valid = arr
       .filter((f) => typeof f?.url === 'string' && f.url.length > 0)
-      .map((f, i) => ({
-        url: String(f.url),
-        sortOrder:
-          typeof f.orden === 'number' ? f.orden : typeof f.order === 'number' ? f.order : i,
-      }))
+      .map((f, i) => {
+        const url = String(f.url);
+        const explicit =
+          typeof f.type === 'string'
+            ? f.type
+            : typeof f.tipo === 'string'
+              ? f.tipo
+              : typeof f.mediaType === 'string'
+                ? f.mediaType
+                : undefined;
+        const kind =
+          explicit?.toUpperCase() === 'VIDEO' || explicit?.toLowerCase() === 'video'
+            ? 'VIDEO'
+            : explicit?.toUpperCase() === 'PHOTO' || explicit?.toLowerCase() === 'foto'
+              ? 'PHOTO'
+              : inferMediaTypeFromUrl(url);
+        return {
+          url,
+          sortOrder:
+            typeof f.orden === 'number' ? f.orden : typeof f.order === 'number' ? f.order : i,
+          type: kind,
+        };
+      })
       .sort((a, b) => a.sortOrder - b.sortOrder);
     if (valid.length) {
       mediaUrls = valid;
@@ -75,10 +108,13 @@ export function extractFromRawJson(raw: unknown): {
       (typeof r.cover_image === 'string' && r.cover_image.trim()) ||
       (typeof r.main_image === 'string' && r.main_image.trim()) ||
       null;
-    if (single) mediaUrls = [{ url: single, sortOrder: 0 }];
+    if (single) {
+      const kind = inferMediaTypeFromUrl(single);
+      mediaUrls = [{ url: single, sortOrder: 0, type: kind }];
+    }
   }
 
-  const heroImageUrl = mediaUrls[0]?.url ?? null;
+  const heroImageUrl = mediaUrls.length ? pickHeroUrlFromMedia(mediaUrls) : null;
 
   return { heroImageUrl, title, mediaUrls };
 }

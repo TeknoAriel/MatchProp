@@ -36,7 +36,7 @@ export interface NormalizedListing {
   addressText?: string | null;
   locationText?: string | null;
   updatedAtSource?: Date | null;
-  mediaUrls?: { url: string; sortOrder: number }[];
+  mediaUrls?: { url: string; sortOrder: number; type?: string | null }[];
   details?: ListingDetailsFromIngest | null;
 }
 
@@ -50,5 +50,7 @@ export interface SourceConnector {
   fetchBatch(params: { cursor?: string | null; limit: number }): Promise<FetchBatchResult>;
   normalize(
     raw: RawListing
-  ): NormalizedListing & { mediaUrls?: { url: string; sortOrder: number }[] };
+  ): NormalizedListing & {
+    mediaUrls?: { url: string; sortOrder: number; type?: string | null }[];
+  };
 }

@@ -7,6 +7,7 @@ import ShareModal from '../../../components/ShareModal';
 import ReverseMatchingMiniDashboard from '../../../components/ReverseMatchingMiniDashboard';
 import InquiryModal from '../../../components/InquiryModal';
 import PremiumGraceBanner from '../../../components/PremiumGraceBanner';
+import ListingMediaView, { inferClientMediaKind } from '../../../components/ListingMediaView';
 import { recordEngagement, recordListingOpenSessionOnce } from '../../../lib/userEngagementClient';
 
 const API_BASE = '/api';
@@ -40,7 +41,7 @@ interface ListingDetail {
   heroImageUrl: string | null;
   source: string;
   details: ListingDetailsExtra | null;
-  media: { url: string; sortOrder: number }[];
+  media: { url: string; sortOrder: number; type?: string | null }[];
 }
 
 const INVALID_IDS = ['', 'undefined', 'null'];
@@ -332,14 +333,15 @@ export default function ListingDetailPage() {
         </Link>
 
         <div className="border rounded-2xl overflow-hidden bg-white shadow-lg">
-          <div className="aspect-video bg-slate-100 relative group">
+          <div className="aspect-video bg-slate-100 relative group overflow-hidden">
             {currentImage && !failedImages.has(currentImage.url) ? (
-              <img
-                src={currentImage.url}
+              <ListingMediaView
+                item={{ url: currentImage.url, type: currentImage.type }}
                 alt={listing.title ?? ''}
                 className="w-full h-full object-cover transition-transform duration-300"
-                loading="lazy"
-                onError={() => handleImageError(currentImage.url)}
+                fitClassName="absolute inset-0 w-full h-full"
+                onImageError={() => handleImageError(currentImage.url)}
+                onVideoError={() => handleImageError(currentImage.url)}
               />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-gradient-to-br from-slate-50 to-slate-200">
@@ -352,7 +354,7 @@ export default function ListingDetailPage() {
                 <button
                   type="button"
                   onClick={() => setImageIndex((i) => (i <= 0 ? images.length - 1 : i - 1))}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-lg opacity-90 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                   aria-label="Anterior"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -367,7 +369,7 @@ export default function ListingDetailPage() {
                 <button
                   type="button"
                   onClick={() => setImageIndex((i) => (i >= images.length - 1 ? 0 : i + 1))}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-lg opacity-90 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                   aria-label="Siguiente"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -390,8 +392,12 @@ export default function ListingDetailPage() {
                     />
                   ))}
                 </div>
-                <span className="absolute top-3 right-3 text-xs bg-black/60 text-white px-3 py-1.5 rounded-full font-medium">
-                  📷 {imageIndex + 1} / {images.length}
+                <span className="absolute top-3 right-3 z-10 text-xs bg-black/60 text-white px-3 py-1.5 rounded-full font-medium">
+                  {inferClientMediaKind(images[imageIndex]!.url, images[imageIndex]!.type) ===
+                  'PHOTO'
+                    ? '📷'
+                    : '🎬'}{' '}
+                  {imageIndex + 1} / {images.length}
                 </span>
               </>
             )}
@@ -405,7 +411,7 @@ export default function ListingDetailPage() {
                   onClick={() => setImageIndex(idx)}
                   className={`flex-shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all ${idx === imageIndex ? 'border-blue-500 ring-2 ring-blue-200' : 'border-transparent opacity-70 hover:opacity-100'}`}
                 >
-                  {!failedImages.has(img.url) ? (
+                  {inferClientMediaKind(img.url, img.type) === 'PHOTO' && !failedImages.has(img.url) ? (
                     <img
                       src={img.url}
                       alt=""
@@ -413,6 +419,21 @@ export default function ListingDetailPage() {
                       loading="lazy"
                       onError={() => handleImageError(img.url)}
                     />
+                  ) : inferClientMediaKind(img.url, img.type) === 'VIDEO_FILE' &&
+                    !failedImages.has(img.url) ? (
+                    <video
+                      src={img.url}
+                      className="w-full h-full object-cover bg-black"
+                      muted
+                      playsInline
+                      preload="metadata"
+                      aria-hidden
+                    />
+                  ) : inferClientMediaKind(img.url, img.type) !== 'PHOTO' &&
+                    !failedImages.has(img.url) ? (
+                    <div className="w-full h-full bg-slate-800 text-white flex items-center justify-center text-xs font-medium">
+                      ▶
+                    </div>
                   ) : (
                     <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400 text-xs">
                       🏠

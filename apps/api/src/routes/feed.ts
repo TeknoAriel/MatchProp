@@ -2,9 +2,10 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { encodeListingCursor, decodeListingCursor } from '../lib/cursor.js';
 import { getCachedTotal, setCachedTotal } from '../lib/feed-total-cache.js';
-import { extractFromRawJson } from '../lib/rawjson-fallback.js';
 import { amenityFiltersToAndList } from '../lib/amenity-filter.js';
 import { locationTextToPrismaClause } from '../lib/location-filter.js';
+import { mergeListingQualityWhere } from '../lib/listing-quality-where.js';
+import { feedItemWithRawJsonFallback } from '../lib/feed-listing-card.js';
 
 const FEED_LIMIT_DEFAULT = 20;
 const FEED_LIMIT_MAX = 50;
@@ -12,6 +13,16 @@ const VALID_OPERATIONS = ['SALE', 'RENT'] as const;
 const VALID_PROPERTY_TYPES = ['HOUSE', 'APARTMENT', 'LAND', 'OFFICE', 'OTHER'] as const;
 const VALID_CURRENCIES = ['USD', 'ARS'] as const;
 const LOCATION_TEXT_MAX_LEN = 200;
+
+const listingCardMediaItemSchema = {
+  type: 'object',
+  properties: {
+    url: { type: 'string' },
+    sortOrder: { type: 'integer' },
+    type: { type: 'string', description: 'PHOTO | VIDEO' },
+  },
+  required: ['url', 'sortOrder'],
+};
 
 /** Schema ListingCard (card liviana) */
 const listingCardSchema = {
@@ -26,6 +37,7 @@ const listingCardSchema = {
     areaTotal: { type: ['number', 'null'] },
     locationText: { type: ['string', 'null'] },
     heroImageUrl: { type: ['string', 'null'] },
+    media: { type: 'array', items: listingCardMediaItemSchema },
     publisherRef: { type: ['string', 'null'] },
     source: { type: 'string' },
     operationType: { type: ['string', 'null'] },
@@ -65,54 +77,6 @@ const AMENITIES_OPTIONS = [
   'baulera',
   'amoblado',
 ] as const;
-
-/** Aplica rawJson fallback cuando heroImageUrl o title faltan en el listing */
-function feedItemWithRawJsonFallback(l: {
-  id: string;
-  title: string | null;
-  heroImageUrl: string | null;
-  media?: { url: string; sortOrder: number }[];
-  rawJson?: unknown;
-  price?: number | null;
-  currency?: string | null;
-  bedrooms?: number | null;
-  bathrooms?: number | null;
-  areaTotal?: number | null;
-  locationText?: string | null;
-  publisherRef?: string | null;
-  source?: string;
-  operationType?: string | null;
-  lastSeenAt?: Date;
-}) {
-  let heroImageUrl = l.heroImageUrl ?? l.media?.[0]?.url ?? null;
-  let title = l.title;
-  let media = l.media;
-  if ((!heroImageUrl || !title?.trim()) && l.rawJson) {
-    const fb = extractFromRawJson(l.rawJson);
-    if (!heroImageUrl) heroImageUrl = fb.heroImageUrl;
-    if (!title?.trim()) title = fb.title;
-    if (!media?.length && fb.mediaUrls.length) {
-      media = fb.mediaUrls.map((m) => ({ url: m.url, sortOrder: m.sortOrder }));
-    }
-  }
-  return {
-    id: l.id,
-    title,
-    price: l.price ? Math.round(l.price) : null,
-    currency: l.currency,
-    bedrooms: l.bedrooms,
-    bathrooms: l.bathrooms,
-    areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
-    locationText: l.locationText,
-    heroImageUrl,
-    media: Array.isArray(media)
-      ? media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }))
-      : undefined,
-    publisherRef: l.publisherRef,
-    source: l.source,
-    operationType: l.operationType,
-  };
-}
 
 type FeedFilters = {
   operationType?: string;
@@ -719,7 +683,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
         media: {
           orderBy: { sortOrder: 'asc' as const },
           take: 6,
-          select: { url: true, sortOrder: true },
+          select: { url: true, sortOrder: true, type: true },
         },
       } as const;
 
@@ -755,6 +719,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
         swipeDecisions: { none: { userId: user.userId } },
         ...filtersToWhere(activeFilters),
       };
+      mergeListingQualityWhere(baseWhere);
       let findWhere = buildFindWhere(baseWhere);
 
       let total: number | null = null;
@@ -794,6 +759,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
             swipeDecisions: { none: { userId: user.userId } },
             ...filtersToWhere(rf),
           };
+          mergeListingQualityWhere(bw);
           const fw = buildFindWhere(bw);
           const tryRaw = await prisma.listing.findMany({
             where: fw,
@@ -834,10 +800,11 @@ export async function feedRoutes(fastify: FastifyInstance) {
           : null;
 
       if (items.length === 0 && !hasCursor && !feedAll && hasRestrictiveFilters) {
-        const fallbackWhere = {
+        const fallbackWhere: Record<string, unknown> = {
           status: 'ACTIVE' as const,
           swipeDecisions: { none: { userId: user.userId } },
         };
+        mergeListingQualityWhere(fallbackWhere);
         const catalogOrderBy = [{ createdAt: 'desc' as const }, { id: 'desc' as const }];
         const fallbackRaw = await prisma.listing.findMany({
           where: fallbackWhere,
@@ -915,14 +882,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
                     locationText: { type: ['string', 'null'] },
                     media: {
                       type: 'array',
-                      items: {
-                        type: 'object',
-                        properties: {
-                          url: { type: 'string' },
-                          sortOrder: { type: 'integer' },
-                        },
-                        required: ['url', 'sortOrder'],
-                      },
+                      items: listingCardMediaItemSchema,
                     },
                   },
                 },
@@ -1019,6 +979,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
         lat: fw.lat ?? { not: null },
         lng: fw.lng ?? { not: null },
       };
+      mergeListingQualityWhere(baseWhere);
 
       const itemsRaw = await prisma.listing.findMany({
         where: baseWhere,
@@ -1043,7 +1004,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
           media: {
             orderBy: { sortOrder: 'asc' },
             take: 6,
-            select: { url: true, sortOrder: true },
+            select: { url: true, sortOrder: true, type: true },
           },
         },
       });
