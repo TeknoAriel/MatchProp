@@ -10,6 +10,11 @@ import type { NormalizedListing } from '../../services/ingest/types.js';
 const SOURCE = 'API_PARTNER_1' as const;
 const EXT_ID = 'listing-matches-test-' + Date.now();
 
+/** Una foto para pasar mergeListingQualityWhere (feed/alertas). */
+const SAMPLE_MEDIA = [
+  { url: 'https://example.com/listing-matches-test.jpg', sortOrder: 0 },
+] as const;
+
 function norm(overrides: Partial<NormalizedListing>): NormalizedListing {
   return {
     source: SOURCE,
@@ -23,6 +28,7 @@ function norm(overrides: Partial<NormalizedListing>): NormalizedListing {
     operationType: 'SALE',
     propertyType: 'APARTMENT',
     locationText: 'Palermo, CABA',
+    mediaUrls: [...SAMPLE_MEDIA],
     ...overrides,
   };
 }

@@ -182,7 +182,6 @@ export default function DashboardPage() {
     const tb = new Date(b.updatedAt).getTime();
     return tb - ta;
   });
-  const recentTop3 = sortedSearches.slice(0, 3);
   const searchSummaryLine = activeSearch
     ? [activeSearch.name?.trim(), filtersToHumanSummary(activeSearch.filters)]
         .filter(Boolean)
@@ -225,11 +224,14 @@ export default function DashboardPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-[var(--mp-foreground)] tracking-tight">
             ¿Qué estás buscando?
           </h1>
-          {level === 'NEW' && (
-            <p className="mt-2 text-sm text-[var(--mp-muted)] max-w-xl">
-              Escribí en tus palabras: la IA entiende zona, ambientes y precio.
-            </p>
-          )}
+          <p className="mt-2 text-sm text-[var(--mp-muted)] max-w-xl">
+            Escribí en tus palabras (o por voz); la IA arma filtros y te llevamos al match. Para
+            afinar paso a paso usá{' '}
+            <Link href="/assistant" className="text-[var(--mp-accent)] font-medium hover:underline">
+              el asistente
+            </Link>
+            .
+          </p>
         </div>
         <Link
           href="/me/saved"
@@ -280,24 +282,6 @@ export default function DashboardPage() {
             Lista
           </Link>
         </nav>
-      )}
-
-      {level === 'ADVANCED' && recentTop3.length > 0 && (
-        <p className="mb-6 text-xs text-[var(--mp-muted)] leading-relaxed">
-          <span className="font-semibold text-[var(--mp-foreground)]">Últimas búsquedas: </span>
-          {recentTop3.map((s, i) => (
-            <span key={s.id}>
-              {i > 0 ? ' · ' : null}
-              <button
-                type="button"
-                className="text-[var(--mp-accent)] hover:underline font-medium"
-                onClick={() => void handleGoToMatch(s.id)}
-              >
-                {s.name || s.queryText?.slice(0, 36) || 'Sin nombre'}
-              </button>
-            </span>
-          ))}
-        </p>
       )}
 
       <div className="mb-10">
@@ -380,9 +364,6 @@ export default function DashboardPage() {
             >
               Seguí donde estabas
             </p>
-            <p className="text-xs text-[var(--mp-muted)] mt-1 mb-2">
-              Tu búsqueda activa se ve siempre en la barra superior; acá tenés atajos para seguir.
-            </p>
             <p className="text-sm text-[var(--mp-foreground)]">
               {stats.listingOpens} {stats.listingOpens === 1 ? 'vista' : 'vistas'} · {stats.saves}{' '}
               {stats.saves === 1 ? 'guardada' : 'guardadas'}
@@ -433,22 +414,16 @@ export default function DashboardPage() {
           </p>
         )}
 
-        <div className="mt-8 flex flex-col sm:flex-row sm:flex-wrap gap-3">
-          <Link
-            href="/feed"
-            className="inline-flex items-center justify-center w-full sm:w-auto min-h-[52px] px-8 rounded-full font-semibold bg-[var(--mp-accent)] text-white border border-[var(--mp-accent-hover)] hover:opacity-[0.96] transition-opacity"
-          >
-            Explorar propiedades
-          </Link>
-          {level === 'ADVANCED' && (
+        {level !== 'ADVANCED' && (
+          <div className="mt-8">
             <Link
-              href="/feed/list"
-              className="inline-flex items-center justify-center w-full sm:w-auto min-h-[52px] px-6 rounded-full font-medium border border-[var(--mp-border)] text-[var(--mp-foreground)] bg-[var(--mp-card)] hover:bg-[var(--mp-bg)]"
+              href="/feed"
+              className="inline-flex items-center justify-center w-full sm:w-auto min-h-[52px] px-8 rounded-full font-semibold bg-[var(--mp-accent)] text-white border border-[var(--mp-accent-hover)] hover:opacity-[0.96] transition-opacity"
             >
-              Ver en lista
+              Explorar propiedades
             </Link>
-          )}
-        </div>
+          </div>
+        )}
 
         {sortedSearches.length > 0 && (
           <section

@@ -43,7 +43,7 @@ Regla: **no duplicar** la misma tarea en detalle en ambos; en `backlog` va la é
 | ------------------------ | -------------------------------------------------------------------------------------- | --------------------------------------------- |
 | **Analytics trackEvent** | Modelo/helper `trackEvent` sin PII; eventos mínimos (vistas, guardados, activaciones). | Endpoint o servicio; sin exponer PII en logs. |
 | **Virtualización lista** | Lista larga en feed/list con virtualización para mejor performance.                    | Scroll fluido con muchos ítems.               |
-| **Portal SEO**           | Páginas públicas indexables (landing, búsquedas por zona).                             | Meta tags, sitemap.                           |
+| **Portal SEO**           | Páginas públicas indexables (fichas, zonas, sitemap dinámico).                         | **Parcial:** ver § Sprint 4 siguiente.        |
 | **Dashboard analytics**  | Vistas básicas para admin (leads, alertas, matches).                                   | Solo lectura; datos agregados.                |
 
 ### Mejoras técnicas
@@ -54,6 +54,14 @@ Regla: **no duplicar** la misma tarea en detalle en ambos; en `backlog` va la é
 | **Fastify json schema**  | Reemplazar shorthand schema (FSTDEP021) por objeto completo para Fastify v5.         | **Hecho:** `/listings/share`, `/universal/feed`, `/universal/listings`: querystring con type: 'object', properties. |
 | **Punycode**             | Sustituir uso de `punycode` por alternativa userland si Node lo depreca.             | Pendiente.                                                                                                          |
 | **Admin ESLint**         | Mantener reglas react-hooks (ej. dependencias de useEffect) sin warnings en build.   | Hecho (visits: useCallback).                                                                                        |
+
+### Sprint 4 — siguiente cola (después de fichas públicas + sitemap)
+
+1. **Landing pública (plan 4.2):** home con H1 claro, bloques de valor, CTAs a login/feed; meta `description` específica.
+2. **Lighthouse SEO:** objetivo > 90 en `/` y `/listing/[id]` (títulos, contraste, alt en imágenes donde aplique).
+3. **JSON-LD opcional:** `RealEstateListing` o `Product` en el layout de ficha (coherente con datos públicos ya expuestos).
+4. **Ops:** en Vercel (proyecto Web) definir `API_SERVER_URL` apuntando a la API pública para que `generateMetadata` y `sitemap.ts` resuelvan bien en build/ISR (en local ya usa `http://127.0.0.1:3001`).
+5. **Si hiciera falta:** rate limit dedicado en API para `/public/listings/*` frente a crawlers agresivos.
 
 ---
 
@@ -73,4 +81,4 @@ Regla: **no duplicar** la misma tarea en detalle en ambos; en `backlog` va la é
 
 ---
 
-_Última actualización: 2026-03-20 — alineado a FOCO_2026, CI y ALINEACION_MASTERPLAN._
+_Última actualización: 2026-03-27 — Sprint 4 fichas/sitemap; cola SEO arriba._

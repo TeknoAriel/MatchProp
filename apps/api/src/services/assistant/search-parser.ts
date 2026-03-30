@@ -1,10 +1,25 @@
 import type { SearchFilters } from '@matchprop/shared';
-import { canonicalizeAmenityToken } from '../../lib/amenity-filter.js';
+import { AMENITY_SPECS, canonicalizeAmenityToken } from '../../lib/amenity-filter.js';
+import { capSearchFilters, countActiveFilterAtoms } from './search-filter-cap.js';
 
 const LOCATION_MAX = 200;
 const TITLE_MAX = 100;
 const DESC_MAX = 200;
 const VALID_PROPERTY_TYPES = ['HOUSE', 'APARTMENT', 'LAND', 'OFFICE', 'OTHER'] as const;
+
+/**
+ * Sinónimos y abreviaturas → forma que matchean las regex del parser (depto, pileta, etc.).
+ */
+function normalizeSearchDialect(text: string): string {
+  return text
+    .replace(/\bdepar(?=[\s,.]|$)/gi, 'depto')
+    .replace(/\bdepars\b/gi, 'deptos')
+    .replace(/\bdpto\b/gi, 'depto')
+    .replace(/\bdptos\b/gi, 'deptos')
+    .replace(/\bmonoambiente\b/gi, 'monoambiente')
+    .replace(/\bpool\b/gi, 'piscina')
+    .replace(/\bswimming\s*pool\b/gi, 'piscina');
+}
 
 /** Origen del aviso (enum Prisma ListingSource). */
 const SOURCE_PHRASES: { pattern: RegExp; source: string }[] = [
@@ -177,7 +192,8 @@ function parseSortBy(
 ): 'date_desc' | 'price_asc' | 'price_desc' | 'area_desc' | undefined {
   const lower = text.toLowerCase();
   if (
-    /\bm[aá]s\s+barat[oa]s?|ordenar\s+por\s+precio\s+asc|precio\s+asc|menor\s+precio/i.test(lower)
+    /\bm[aá]s\s+barat[oa]s?|\bbarat[oa]s?\b|\beconom/i.test(lower) ||
+    /ordenar\s+por\s+precio\s+asc|precio\s+asc|menor\s+precio/i.test(lower)
   )
     return 'price_asc';
   if (/\bm[aá]s\s+car[oa]s?|precio\s+desc|mayor\s+precio/i.test(lower)) return 'price_desc';
@@ -220,10 +236,13 @@ function cleanLocationFragment(raw: string): string {
 
 function parseLocation(text: string): string {
   const patterns = [
+    /(?:por|en)\s+(?:el\s+)?(centro|macrocentro|microcentro|zona\s+norte|zona\s+sur)\b/i,
+    /\b(?:busco|buscamos|quiero|necesito|ver|alquilar|comprar|propiedad|vivienda)\b[^,.]{0,50}?\s+en\s+([A-Za-záéíóúÁÉÍÓÚñÑ][A-Za-záéíóúÁÉÍÓÚñÑ\s]{1,48}?)(?=\s*[,.;]|$|\s+(?:con|hasta|desde|que|y|o|para)\s|\s+\d)/i,
     /en\s+([A-Za-záéíóúÁÉÍÓÚñÑ\s]+?)(?:\s+(?:casa|depto|departamento|terreno|local|oficina)|,|\.|$)/i,
     /en\s+([A-Za-záéíóúÁÉÍÓÚñÑ\s]+?)(?=\s*[,.]|$|\s+\d|\s+hasta|\s+desde|\s+m[aá]x)/i,
+    /\ben\s+([A-Za-záéíóúÁÉÍÓÚñÑ]{4,}(?:\s+[A-Za-záéíóúÁÉÍÓÚñÑ]+){0,2})\s*$/i,
     /(zona\s+[A-Za-záéíóúÁÉÍÓÚñÑ\s]+?)(?:\s|,|\.|$)/i,
-    /(?:en\s+)?(Palermo|Nordelta|Microcentro|Rosario|CABA|Belgrano|Caballito|Villa\s+Crespo|Funes|Fisherton|Roldán|Córdoba|Mendoza|Pilar|Tigre|San\s+Isidro|Vicente\s+López)/i,
+    /(?:en\s+)?(Palermo|Nordelta|Microcentro|Rosario|CABA|Belgrano|Caballito|Villa\s+Crespo|Funes|Fisherton|Roldán|Córdoba|Mendoza|Pilar|Tigre|San\s+Isidro|Vicente\s+López|Santa\s+Fe|La\s+Plata|Mar\s+del\s+Plata|Salta|Tucumán|Neuquén|Bariloche)/i,
   ];
   for (const p of patterns) {
     const m = text.match(p);
@@ -251,10 +270,30 @@ function parseLocation(text: string): string {
 
 function parseOperation(text: string): 'SALE' | 'RENT' | undefined {
   const lower = text.toLowerCase();
-  if (/comprar|venta|vender|for\s*sale|buy/i.test(lower) && !/alquiler|rent|arriendo/i.test(lower))
-    return 'SALE';
-  if (/alquiler|rent|arriendo|alquilar/i.test(lower)) return 'RENT';
+  const rentish = /alquiler|rent|arriendo|alquilar|temporal/i.test(lower);
+  const saleish =
+    /comprar|venta|vender|for\s*sale|\bbuy\b|invertir|inversi[oó]n|compra\b/i.test(lower) ||
+    /\bmi\s+casa\b|\bcasa\s+propia\b|\bser\s+propietario\b|\bpropietarios?\b/i.test(lower) ||
+    (!rentish && /\bmudarme\b|\bmudanza\b/.test(lower));
+  if (saleish && !rentish) return 'SALE';
+  if (rentish) return 'RENT';
   return undefined;
+}
+
+/** Señales blandas detectadas por reglas (no siempre se traducen a WHERE). */
+export function extractSoftPreferences(text: string): string[] {
+  const lower = text.toLowerCase();
+  const out = new Set<string>();
+  if (/\bfamilia|hijos|niñ[oa]s?|chicos\b/.test(lower)) out.add('familia');
+  if (/\bluminos/.test(lower)) out.add('luminoso');
+  if (/\bmodern[oa]s?\b/.test(lower)) out.add('moderno');
+  if (/\btranquil[oa]s?\b/.test(lower)) out.add('tranquilo');
+  if (/\bverde\b|vegetaci|arbol/.test(lower)) out.add('verde');
+  if (/\bchic[oa]s?\b|\bpequeñ[oa]s?\b|\bcompact[oa]s?\b/.test(lower)) out.add('compacto');
+  if (/\bpremium\b|\balta\s+gama\b|\blujos[oa]s?\b/.test(lower)) out.add('premium');
+  if (/\bcerca\s+de\s+todo\b|ubicaci[oó]n\s+central/.test(lower)) out.add('ubicación céntrica');
+  if (/\bmudarme\s+ya\b|\burgente\b|\brapido\b|\brápido\b/.test(lower)) out.add('urgente');
+  return [...out];
 }
 
 function parseCurrency(text: string): string | undefined {
@@ -306,7 +345,7 @@ function parsePropertyType(text: string): string[] | undefined {
       lower
     );
   const hasApt =
-    /\b(departamentos?|deptos?|\bdepto\b|apartments?|\bph\b|p\.h\.|monoambientes?|mono\s*ambientes?|semipisos?|lofts?|duplex\b)\b/i.test(
+    /\b(departamentos?|deptos?|\bdepto\b|depar\b|apartments?|\bph\b|p\.h\.|monoambientes?|mono\s*ambientes?|semipisos?|lofts?|duplex\b)\b/i.test(
       lower
     ) || /\bpiso\s+(alto|bajo|\d+)\b/i.test(lower);
   const hasLand =
@@ -323,7 +362,7 @@ function parsePropertyType(text: string): string[] | undefined {
     (/\b(local|locales)\b/i.test(lower) && /\b(comercial|showroom|galería|galeria)\b/i.test(lower));
 
   const dwellingMention =
-    /\b(departamentos?|deptos?|\bdepto\b|monoambientes?|mono\s*ambientes?|semipisos?|lofts?|casas?|ph\b|terrenos?|lotes?|locales?\s+comercial|oficinas?|duplex\b)\b/i.test(
+    /\b(departamentos?|deptos?|\bdepto\b|depar\b|monoambientes?|mono\s*ambientes?|semipisos?|lofts?|casas?|ph\b|terrenos?|lotes?|locales?\s+comercial|oficinas?|duplex\b)\b/i.test(
       lower
     ) || /\bpiso\s+(alto|bajo|\d+)\b/i.test(lower);
 
@@ -355,7 +394,7 @@ function parsePropertyType(text: string): string[] | undefined {
       HOUSE:
         /\b(casas?|chalets?|chalet|viviendas?\s+unifamiliares?|vivienda\s+unifamiliar|houses?)\b/i,
       APARTMENT:
-        /\b(departamentos?|deptos?|\bdepto\b|apartments?|\bph\b|p\.h\.|monoambientes?|mono\s*ambientes?|semipisos?|lofts?|duplex\b|piso\s+(alto|bajo|\d+))\b/i,
+        /\b(departamentos?|deptos?|\bdepto\b|depar\b|apartments?|\bph\b|p\.h\.|monoambientes?|mono\s*ambientes?|semipisos?|lofts?|duplex\b|piso\s+(alto|bajo|\d+))\b/i,
     };
     let best: { t: string; idx: number } | null = null;
     for (const t of unique) {
@@ -382,56 +421,29 @@ function parsePropertyType(text: string): string[] | undefined {
   return unique.length ? unique : undefined;
 }
 
-/** Mapeo: término en texto → clave canónica (sinónimos vía canonicalizeAmenityToken + amenity-filter). */
-const AMENITY_PATTERNS: { pattern: RegExp; key: string }[] = [
-  { pattern: /\b(pileta|pilta|piscina|piletas|piscinas)\b/i, key: 'pileta' },
-  {
-    pattern:
-      /\b(cochera|cocheras|garage|garages|estacionamiento|estacionamientos|playa\s+de\s+estacionamiento)\b/i,
-    key: 'cochera',
-  },
-  { pattern: /\b(jard[ií]n|jardines|patio|patios)\b/i, key: 'jardín' },
-  {
-    pattern: /\b(parrilla|parrillas|asador|asadores|churrasquera|churrasqueras|bbq|barbacoa)\b/i,
-    key: 'parrilla',
-  },
-  { pattern: /\b(quincho|quinchos)\b/i, key: 'quincho' },
-  { pattern: /\b(gimnasio|gimnasios|gym)\b/i, key: 'gimnasio' },
-  { pattern: /\b(amueblad[oa]|amoblad[oa]|muebles)\b/i, key: 'amoblado' },
-  {
-    pattern:
-      /\b(aire\s*acondicionad[oa]s?|climatizad[oa]s?|fr[ií]o\s+calor|ac\s+split|\bsplits?\b)\b/i,
-    key: 'aire acondicionado',
-  },
-  { pattern: /\b(calefacci[oó]n|calefaccion|caldera|radiadores)\b/i, key: 'calefacción' },
-  { pattern: /\b(chimenea|chimeneas)\b/i, key: 'chimenea' },
-  {
-    pattern: /\b(seguridad|porter[ií]a|porteria|encargado|vigilancia\s+privada)\b/i,
-    key: 'seguridad',
-  },
-  { pattern: /\b(ascensor|ascensores|elevador|elevadores)\b/i, key: 'ascensor' },
-  { pattern: /\b(terraza|terrazas|roof\s+garden|rooftop)\b/i, key: 'terraza' },
-  { pattern: /\b(balc[oó]n|balcon|balcones)\b/i, key: 'balcón' },
-  { pattern: /\b(lavadero|lavaderos)\b/i, key: 'lavadero' },
-  {
-    pattern: /\b(SUM|sal[oó]n\s+de\s+usos\s+m[uú]ltiples|usos\s+m[uú]ltiples)\b/i,
-    key: 'SUM',
-  },
-  { pattern: /\b(alarma|alarmas)\b/i, key: 'alarma' },
-  { pattern: /\b(baulera|bauleras|dep[oó]sito|deposito|bodega)\b/i, key: 'baulera' },
-  { pattern: /\b(paneles?\s+solares?|energ[ií]a\s+solar)\b/i, key: 'energía solar' },
-  { pattern: /\b(mascotas?|pet\s*friendly|acepta\s+mascotas)\b/i, key: 'mascotas' },
-  { pattern: /\b(hidromasaje|hidromasajes|jacuzzi|yacuzzi)\b/i, key: 'hidromasaje' },
-  { pattern: /\b(sauna|saunas)\b/i, key: 'sauna' },
-  { pattern: /\b(vigilancia|c[aá]maras?|circuito\s+cerrado)\b/i, key: 'vigilancia' },
-  { pattern: /\b(internet\s*wifi|wi-?fi|inal[aá]mbrico)\b/i, key: 'internet wifi' },
-  { pattern: /\b(solarium|sol[aá]rium)\b/i, key: 'solarium' },
-];
+/** Amenidades: misma fuente que el formulario / feed (`AMENITY_SPECS`) para objetividad. */
+function phraseMatchesAmenityPhrase(text: string, phrase: string): boolean {
+  const t = text.toLowerCase();
+  const p = phrase.toLowerCase().trim();
+  if (p.length < 2) return false;
+  if (/\s/.test(p)) return t.includes(p);
+  try {
+    const esc = p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`\\b${esc}\\b`, 'i').test(text);
+  } catch {
+    return t.includes(p);
+  }
+}
 
 function parseAmenities(text: string): string[] {
   const found = new Set<string>();
-  for (const { pattern, key } of AMENITY_PATTERNS) {
-    if (pattern.test(text)) found.add(canonicalizeAmenityToken(key));
+  for (const [canonical, spec] of Object.entries(AMENITY_SPECS)) {
+    for (const phrase of spec.contains) {
+      if (phraseMatchesAmenityPhrase(text, phrase)) {
+        found.add(canonicalizeAmenityToken(canonical));
+        break;
+      }
+    }
   }
   return Array.from(found);
 }
@@ -477,8 +489,9 @@ export function parseSearchText(text: string): {
   filters: SearchFilters;
   explanation: string;
   warnings: string[];
+  softPreferences: string[];
 } {
-  const t = text.trim();
+  const t = normalizeSearchDialect(text.trim());
   if (!t) {
     return {
       filters: {},
@@ -486,6 +499,7 @@ export function parseSearchText(text: string): {
       warnings: [
         'No entendí criterios específicos. Probá con "departamento en Palermo" o "casa hasta 100k USD".',
       ],
+      softPreferences: [],
     };
   }
 
@@ -513,94 +527,115 @@ export function parseSearchText(text: string): {
   const source = parseSource(t);
   const propertyType = parsePropertyType(t);
   const amenities = parseAmenities(t);
+  const softPreferences = extractSoftPreferences(t);
   const aptoCredito = parseAptoCredito(t);
   const sortBy = parseSortBy(t);
   const photosCountMin = parsePhotosCountMin(t);
   const listingAgeDays = parseListingAgeDays(t);
 
-  const filters: SearchFilters = {};
-  if (operation) filters.operationType = operation;
-  if (currency) filters.currency = currency;
-  if (priceMin != null) filters.priceMin = priceMin;
-  if (priceMax != null) filters.priceMax = priceMax;
+  const filtersRaw: SearchFilters = {};
+  if (operation) filtersRaw.operationType = operation;
+  if (currency) filtersRaw.currency = currency;
+  if (priceMin != null) filtersRaw.priceMin = priceMin;
+  if (priceMax != null) filtersRaw.priceMax = priceMax;
   if (bedroomsResult != null) {
-    if (bedroomsResult.isMax) filters.bedroomsMax = bedroomsResult.count;
-    else filters.bedroomsMin = bedroomsResult.count;
+    if (bedroomsResult.isMax) filtersRaw.bedroomsMax = bedroomsResult.count;
+    else filtersRaw.bedroomsMin = bedroomsResult.count;
   }
   if (bathroomsResult != null) {
-    if (bathroomsResult.isMax) filters.bathroomsMax = bathroomsResult.count;
-    else filters.bathroomsMin = bathroomsResult.count;
+    if (bathroomsResult.isMax) filtersRaw.bathroomsMax = bathroomsResult.count;
+    else filtersRaw.bathroomsMin = bathroomsResult.count;
   }
-  if (areaMin != null) filters.areaMin = areaMin;
-  if (areaMax != null) filters.areaMax = areaMax;
-  if (areaCoveredMin != null) filters.areaCoveredMin = areaCoveredMin;
-  if (locationText) filters.locationText = locationText;
-  if (addressText) filters.addressText = addressText;
-  if (titleContains) filters.titleContains = titleContains;
-  if (descriptionContains) filters.descriptionContains = descriptionContains;
-  if (keywords.length) filters.keywords = keywords;
-  if (source) filters.source = source;
-  if (propertyType?.length) filters.propertyType = propertyType;
-  if (amenities.length) filters.amenities = amenities;
-  if (aptoCredito === true) filters.aptoCredito = aptoCredito;
-  if (sortBy) filters.sortBy = sortBy;
-  if (photosCountMin != null) filters.photosCountMin = photosCountMin;
-  if (listingAgeDays != null) filters.listingAgeDays = listingAgeDays;
+  if (areaMin != null) filtersRaw.areaMin = areaMin;
+  if (areaMax != null) filtersRaw.areaMax = areaMax;
+  if (areaCoveredMin != null) filtersRaw.areaCoveredMin = areaCoveredMin;
+  if (locationText) filtersRaw.locationText = locationText;
+  if (addressText) filtersRaw.addressText = addressText;
+  if (titleContains) filtersRaw.titleContains = titleContains;
+  if (descriptionContains) filtersRaw.descriptionContains = descriptionContains;
+  if (keywords.length) filtersRaw.keywords = keywords;
+  if (source) filtersRaw.source = source;
+  if (propertyType?.length) filtersRaw.propertyType = propertyType;
+  if (amenities.length) filtersRaw.amenities = amenities;
+  if (aptoCredito === true) filtersRaw.aptoCredito = aptoCredito;
+  if (sortBy) filtersRaw.sortBy = sortBy;
+  if (photosCountMin != null) filtersRaw.photosCountMin = photosCountMin;
+  if (listingAgeDays != null) filtersRaw.listingAgeDays = listingAgeDays;
 
   /** Listados: por defecto siempre más recientes primero salvo que el texto pida otro orden. */
-  if (hasRecognizedFilters(filters) && filters.sortBy == null) {
-    filters.sortBy = 'date_desc';
+  if (hasRecognizedFilters(filtersRaw) && filtersRaw.sortBy == null) {
+    filtersRaw.sortBy = 'date_desc';
   }
 
+  const atomsBeforeCap = countActiveFilterAtoms(filtersRaw);
+  const filters = capSearchFilters(filtersRaw);
+  const capTrimmed = countActiveFilterAtoms(filters) < atomsBeforeCap;
+
   const parts: string[] = [];
-  if (operation) parts.push(operation === 'SALE' ? 'venta' : 'alquiler');
-  if (propertyType?.length) parts.push(propertyType.map((p) => p.toLowerCase()).join(' o '));
-  if (locationText) parts.push(`en ${locationText}`);
-  if (priceMin != null) {
-    parts.push(`desde ${priceMin.toLocaleString()}${currency ? ` ${currency}` : ''}`);
+  if (filters.operationType) parts.push(filters.operationType === 'SALE' ? 'venta' : 'alquiler');
+  if (filters.propertyType?.length) {
+    parts.push(filters.propertyType.map((p) => p.toLowerCase()).join(' o '));
   }
-  if (priceMax) {
+  if (filters.locationText) parts.push(`en ${filters.locationText}`);
+  if (filters.priceMin != null) {
     parts.push(
-      currency
-        ? `hasta ${priceMax.toLocaleString()} ${currency}`
-        : `hasta ${priceMax.toLocaleString()} (moneda no especificada)`
+      `desde ${filters.priceMin.toLocaleString()}${filters.currency ? ` ${filters.currency}` : ''}`
     );
   }
-  if (bedroomsResult) {
+  if (filters.priceMax != null) {
     parts.push(
-      bedroomsResult.isMax
+      filters.currency
+        ? `hasta ${filters.priceMax.toLocaleString()} ${filters.currency}`
+        : `hasta ${filters.priceMax.toLocaleString()} (moneda no especificada)`
+    );
+  }
+  if (filters.bedroomsMin != null) {
+    const matchLocal =
+      bedroomsResult && !bedroomsResult.isMax && bedroomsResult.count === filters.bedroomsMin;
+    parts.push(
+      matchLocal
+        ? `${bedroomsResult.count} ${bedroomsResult.word}`
+        : `al menos ${filters.bedroomsMin} dormitorios`
+    );
+  }
+  if (filters.bedroomsMax != null) {
+    const matchLocal =
+      bedroomsResult && bedroomsResult.isMax && bedroomsResult.count === filters.bedroomsMax;
+    parts.push(
+      matchLocal
         ? `máx ${bedroomsResult.count} ${bedroomsResult.word}`
-        : `${bedroomsResult.count} ${bedroomsResult.word}`
+        : `máx ${filters.bedroomsMax} dormitorios`
     );
   }
-  if (bathroomsResult) {
-    parts.push(
-      bathroomsResult.isMax
-        ? `máx ${bathroomsResult.count} baños`
-        : `${bathroomsResult.count} baños`
-    );
+  if (filters.bathroomsMin != null) {
+    parts.push(`${filters.bathroomsMin} baños`);
   }
-  if (areaMin != null) parts.push(`desde ${areaMin} m² totales`);
-  if (areaMax != null) parts.push(`hasta ${areaMax} m² totales`);
-  if (areaCoveredMin != null) parts.push(`cubiertos desde ${areaCoveredMin} m²`);
-  if (addressText) parts.push(`dirección similar a «${addressText}»`);
-  if (titleContains) parts.push(`título con «${titleContains}»`);
-  if (descriptionContains) parts.push(`descripción con «${descriptionContains}»`);
-  if (keywords.length) parts.push(`palabras clave: ${keywords.join(', ')}`);
-  if (source) parts.push(`origen ${source}`);
-  if (amenities.length) parts.push(`con ${amenities.join(', ')}`);
-  if (aptoCredito) parts.push('apto crédito');
-  if (sortBy) {
+  if (filters.bathroomsMax != null) {
+    parts.push(`máx ${filters.bathroomsMax} baños`);
+  }
+  if (filters.areaMin != null) parts.push(`desde ${filters.areaMin} m² totales`);
+  if (filters.areaMax != null) parts.push(`hasta ${filters.areaMax} m² totales`);
+  if (filters.areaCoveredMin != null) parts.push(`cubiertos desde ${filters.areaCoveredMin} m²`);
+  if (filters.addressText) parts.push(`dirección similar a «${filters.addressText}»`);
+  if (filters.titleContains) parts.push(`título con «${filters.titleContains}»`);
+  if (filters.descriptionContains) parts.push(`descripción con «${filters.descriptionContains}»`);
+  if (filters.keywords?.length) parts.push(`palabras clave: ${filters.keywords.join(', ')}`);
+  if (filters.source) parts.push(`origen ${filters.source}`);
+  if (filters.amenities?.length) parts.push(`con ${filters.amenities.join(', ')}`);
+  if (filters.aptoCredito) parts.push('apto crédito');
+  if (filters.sortBy) {
     const sortLabels: Record<string, string> = {
       price_asc: 'más baratas primero',
       price_desc: 'más caras primero',
       area_desc: 'más grandes primero',
       date_desc: 'más recientes primero',
     };
-    parts.push(sortLabels[sortBy] ?? sortBy);
+    parts.push(sortLabels[filters.sortBy] ?? filters.sortBy);
   }
-  if (photosCountMin != null) parts.push('con fotos');
-  if (listingAgeDays != null) parts.push(`publicadas últimos ${listingAgeDays} días`);
+  if (filters.photosCountMin != null) parts.push('con fotos');
+  if (filters.listingAgeDays != null) {
+    parts.push(`publicadas últimos ${filters.listingAgeDays} días`);
+  }
 
   const explanation =
     parts.length > 0
@@ -612,6 +647,11 @@ export function parseSearchText(text: string): {
     : [
         'No entendí criterios específicos. Probá con "departamento en Palermo" o "casa hasta 100k USD".',
       ];
+  if (capTrimmed && hasRecognizedFilters(filters)) {
+    warnings.push(
+      'Se aplicó un máximo de 20 criterios activos; se priorizó operación, tipo, ubicación y precio frente a extras.'
+    );
+  }
 
   // Validación defensiva: si explanation sugiere datos pero filters está vacío => bug
   if (parts.length > 0 && !hasRecognizedFilters(filters) && process.env.NODE_ENV !== 'production') {
@@ -620,5 +660,5 @@ export function parseSearchText(text: string): {
     );
   }
 
-  return { filters, explanation, warnings };
+  return { filters, explanation, warnings, softPreferences };
 }

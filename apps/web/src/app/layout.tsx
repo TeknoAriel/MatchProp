@@ -5,12 +5,14 @@ import { ToastProvider } from '../components/FunToast';
 import { UserEngagementProvider } from '../components/UserEngagementProvider';
 import AppShell from '../components/AppShell';
 import { BuildStamp } from '../components/BuildStamp';
+import { BetaBanner } from '../components/BetaBanner';
 
 const PRODUCT_NAME = process.env.NEXT_PUBLIC_PRODUCT_NAME || 'MatchProp';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://match-prop-web.vercel.app';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://matchprop.beta.vercel.app';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(APP_URL),
   title: { default: PRODUCT_NAME, template: `%s | ${PRODUCT_NAME}` },
   description:
     'Buscá y encontrá tu próximo inmueble. Match tipo Tinder, listas, alertas y consultas directas con inmobiliarias.',
@@ -42,6 +44,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="es" suppressHydrationWarning>
       <body className="antialiased min-h-screen overflow-x-hidden">
+        <BetaBanner />
         <ThemeProvider>
           <ToastProvider>
             <UserEngagementProvider>

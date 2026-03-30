@@ -72,10 +72,12 @@ export interface FeedResponse {
 
 // --- Sprint 1: ListingCard + FeedResponseV1 + DTOs ---
 
-/** Media item para carrusel */
+/** Media item para carrusel (foto o video según type) */
 export interface ListingCardMedia {
   url: string;
   sortOrder: number;
+  /** PHOTO | VIDEO (opcional; el cliente puede inferir por extensión de URL) */
+  type?: string;
 }
 
 /** Card liviana para feed Tinder (Listing canonical) */
@@ -165,9 +167,43 @@ export interface SavedSearchDTO {
   updatedAt: string;
 }
 
+/**
+ * Intención estructurada (explicación + trazabilidad). Los filtros duros viven en `SearchFilters`.
+ */
+export interface SearchIntent {
+  operation?: 'SALE' | 'RENT';
+  propertyTypes?: string[];
+  /** Texto de ubicación tal como lo expresó el usuario */
+  locationRaw?: string | null;
+  price?: {
+    min?: number | null;
+    max?: number | null;
+    currency?: string | null;
+  };
+  features?: {
+    bedroomsMin?: number | null;
+    bedroomsMax?: number | null;
+    bathroomsMin?: number | null;
+    bathroomsMax?: number | null;
+  };
+  amenities?: string[];
+  /** Claves de filtro aplicadas como “duras” en Prisma */
+  strictFilters?: string[];
+  /** Señales para ranking / copy; no siempre son WHERE */
+  softPreferences?: string[];
+  lifestyleSignals?: string[];
+  confidence: number;
+  rawQuery: string;
+  /** Notas del intérprete (reglas o LLM), p. ej. “‘mi casa’ → compra” */
+  interpretationNotes?: string[];
+  /** true si hubo capa LLM (API configurada) */
+  usedLlm?: boolean;
+}
+
 /** Respuesta del asistente de búsqueda */
 export interface AssistantSearchResponse {
   filters: SearchFilters;
   explanation: string;
   warnings?: string[];
+  intent?: SearchIntent;
 }

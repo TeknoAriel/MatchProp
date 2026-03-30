@@ -16,6 +16,11 @@ export interface ListingCursorPayload {
   /** Legacy (v1) y sorts por precio/superficie */
   lastSeenAt?: Date;
   id: string;
+  /**
+   * Si el GET /feed aplicó relajación de filtros (fallback), las páginas siguientes
+   * deben usar el mismo nivel; si no, se mezclan resultados filtrados y no filtrados.
+   */
+  relaxStep?: number;
 }
 
 function toBase64Url(b64: string): string {
@@ -56,9 +61,10 @@ export function decodeCursor(cursor: string | undefined): CursorPayload | null {
 }
 
 export function encodeListingCursor(payload: ListingCursorPayload): string {
-  const o: Record<string, string> = { id: payload.id };
+  const o: Record<string, string | number> = { id: payload.id };
   if (payload.createdAt) o.createdAt = payload.createdAt.toISOString();
   if (payload.lastSeenAt) o.lastSeenAt = payload.lastSeenAt.toISOString();
+  if (payload.relaxStep != null && payload.relaxStep >= 1) o.relaxStep = payload.relaxStep;
   const json = JSON.stringify(o);
   return toBase64Url(Buffer.from(json, 'utf8').toString('base64'));
 }
@@ -74,6 +80,7 @@ export function decodeListingCursor(cursor: string | undefined): ListingCursorPa
       lastSeenAt?: string;
       createdAt?: string;
       id?: string;
+      relaxStep?: number;
     };
     if (typeof decoded?.id !== 'string' || decoded.id.length > 50) return null;
     let createdAt: Date | undefined;
@@ -87,7 +94,12 @@ export function decodeListingCursor(cursor: string | undefined): ListingCursorPa
       if (!Number.isNaN(d.getTime())) lastSeenAt = d;
     }
     if (!createdAt && !lastSeenAt) return null;
-    return { id: decoded.id, createdAt, lastSeenAt };
+    let relaxStep: number | undefined;
+    if (typeof decoded.relaxStep === 'number' && Number.isFinite(decoded.relaxStep)) {
+      const rs = Math.floor(decoded.relaxStep);
+      if (rs >= 1 && rs <= 10) relaxStep = rs;
+    }
+    return { id: decoded.id, createdAt, lastSeenAt, relaxStep };
   } catch {
     return null;
   }

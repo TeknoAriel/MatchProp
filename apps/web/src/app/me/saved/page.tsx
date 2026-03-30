@@ -64,11 +64,12 @@ function toListingCardMini(item: SavedItemRaw): ListingCardMiniData | null {
   };
 }
 
-type TabType = 'FAVORITE' | 'LATER' | { listId: string; name: string };
+type TabType = 'FAVORITE' | 'LATER' | 'SAVED_SEARCHES' | { listId: string; name: string };
 
 interface SavedSearchItem {
   id: string;
   name: string;
+  queryText?: string | null;
   filters?: Record<string, unknown>;
 }
 
@@ -87,9 +88,11 @@ function SavedPageContent() {
   const [activeTab, setActiveTab] = useState<TabType>(
     listIdFromUrl && searchParams?.get('name')
       ? { listId: listIdFromUrl, name: searchParams.get('name') ?? '' }
-      : tabFromUrl === 'like'
-        ? 'LATER'
-        : 'FAVORITE'
+      : tabFromUrl === 'searches'
+        ? 'SAVED_SEARCHES'
+        : tabFromUrl === 'like'
+          ? 'LATER'
+          : 'FAVORITE'
   );
   const [searchModal, setSearchModal] = useState<{ id: string; name: string } | null>(null);
   const [listingsStatus, setListingsStatus] = useState<Record<string, ListingStatus>>({});
@@ -107,6 +110,8 @@ function SavedPageContent() {
   useEffect(() => {
     if (listIdFromUrl && searchParams?.get('name')) {
       setActiveTab({ listId: listIdFromUrl, name: searchParams.get('name') ?? '' });
+    } else if (tabFromUrl === 'searches') {
+      setActiveTab('SAVED_SEARCHES');
     } else if (tabFromUrl === 'like') {
       setActiveTab('LATER');
     } else if (tabFromUrl === 'favoritos' || !tabFromUrl) {
@@ -119,13 +124,6 @@ function SavedPageContent() {
       .then((res) => (res.ok ? res.json() : { lists: [] }))
       .then((data: { lists?: CustomList[] }) => setCustomLists(data?.lists ?? []))
       .catch(() => setCustomLists([]));
-  }, []);
-
-  const fetchSavedSearches = useCallback(() => {
-    fetch(`${API_BASE}/searches`, { credentials: 'include' })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data: unknown) => setSavedSearches(Array.isArray(data) ? data : []))
-      .catch(() => setSavedSearches([]));
   }, []);
 
   async function handleCargarSearch(searchId: string, view: 'match' | 'list') {
@@ -148,6 +146,7 @@ function SavedPageContent() {
   }
 
   const fetchSaved = useCallback(() => {
+    if (activeTab === 'SAVED_SEARCHES') return;
     setLoading(true);
     const isCustomList = typeof activeTab === 'object' && 'listId' in activeTab;
     const listType = activeTab === 'LATER' ? 'LATER' : activeTab === 'FAVORITE' ? 'FAVORITE' : null;
@@ -213,6 +212,19 @@ function SavedPageContent() {
   }, [router, activeTab]);
 
   useEffect(() => {
+    if (activeTab !== 'SAVED_SEARCHES') return;
+    setLoading(true);
+    setItems([]);
+    fetch(`${API_BASE}/searches`, { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: unknown) =>
+        setSavedSearches(Array.isArray(data) ? (data as SavedSearchItem[]) : [])
+      )
+      .catch(() => setSavedSearches([]))
+      .finally(() => setLoading(false));
+  }, [activeTab]);
+
+  useEffect(() => {
     Promise.all([
       fetch(`${API_BASE}/me`, { credentials: 'include' }).then((r) => (r.ok ? r.json() : null)),
       fetch(`${API_BASE}/me/profile`, { credentials: 'include' }).then((r) =>
@@ -238,10 +250,6 @@ function SavedPageContent() {
   useEffect(() => {
     fetchCustomLists();
   }, [fetchCustomLists]);
-
-  useEffect(() => {
-    if (activeTab === 'FAVORITE' || activeTab === 'LATER') fetchSavedSearches();
-  }, [activeTab, fetchSavedSearches]);
 
   useEffect(() => {
     fetchSaved();
@@ -409,13 +417,23 @@ function SavedPageContent() {
           </div>
         )}
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-slate-900">Listas favoritas</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Guardados</h1>
           <button
             type="button"
             onClick={() => {
               setLoading(true);
               fetchCustomLists();
-              fetchSaved();
+              if (activeTab === 'SAVED_SEARCHES') {
+                fetch(`${API_BASE}/searches`, { credentials: 'include' })
+                  .then((res) => (res.ok ? res.json() : []))
+                  .then((data: unknown) =>
+                    setSavedSearches(Array.isArray(data) ? (data as SavedSearchItem[]) : [])
+                  )
+                  .catch(() => setSavedSearches([]))
+                  .finally(() => setLoading(false));
+              } else {
+                fetchSaved();
+              }
             }}
             className="text-sm text-blue-600 hover:text-blue-800 font-medium"
           >
@@ -435,7 +453,7 @@ function SavedPageContent() {
                 : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
             }`}
           >
-            👍 Like
+            👍 Me gusta
           </button>
           <button
             type="button"
@@ -462,38 +480,90 @@ function SavedPageContent() {
               📁 {l.name} ({l.count})
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setActiveTab('SAVED_SEARCHES')}
+            className={`px-4 py-2 rounded-xl font-medium transition-colors ${
+              activeTab === 'SAVED_SEARCHES'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+            }`}
+          >
+            🔍 Mis búsquedas guardadas
+          </button>
         </div>
 
-        {(activeTab === 'FAVORITE' || activeTab === 'LATER') && savedSearches.length > 0 && (
-          <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-200">
-            <div className="flex justify-between items-center mb-2">
-              <p className="text-sm font-medium text-blue-800">
-                Acceso rápido a búsquedas guardadas
-              </p>
-              <Link
-                href="/searches"
-                className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline"
-              >
-                Ver todas →
-              </Link>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {savedSearches.slice(0, 8).map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => setSearchModal({ id: s.id, name: s.name })}
-                  className="flex gap-1.5 items-center px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-sm font-medium text-blue-800 hover:bg-blue-50 hover:border-blue-300 transition-colors"
+        {activeTab === 'SAVED_SEARCHES' ? (
+          <div className="space-y-4 mb-8">
+            <p className="text-sm text-slate-600">
+              Mismo flujo que en Búsquedas guardadas: título, texto y detalle; desde el detalle
+              podés editar y configurar alertas.
+            </p>
+            <Link
+              href="/searches"
+              className="inline-block text-sm font-medium text-blue-600 hover:underline mb-2"
+            >
+              Abrir vista completa de búsquedas →
+            </Link>
+            {savedSearches.length === 0 ? (
+              <div className="text-center py-12 rounded-2xl bg-white border border-slate-100 shadow-sm">
+                <p className="text-slate-500">No tenés búsquedas guardadas todavía.</p>
+                <Link
+                  href="/dashboard"
+                  className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700"
                 >
-                  <span className="truncate max-w-[140px]">{s.name}</span>
-                  <span className="text-blue-500">→</span>
-                </button>
-              ))}
-            </div>
+                  Crear búsqueda
+                </Link>
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {savedSearches.map((s) => (
+                  <li
+                    key={s.id}
+                    className="p-4 rounded-xl border border-slate-200 bg-white shadow-sm space-y-2"
+                  >
+                    <p className="font-semibold text-slate-900">{s.name}</p>
+                    {s.queryText ? (
+                      <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">
+                        {s.queryText}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-slate-400 italic">
+                        Sin texto guardado (solo filtros)
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <Link
+                        href={`/searches/${s.id}`}
+                        className="text-sm font-medium text-blue-600 hover:underline"
+                      >
+                        Detalle y alertas
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => void handleCargarSearch(s.id, 'match')}
+                        disabled={loadingSearch === s.id}
+                        className="text-sm font-medium text-emerald-700 hover:underline disabled:opacity-50"
+                      >
+                        {loadingSearch === s.id ? '…' : 'Ver Match'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleCargarSearch(s.id, 'list')}
+                        disabled={loadingSearch === s.id}
+                        className="text-sm font-medium text-slate-700 hover:underline disabled:opacity-50"
+                      >
+                        {loadingSearch === s.id ? '…' : 'Ver lista'}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-        )}
+        ) : null}
 
-        {searchModal && (
+        {activeTab !== 'SAVED_SEARCHES' && searchModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
             <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-5">
               <h3 className="font-bold text-slate-900 mb-2">Ver búsqueda</h3>
@@ -533,7 +603,7 @@ function SavedPageContent() {
           </div>
         )}
 
-        {items.length > 0 && (
+        {activeTab !== 'SAVED_SEARCHES' && items.length > 0 && (
           <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-3">
             <button
               type="button"
@@ -545,7 +615,7 @@ function SavedPageContent() {
           </div>
         )}
 
-        {shareOpen && items.length > 0 && (
+        {activeTab !== 'SAVED_SEARCHES' && shareOpen && items.length > 0 && (
           <ShareModal
             open={shareOpen}
             onClose={() => setShareOpen(false)}
@@ -562,7 +632,7 @@ function SavedPageContent() {
           />
         )}
 
-        {addToListCard && (
+        {activeTab !== 'SAVED_SEARCHES' && addToListCard && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
             <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-5">
               <h3 className="font-bold text-slate-900 mb-4">Agregar a lista</h3>
@@ -694,7 +764,7 @@ function SavedPageContent() {
           </div>
         )}
 
-        {inquiryListingId && (
+        {activeTab !== 'SAVED_SEARCHES' && inquiryListingId && (
           <InquiryModal
             open={!!inquiryListingId}
             onClose={() => setInquiryListingId(null)}
@@ -716,45 +786,46 @@ function SavedPageContent() {
           />
         )}
 
-        {items.length === 0 ? (
-          <div className="text-center py-12 rounded-2xl bg-white border border-slate-100 shadow-sm">
-            <p className="text-slate-500">
-              {activeTab === 'FAVORITE'
-                ? 'No tenés favoritos. Usá ★ o "Agregar a lista favorita" en el feed.'
-                : activeTab === 'LATER'
-                  ? 'No tenés likes. Usá 👍 o "Agregar a like" en el feed.'
-                  : 'No hay propiedades en esta lista. Agregá desde el feed con "Agregar a lista".'}
-            </p>
-            <Link
-              href="/feed"
-              className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700"
-            >
-              Ir al feed
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {items.map((item) => {
-              const card = toListingCardMini(item as SavedItemRaw);
-              if (!card) return null;
-              const status = listingsStatus[item.listingId];
-              return (
-                <ListingCardMini
-                  key={item.id}
-                  listing={card}
-                  href={`/listing/${item.listingId}`}
-                  showShareButton
-                  status={status ?? null}
-                  onContact={() => setInquiryListingId(item.listingId)}
-                  onRemove={() => handleQuitar(item.listingId)}
-                  onToggleFavorite={() => handleToggleFavorite(item.listingId)}
-                  onToggleLike={() => handleToggleLike(item.listingId)}
-                  onAddToList={() => setAddToListCard(card)}
-                />
-              );
-            })}
-          </div>
-        )}
+        {activeTab !== 'SAVED_SEARCHES' &&
+          (items.length === 0 ? (
+            <div className="text-center py-12 rounded-2xl bg-white border border-slate-100 shadow-sm">
+              <p className="text-slate-500">
+                {activeTab === 'FAVORITE'
+                  ? 'No tenés favoritos. Usá ★ o "Agregar a lista favorita" en el feed.'
+                  : activeTab === 'LATER'
+                    ? 'No tenés me gusta. Usá 👍 en el feed.'
+                    : 'No hay propiedades en esta lista. Agregá desde el feed con "Agregar a lista".'}
+              </p>
+              <Link
+                href="/feed"
+                className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700"
+              >
+                Ir al feed
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {items.map((item) => {
+                const card = toListingCardMini(item as SavedItemRaw);
+                if (!card) return null;
+                const status = listingsStatus[item.listingId];
+                return (
+                  <ListingCardMini
+                    key={item.id}
+                    listing={card}
+                    href={`/listing/${item.listingId}`}
+                    showShareButton
+                    status={status ?? null}
+                    onContact={() => setInquiryListingId(item.listingId)}
+                    onRemove={() => handleQuitar(item.listingId)}
+                    onToggleFavorite={() => handleToggleFavorite(item.listingId)}
+                    onToggleLike={() => handleToggleLike(item.listingId)}
+                    onAddToList={() => setAddToListCard(card)}
+                  />
+                );
+              })}
+            </div>
+          ))}
       </div>
     </main>
   );

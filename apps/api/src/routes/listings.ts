@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import { trackEvent } from '../lib/analytics.js';
 import { isProductionRuntime } from '../lib/error-handler.js';
 import { extractFromRawJson } from '../lib/rawjson-fallback.js';
+import { pickHeroUrlFromMedia } from '../lib/media-url-kind.js';
 
 type ListingWithMedia = Prisma.ListingGetPayload<{
   include: { media: { orderBy: { sortOrder: 'asc' } } };
@@ -19,17 +20,27 @@ function listingRecordToApiResponse(listing: ListingWithMedia, opts?: { viewUser
     }).catch(() => {});
   }
 
-  let mediaList = listing.media.map((m) => ({ url: m.url, sortOrder: m.sortOrder }));
-  let heroImageUrl = listing.heroImageUrl;
+  let mediaList = listing.media.map((m) => ({
+    url: m.url,
+    sortOrder: m.sortOrder,
+    ...(m.type ? { type: m.type } : {}),
+  }));
+  let heroImageUrl =
+    listing.heroImageUrl ?? (mediaList.length ? pickHeroUrlFromMedia(mediaList) : null);
   let title = listing.title;
   if ((!heroImageUrl || !title?.trim() || mediaList.length === 0) && listing.rawJson) {
     const fb = extractFromRawJson(listing.rawJson);
     if (!heroImageUrl) heroImageUrl = fb.heroImageUrl;
     if (!title?.trim()) title = fb.title;
     if (mediaList.length === 0 && fb.mediaUrls.length) {
-      mediaList = fb.mediaUrls.map((m) => ({ url: m.url, sortOrder: m.sortOrder }));
+      mediaList = fb.mediaUrls.map((m) => ({
+        url: m.url,
+        sortOrder: m.sortOrder,
+        ...(m.type ? { type: m.type } : {}),
+      }));
     }
   }
+  if (!heroImageUrl && mediaList.length) heroImageUrl = pickHeroUrlFromMedia(mediaList);
   const photosCount = mediaList.length || (heroImageUrl ? 1 : 0);
   const details =
     listing.details != null && typeof listing.details === 'object'
@@ -154,7 +165,12 @@ export async function listingRoutes(fastify: FastifyInstance) {
                 type: 'array',
                 items: {
                   type: 'object',
-                  properties: { url: { type: 'string' }, sortOrder: { type: 'integer' } },
+                  properties: {
+                    url: { type: 'string' },
+                    sortOrder: { type: 'integer' },
+                    type: { type: 'string', description: 'PHOTO | VIDEO' },
+                  },
+                  required: ['url', 'sortOrder'],
                 },
               },
             },

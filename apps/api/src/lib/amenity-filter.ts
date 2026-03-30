@@ -169,6 +169,11 @@ export const AMENITY_SPECS: Record<string, AmenitySpec> = {
   },
 };
 
+/** Claves canónicas de amenity (para prompts LLM y validación). */
+export function listCanonicalAmenityKeys(): string[] {
+  return Object.keys(AMENITY_SPECS).sort();
+}
+
 function normalizeKey(s: string): string {
   return s.trim().toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').replace(/\s+/g, ' ');
 }

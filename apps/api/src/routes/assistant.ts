@@ -1,14 +1,25 @@
 import { FastifyInstance } from 'fastify';
-import { getAssistantProvider } from '../services/assistant/index.js';
+import { z } from 'zod';
+import {
+  interpretSearchQuery,
+  loadIntentLlmConfig,
+} from '../services/assistant/search-interpreter.js';
 import { chatCompletion } from '../services/assistant/conversational.js';
-import { assistantSearchRequestSchema, normalizeFilters } from '../schemas/search.js';
+import { normalizeFilters, searchFiltersSchema } from '../schemas/search.js';
 import { executeFeed } from '../lib/feed-engine.js';
 import { prisma } from '../lib/prisma.js';
 import { decrypt } from '../lib/crypto.js';
 import { reorderByEngagementAffinity } from '../services/assistant/preview-affinity.js';
+import { reorderBySoftSignals } from '../services/assistant/preview-soft-rank.js';
 import type { SearchFilters } from '@matchprop/shared';
 
 const PREVIEW_LIMIT = 10;
+
+const assistantSearchBodySchema = z.object({
+  text: z.string().min(3, 'Mínimo 3 caracteres').max(500, 'Máximo 500 caracteres'),
+  previousFilters: searchFiltersSchema.optional(),
+  previousQuery: z.string().max(500).optional(),
+});
 
 export type FallbackMode = 'STRICT' | 'RELAX' | 'BROAD' | 'FEED';
 
@@ -72,6 +83,8 @@ export async function assistantRoutes(fastify: FastifyInstance) {
           required: ['text'],
           properties: {
             text: { type: 'string', minLength: 3, maxLength: 500 },
+            previousFilters: { type: 'object', additionalProperties: true },
+            previousQuery: { type: 'string', maxLength: 500 },
           },
         },
         response: {
@@ -96,6 +109,7 @@ export async function assistantRoutes(fastify: FastifyInstance) {
               },
               explanation: { type: 'string' },
               warnings: { type: 'array', items: { type: 'string' } },
+              intent: { type: 'object', additionalProperties: true },
             },
           },
           400: {
@@ -110,24 +124,26 @@ export async function assistantRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const parsed = assistantSearchRequestSchema.safeParse(
-          (request.body as { text?: string }) ?? {}
-        );
+        const parsed = assistantSearchBodySchema.safeParse((request.body as object) ?? {});
         if (!parsed.success) {
           return reply.status(400).send({
             message: parsed.error.errors[0]?.message ?? 'Invalid request',
             code: 'INVALID_REQUEST',
           });
         }
-        const { text } = parsed.data;
+        const { text, previousFilters: prevRaw, previousQuery: _prevQ } = parsed.data;
+        void _prevQ;
 
         // No loguear texto completo (PII). Solo longitud.
-        request.log.info({ textLen: text.length }, 'assistant/search');
+        request.log.info({ textLen: text.length, hasPrevious: !!prevRaw }, 'assistant/search');
 
-        const provider = getAssistantProvider();
         let result;
         try {
-          result = await provider.parse(text);
+          const previousFilters = prevRaw
+            ? (normalizeFilters(prevRaw) as SearchFilters)
+            : undefined;
+          const llm = await loadIntentLlmConfig();
+          result = await interpretSearchQuery({ text, previousFilters, llm });
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           if (
@@ -151,6 +167,7 @@ export async function assistantRoutes(fastify: FastifyInstance) {
           filters: result.filters,
           explanation: result.explanation,
           warnings: result.warnings ?? [],
+          intent: result.intent,
         };
       } catch (err) {
         request.log.error({ err }, 'assistant/search unhandled');
@@ -177,6 +194,7 @@ export async function assistantRoutes(fastify: FastifyInstance) {
             cursor: { type: 'string' },
             limit: { type: 'integer' },
             fallbackMode: { type: 'string', enum: ['STRICT', 'RELAX', 'BROAD', 'FEED'] },
+            softPreferences: { type: 'array', items: { type: 'string' } },
           },
         },
         response: {
@@ -205,6 +223,7 @@ export async function assistantRoutes(fastify: FastifyInstance) {
         cursor?: string;
         limit?: number;
         fallbackMode?: FallbackMode;
+        softPreferences?: string[];
       };
       const rawFilters = normalizeFilters(body.filters ?? {}) as SearchFilters;
       const limit = Math.min(20, Math.max(1, body.limit ?? PREVIEW_LIMIT));
@@ -263,8 +282,12 @@ export async function assistantRoutes(fastify: FastifyInstance) {
       };
 
       let itemsOut = feedResult.items;
+      const softPrefs = Array.isArray(body.softPreferences)
+        ? body.softPreferences.filter((s) => typeof s === 'string' && s.trim()).slice(0, 20)
+        : [];
       if (!cursor && mode !== 'FEED' && Array.isArray(itemsOut) && itemsOut.length > 1) {
         itemsOut = await reorderByEngagementAffinity(user.userId, itemsOut);
+        itemsOut = reorderBySoftSignals(itemsOut, softPrefs);
       }
 
       return {

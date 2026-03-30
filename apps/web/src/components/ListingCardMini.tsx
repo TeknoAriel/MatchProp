@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { formatListingPrice } from '../lib/format-price';
+import ListingCardImageCarousel from './ListingCardImageCarousel';
 
 export interface ListingCardMiniData {
   id: string;
@@ -11,7 +11,7 @@ export interface ListingCardMiniData {
   currency?: string | null;
   locationText?: string | null;
   heroImageUrl?: string | null;
-  media?: { url: string; sortOrder: number }[];
+  media?: { url: string; sortOrder: number; type?: string | null }[];
   bedrooms?: number | null;
   bathrooms?: number | null;
   areaTotal?: number | null;
@@ -84,17 +84,6 @@ export default function ListingCardMini({
   onToggleLike,
   onAddToList,
 }: ListingCardMiniProps) {
-  const [imgError, setImgError] = useState(false);
-  const [imageIndex, setImageIndex] = useState(0);
-  const images: { url: string }[] = listing.media?.length
-    ? [...listing.media].sort((a, b) => a.sortOrder - b.sortOrder)
-    : listing.heroImageUrl
-      ? [{ url: listing.heroImageUrl }]
-      : [];
-  const currentImage = images[imageIndex];
-  const hasMultiple = images.length > 1;
-  const showImage = !!currentImage && !imgError;
-
   const title = displayTitle(listing);
   const priceText =
     listing.price != null ? formatListingPrice(listing.price, listing.currency) : 'Consultar';
@@ -126,80 +115,16 @@ export default function ListingCardMini({
         </div>
       )}
       <Link href={href} className="block flex-1">
-        <div className="mp-listing-media bg-[var(--mp-bg)] relative overflow-hidden group">
-          {showImage ? (
-            <img
-              src={currentImage!.url}
-              alt={title}
-              className="w-full h-full object-cover transition-opacity duration-200"
-              loading="lazy"
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--mp-muted)] bg-gradient-to-br from-[var(--mp-bg)] to-[color-mix(in_srgb,var(--mp-muted)_14%,var(--mp-bg))]">
-              <span className="text-4xl mb-2">🏠</span>
-              <span className="text-xs">Sin imagen</span>
-            </div>
-          )}
-          {hasMultiple && (
-            <>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setImageIndex((i) => (i <= 0 ? images.length - 1 : i - 1));
-                }}
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label="Imagen anterior"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setImageIndex((i) => (i >= images.length - 1 ? 0 : i + 1));
-                }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 text-slate-700 flex items-center justify-center hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label="Siguiente imagen"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                {images.map((_, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setImageIndex(idx);
-                    }}
-                    className={`w-2 h-2 rounded-full transition-all ${idx === imageIndex ? 'bg-white scale-125' : 'bg-white/60 hover:bg-white/80'}`}
-                    aria-label={`Ir a imagen ${idx + 1}`}
-                  />
-                ))}
-              </div>
-              <span className="absolute top-2 right-2 text-xs bg-black/60 text-white px-2 py-1 rounded-full font-medium">
-                📷 {imageIndex + 1}/{images.length}
-              </span>
-            </>
-          )}
+        <div className="mp-listing-media bg-[var(--mp-bg)] relative overflow-hidden group aspect-[4/3] min-h-[140px]">
+          <ListingCardImageCarousel
+            heroImageUrl={listing.heroImageUrl}
+            media={listing.media}
+            alt={title}
+            controlsAlwaysVisible={(listing.media?.length ?? 0) > 1}
+            carouselButtonClass="opacity-0 group-hover:opacity-100 transition-opacity"
+          />
           {badges && (listing.operationType || listing.propertyType) && (
-            <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
+            <div className="absolute top-2 left-2 z-20 flex gap-1 flex-wrap pointer-events-none">
               {listing.operationType && (
                 <span className="px-2 py-0.5 rounded-full bg-black/60 text-white text-xs font-medium">
                   {OPERATION_LABEL[listing.operationType] ?? listing.operationType}

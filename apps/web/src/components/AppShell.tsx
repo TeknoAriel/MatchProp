@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from './ThemeProvider';
@@ -45,9 +45,9 @@ const MAS_SECTIONS: { title: string; subtitle?: string; items: readonly MasEntry
     items: [
       {
         href: '/me/saved',
-        label: 'Listas y favoritos',
+        label: 'Guardados',
         icon: '⭐',
-        desc: 'Listas personalizadas y destacados',
+        desc: 'Me gusta, favoritos, listas y búsquedas',
       },
       {
         href: '/searches',
@@ -81,7 +81,21 @@ const MAS_SECTIONS: { title: string; subtitle?: string; items: readonly MasEntry
   },
 ] as const;
 
-const MAS_FLAT = MAS_SECTIONS.flatMap((s) => s.items);
+const ADMIN_MAS_ITEM: MasEntry = {
+  href: '/me/settings',
+  label: 'Configuración e integraciones',
+  icon: '⚙️',
+  desc: 'Admin: asistente IA, importadores, API, pagos',
+};
+
+function masSectionsForRole(
+  role: string | null
+): readonly { title: string; subtitle?: string; items: readonly MasEntry[] }[] {
+  if (role !== 'ADMIN') return MAS_SECTIONS;
+  return MAS_SECTIONS.map((section) =>
+    section.title === 'Cuenta' ? { ...section, items: [...section.items, ADMIN_MAS_ITEM] } : section
+  );
+}
 
 const NAV_LINK_CLASS =
   'flex items-center gap-3 px-3 py-3 rounded-[var(--mp-radius-chip)] text-[15px] font-medium transition-colors min-h-[44px]';
@@ -102,13 +116,39 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [toolsOpen, setToolsOpen] = useState(false);
 
   useEffect(() => {
+    const publicPath =
+      pathname?.startsWith('/login') ||
+      pathname?.startsWith('/join') ||
+      pathname?.startsWith('/auth/') ||
+      pathname === '/' ||
+      pathname === '';
+    if (publicPath) {
+      setUserRole(null);
+      return;
+    }
+    let cancelled = false;
     fetch('/api/me/profile', { credentials: 'include' })
       .then((res) => (res.ok ? res.json() : null))
-      .then((d) => d?.role && setUserRole(d.role))
-      .catch(() => {});
-  }, []);
+      .then((d) => {
+        if (cancelled || !d) return;
+        const r = typeof d.role === 'string' ? d.role.toUpperCase() : null;
+        setUserRole(r);
+      })
+      .catch(() => {
+        if (!cancelled) setUserRole(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
-  const secondaryActive = MAS_FLAT.some((item) => navItemActive(pathname, item.href));
+  const masSectionsResolved = useMemo(() => masSectionsForRole(userRole), [userRole]);
+  const masFlatResolved = useMemo(
+    () => masSectionsResolved.flatMap((s) => s.items),
+    [masSectionsResolved]
+  );
+
+  const secondaryActive = masFlatResolved.some((item) => navItemActive(pathname, item.href));
 
   useEffect(() => {
     if (secondaryActive) setToolsOpen(true);
@@ -183,7 +223,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </button>
               {toolsOpen && (
                 <div className="mt-2 space-y-3 pl-1 ml-2 border-l-2 border-[var(--mp-border)]">
-                  {MAS_SECTIONS.map((section) => (
+                  {masSectionsResolved.map((section) => (
                     <div key={section.title}>
                       <div className="px-3 py-1">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--mp-muted)]">
@@ -222,7 +262,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           )}
 
           {!sidebarOpen &&
-            MAS_FLAT.map((item) => {
+            masFlatResolved.map((item) => {
               const active = navItemActive(pathname, item.href);
               if (!active) return null;
               return (
@@ -277,6 +317,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             MatchProp
           </Link>
           <div className="flex items-center gap-2">
+            {userRole === 'ADMIN' && (
+              <Link
+                href="/me/settings"
+                className="p-2 rounded-[var(--mp-radius-chip)] text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)] min-h-[44px] min-w-[44px] flex items-center justify-center"
+                title="Configuración e integraciones"
+                aria-label="Configuración e integraciones"
+              >
+                ⚙️
+              </Link>
+            )}
             <Link
               href="/me/premium"
               className="px-2 py-1.5 rounded-[var(--mp-radius-chip)] bg-[var(--mp-premium)] text-slate-900 text-sm font-medium"
@@ -307,7 +357,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               type="button"
               onClick={() => setMasOpen(true)}
               className={`flex flex-col items-center justify-center flex-1 py-3 min-h-[52px] rounded-[var(--mp-radius-chip)] transition-colors active:scale-[0.98] ${
-                MAS_FLAT.some((m) => navItemActive(pathname, m.href))
+                masFlatResolved.some((m) => navItemActive(pathname, m.href))
                   ? 'text-[var(--mp-accent)] font-semibold'
                   : 'text-[var(--mp-muted)]'
               }`}
@@ -346,7 +396,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   </button>
                 </div>
                 <div className="space-y-5">
-                  {MAS_SECTIONS.map((section) => (
+                  {masSectionsResolved.map((section) => (
                     <div key={section.title}>
                       <div className="mb-2 px-1">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--mp-muted)]">

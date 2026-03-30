@@ -204,7 +204,9 @@ No debe contener secretos; solo comprobaciones de build y tests.
 
 Al terminar las cuatro etapas y rellenar el checklist de revisión final, la app queda **100% operativa y ajustada al proyecto**, lista para deploy tras la revisión final.
 
-**Plan de cierre concreto (pasos y estado actual):** [PLAN_DE_TRABAJO_CIERRE_VERSION.md](./PLAN_DE_TRABAJO_CIERRE_VERSION.md).
+**Plan de cierre concreto (pasos y estado actual):** [PLAN_DE_TRABAJO_CIERRE_VERSION.md](../PLAN_DE_TRABAJO_CIERRE_VERSION.md).
+
+**Apertura beta (feedback usuarios):** [BETA_PROGRAMA_CIERRE_ETAPA.md](../BETA_PROGRAMA_CIERRE_ETAPA.md).
 
 ---
 

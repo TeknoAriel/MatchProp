@@ -4,9 +4,10 @@
 import { prisma } from './prisma.js';
 import { encodeListingCursor, decodeListingCursor } from './cursor.js';
 import { getCachedTotal, setCachedTotal } from './feed-total-cache.js';
-import { extractFromRawJson } from './rawjson-fallback.js';
 import { amenityFiltersToAndList } from './amenity-filter.js';
 import { locationTextToPrismaClause } from './location-filter.js';
+import { mergeListingQualityWhere } from './listing-quality-where.js';
+import { feedItemWithRawJsonFallback } from './feed-listing-card.js';
 import type { SearchFilters } from '@matchprop/shared';
 
 /** Entrada alineada con filtros del GET /feed (filtersToWhere). */
@@ -227,11 +228,12 @@ export async function listingMatchesFilters(
 ): Promise<boolean> {
   const f = toFeedFiltersInput(filters);
 
-  const baseWhere = {
+  const baseWhere: Record<string, unknown> = {
     id: listingId,
     status: 'ACTIVE' as const,
     ...filtersToWhere(f),
   };
+  mergeListingQualityWhere(baseWhere);
 
   const count = await prisma.listing.count({ where: baseWhere });
   return count === 1;
@@ -261,6 +263,7 @@ export async function executeFeed(params: {
     ...(since ? { lastSeenAt: { gt: since } } : {}),
     ...filtersToWhere(filters),
   };
+  mergeListingQualityWhere(baseWhere);
 
   const findWhere = { ...baseWhere } as Record<string, unknown>;
   const sortKey = filters.sortBy ?? 'date_desc';
@@ -325,37 +328,18 @@ export async function executeFeed(params: {
       media: {
         orderBy: { sortOrder: 'asc' },
         take: 6,
-        select: { url: true, sortOrder: true },
+        select: { url: true, sortOrder: true, type: true },
       },
     },
   });
 
   const hasMore = itemsRaw.length > limit;
-  const items = (hasMore ? itemsRaw.slice(0, limit) : itemsRaw).map((l) => {
-    let heroImageUrl =
-      l.heroImageUrl ?? (l as { media?: { url: string }[] }).media?.[0]?.url ?? null;
-    let title = l.title;
-    if ((!heroImageUrl || !title?.trim()) && l.rawJson) {
-      const fb = extractFromRawJson(l.rawJson);
-      if (!heroImageUrl) heroImageUrl = fb.heroImageUrl;
-      if (!title?.trim()) title = fb.title;
-    }
-    return {
-      id: l.id,
-      title,
-      price: l.price ? Math.round(l.price) : null,
-      currency: l.currency,
+  const items = (hasMore ? itemsRaw.slice(0, limit) : itemsRaw).map((l) =>
+    feedItemWithRawJsonFallback({
+      ...l,
       propertyType: l.propertyType,
-      bedrooms: l.bedrooms,
-      bathrooms: l.bathrooms,
-      areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
-      locationText: l.locationText,
-      heroImageUrl,
-      publisherRef: l.publisherRef,
-      source: l.source,
-      operationType: l.operationType,
-    };
-  });
+    })
+  );
   const lastRaw = hasMore ? itemsRaw[limit - 1] : itemsRaw[itemsRaw.length - 1];
   const last = items[items.length - 1];
   const nextCursor =

@@ -71,7 +71,7 @@ export default function LeadChatPage() {
         const d = (await res.json().catch(() => ({}))) as { message?: string };
         const msg =
           res.status === 403
-            ? 'Activá el lead para chatear'
+            ? 'Habilitá la consulta (premium) para chatear'
             : res.status === 404
               ? 'Lead no encontrado'
               : d?.message || `Error ${res.status}`;
@@ -108,11 +108,11 @@ export default function LeadChatPage() {
         <div className="max-w-lg mx-auto">
           <div className="rounded-2xl bg-[var(--mp-card)] border border-[var(--mp-border)] p-6">
             <p className="text-amber-700 font-medium">
-              {!lead ? 'Lead no encontrado' : 'Activá el lead para chatear'}
+              {!lead ? 'Lead no encontrado' : 'Chat no disponible todavía'}
             </p>
             <p className="text-sm text-[var(--mp-muted)] mt-2">
               {lead && lead.status !== 'ACTIVE'
-                ? 'En Consultas, activá la consulta para desbloquear el chat.'
+                ? 'En Mis consultas, habilitá la consulta con premium para desbloquear el chat.'
                 : 'Verificá que la consulta exista.'}
             </p>
             <Link

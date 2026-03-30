@@ -471,7 +471,15 @@ export default function SearchResultsPage() {
         </div>
 
         <div className="mb-4 p-3 rounded-xl bg-white shadow-sm border border-slate-100/80 space-y-2">
-          <p className="text-sm font-medium text-gray-700">Alertas</p>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <p className="text-sm font-medium text-gray-700">Avisos por búsqueda</p>
+            <Link
+              href="/alerts"
+              className="text-sm font-medium text-blue-600 hover:underline shrink-0"
+            >
+              Alertas
+            </Link>
+          </div>
           {(['NEW_LISTING', 'PRICE_DROP', 'BACK_ON_MARKET'] as AlertType[]).map((type) => (
             <div key={type} className="flex items-center justify-between gap-2">
               <span className="text-sm text-gray-600">{ALERT_LABELS[type]}</span>

@@ -1,6 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import type { NormalizedListing, ListingDetailsFromIngest } from './types.js';
+import { pickHeroUrlFromMedia, resolveMediaType } from '../../lib/media-url-kind.js';
 import { normalizeIngestPropertyType } from './property-type-normalize.js';
 import { onListingCreated } from '../crm-push/on-listing-created.js';
 
@@ -111,7 +112,7 @@ export async function upsertListing(
       lng: norm.lng ?? null,
       addressText: norm.addressText ?? null,
       locationText,
-      heroImageUrl: norm.mediaUrls?.[0]?.url ?? null,
+      heroImageUrl: norm.mediaUrls?.length ? pickHeroUrlFromMedia(norm.mediaUrls) : null,
       photosCount: norm.mediaUrls?.length ?? 0,
       updatedAtSource: norm.updatedAtSource ?? null,
       lastSyncedAt: now,
@@ -136,7 +137,7 @@ export async function upsertListing(
       lng: norm.lng ?? undefined,
       addressText: norm.addressText ?? undefined,
       locationText: locationText ?? undefined,
-      heroImageUrl: norm.mediaUrls?.[0]?.url ?? undefined,
+      heroImageUrl: norm.mediaUrls?.length ? pickHeroUrlFromMedia(norm.mediaUrls) : undefined,
       photosCount: norm.mediaUrls?.length ?? 0,
       updatedAtSource: norm.updatedAtSource ?? undefined,
       lastSyncedAt: now,
@@ -152,7 +153,7 @@ export async function upsertListing(
       data: norm.mediaUrls.map((m, i) => ({
         listingId: listing.id,
         url: m.url,
-        type: 'PHOTO',
+        type: resolveMediaType(m.url, m.type),
         sortOrder: m.sortOrder ?? i,
       })),
     });

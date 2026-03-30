@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toDatetimeLocalValue } from '../lib/datetime-local';
 
 const API_BASE = '/api';
 
@@ -63,7 +64,7 @@ export default function VisitScheduleModal({
 
   const minDatetime = new Date();
   minDatetime.setMinutes(minDatetime.getMinutes() + 30);
-  const minStr = minDatetime.toISOString().slice(0, 16);
+  const minStr = toDatetimeLocalValue(minDatetime);
 
   return (
     <div
