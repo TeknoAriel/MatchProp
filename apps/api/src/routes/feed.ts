@@ -95,6 +95,8 @@ type FeedFilters = {
   addressText?: string;
   titleContains?: string;
   descriptionContains?: string;
+  /** Palabras que deben aparecer en título o descripción (AND entre palabras). */
+  keywords?: string[];
   sortBy?: (typeof VALID_SORT)[number];
   source?: string;
   aptoCredito?: boolean;
@@ -192,6 +194,23 @@ function parseFeedQuery(q: Record<string, unknown>): FeedFilters {
   const aptoCredito = q.aptoCredito === '1' || q.aptoCredito === 'true' ? true : undefined;
   const photosCountMin = parseIntParam(q.photosCountMin);
   const listingAgeDays = parseIntParam(q.listingAgeDays ?? q.listingAge);
+  const keywordsRaw = q.keywords;
+  let keywords: string[] | undefined;
+  if (typeof keywordsRaw === 'string' && keywordsRaw.trim()) {
+    keywords = keywordsRaw
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length >= 2 && s.length <= 80)
+      .slice(0, 12);
+    if (keywords.length === 0) keywords = undefined;
+  } else if (Array.isArray(keywordsRaw)) {
+    keywords = keywordsRaw
+      .filter((x): x is string => typeof x === 'string')
+      .map((s) => s.trim())
+      .filter((s) => s.length >= 2 && s.length <= 80)
+      .slice(0, 12);
+    if (keywords.length === 0) keywords = undefined;
+  }
   return {
     operationType,
     propertyTypes: parsePropertyTypes(q.propertyType ?? q.propertyTypes),
@@ -222,6 +241,7 @@ function parseFeedQuery(q: Record<string, unknown>): FeedFilters {
     maxLat: parseFloatParam(q.maxLat),
     minLng: parseFloatParam(q.minLng),
     maxLng: parseFloatParam(q.maxLng),
+    keywords,
   };
 }
 
@@ -234,6 +254,21 @@ function sanitizeSavedPropertyTypes(raw: unknown): string[] | undefined {
       VALID_PROPERTY_TYPES.includes(v as (typeof VALID_PROPERTY_TYPES)[number])
   );
   return arr.length ? arr : undefined;
+}
+
+/** JSON guardado puede traer `propertyType` como array (SearchFilters) o string suelto legado. */
+function propertyTypesFromSavedFiltersJson(f: Record<string, unknown>): unknown {
+  const pt = f.propertyType;
+  const pts = f.propertyTypes;
+  if (Array.isArray(pt)) return pt;
+  if (
+    typeof pt === 'string' &&
+    VALID_PROPERTY_TYPES.includes(pt as (typeof VALID_PROPERTY_TYPES)[number])
+  ) {
+    return [pt];
+  }
+  if (Array.isArray(pts)) return pts;
+  return null;
 }
 
 function mergeFilters(
@@ -303,6 +338,13 @@ function mergeFilters(
         amenities: Array.isArray(p.amenities) ? (p.amenities as string[]) : undefined,
         photosCountMin: typeof p.photosCountMin === 'number' ? p.photosCountMin : undefined,
         listingAgeDays: typeof p.listingAgeDays === 'number' ? p.listingAgeDays : undefined,
+        keywords: Array.isArray(p.keywords)
+          ? (p.keywords as unknown[])
+              .filter((x): x is string => typeof x === 'string')
+              .map((s) => s.trim())
+              .filter((s) => s.length >= 2)
+              .slice(0, 12)
+          : undefined,
       }
     : {};
   const mergedTypes = overrides.propertyTypes ?? base.propertyTypes;
@@ -330,6 +372,7 @@ function mergeFilters(
     amenities: overrides.amenities ?? base.amenities,
     photosCountMin: overrides.photosCountMin ?? base.photosCountMin,
     listingAgeDays: overrides.listingAgeDays ?? base.listingAgeDays,
+    keywords: overrides.keywords ?? base.keywords,
     minLat: overrides.minLat ?? (typeof p?.minLat === 'number' ? p.minLat : undefined),
     maxLat: overrides.maxLat ?? (typeof p?.maxLat === 'number' ? p.maxLat : undefined),
     minLng: overrides.minLng ?? (typeof p?.minLng === 'number' ? p.minLng : undefined),
@@ -395,6 +438,21 @@ function filtersToWhere(f: FeedFilters): Record<string, unknown> {
     if (andList.length)
       where.AND = [...((where.AND as Record<string, unknown>[]) ?? []), ...andList];
   }
+  if (f.keywords?.length) {
+    const andKw: Record<string, unknown>[] = [];
+    for (const kw of f.keywords) {
+      const k = String(kw).trim();
+      if (!k) continue;
+      andKw.push({
+        OR: [
+          { title: { contains: k, mode: 'insensitive' } },
+          { description: { contains: k, mode: 'insensitive' } },
+        ],
+      });
+    }
+    if (andKw.length)
+      where.AND = [...((where.AND as Record<string, unknown>[]) ?? []), ...andKw];
+  }
   if (f.minLat != null || f.maxLat != null || f.minLng != null || f.maxLng != null) {
     const latCond: { not?: null; gte?: number; lte?: number } = { not: null };
     if (f.minLat != null) latCond.gte = f.minLat;
@@ -408,7 +466,11 @@ function filtersToWhere(f: FeedFilters): Record<string, unknown> {
   return where;
 }
 
-/** Relaja filtros por pasos acumulativos antes de caer al catálogo completo (similares graduales). */
+/**
+ * Relaja filtros por pasos acumulativos antes de caer al catálogo completo.
+ * No se quitan tipo de propiedad ni operación: el usuario los expresó de forma explícita.
+ * Tampoco ubicación ni texto de título/descripcion/keywords: no mostrar otras zonas.
+ */
 function relaxFeedFiltersAccum(base: FeedFilters, step: number): FeedFilters {
   const f: FeedFilters = { ...base };
   if (step >= 1) {
@@ -425,18 +487,6 @@ function relaxFeedFiltersAccum(base: FeedFilters, step: number): FeedFilters {
     f.priceMin = undefined;
     f.priceMax = undefined;
     f.currency = undefined;
-  }
-  if (step >= 3) {
-    f.propertyTypes = undefined;
-  }
-  if (step >= 4) {
-    f.locationText = undefined;
-    f.addressText = undefined;
-    f.titleContains = undefined;
-    f.descriptionContains = undefined;
-  }
-  if (step >= 5) {
-    f.operationType = undefined;
   }
   return f;
 }
@@ -570,12 +620,16 @@ export async function feedRoutes(fastify: FastifyInstance) {
         bathroomsMax?: number | null;
         areaMin?: number | null;
         areaMax?: number | null;
+        areaCoveredMin?: number | null;
         locationText?: string | null;
         addressText?: string | null;
         titleContains?: string | null;
+        descriptionContains?: string | null;
+        keywords?: unknown;
         sortBy?: string | null;
         source?: string | null;
         amenities?: string[] | null;
+        aptoCredito?: boolean | null;
         photosCountMin?: number | null;
         listingAgeDays?: number | null;
       } | null = null;
@@ -601,9 +655,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
             minPrice: typeof f.priceMin === 'number' ? f.priceMin : null,
             maxPrice: typeof f.priceMax === 'number' ? f.priceMax : null,
             currency: (f.currency as string) ?? null,
-            propertyTypes: Array.isArray(f.propertyType)
-              ? f.propertyType
-              : ((f.propertyTypes as unknown) ?? null),
+            propertyTypes: propertyTypesFromSavedFiltersJson(f),
             bedroomsMin: typeof f.bedroomsMin === 'number' ? f.bedroomsMin : null,
             bedroomsMax: typeof f.bedroomsMax === 'number' ? f.bedroomsMax : null,
             bathroomsMin: typeof f.bathroomsMin === 'number' ? f.bathroomsMin : null,
@@ -613,9 +665,13 @@ export async function feedRoutes(fastify: FastifyInstance) {
             locationText: (f.locationText as string) ?? null,
             addressText: (f.addressText as string) ?? null,
             titleContains: (f.titleContains as string) ?? null,
+            descriptionContains: (f.descriptionContains as string) ?? null,
+            keywords: f.keywords ?? null,
             sortBy: (f.sortBy as string) ?? null,
             source: (f.source as string) ?? null,
             amenities: Array.isArray(f.amenities) ? f.amenities : null,
+            aptoCredito: f.aptoCredito === true ? true : null,
+            areaCoveredMin: typeof f.areaCoveredMin === 'number' ? f.areaCoveredMin : null,
             photosCountMin: typeof f.photosCountMin === 'number' ? f.photosCountMin : null,
             listingAgeDays: typeof f.listingAgeDays === 'number' ? f.listingAgeDays : null,
           };
@@ -712,8 +768,23 @@ export async function feedRoutes(fastify: FastifyInstance) {
 
       const includeTotal = parseIntParam(q.includeTotal) === 1;
       const hasCursor = !!cursorData;
+      const relaxMaxStep = 2;
+      const relaxStepRaw =
+        !feedAll && cursorData && typeof cursorData.relaxStep === 'number'
+          ? Math.floor(cursorData.relaxStep)
+          : null;
+      const relaxStepFromCursor =
+        relaxStepRaw != null && relaxStepRaw >= 1
+          ? Math.min(relaxStepRaw, relaxMaxStep)
+          : null;
 
-      let activeFilters = filters;
+      let activeFilters =
+        relaxStepFromCursor != null
+          ? relaxFeedFiltersAccum(filters, relaxStepFromCursor)
+          : filters;
+      /** Se reenvía en nextCursor para que la página siguiente use los mismos filtros efectivos. */
+      let cursorRelaxStepForNext: number | null = relaxStepFromCursor;
+
       let baseWhere: Record<string, unknown> = {
         status: 'ACTIVE',
         swipeDecisions: { none: { userId: user.userId } },
@@ -749,10 +820,15 @@ export async function feedRoutes(fastify: FastifyInstance) {
         filters.bedrooms != null ||
         filters.bathrooms != null ||
         filters.areaMin != null ||
-        (filters.locationText != null && filters.locationText !== '');
+        (filters.locationText != null && filters.locationText.trim() !== '') ||
+        (filters.addressText != null && filters.addressText.trim() !== '') ||
+        (filters.descriptionContains != null && filters.descriptionContains.trim() !== '') ||
+        (filters.titleContains != null && filters.titleContains.trim() !== '') ||
+        (filters.keywords?.length ?? 0) > 0 ||
+        (filters.amenities?.length ?? 0) > 0;
 
       if (itemsRaw.length === 0 && !hasCursor && !feedAll && hasRestrictiveFilters) {
-        for (let step = 1; step <= 5; step++) {
+        for (let step = 1; step <= relaxMaxStep; step++) {
           const rf = relaxFeedFiltersAccum(filters, step);
           const bw: Record<string, unknown> = {
             status: 'ACTIVE',
@@ -773,6 +849,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
             baseWhere = bw;
             findWhere = fw;
             fallbackUsed = true;
+            cursorRelaxStepForNext = step;
             if (includeTotal) {
               total = await prisma.listing.count({ where: bw });
               setCachedTotal(user.userId, rf as Record<string, unknown>, total);
@@ -795,9 +872,29 @@ export async function feedRoutes(fastify: FastifyInstance) {
                 createdAt: lastRaw.createdAt,
                 lastSeenAt: lastRaw.lastSeenAt,
                 id: last.id,
+                ...(cursorRelaxStepForNext != null ? { relaxStep: cursorRelaxStepForNext } : {}),
               })
-            : encodeListingCursor({ lastSeenAt: lastRaw.lastSeenAt, id: last.id })
+            : encodeListingCursor({
+                lastSeenAt: lastRaw.lastSeenAt,
+                id: last.id,
+                ...(cursorRelaxStepForNext != null ? { relaxStep: cursorRelaxStepForNext } : {}),
+              })
           : null;
+
+      const geoPinned =
+        (filters.locationText != null && filters.locationText.trim() !== '') ||
+        (filters.addressText != null && filters.addressText.trim() !== '');
+
+      if (items.length === 0 && !hasCursor && !feedAll && hasRestrictiveFilters && geoPinned) {
+        return {
+          items: [],
+          total: includeTotal ? 0 : null,
+          limit,
+          nextCursor: null,
+          fallbackUsed: false,
+          emptyCatalog: false,
+        };
+      }
 
       if (items.length === 0 && !hasCursor && !feedAll && hasRestrictiveFilters) {
         const fallbackWhere: Record<string, unknown> = {
@@ -911,12 +1008,16 @@ export async function feedRoutes(fastify: FastifyInstance) {
         bathroomsMax?: number | null;
         areaMin?: number | null;
         areaMax?: number | null;
+        areaCoveredMin?: number | null;
         locationText?: string | null;
         addressText?: string | null;
         titleContains?: string | null;
+        descriptionContains?: string | null;
+        keywords?: unknown;
         sortBy?: string | null;
         source?: string | null;
         amenities?: string[] | null;
+        aptoCredito?: boolean | null;
         photosCountMin?: number | null;
         listingAgeDays?: number | null;
       } | null = null;
@@ -942,9 +1043,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
             minPrice: typeof f.priceMin === 'number' ? f.priceMin : null,
             maxPrice: typeof f.priceMax === 'number' ? f.priceMax : null,
             currency: (f.currency as string) ?? null,
-            propertyTypes: Array.isArray(f.propertyType)
-              ? f.propertyType
-              : ((f.propertyTypes as unknown) ?? null),
+            propertyTypes: propertyTypesFromSavedFiltersJson(f),
             bedroomsMin: typeof f.bedroomsMin === 'number' ? f.bedroomsMin : null,
             bedroomsMax: typeof f.bedroomsMax === 'number' ? f.bedroomsMax : null,
             bathroomsMin: typeof f.bathroomsMin === 'number' ? f.bathroomsMin : null,
@@ -954,9 +1053,13 @@ export async function feedRoutes(fastify: FastifyInstance) {
             locationText: (f.locationText as string) ?? null,
             addressText: (f.addressText as string) ?? null,
             titleContains: (f.titleContains as string) ?? null,
+            descriptionContains: (f.descriptionContains as string) ?? null,
+            keywords: f.keywords ?? null,
             sortBy: (f.sortBy as string) ?? null,
             source: (f.source as string) ?? null,
             amenities: Array.isArray(f.amenities) ? f.amenities : null,
+            aptoCredito: f.aptoCredito === true ? true : null,
+            areaCoveredMin: typeof f.areaCoveredMin === 'number' ? f.areaCoveredMin : null,
             photosCountMin: typeof f.photosCountMin === 'number' ? f.photosCountMin : null,
             listingAgeDays: typeof f.listingAgeDays === 'number' ? f.listingAgeDays : null,
           };

@@ -106,6 +106,7 @@ export async function completeIntentWithLlm(
 
   const amenityKeys = listCanonicalAmenityKeys().slice(0, 80).join(', ');
   const system = `Sos un extractor de intención inmobiliaria para Argentina. Respondé SOLO un JSON válido sin markdown.
+Tu trabajo es completar TODO lo que el usuario mencionó y las reglas aún no llenaron: precio (min/max/moneda), tipo(s) de propiedad, dormitorios/baños, m², zona o ciudad (locationText), amenities del listado canónico, palabras clave (keywords), orden (sortBy).
 Campos opcionales en filtersPatch (solo si el texto lo justifica y no contradice hechos ya extraídos por reglas):
 - operationType: "SALE" | "RENT"
 - propertyType: array de ["HOUSE","APARTMENT","LAND","OFFICE","OTHER"]
@@ -119,9 +120,11 @@ Campos opcionales en filtersPatch (solo si el texto lo justifica y no contradice
 - sortBy: "date_desc"|"price_asc"|"price_desc"|"area_desc"
 
 Reglas:
+- Revisá el texto completo (incluso listas largas) y rellená cada criterio mencionado una sola vez en filtersPatch.
 - Si el usuario dice "mi casa", "mudarme", "comprar" → SALE salvo que pida alquiler explícito.
 - "invertir" + terreno/lote → propertyType puede incluir LAND.
 - No inventes precios si no hay números.
+- Si nombra una ciudad o barrio y locationText sigue vacío en el borrador, ponelos en locationText.
 - softPreferences: array de strings (ej. "familiar", "luminoso") — no son filtros SQL.
 - lifestyleSignals: sinónimos de contexto (ej. "niños", "inversión").
 - notes: 1-3 frases en español para mostrar al usuario cómo interpretaste (explicabilidad).
@@ -143,7 +146,7 @@ JSON shape:
       { role: 'system', content: system },
       { role: 'user', content: userPayload },
     ],
-    max_tokens: 700,
+    max_tokens: 1024,
     temperature: 0.2,
     response_format: { type: 'json_object' },
   };

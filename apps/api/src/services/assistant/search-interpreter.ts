@@ -9,6 +9,7 @@ import {
   mergeLlmPatchOntoDeterministic,
   type IntentLlmConfig,
 } from './intent-llm.js';
+import { capSearchFilters } from './search-filter-cap.js';
 
 export async function loadIntentLlmConfig(): Promise<IntentLlmConfig | null> {
   const config = await prisma.assistantConfig.findUnique({ where: { id: 'default' } });
@@ -70,6 +71,8 @@ export async function interpretSearchQuery(opts: {
       interpretationNotes.push(...llmOut.notes);
     }
   }
+
+  filters = capSearchFilters(filters);
 
   const softPreferences = [...softSet];
   let explanation = parsed.explanation;
