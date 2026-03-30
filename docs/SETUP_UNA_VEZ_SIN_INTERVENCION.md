@@ -8,7 +8,7 @@ Hacé esto **solo una vez**. Después: push al branch → PR → CI verde → me
 
 ### A) Permitir auto-merge en el repositorio
 
-1. Abrí: **https://github.com/TeknoAriel/MatchProp/settings**
+1. Abrí: **https://github.com/kiteprop/ia-matchprop/settings**
 2. En el menú izquierdo, en **General** (ya estás ahí si entraste por el link).
 3. Bajá hasta la sección **Pull Requests**.
 4. Activá la opción **Allow auto-merge** (checkbox).
@@ -20,7 +20,7 @@ Hacé esto **solo una vez**. Después: push al branch → PR → CI verde → me
 
 ### B) Permisos de los workflows (lectura/escritura)
 
-1. Abrí: **https://github.com/TeknoAriel/MatchProp/settings/actions**
+1. Abrí: **https://github.com/kiteprop/ia-matchprop/settings/actions**
 2. En **Workflow permissions**, elegí **Read and write permissions**.
 3. **Save**.
 
@@ -42,7 +42,7 @@ El token del workflow por defecto **no** puede mergear a `main` protegido. Hace 
 
 **C2 — Guardarlo en el repo**
 
-1. Abrí: **https://github.com/TeknoAriel/MatchProp/settings/secrets/actions**
+1. Abrí: **https://github.com/kiteprop/ia-matchprop/settings/secrets/actions**
 2. **New repository secret**
 3. **Name** (exacto, mayúsculas como acá): `AUTOMERGE_TOKEN`
 4. **Secret**: pegá el token que copiaste en C1.
@@ -52,8 +52,8 @@ El token del workflow por defecto **no** puede mergear a `main` protegido. Hace 
 
 ### D) Branch protection en `main` (que el bot pueda mergear sin tu aprobación)
 
-1. Abrí: **https://github.com/TeknoAriel/MatchProp/settings/branch_protection_rules/new**  
-   O si ya existe regla para `main`: **https://github.com/TeknoAriel/MatchProp/settings/branches** → **Edit** junto a la regla de `main`.
+1. Abrí: **https://github.com/kiteprop/ia-matchprop/settings/branch_protection_rules/new**  
+   O si ya existe regla para `main`: **https://github.com/kiteprop/ia-matchprop/settings/branches** → **Edit** junto a la regla de `main`.
 
 2. Asegurate de:
    - **Require a pull request before merging**: puede estar **activado** (queremos PR).
@@ -70,7 +70,7 @@ El token del workflow por defecto **no** puede mergear a `main` protegido. Hace 
 
 Con cada push a un branch que no sea `main`, el workflow **Deploy auto (PR + automerge)** crea el PR y pone la etiqueta `automerge`.
 
-Revisá en: **https://github.com/TeknoAriel/MatchProp/actions**
+Revisá en: **https://github.com/kiteprop/ia-matchprop/actions**
 
 ---
 

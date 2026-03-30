@@ -32,7 +32,7 @@ Guía para publicar MatchProp con acceso público y testers beta.
 
 La API se deploya como **Vercel Serverless Functions** desde `apps/api` (ver `apps/api/vercel.json`).
 
-1. Vercel → **Add New → Project** → Importar repo `TeknoAriel/MatchProp`
+1. Vercel → **Add New → Project** → Importar repo `kiteprop/ia-matchprop`
 2. **Root Directory**: `apps/api`
 3. **Environment Variables** (mismas que en `.env.example`, versión prod):
 

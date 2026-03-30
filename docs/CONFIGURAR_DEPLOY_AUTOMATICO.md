@@ -33,7 +33,7 @@ El `GITHUB_TOKEN` por defecto **no puede** mergear PRs en branches protegidos. N
 3. **Copiar el token** (solo se muestra una vez).
 
 4. **Agregar como secret en el repo**:
-   - https://github.com/TeknoAriel/MatchProp/settings/secrets/actions
+   - https://github.com/kiteprop/ia-matchprop/settings/secrets/actions
    - **"New repository secret"**
    - Name: `AUTOMERGE_TOKEN`
    - Value: pegar el token

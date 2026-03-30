@@ -62,7 +62,7 @@ sys.exit(1)
       echo "⚠ La rama $BRANCH NO está mergeada en main"
       echo "  Main:   $MAIN_SHA"
       echo "  Branch: $BRANCH_SHA"
-      echo "  Ver PR: https://github.com/TeknoAriel/MatchProp/pulls"
+      echo "  Ver PR: https://github.com/kiteprop/ia-matchprop/pulls"
     fi
   fi
 fi

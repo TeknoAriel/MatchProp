@@ -53,6 +53,7 @@
 | [archive/AUDIT_MATCHPROP.md](./archive/AUDIT_MATCHPROP.md)     | Auditoría técnica histórica (archivo)                                                 |
 | [DEV.md](./DEV.md)                                             | Desarrollo local — requisitos, comandos, troubleshooting                              |
 | [PROD.md](./PROD.md)                                           | Producción — variables de entorno, observabilidad, seguridad                          |
+| [REPO_OFICIAL_KITEPROP.md](./REPO_OFICIAL_KITEPROP.md)         | Repo GitHub `kiteprop/ia-matchprop`, Vercel y secretos tras el cambio de remoto       |
 | [SETUP_DEPLOY_SIMPLE.md](./SETUP_DEPLOY_SIMPLE.md)             | Deploy simple — Neon + Vercel, variables, URLs                                        |
 | [DEPLOY_CHECKLIST.md](./DEPLOY_CHECKLIST.md)                   | Checklist pre-deploy, deploy, post-deploy                                             |
 | [demo.md](./demo.md)                                           | Prueba real solo con navegador — escenario demo 1-click                               |

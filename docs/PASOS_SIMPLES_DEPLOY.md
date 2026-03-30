@@ -8,7 +8,7 @@ No tocamos Neon, Vercel ni claves compartidas. Solo esto:
 
 **Desactivar la protección de la rama `main`** para que el bot pueda mergear sin tokens extra.
 
-1. **Ir a:** https://github.com/TeknoAriel/MatchProp/settings/branches
+1. **Ir a:** https://github.com/kiteprop/ia-matchprop/settings/branches
 
 2. Si hay una regla para `main`, clic en **Delete** (eliminar la regla).
 

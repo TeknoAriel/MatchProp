@@ -14,7 +14,7 @@ Valor: generar con `openssl rand -hex 32` (quien tenga acceso admin). **Mismo va
 
 ### 1a. GitHub Actions
 
-1. **https://github.com/TeknoAriel/MatchProp/settings/secrets/actions**
+1. **https://github.com/kiteprop/ia-matchprop/settings/secrets/actions**
 2. **New repository secret** → nombre `CRON_SECRET` → pegar valor.
 
 ### 1b. Vercel – API
@@ -84,7 +84,7 @@ pnpm smoke:prod
 
 | Recurso            | URL                                                              |
 | ------------------ | ---------------------------------------------------------------- |
-| GitHub secrets     | https://github.com/TeknoAriel/MatchProp/settings/secrets/actions |
+| GitHub secrets     | https://github.com/kiteprop/ia-matchprop/settings/secrets/actions |
 | Vercel (proyectos) | dashboard del team → web, admin, api                             |
 
 ---
