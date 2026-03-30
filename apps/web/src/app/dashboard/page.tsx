@@ -207,6 +207,9 @@ export default function DashboardPage() {
       </div>
       <div className="mb-4">
         <WelcomeMessage name={userName} as="h2" />
+        <p className="text-sm text-[var(--mp-muted)] mt-1 max-w-xl">
+          Describí lo que buscás; la IA arma filtros y te llevamos al match.
+        </p>
       </div>
       {showTip && (level === 'NEW' || level === 'ACTIVE') && (
         <div className="mb-6">
@@ -331,6 +334,24 @@ export default function DashboardPage() {
             Escuchando… decí lo que buscás
           </p>
         )}
+
+        <Link
+          href="/assistant"
+          className="mt-6 flex items-center gap-3 w-full p-4 rounded-[var(--mp-radius-card)] border border-[var(--mp-border)] bg-[var(--mp-card)] hover:border-[color-mix(in_srgb,var(--mp-accent)_35%,var(--mp-border))] transition-colors text-left"
+        >
+          <span className="text-2xl shrink-0" aria-hidden>
+            ✨
+          </span>
+          <div className="min-w-0">
+            <p className="font-semibold text-[var(--mp-foreground)]">Asistente con IA</p>
+            <p className="text-xs text-[var(--mp-muted)] mt-0.5">
+              Filtros finos, vista previa y más control sobre tu búsqueda.
+            </p>
+          </div>
+          <span className="text-[var(--mp-muted)] text-sm shrink-0 ml-auto" aria-hidden>
+            →
+          </span>
+        </Link>
 
         {showContinueBlock && activeSearch && searchSummaryLine && (
           <section
