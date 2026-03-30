@@ -13,6 +13,8 @@ import type { FastifyInstance } from 'fastify';
 const USER_EMAIL = 'alerts-runner-dedupe@matchprop.com';
 const SOURCE = 'API_PARTNER_1' as const;
 
+const SAMPLE_MEDIA = [{ url: 'https://example.com/alerts-runner-test.jpg', sortOrder: 0 }] as const;
+
 function norm(extId: string, overrides: Partial<NormalizedListing>): NormalizedListing {
   return {
     source: SOURCE,
@@ -22,6 +24,7 @@ function norm(extId: string, overrides: Partial<NormalizedListing>): NormalizedL
     price: 100000,
     operationType: 'SALE',
     propertyType: 'APARTMENT',
+    mediaUrls: [...SAMPLE_MEDIA],
     ...overrides,
   };
 }
