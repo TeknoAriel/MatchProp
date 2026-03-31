@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { notifyNotificationsChanged } from '../../../lib/notificationEvents';
 
 const API_BASE = '/api';
 
@@ -72,6 +73,18 @@ export default function NotificationsPage() {
       setList((prev) =>
         prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n))
       );
+      notifyNotificationsChanged();
+    }
+  }
+
+  async function markAllRead() {
+    const res = await fetch(`${API_BASE}/me/notifications/read-all`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (res.ok) {
+      setList((prev) => prev.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })));
+      notifyNotificationsChanged();
     }
   }
 
@@ -90,14 +103,25 @@ export default function NotificationsPage() {
   return (
     <main className="min-h-screen p-4">
       <div className="max-w-lg mx-auto">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-wrap justify-between items-center gap-2 mb-6">
           <h1 className="text-2xl font-bold text-slate-900">Notificaciones</h1>
-          <Link
-            href="/feed"
-            className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
-          >
-            ← Match
-          </Link>
+          <div className="flex items-center gap-3">
+            {list.some((n) => !n.readAt) ? (
+              <button
+                type="button"
+                onClick={() => void markAllRead()}
+                className="text-sm font-medium text-slate-600 hover:text-slate-900 underline"
+              >
+                Marcar todas leídas
+              </button>
+            ) : null}
+            <Link
+              href="/feed"
+              className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+            >
+              ← Match
+            </Link>
+          </div>
         </div>
 
         {list.length === 0 ? (

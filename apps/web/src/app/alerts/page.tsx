@@ -330,15 +330,24 @@ export default function AlertsPage() {
             <span className="text-3xl">🔔</span>
           </div>
           <h3 className="font-medium text-[var(--mp-foreground)] mb-2">No tenés alertas activas</h3>
-          <p className="text-sm text-[var(--mp-muted)] mb-4">
-            Creá una búsqueda y activá alertas para recibir avisos
+          <p className="text-sm text-[var(--mp-muted)] mb-4 max-w-sm mx-auto leading-relaxed">
+            Activá alertas desde una búsqueda guardada o describí criterios en el asistente para no
+            perderte novedades.
           </p>
-          <Link
-            href="/searches"
-            className="inline-block px-6 py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700"
-          >
-            Ver mis búsquedas
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+            <Link
+              href="/searches"
+              className="inline-block px-6 py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700"
+            >
+              Ver mis búsquedas
+            </Link>
+            <Link
+              href="/assistant"
+              className="inline-block px-6 py-3 rounded-xl font-medium border border-[var(--mp-border)] bg-[var(--mp-card)] text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]"
+            >
+              Ir al asistente
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="space-y-4">

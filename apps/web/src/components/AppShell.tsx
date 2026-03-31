@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from './ThemeProvider';
+import { NOTIFICATIONS_CHANGED_EVENT } from '../lib/notificationEvents';
 
 /**
  * Flujo principal (masterplan v3.2): una acción clara por nivel.
@@ -107,6 +108,29 @@ function navItemActive(pathname: string | null, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function UnreadBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  const label = count > 99 ? '99+' : String(count);
+  return (
+    <span
+      className="absolute -top-1 -right-1 min-w-[1.125rem] h-[1.125rem] px-0.5 flex items-center justify-center rounded-full bg-rose-600 text-white text-[10px] font-bold leading-none shadow-sm"
+      aria-hidden
+    >
+      {label}
+    </span>
+  );
+}
+
+function MasMoreDot({ show }: { show: boolean }) {
+  if (!show) return null;
+  return (
+    <span
+      className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-[var(--mp-card)]"
+      aria-hidden
+    />
+  );
+}
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
@@ -114,6 +138,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [masOpen, setMasOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+  const refreshUnreadNotifications = useCallback(() => {
+    fetch('/api/me/notifications/unread-count', { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((d: { count?: number } | null) => {
+        if (d && typeof d.count === 'number') setUnreadNotifications(d.count);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const publicPath =
@@ -124,6 +158,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       pathname === '';
     if (publicPath) {
       setUserRole(null);
+      setUnreadNotifications(0);
       return;
     }
     let cancelled = false;
@@ -137,10 +172,24 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       .catch(() => {
         if (!cancelled) setUserRole(null);
       });
+    refreshUnreadNotifications();
     return () => {
       cancelled = true;
     };
-  }, [pathname]);
+  }, [pathname, refreshUnreadNotifications]);
+
+  useEffect(() => {
+    const onChanged = () => refreshUnreadNotifications();
+    window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, onChanged);
+    const onFocus = () => refreshUnreadNotifications();
+    window.addEventListener('focus', onFocus);
+    const id = window.setInterval(refreshUnreadNotifications, 90000);
+    return () => {
+      window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, onChanged);
+      window.removeEventListener('focus', onFocus);
+      window.clearInterval(id);
+    };
+  }, [refreshUnreadNotifications]);
 
   const masSectionsResolved = useMemo(() => masSectionsForRole(userRole), [userRole]);
   const masFlatResolved = useMemo(
@@ -210,11 +259,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <button
                 type="button"
                 onClick={() => setToolsOpen(!toolsOpen)}
-                className={`${NAV_LINK_CLASS} w-full min-w-0 text-left justify-between text-[var(--mp-muted)] hover:bg-[var(--mp-bg)] hover:text-[var(--mp-foreground)] ${
+                className={`${NAV_LINK_CLASS} relative w-full min-w-0 text-left justify-between text-[var(--mp-muted)] hover:bg-[var(--mp-bg)] hover:text-[var(--mp-foreground)] ${
                   secondaryActive ? 'text-[var(--mp-accent-hover)] font-semibold' : ''
                 }`}
                 aria-expanded={toolsOpen}
               >
+                <MasMoreDot show={unreadNotifications > 0} />
                 <span className="flex items-center gap-3 min-w-0">
                   <span className="text-lg shrink-0">⋯</span>
                   <span className="truncate">Más</span>
@@ -242,7 +292,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                             <Link
                               key={item.href}
                               href={item.href}
-                              className={`${NAV_LINK_CLASS} min-w-0 text-[14px] py-2.5 ${
+                              className={`${NAV_LINK_CLASS} relative min-w-0 text-[14px] py-2.5 ${
                                 active
                                   ? 'bg-[color-mix(in_srgb,var(--mp-accent)_14%,var(--mp-card))] text-[var(--mp-accent-hover)] font-semibold'
                                   : 'text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]'
@@ -250,6 +300,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                             >
                               <span className="text-base shrink-0">{item.icon}</span>
                               <span className="truncate">{item.label}</span>
+                              {item.href === '/me/notifications' ? (
+                                <UnreadBadge count={unreadNotifications} />
+                              ) : null}
                             </Link>
                           );
                         })}
@@ -317,6 +370,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             MatchProp
           </Link>
           <div className="flex items-center gap-2">
+            <Link
+              href="/me/notifications"
+              className="relative p-2 rounded-[var(--mp-radius-chip)] text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)] min-h-[44px] min-w-[44px] flex items-center justify-center"
+              title="Notificaciones"
+              aria-label={`Notificaciones${unreadNotifications > 0 ? ` (${unreadNotifications} sin leer)` : ''}`}
+            >
+              <span className="text-xl" aria-hidden>
+                🔔
+              </span>
+              <UnreadBadge count={unreadNotifications} />
+            </Link>
             {userRole === 'ADMIN' && (
               <Link
                 href="/me/settings"
@@ -356,12 +420,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => setMasOpen(true)}
-              className={`flex flex-col items-center justify-center flex-1 py-3 min-h-[52px] rounded-[var(--mp-radius-chip)] transition-colors active:scale-[0.98] ${
+              className={`relative flex flex-col items-center justify-center flex-1 py-3 min-h-[52px] rounded-[var(--mp-radius-chip)] transition-colors active:scale-[0.98] ${
                 masFlatResolved.some((m) => navItemActive(pathname, m.href))
                   ? 'text-[var(--mp-accent)] font-semibold'
                   : 'text-[var(--mp-muted)]'
               }`}
             >
+              <MasMoreDot show={unreadNotifications > 0} />
               <span className="text-[1.25rem]">⋯</span>
               <span className="text-[13px]">Más</span>
             </button>
@@ -416,14 +481,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                               key={item.href}
                               href={item.href}
                               onClick={() => setMasOpen(false)}
-                              className={`flex items-center gap-3 px-4 py-3 rounded-[var(--mp-radius-chip)] min-h-[52px] ${
+                              className={`relative flex items-center gap-3 px-4 py-3 rounded-[var(--mp-radius-chip)] min-h-[52px] ${
                                 active
                                   ? 'bg-[var(--mp-accent)] text-white'
                                   : 'text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]'
                               }`}
                             >
                               <span className="text-xl shrink-0">{item.icon}</span>
-                              <div className="min-w-0">
+                              <div className="min-w-0 flex-1">
                                 <span className="font-medium block">{item.label}</span>
                                 <span
                                   className={`text-xs block truncate ${active ? 'text-white/80' : 'text-[var(--mp-muted)]'}`}
@@ -431,6 +496,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                   {item.desc}
                                 </span>
                               </div>
+                              {item.href === '/me/notifications' && unreadNotifications > 0 ? (
+                                <span className="shrink-0 min-w-[1.25rem] h-6 px-1.5 flex items-center justify-center rounded-full bg-white/25 text-xs font-bold">
+                                  {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                                </span>
+                              ) : null}
                             </Link>
                           );
                         })}

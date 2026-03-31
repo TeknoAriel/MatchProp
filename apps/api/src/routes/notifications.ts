@@ -5,6 +5,53 @@ export async function notificationsRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', fastify.authenticate);
 
   fastify.get(
+    '/me/notifications/unread-count',
+    {
+      schema: {
+        tags: ['Notifications'],
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            type: 'object',
+            properties: { count: { type: 'number' } },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const user = request.user as { userId: string };
+      const count = await prisma.notification.count({
+        where: { userId: user.userId, readAt: null },
+      });
+      return { count };
+    }
+  );
+
+  fastify.post(
+    '/me/notifications/read-all',
+    {
+      schema: {
+        tags: ['Notifications'],
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            type: 'object',
+            properties: { ok: { type: 'boolean' }, updated: { type: 'number' } },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const user = request.user as { userId: string };
+      const result = await prisma.notification.updateMany({
+        where: { userId: user.userId, readAt: null },
+        data: { readAt: new Date() },
+      });
+      return { ok: true, updated: result.count };
+    }
+  );
+
+  fastify.get(
     '/me/notifications',
     {
       schema: {
