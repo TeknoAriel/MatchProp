@@ -15,6 +15,7 @@ import {
   ACTIVE_SEARCH_CHANGED_EVENT,
 } from '../../lib/activeSearchEvents';
 import ActiveSearchBar from '../../components/ActiveSearchBar';
+import OnboardingWelcomeModal from '../../components/OnboardingWelcomeModal';
 
 const API_BASE = '/api';
 
@@ -202,6 +203,7 @@ export default function DashboardPage() {
 
   return (
     <main className="py-4 md:py-6">
+      <OnboardingWelcomeModal />
       <div className="-mx-4 md:-mx-6 mb-4">
         <ActiveSearchBar sticky={false} />
       </div>

@@ -35,6 +35,7 @@ import {
   generateState,
   generateCodeVerifier,
 } from '../services/oauth-flow.js';
+import { trackEvent } from '../lib/analytics.js';
 
 function getClientMeta(request: { ip?: string; headers?: { 'user-agent'?: string } }) {
   return {
@@ -200,6 +201,8 @@ export async function authRoutes(fastify: FastifyInstance) {
           role: UserRole.AGENT,
         },
       });
+
+      trackEvent('signup_completed', { userId: user.id }).catch(() => {});
 
       const meta = getClientMeta(request);
       const { refreshToken } = await createSession({
@@ -391,6 +394,10 @@ export async function authRoutes(fastify: FastifyInstance) {
         ...meta,
       });
 
+      if (user.isNewUser) {
+        trackEvent('signup_completed', { userId: user.userId }).catch(() => {});
+      }
+
       const { refreshToken } = await createSession({
         userId: user.userId,
         ...meta,
@@ -465,6 +472,10 @@ export async function authRoutes(fastify: FastifyInstance) {
         provider: 'magic_link',
         ...meta,
       });
+
+      if (user.isNewUser) {
+        trackEvent('signup_completed', { userId: user.userId }).catch(() => {});
+      }
 
       const { refreshToken } = await createSession({
         userId: user.userId,
@@ -651,6 +662,9 @@ export async function authRoutes(fastify: FastifyInstance) {
         provider,
         ...meta,
       });
+      if (user.isNewUser) {
+        trackEvent('signup_completed', { userId: user.userId }).catch(() => {});
+      }
       const { refreshToken } = await createSession({ userId: user.userId, ...meta });
       const accessToken = signAccessToken(fastify, {
         userId: user.userId,

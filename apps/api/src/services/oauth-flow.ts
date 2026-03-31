@@ -59,7 +59,7 @@ export async function consumeOAuthAttempt(state: string) {
 export async function upsertUserAndIdentityFromOAuth(
   provider: 'google' | 'apple' | 'facebook',
   profile: OAuthProfile
-): Promise<{ userId: string; email: string; role: string }> {
+): Promise<{ userId: string; email: string; role: string; isNewUser: boolean }> {
   const providerEnum = provider as IdentityProvider;
 
   const existingIdentity = await prisma.userIdentity.findUnique({
@@ -77,6 +77,7 @@ export async function upsertUserAndIdentityFromOAuth(
       userId: existingIdentity.userId,
       email: existingIdentity.user.email,
       role: existingIdentity.user.role,
+      isNewUser: false,
     };
   }
 
@@ -102,6 +103,7 @@ export async function upsertUserAndIdentityFromOAuth(
         userId: existingUser.id,
         email: existingUser.email,
         role: existingUser.role,
+        isNewUser: false,
       };
     }
   }
@@ -133,5 +135,6 @@ export async function upsertUserAndIdentityFromOAuth(
     userId: user.id,
     email: user.email,
     role: user.role,
+    isNewUser: true,
   };
 }

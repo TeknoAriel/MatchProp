@@ -2,7 +2,21 @@
 
 Especificación para reorganizar la UX de búsquedas, match y alertas. **Prioridad:** ejecutar antes de continuar con Sprint 7.
 
-**Última actualización:** 2026-03-21
+**Última actualización:** 2026-03-29
+
+---
+
+## Estado actual (2026-03) vs pendiente
+
+| Área                | Implementado hoy                                                                                                            | Pendiente respecto a este spec                                                                                        |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Búsquedas guardadas | Listado, detalle por id, guardar/editar copia, barra de búsqueda activa, `activeSearchId` al crear                          | Acciones unificadas en **card** (§1.1), menú alertas en card (§1.2), bloque resultados de alertas por búsqueda (§1.3) |
+| Feed / match        | `/feed` con búsqueda activa o `feed=all`, cursor con relajación, empty state con CTA al asistente si no hay búsqueda activa | **`/me/match`** agregado multi-búsqueda y orden like > favoritos > resto (§3)                                         |
+| Alertas             | `/alerts`, suscripciones por búsqueda                                                                                       | Vista unificada de **AlertDelivery** global (§4.2) y endpoint dedicado (§5)                                           |
+| API                 | `POST/GET/PATCH/DELETE /searches`, feed existente                                                                           | `PATCH` opcional `isActiveForMatch`, `GET /me/match`, entregas de alertas por búsqueda/global (§5)                    |
+| Modelo              | `User.activeSearchId`, `SavedSearch`                                                                                        | Campo opcional `isActiveForMatch` (§6) si se prioriza exclusión por búsqueda                                          |
+
+La lista detallada de §1–§7 sigue siendo la **hoja de ruta**; esta tabla solo ancla qué está cubierto en código frente al documento original.
 
 ---
 

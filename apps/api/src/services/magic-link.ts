@@ -71,8 +71,14 @@ export async function upsertUserAndIdentityForMagicLink(email: string): Promise<
   userId: string;
   email: string;
   role: string;
+  /** true si el usuario no existía antes de este upsert (alta por magic link). */
+  isNewUser: boolean;
 }> {
   const normalized = normalizeEmail(email);
+
+  const existingUser = await prisma.user.findUnique({
+    where: { email: normalized },
+  });
 
   const user = await prisma.user.upsert({
     where: { email: normalized },
@@ -107,5 +113,6 @@ export async function upsertUserAndIdentityForMagicLink(email: string): Promise<
     userId: user.id,
     email: user.email,
     role: user.role,
+    isNewUser: !existingUser,
   };
 }
