@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto';
 import { prisma } from '../lib/prisma.js';
-import type { IdentityProvider } from '@prisma/client';
+import type { IdentityProvider, SignupMethod } from '@prisma/client';
 import type { OAuthProfile } from './oauth/types.js';
 
 const OAUTH_ATTEMPT_EXPIRY_MIN = 10;
@@ -112,10 +112,17 @@ export async function upsertUserAndIdentityFromOAuth(
     profile.email && profile.emailVerified
       ? profile.email
       : `${profile.providerUserId}@${provider}.oauth.local`;
+  const signupMethod: SignupMethod =
+    provider === 'google'
+      ? 'OAUTH_GOOGLE'
+      : provider === 'apple'
+        ? 'OAUTH_APPLE'
+        : 'OAUTH_FACEBOOK';
   const user = await prisma.user.create({
     data: {
       email,
       role: 'BUYER',
+      signupMethod,
     },
   });
   await prisma.userIdentity.create({

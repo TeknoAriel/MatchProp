@@ -1,6 +1,7 @@
 import { randomBytes, createHash } from 'crypto';
 import { prisma } from '../lib/prisma.js';
 import type { IdentityProvider } from '@prisma/client';
+import type { SignupMethod } from '@prisma/client';
 
 const TOKEN_BYTES = 32;
 const TOKEN_EXPIRY_MIN = 15;
@@ -67,7 +68,10 @@ export async function consumeMagicLinkToken(token: string): Promise<{ email: str
   return { email: record.email };
 }
 
-export async function upsertUserAndIdentityForMagicLink(email: string): Promise<{
+export async function upsertUserAndIdentityForMagicLink(
+  email: string,
+  opts?: { signupMethodOnCreate?: SignupMethod }
+): Promise<{
   userId: string;
   email: string;
   role: string;
@@ -75,6 +79,7 @@ export async function upsertUserAndIdentityForMagicLink(email: string): Promise<
   isNewUser: boolean;
 }> {
   const normalized = normalizeEmail(email);
+  const signupOnCreate = opts?.signupMethodOnCreate ?? 'MAGIC_LINK';
 
   const existingUser = await prisma.user.findUnique({
     where: { email: normalized },
@@ -87,6 +92,7 @@ export async function upsertUserAndIdentityForMagicLink(email: string): Promise<
       // El Magic Link valida el mail, pero NO otorga roles admin por sí solo.
       // Los roles "premium/admin" se asignan por contraseña o por panel admin.
       role: 'BUYER',
+      signupMethod: signupOnCreate,
     },
     // Si el usuario ya existe, preservamos su rol y vigencias para no pisar historial.
     update: {},

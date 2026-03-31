@@ -15,6 +15,17 @@ enum UserRole {
   INMOBILIARIA  // Inmobiliaria: 10 USD/mes, puede crear agentes/corredores (20% dto)
 }
 
+/// Origen del alta (solo se setea en la creación del usuario).
+enum SignupMethod {
+  PASSWORD
+  MAGIC_LINK
+  OAUTH_GOOGLE
+  OAUTH_APPLE
+  OAUTH_FACEBOOK
+  DEMO
+  ADMIN_GRANT
+}
+
 enum IdentityProvider {
   magic_link
   google
@@ -47,10 +58,12 @@ model User {
   email           String    @unique
   passwordHash    String?
   role            UserRole  @default(BUYER)
+  signupMethod    SignupMethod?
   premiumUntil    DateTime?
   activeSearchId  String?
   organizationId  String?   // Para agentes/corredores bajo inmobiliaria
   createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   organization       Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   profile            UserProfile?

@@ -71,7 +71,12 @@ export async function authRoutes(fastify: FastifyInstance) {
             data: { passwordHash: adminHash, role: UserRole.ADMIN },
           })
         : await prisma.user.create({
-            data: { email, passwordHash: adminHash, role: UserRole.ADMIN },
+            data: {
+              email,
+              passwordHash: adminHash,
+              role: UserRole.ADMIN,
+              signupMethod: 'ADMIN_GRANT',
+            },
           });
       const meta = getClientMeta(request);
       const { refreshToken } = await createSession({
@@ -199,6 +204,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           email: body.email,
           passwordHash,
           role: UserRole.AGENT,
+          signupMethod: 'PASSWORD',
         },
       });
 
@@ -526,7 +532,9 @@ export async function authRoutes(fastify: FastifyInstance) {
           const demoRefresh = 'demo-refresh-token';
           setAuthCookies(reply, accessToken, demoRefresh);
         } else {
-          const user = await upsertUserAndIdentityForMagicLink(DEMO_EMAIL);
+          const user = await upsertUserAndIdentityForMagicLink(DEMO_EMAIL, {
+            signupMethodOnCreate: 'DEMO',
+          });
           await logAuthAudit({
             event: 'magic_verified',
             userId: user.userId,

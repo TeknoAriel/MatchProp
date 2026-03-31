@@ -17,7 +17,7 @@ import {
   mapMPStatusToPaymentStatus,
   verifyWebhookSignature,
 } from '../lib/mercadopago.js';
-import { PLANS } from './subscriptions.js';
+import { PLANS } from '../lib/plans.js';
 import Stripe from 'stripe';
 
 // Tipo de cambio aproximado USD -> ARS (actualizar periódicamente o usar API)

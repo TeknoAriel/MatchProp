@@ -38,6 +38,7 @@ import { cronRoutes } from './routes/cron.js';
 import { subscriptionRoutes } from './routes/subscriptions.js';
 import { paymentRoutes } from './routes/payments.js';
 import { adminUsersRoutes } from './routes/admin-users.js';
+import { adminBillingRoutes } from './routes/admin-billing.js';
 import { adminStatsRoutes } from './routes/admin-stats.js';
 import { prisma } from './lib/prisma.js';
 import { registerProductionErrorHandler } from './lib/error-handler.js';
@@ -265,6 +266,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   await fastify.register(subscriptionRoutes);
   await fastify.register(paymentRoutes);
   await fastify.register(adminUsersRoutes);
+  await fastify.register(adminBillingRoutes);
   await fastify.register(adminStatsRoutes);
 
   const { demoRoutes } = await import('./routes/demo.js');

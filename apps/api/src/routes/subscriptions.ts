@@ -12,44 +12,9 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { UserRole, PaymentProvider } from '@prisma/client';
 import { isMercadoPagoConfigured } from '../lib/mercadopago.js';
+import { PLANS, ORG_DISCOUNT } from '../lib/plans.js';
 
-// Planes y precios (centavos USD)
-export const PLANS = {
-  BUYER: {
-    id: 'BUYER',
-    name: 'Usuario',
-    description: 'Like y favoritos',
-    priceMonthly: 100, // $1 USD
-    priceYearly: 1000, // $10 USD (2 meses gratis)
-    features: ['Like ilimitados', 'Favoritos ilimitados', 'Alertas básicas'],
-  },
-  AGENT: {
-    id: 'AGENT',
-    name: 'Agente',
-    description: 'Listas personalizadas',
-    priceMonthly: 300, // $3 USD
-    priceYearly: 3000, // $30 USD
-    features: ['Todo de Usuario', 'Listas personalizadas', 'Exportar listas', 'Alertas avanzadas'],
-  },
-  REALTOR: {
-    id: 'REALTOR',
-    name: 'Corredor',
-    description: 'Herramientas profesionales',
-    priceMonthly: 500, // $5 USD
-    priceYearly: 5000, // $50 USD
-    features: ['Todo de Agente', 'CRM básico', 'Reportes', 'Soporte prioritario'],
-  },
-  INMOBILIARIA: {
-    id: 'INMOBILIARIA',
-    name: 'Inmobiliaria',
-    description: 'Para equipos',
-    priceMonthly: 1000, // $10 USD
-    priceYearly: 10000, // $100 USD
-    features: ['Todo de Corredor', 'Gestión de equipo', 'API acceso', 'Descuento 20% para agentes'],
-  },
-} as const;
-
-const ORG_DISCOUNT = 0.2; // 20% descuento para agentes bajo inmobiliaria
+export { PLANS };
 
 export async function subscriptionRoutes(fastify: FastifyInstance) {
   // GET /plans - Planes públicos (no requiere auth)
@@ -292,15 +257,17 @@ export async function subscriptionRoutes(fastify: FastifyInstance) {
       });
 
       // Crear registro de pago
+      const now = new Date();
       await prisma.payment.create({
         data: {
           userId,
           subscriptionId: subscription.id,
           amount: finalPrice,
           currency: 'USD',
-          status: 'PENDING',
+          status: 'COMPLETED',
           provider: 'MANUAL',
           description: `Suscripción ${plan.name} - ${body.billingCycle === 'yearly' ? 'Anual' : 'Mensual'}`,
+          paidAt: now,
         },
       });
 

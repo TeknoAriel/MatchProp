@@ -84,6 +84,8 @@ export async function profileRoutes(fastify: FastifyInstance) {
                 type: 'boolean',
                 description: 'Si puede cambiar contraseña (no OAuth-only)',
               },
+              createdAt: { type: 'string' },
+              signupMethod: { type: ['string', 'null'] },
             },
           },
         },
@@ -104,6 +106,8 @@ export async function profileRoutes(fastify: FastifyInstance) {
         email: u.email,
         role: effectiveRole,
         premiumUntil: u.premiumUntil?.toISOString() ?? null,
+        createdAt: u.createdAt.toISOString(),
+        signupMethod: u.signupMethod ?? null,
         hasPassword: !!u.passwordHash,
         profile: u.profile
           ? Object.fromEntries(
