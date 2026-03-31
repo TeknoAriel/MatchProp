@@ -1,4 +1,4 @@
-import type { Mailer } from './types.js';
+import type { AlertEmailPayload, Mailer } from './types.js';
 
 export function createSendGridMailerFromCredentials(apiKey: string, from: string): Mailer {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -12,6 +12,15 @@ export function createSendGridMailerFromCredentials(apiKey: string, from: string
         subject: 'Iniciar sesión en MatchProp',
         text: `Hacé clic en este link para iniciar sesión: ${link}`,
         html: `<p>Hacé clic en este link para iniciar sesión:</p><p><a href="${link}">${link}</a></p><p>El link vence en 15 minutos.</p>`,
+      });
+    },
+    async sendAlertNotification(payload: AlertEmailPayload) {
+      await sgMail.send({
+        to: payload.to,
+        from,
+        subject: payload.subject,
+        text: payload.text,
+        html: payload.html,
       });
     },
   };

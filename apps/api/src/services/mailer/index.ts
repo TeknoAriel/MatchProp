@@ -20,6 +20,19 @@ export function getMailer(): Mailer {
   return consoleMailer;
 }
 
+/** True si hay API key SendGrid en DB (habilitada) o en env — apto para mail transaccional. */
+export async function isSendGridAvailableForSend(): Promise<boolean> {
+  try {
+    const row = await prisma.sendGridConfig.findUnique({
+      where: { id: 'default' },
+    });
+    if (row?.isEnabled && row.apiKeyEncrypted) return true;
+  } catch {
+    /* ignore */
+  }
+  return Boolean(process.env.SENDGRID_API_KEY?.trim());
+}
+
 /** Mailer para producción: prioridad 1) config en DB, 2) env, 3) console. */
 export async function getMailerForSend(): Promise<Mailer> {
   try {

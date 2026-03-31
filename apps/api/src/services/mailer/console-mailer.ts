@@ -1,4 +1,4 @@
-import type { Mailer } from './types.js';
+import type { AlertEmailPayload, Mailer } from './types.js';
 
 const store: { email: string; link: string }[] = [];
 
@@ -7,6 +7,9 @@ export const consoleMailer: Mailer = {
   async sendMagicLink(email: string, link: string) {
     console.log(`[Mailer] Magic link for ${email}: ${link}`);
     store.push({ email, link });
+  },
+  async sendAlertNotification(payload: AlertEmailPayload) {
+    console.log(`[Mailer] Alert email -> ${payload.to}: ${payload.subject}`);
   },
 };
 

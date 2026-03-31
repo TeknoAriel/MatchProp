@@ -5,6 +5,7 @@
 import { prisma } from './prisma.js';
 import { executeFeed, listingMatchesFilters } from './feed-engine.js';
 import type { SearchFilters } from '@matchprop/shared';
+import { sendAlertDeliveryEmail } from './alert-delivery-email.js';
 
 export type RunAlertsOptions = {
   /** Límite de items por subscription para NEW_LISTING (default 100). En tests usar valor bajo. */
@@ -17,20 +18,21 @@ export type RunAlertsOptions = {
 
 const DEFAULT_FEED_LIMIT = 100;
 
-function safeCreateDelivery(
+async function createDeliveryIfNew(
   subscriptionId: string,
   listingId: string,
   type: 'NEW_LISTING' | 'PRICE_DROP' | 'BACK_ON_MARKET'
-): Promise<void> {
-  return prisma.alertDelivery
-    .create({
+): Promise<boolean> {
+  try {
+    await prisma.alertDelivery.create({
       data: { subscriptionId, listingId, type },
-    })
-    .then(() => {})
-    .catch((err) => {
-      if (err?.code === 'P2002') return; // Unique constraint
-      throw err;
     });
+    return true;
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code;
+    if (code === 'P2002') return false;
+    throw err;
+  }
 }
 
 /**
@@ -81,11 +83,18 @@ export async function runAlerts(opts: RunAlertsOptions = {}): Promise<void> {
 
       for (const item of result.items) {
         const listingId = (item as { id: string }).id;
-        await safeCreateDelivery(sub.id, listingId, 'NEW_LISTING');
+        const created = await createDeliveryIfNew(sub.id, listingId, 'NEW_LISTING');
         const title = (item as { title?: string }).title ?? 'Sin título';
         log(
           `[Alert] userId=${sub.userId} sub=${sub.id} NEW_LISTING listing=${listingId} "${title}"`
         );
+        if (created) {
+          void sendAlertDeliveryEmail({
+            userId: sub.userId,
+            listingId,
+            alertType: 'NEW_LISTING',
+          }).catch((e) => log(`[Alert] email NEW_LISTING failed: ${String(e)}`));
+        }
       }
     } else if (sub.type === 'PRICE_DROP') {
       const events = await prisma.listingEvent.findMany({
@@ -117,11 +126,18 @@ export async function runAlerts(opts: RunAlertsOptions = {}): Promise<void> {
         const matches = await listingMatchesFilters(ev.listingId, filters);
         if (!matches) continue;
 
-        await safeCreateDelivery(sub.id, ev.listingId, 'PRICE_DROP');
+        const created = await createDeliveryIfNew(sub.id, ev.listingId, 'PRICE_DROP');
         const title = ev.listing.title ?? 'Sin título';
         log(
           `[Alert] userId=${sub.userId} sub=${sub.id} PRICE_DROP listing=${ev.listingId} "${title}"`
         );
+        if (created) {
+          void sendAlertDeliveryEmail({
+            userId: sub.userId,
+            listingId: ev.listingId,
+            alertType: 'PRICE_DROP',
+          }).catch((e) => log(`[Alert] email PRICE_DROP failed: ${String(e)}`));
+        }
       }
     } else if (sub.type === 'BACK_ON_MARKET') {
       const events = await prisma.listingEvent.findMany({
@@ -139,11 +155,18 @@ export async function runAlerts(opts: RunAlertsOptions = {}): Promise<void> {
         const matches = await listingMatchesFilters(ev.listingId, filters);
         if (!matches) continue;
 
-        await safeCreateDelivery(sub.id, ev.listingId, 'BACK_ON_MARKET');
+        const created = await createDeliveryIfNew(sub.id, ev.listingId, 'BACK_ON_MARKET');
         const title = ev.listing.title ?? 'Sin título';
         log(
           `[Alert] userId=${sub.userId} sub=${sub.id} BACK_ON_MARKET listing=${ev.listingId} "${title}"`
         );
+        if (created) {
+          void sendAlertDeliveryEmail({
+            userId: sub.userId,
+            listingId: ev.listingId,
+            alertType: 'BACK_ON_MARKET',
+          }).catch((e) => log(`[Alert] email BACK_ON_MARKET failed: ${String(e)}`));
+        }
       }
     }
 
