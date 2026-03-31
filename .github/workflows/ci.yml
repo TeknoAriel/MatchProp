@@ -7,10 +7,10 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
-# Un grupo por PR (#número) o por ref en push: no mezcla PR con push a ramas sueltas.
+# PR: cancelar corridas viejas del mismo PR. Push a main: NO cancelar (evita cortar Smoke UX / smoke-prod).
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   PNPM_VERSION: '9.0.0'
@@ -48,7 +48,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -99,7 +99,7 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build:shared

@@ -31,10 +31,7 @@ cd ia-matchprop
 1. Abrí **https://github.com/kiteprop/ia-matchprop/settings**
 2. **General → Default branch:** debe ser **`main`**.
 3. **Actions → General:** “Workflow permissions” en **Read and write** si usás deploy automático y PRs.
-4. **Secrets and variables → Actions:** volvé a crear secretos que dependían del repo viejo, por ejemplo:
-   - `AUTOMERGE_TOKEN` (PAT con `repo`, si usás auto-merge con branch protection)
-   - `DEPLOY_WEBHOOK_URL` (opcional)
-   - Cualquier otro que figure en `.github/workflows/`
+4. **Secrets and variables → Actions:** volvé a crear secretos que dependían del repo viejo. Guía paso a paso: **[SECRETOS_Y_AUTOMERGE_GITHUB.md](./SECRETOS_Y_AUTOMERGE_GITHUB.md)** (incluye `AUTOMERGE_TOKEN`, `CRON_SECRET`, auto-merge).
 5. **Branches → Branch protection rules** para `main`: alineá con [CONFIG_PARA_DEPLOY_AUTOMATICO.md](./CONFIG_PARA_DEPLOY_AUTOMATICO.md).
 
 ---
