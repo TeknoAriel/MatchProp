@@ -6,6 +6,7 @@ import { prisma } from './prisma.js';
 import { executeFeed, listingMatchesFilters } from './feed-engine.js';
 import type { SearchFilters } from '@matchprop/shared';
 import { sendAlertDeliveryEmail } from './alert-delivery-email.js';
+import { sendAlertWebPush } from './web-push-send.js';
 
 export type RunAlertsOptions = {
   /** Límite de items por subscription para NEW_LISTING (default 100). En tests usar valor bajo. */
@@ -94,6 +95,11 @@ export async function runAlerts(opts: RunAlertsOptions = {}): Promise<void> {
             listingId,
             alertType: 'NEW_LISTING',
           }).catch((e) => log(`[Alert] email NEW_LISTING failed: ${String(e)}`));
+          void sendAlertWebPush({
+            userId: sub.userId,
+            listingId,
+            alertType: 'NEW_LISTING',
+          }).catch((e) => log(`[Alert] push NEW_LISTING failed: ${String(e)}`));
         }
       }
     } else if (sub.type === 'PRICE_DROP') {
@@ -137,6 +143,11 @@ export async function runAlerts(opts: RunAlertsOptions = {}): Promise<void> {
             listingId: ev.listingId,
             alertType: 'PRICE_DROP',
           }).catch((e) => log(`[Alert] email PRICE_DROP failed: ${String(e)}`));
+          void sendAlertWebPush({
+            userId: sub.userId,
+            listingId: ev.listingId,
+            alertType: 'PRICE_DROP',
+          }).catch((e) => log(`[Alert] push PRICE_DROP failed: ${String(e)}`));
         }
       }
     } else if (sub.type === 'BACK_ON_MARKET') {
@@ -166,6 +177,11 @@ export async function runAlerts(opts: RunAlertsOptions = {}): Promise<void> {
             listingId: ev.listingId,
             alertType: 'BACK_ON_MARKET',
           }).catch((e) => log(`[Alert] email BACK_ON_MARKET failed: ${String(e)}`));
+          void sendAlertWebPush({
+            userId: sub.userId,
+            listingId: ev.listingId,
+            alertType: 'BACK_ON_MARKET',
+          }).catch((e) => log(`[Alert] push BACK_ON_MARKET failed: ${String(e)}`));
         }
       }
     }

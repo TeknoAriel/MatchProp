@@ -10,6 +10,7 @@ import AlertDeliveryModal from '../../components/AlertDeliveryModal';
 import type { AlertDeliveryRow } from '../../components/AlertDeliveryModal';
 import { recordEngagement } from '../../lib/userEngagementClient';
 import { notifyActiveSearchChanged } from '../../lib/activeSearchEvents';
+import AlertPushEnable from '../../components/AlertPushEnable';
 
 const API_BASE = '/api';
 
@@ -215,6 +216,8 @@ export default function AlertsPage() {
   return (
     <main className="py-2">
       {toast && <div className="mb-3 mp-callout font-medium">{toast}</div>}
+
+      <AlertPushEnable />
 
       <div className="mb-6">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-3">

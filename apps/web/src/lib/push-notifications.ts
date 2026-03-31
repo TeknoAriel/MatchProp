@@ -143,29 +143,95 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
   }
 }
 
-// Suscribirse a notificaciones push del servidor
+/** Convierte la clave pública VAPID (base64url) al formato que exige PushManager. */
+export function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+async function resolveVapidPublicKey(): Promise<string | null> {
+  const fromEnv = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim();
+  if (fromEnv) return fromEnv;
+  try {
+    const res = await fetch('/api/notifications/push-config', { credentials: 'include' });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { publicKey?: string | null };
+    return data.publicKey?.trim() ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Suscribirse a Web Push del servidor (misma clave VAPID que el backend). */
 export async function subscribeToPush(
   registration: ServiceWorkerRegistration
 ): Promise<PushSubscription | null> {
   try {
+    const keyB64 = await resolveVapidPublicKey();
+    if (!keyB64) {
+      console.warn('[push] Falta VAPID_PUBLIC_KEY en el servidor o NEXT_PUBLIC_VAPID_PUBLIC_KEY en build');
+      return null;
+    }
+
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+      applicationServerKey: urlBase64ToUint8Array(keyB64) as BufferSource,
     });
 
-    // Enviar la suscripción al servidor
-    await fetch('/api/notifications/subscribe', {
+    const res = await fetch('/api/notifications/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify(subscription),
+      body: JSON.stringify(subscription.toJSON()),
     });
+
+    if (!res.ok) {
+      console.error('[push] Error guardando suscripción:', res.status);
+      return null;
+    }
 
     return subscription;
   } catch (error) {
     console.error('Error suscribiéndose a push:', error);
     return null;
   }
+}
+
+/** Registra SW, pide permiso y suscribe a alertas push (Kiteprop / MatchProp). */
+export async function enableAlertWebPush(): Promise<{
+  ok: boolean;
+  reason?: 'unsupported' | 'denied' | 'no_vapid' | 'subscribe_failed' | 'sw_failed';
+}> {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return { ok: false, reason: 'unsupported' };
+  }
+  const perm = await requestNotificationPermission();
+  if (!perm) return { ok: false, reason: 'denied' };
+
+  const reg = await registerServiceWorker();
+  if (!reg) return { ok: false, reason: 'sw_failed' };
+
+  const existing = await reg.pushManager.getSubscription();
+  if (existing) {
+    const res = await fetch('/api/notifications/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(existing.toJSON()),
+    });
+    if (!res.ok) return { ok: false, reason: 'subscribe_failed' };
+    return { ok: true };
+  }
+
+  const sub = await subscribeToPush(reg);
+  if (!sub) return { ok: false, reason: 'no_vapid' };
+  return { ok: true };
 }
 
 // Clase para manejar notificaciones in-app

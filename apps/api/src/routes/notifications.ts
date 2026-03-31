@@ -2,7 +2,97 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 
 export async function notificationsRoutes(fastify: FastifyInstance) {
+  /** Clave pública VAPID para el navegador (sin auth). */
+  fastify.get(
+    '/notifications/push-config',
+    {
+      schema: {
+        tags: ['Notifications'],
+        response: {
+          200: {
+            type: 'object',
+            properties: { publicKey: { type: ['string', 'null'] } },
+          },
+        },
+      },
+    },
+    async () => ({
+      publicKey: process.env.VAPID_PUBLIC_KEY?.trim() ?? null,
+    })
+  );
+
   fastify.addHook('preHandler', fastify.authenticate);
+
+  fastify.post(
+    '/notifications/subscribe',
+    {
+      schema: {
+        tags: ['Notifications'],
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: 'object',
+          required: ['endpoint', 'keys'],
+          properties: {
+            endpoint: { type: 'string' },
+            keys: {
+              type: 'object',
+              required: ['p256dh', 'auth'],
+              properties: { p256dh: { type: 'string' }, auth: { type: 'string' } },
+            },
+          },
+        },
+        response: {
+          200: { type: 'object', properties: { ok: { type: 'boolean' } } },
+        },
+      },
+    },
+    async (request) => {
+      const userId = (request.user as { userId: string }).userId;
+      const body = request.body as {
+        endpoint: string;
+        keys: { p256dh: string; auth: string };
+      };
+      const endpoint = body.endpoint?.trim();
+      const p256dh = body.keys?.p256dh?.trim();
+      const auth = body.keys?.auth?.trim();
+      if (!endpoint || !p256dh || !auth) {
+        throw fastify.httpErrors.badRequest('Suscripción push inválida');
+      }
+
+      await prisma.webPushSubscription.upsert({
+        where: { endpoint },
+        create: { userId, endpoint, p256dh, auth },
+        update: { userId, p256dh, auth },
+      });
+      return { ok: true };
+    }
+  );
+
+  fastify.post(
+    '/notifications/unsubscribe',
+    {
+      schema: {
+        tags: ['Notifications'],
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: 'object',
+          required: ['endpoint'],
+          properties: { endpoint: { type: 'string' } },
+        },
+        response: {
+          200: { type: 'object', properties: { ok: { type: 'boolean' } } },
+        },
+      },
+    },
+    async (request) => {
+      const userId = (request.user as { userId: string }).userId;
+      const { endpoint } = request.body as { endpoint: string };
+      await prisma.webPushSubscription.deleteMany({
+        where: { userId, endpoint: endpoint.trim() },
+      });
+      return { ok: true };
+    }
+  );
 
   fastify.get(
     '/me/notifications/unread-count',

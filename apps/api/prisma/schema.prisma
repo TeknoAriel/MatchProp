@@ -84,6 +84,21 @@ model User {
   leads               Lead[]
   subscriptions       Subscription[]
   payments            Payment[]
+  webPushSubscriptions WebPushSubscription[]
+}
+
+/// Suscripciones Web Push (PWA) por usuario — escritorio y móvil con soporte de notificaciones.
+model WebPushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model UserIdentity {
