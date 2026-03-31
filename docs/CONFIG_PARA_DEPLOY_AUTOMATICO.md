@@ -6,8 +6,8 @@
 
 ## Checklist (orden recomendado)
 
-| #   | Qué hacer                                                                       | Dónde                                                                                            | Estado |
-| --- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------ |
+| #   | Qué hacer                                                                       | Dónde                                                                                             | Estado |
+| --- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------ |
 | 1   | Activar **Allow auto-merge** en Pull Requests                                   | [Settings → General → Pull Requests](https://github.com/kiteprop/ia-matchprop/settings)           | [ ]    |
 | 2   | Workflow permissions: **Read and write**                                        | [Settings → Actions](https://github.com/kiteprop/ia-matchprop/settings/actions)                   | [ ]    |
 | 3   | Crear secret **AUTOMERGE_TOKEN** (PAT con scope `repo`)                         | [Settings → Secrets → Actions](https://github.com/kiteprop/ia-matchprop/settings/secrets/actions) | [ ]    |

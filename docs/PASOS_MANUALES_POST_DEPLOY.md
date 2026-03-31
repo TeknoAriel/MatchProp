@@ -82,10 +82,10 @@ pnpm smoke:prod
 
 ## Resumen de URLs útiles
 
-| Recurso            | URL                                                              |
-| ------------------ | ---------------------------------------------------------------- |
+| Recurso            | URL                                                               |
+| ------------------ | ----------------------------------------------------------------- |
 | GitHub secrets     | https://github.com/kiteprop/ia-matchprop/settings/secrets/actions |
-| Vercel (proyectos) | dashboard del team → web, admin, api                             |
+| Vercel (proyectos) | dashboard del team → web, admin, api                              |
 
 ---
 
