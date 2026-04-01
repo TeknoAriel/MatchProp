@@ -14,9 +14,7 @@ const ABS_MAX_LISTINGS = 100;
 type ExecuteFeedResult = Awaited<ReturnType<typeof executeFeed>>;
 type FeedItem = Extract<ExecuteFeedResult, { items: unknown[] }>['items'][number];
 
-function tierFor(
-  flags: { like: boolean; favorite: boolean }
-): 0 | 1 | 2 {
+function tierFor(flags: { like: boolean; favorite: boolean }): 0 | 1 | 2 {
   if (flags.like) return 0;
   if (flags.favorite) return 1;
   return 2;

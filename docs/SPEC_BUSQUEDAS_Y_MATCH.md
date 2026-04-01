@@ -8,13 +8,13 @@ Especificación para reorganizar la UX de búsquedas, match y alertas. **Priorid
 
 ## Estado actual (2026-03) vs pendiente
 
-| Área                | Implementado hoy                                                                                                            | Pendiente respecto a este spec                                                                                        |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Búsquedas guardadas | Listado, detalle por id, guardar/editar copia, barra de búsqueda activa, `activeSearchId` al crear                          | Acciones unificadas en **card** (§1.1), menú alertas en card (§1.2), bloque resultados de alertas por búsqueda (§1.3) |
-| Feed / match        | `/feed` …; **`/me/match`** pestaña Descubrir + `GET /me/match/feed` (agregado multi-búsqueda, orden like > favoritos > resto) | `isActiveForMatch` por búsqueda (§3 / §6); refinar copy/UX                                              |
-| Alertas             | `/alerts`, suscripciones, listado de entregas (`GET /alerts/deliveries`), email + in-app + **Web Push opcional** (VAPID)     | Pulir UX §4.2 (agrupar por búsqueda, etc.) si hace falta; canales push requieren env + migración en prod               |
-| API                 | … + **`GET /me/match/feed`** (agregado guardadas), alertas, push                                                  | `PATCH` opcional `isActiveForMatch` (§5)                                                                              |
-| Modelo              | `User.activeSearchId`, `SavedSearch`                                                                                        | Campo opcional `isActiveForMatch` (§6) si se prioriza exclusión por búsqueda                                          |
+| Área                | Implementado hoy                                                                                                              | Pendiente respecto a este spec                                                                                        |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Búsquedas guardadas | Listado, detalle por id, guardar/editar copia, barra de búsqueda activa, `activeSearchId` al crear                            | Acciones unificadas en **card** (§1.1), menú alertas en card (§1.2), bloque resultados de alertas por búsqueda (§1.3) |
+| Feed / match        | `/feed` …; **`/me/match`** pestaña Descubrir + `GET /me/match/feed` (agregado multi-búsqueda, orden like > favoritos > resto) | `isActiveForMatch` por búsqueda (§3 / §6); refinar copy/UX                                                            |
+| Alertas             | `/alerts`, suscripciones, listado de entregas (`GET /alerts/deliveries`), email + in-app + **Web Push opcional** (VAPID)      | Pulir UX §4.2 (agrupar por búsqueda, etc.) si hace falta; canales push requieren env + migración en prod              |
+| API                 | … + **`GET /me/match/feed`** (agregado guardadas), alertas, push                                                              | `PATCH` opcional `isActiveForMatch` (§5)                                                                              |
+| Modelo              | `User.activeSearchId`, `SavedSearch`                                                                                          | Campo opcional `isActiveForMatch` (§6) si se prioriza exclusión por búsqueda                                          |
 
 La lista detallada de §1–§7 sigue siendo la **hoja de ruta**; esta tabla solo ancla qué está cubierto en código frente al documento original.
 

@@ -41,7 +41,10 @@ describe('Alerts integration', () => {
   });
 
   afterAll(async () => {
-    const u = await prisma.user.findUnique({ where: { email: TEST_USER_EMAIL }, select: { id: true } });
+    const u = await prisma.user.findUnique({
+      where: { email: TEST_USER_EMAIL },
+      select: { id: true },
+    });
     if (u) {
       await prisma.notification.deleteMany({ where: { userId: u.id } });
     }

@@ -175,7 +175,9 @@ export async function subscribeToPush(
   try {
     const keyB64 = await resolveVapidPublicKey();
     if (!keyB64) {
-      console.warn('[push] Falta VAPID_PUBLIC_KEY en el servidor o NEXT_PUBLIC_VAPID_PUBLIC_KEY en build');
+      console.warn(
+        '[push] Falta VAPID_PUBLIC_KEY en el servidor o NEXT_PUBLIC_VAPID_PUBLIC_KEY en build'
+      );
       return null;
     }
 
