@@ -29,6 +29,7 @@
 | [PLAN_DE_TRABAJO_2026_Q3.md](./PLAN_DE_TRABAJO_2026_Q3.md)     | Plan Q3 2026 (Sprints 7–12) — onboarding, notificaciones, operación        |
 | [ASISTENTE_IA_ARQUITECTURA.md](./ASISTENTE_IA_ARQUITECTURA.md) | Asistente de búsqueda: pipeline texto/voz → filtros → feed + LLM opcional  |
 | [SPEC_BUSQUEDAS_Y_MATCH.md](./SPEC_BUSQUEDAS_Y_MATCH.md)       | Spec: Búsquedas guardadas, Mis match, Mis alertas (prioridad pre-Sprint 7) |
+| [SPRINT_9.md](./SPRINT_9.md)                                   | Sprint 9: Web Push operativo + Mis match agregado (`/me/match/feed`) y dashboard |
 | [gap-check.md](./gap-check.md)                                 | Auditoría de brechas — gaps funcionales, técnicos, riesgos                 |
 
 ---

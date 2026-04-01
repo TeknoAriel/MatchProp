@@ -212,6 +212,20 @@ export default function DashboardPage() {
         <p className="text-sm text-[var(--mp-muted)] mt-1 max-w-xl">
           Describí lo que buscás; la IA arma filtros y te llevamos al match.
         </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link
+            href="/me/match"
+            className="inline-flex items-center justify-center min-h-[48px] px-5 rounded-full font-semibold bg-[var(--mp-accent)] text-white no-underline hover:opacity-[0.96] text-sm shadow-sm"
+          >
+            Mis match
+          </Link>
+          <Link
+            href="/alerts"
+            className="inline-flex items-center justify-center min-h-[48px] px-5 rounded-full font-semibold border-2 border-[var(--mp-accent)] text-[var(--mp-accent)] bg-transparent no-underline hover:bg-[color-mix(in_srgb,var(--mp-accent)_12%,transparent)] text-sm"
+          >
+            Mis alertas
+          </Link>
+        </div>
       </div>
       {showTip && (level === 'NEW' || level === 'ACTIVE') && (
         <div className="mb-6">

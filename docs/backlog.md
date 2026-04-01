@@ -104,6 +104,8 @@
 4. Feature flags formalizados (demo off en prod)
 5. _Nota: no implementar en Sprint 8_
 
+**Paralelo (producto / SPEC, no sustituye lo anterior):** [SPRINT_9.md](./SPRINT_9.md) — Web Push operativo en servidor + `GET /me/match/feed` y dashboard Mis match / Mis alertas.
+
 **Alternativas**:
 
 - Sprint 8a: Solo chat + filtro anti-PII (reducido)

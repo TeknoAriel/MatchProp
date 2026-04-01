@@ -17,6 +17,7 @@ import { orgRoutes } from './routes/orgs.js';
 import { propertyRoutes } from './routes/properties.js';
 import { preferenceRoutes } from './routes/preferences.js';
 import { activeSearchRoutes } from './routes/active-search.js';
+import { meMatchRoutes } from './routes/me-match.js';
 import { feedRoutes } from './routes/feed.js';
 import { swipeRoutes } from './routes/swipes.js';
 import { savedRoutes } from './routes/saved.js';
@@ -245,6 +246,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   await fastify.register(propertyRoutes);
   await fastify.register(preferenceRoutes);
   await fastify.register(activeSearchRoutes);
+  await fastify.register(meMatchRoutes);
   await fastify.register(feedRoutes);
   await fastify.register(swipeRoutes);
   await fastify.register(savedRoutes);
