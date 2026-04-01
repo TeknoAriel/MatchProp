@@ -17,6 +17,7 @@ jobs:
     continue-on-error: true
     steps:
       - name: Trigger ingest cron
+        continue-on-error: true
         env:
           API_URL: https://match-prop-admin-dsvv.vercel.app/cron/ingest
           STATUS_URL: https://match-prop-admin-dsvv.vercel.app/cron/status
@@ -25,6 +26,24 @@ jobs:
           # Cuando termine la prueba, seteá esta variable (repo variable) a `1` para volver a 1/h.
           CRON_INGEST_INTERVAL_HOURS: ${{ vars.CRON_INGEST_INTERVAL_HOURS || 240 }}
         run: |
+          # No fallar el job por timeouts / 5xx de la API (cron best-effort).
+          set +e
+
+          post_json() {
+            local label="$1"
+            local url="$2"
+            local code
+            code="$(curl -sS -o /dev/null -w "%{http_code}" -X POST "$url" \
+              -H "Authorization: Bearer $CRON_SECRET" \
+              -H "Content-Type: application/json" \
+              -d '{}' || true)"
+            if [ -z "$code" ]; then code="000"; fi
+            echo "${label}: HTTP ${code}"
+            if [ "$code" -ge 400 ] 2>/dev/null || [ "$code" -lt 200 ] 2>/dev/null; then
+              echo "::warning::${label} respondió ${code} (revisar API / CRON_SECRET / timeout)."
+            fi
+          }
+
           if [ -z "$CRON_SECRET" ]; then
             echo "CRON_SECRET not configured. Skipping ingest (configure in repo secrets for prod cron)."
             exit 0
@@ -37,9 +56,9 @@ jobs:
 import json, os
 s = os.environ.get("STATUS_JSON") or "{}"
 try:
-  data = json.loads(s)
+    data = json.loads(s)
 except Exception:
-  data = {}
+    data = {}
 v = data.get("lastRun")
 print(v if v is not None else "")
 PY
@@ -83,13 +102,12 @@ PY
 
           if [ "$RESULT" = "skip" ]; then
             echo "Skipping ingest: lastRun=$LAST_RUN < ${INTERVAL_HOURS}h ago."
-            exit 0
+          else
+            post_json "ingest" "$API_URL"
           fi
 
-          echo "Calling ingest: $API_URL"
-          if ! curl -sS -X POST "$API_URL" \
-            -H "Authorization: Bearer $CRON_SECRET" \
-            -H "Content-Type: application/json" \
-            --fail; then
-            echo "Ingest API returned non-2xx (cold start o CRON_SECRET). Skip sin fallar workflow."
-          fi
+          API_BASE="${API_URL%/cron/ingest}"
+          ALERTS_URL="${API_BASE}/cron/alerts"
+          post_json "alerts" "$ALERTS_URL"
+
+          exit 0
