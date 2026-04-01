@@ -41,6 +41,10 @@ describe('Alerts integration', () => {
   });
 
   afterAll(async () => {
+    const u = await prisma.user.findUnique({ where: { email: TEST_USER_EMAIL }, select: { id: true } });
+    if (u) {
+      await prisma.notification.deleteMany({ where: { userId: u.id } });
+    }
     await prisma.alertSubscription.deleteMany({ where: { user: { email: TEST_USER_EMAIL } } });
     await prisma.savedSearch.deleteMany({ where: { user: { email: TEST_USER_EMAIL } } });
     await app.close();
@@ -110,6 +114,14 @@ describe('Alerts integration', () => {
     const body = res.json() as { id: string; type: string };
     expect(body.type).toBe('BACK_ON_MARKET');
     await prisma.alertSubscription.delete({ where: { id: body.id } });
+  });
+
+  it('POST /cron/alerts sin Authorization devuelve 401', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/cron/alerts',
+    });
+    expect(res.statusCode).toBe(401);
   });
 
   it('alerts:run crea AlertDelivery y no duplica (dedupe)', async () => {
