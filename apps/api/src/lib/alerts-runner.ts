@@ -2,11 +2,58 @@
  * Lógica del job de alertas. Exportada para tests.
  * Una sola pasada, sin intervals/workers. Entrypoint productivo y tests llaman runAlerts(opts).
  */
+import { NotificationType } from '@prisma/client';
 import { prisma } from './prisma.js';
 import { executeFeed, listingMatchesFilters } from './feed-engine.js';
 import type { SearchFilters } from '@matchprop/shared';
 import { sendAlertDeliveryEmail } from './alert-delivery-email.js';
 import { sendAlertWebPush } from './web-push-send.js';
+
+const ALERT_TO_NOTIFICATION: Record<
+  'NEW_LISTING' | 'PRICE_DROP' | 'BACK_ON_MARKET',
+  NotificationType
+> = {
+  NEW_LISTING: NotificationType.ALERT_NEW_LISTING,
+  PRICE_DROP: NotificationType.ALERT_PRICE_DROP,
+  BACK_ON_MARKET: NotificationType.ALERT_BACK_ON_MARKET,
+};
+
+/** In-app (badge), email y push tras un AlertDelivery nuevo. */
+async function notifyAlertChannels(opts: {
+  userId: string;
+  listingId: string;
+  subscriptionId: string;
+  alertType: 'NEW_LISTING' | 'PRICE_DROP' | 'BACK_ON_MARKET';
+  log: (msg: string) => void;
+}): Promise<void> {
+  try {
+    await prisma.notification.create({
+      data: {
+        userId: opts.userId,
+        type: ALERT_TO_NOTIFICATION[opts.alertType],
+        payload: {
+          listingId: opts.listingId,
+          subscriptionId: opts.subscriptionId,
+          alertType: opts.alertType,
+        },
+      },
+    });
+  } catch (e) {
+    opts.log(`[Alert] in-app notification failed: ${String(e)}`);
+  }
+
+  void sendAlertDeliveryEmail({
+    userId: opts.userId,
+    listingId: opts.listingId,
+    alertType: opts.alertType,
+  }).catch((err) => opts.log(`[Alert] email ${opts.alertType} failed: ${String(err)}`));
+
+  void sendAlertWebPush({
+    userId: opts.userId,
+    listingId: opts.listingId,
+    alertType: opts.alertType,
+  }).catch((err) => opts.log(`[Alert] push ${opts.alertType} failed: ${String(err)}`));
+}
 
 export type RunAlertsOptions = {
   /** Límite de items por subscription para NEW_LISTING (default 100). En tests usar valor bajo. */
@@ -90,16 +137,13 @@ export async function runAlerts(opts: RunAlertsOptions = {}): Promise<void> {
           `[Alert] userId=${sub.userId} sub=${sub.id} NEW_LISTING listing=${listingId} "${title}"`
         );
         if (created) {
-          void sendAlertDeliveryEmail({
+          await notifyAlertChannels({
             userId: sub.userId,
             listingId,
+            subscriptionId: sub.id,
             alertType: 'NEW_LISTING',
-          }).catch((e) => log(`[Alert] email NEW_LISTING failed: ${String(e)}`));
-          void sendAlertWebPush({
-            userId: sub.userId,
-            listingId,
-            alertType: 'NEW_LISTING',
-          }).catch((e) => log(`[Alert] push NEW_LISTING failed: ${String(e)}`));
+            log,
+          });
         }
       }
     } else if (sub.type === 'PRICE_DROP') {
@@ -138,16 +182,13 @@ export async function runAlerts(opts: RunAlertsOptions = {}): Promise<void> {
           `[Alert] userId=${sub.userId} sub=${sub.id} PRICE_DROP listing=${ev.listingId} "${title}"`
         );
         if (created) {
-          void sendAlertDeliveryEmail({
+          await notifyAlertChannels({
             userId: sub.userId,
             listingId: ev.listingId,
+            subscriptionId: sub.id,
             alertType: 'PRICE_DROP',
-          }).catch((e) => log(`[Alert] email PRICE_DROP failed: ${String(e)}`));
-          void sendAlertWebPush({
-            userId: sub.userId,
-            listingId: ev.listingId,
-            alertType: 'PRICE_DROP',
-          }).catch((e) => log(`[Alert] push PRICE_DROP failed: ${String(e)}`));
+            log,
+          });
         }
       }
     } else if (sub.type === 'BACK_ON_MARKET') {
@@ -172,16 +213,13 @@ export async function runAlerts(opts: RunAlertsOptions = {}): Promise<void> {
           `[Alert] userId=${sub.userId} sub=${sub.id} BACK_ON_MARKET listing=${ev.listingId} "${title}"`
         );
         if (created) {
-          void sendAlertDeliveryEmail({
+          await notifyAlertChannels({
             userId: sub.userId,
             listingId: ev.listingId,
+            subscriptionId: sub.id,
             alertType: 'BACK_ON_MARKET',
-          }).catch((e) => log(`[Alert] email BACK_ON_MARKET failed: ${String(e)}`));
-          void sendAlertWebPush({
-            userId: sub.userId,
-            listingId: ev.listingId,
-            alertType: 'BACK_ON_MARKET',
-          }).catch((e) => log(`[Alert] push BACK_ON_MARKET failed: ${String(e)}`));
+            log,
+          });
         }
       }
     }
