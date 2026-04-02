@@ -1,6 +1,7 @@
 /**
- * Feed agregado "Mis match" (SPEC): uniona resultados de todas las búsquedas guardadas
+ * Feed agregado "Mis match" (SPEC): une resultados de todas las búsquedas guardadas
  * y ordena like (LATER) > favorito > resto, luego por recencia.
+ * Sin búsquedas guardadas (o si ninguna devuelve ítems), cae al catálogo general como GET /feed?feed=all.
  */
 import type { SearchFilters } from '@matchprop/shared';
 import { prisma } from './prisma.js';
@@ -13,6 +14,19 @@ const ABS_MAX_LISTINGS = 100;
 
 type ExecuteFeedResult = Awaited<ReturnType<typeof executeFeed>>;
 type FeedItem = Extract<ExecuteFeedResult, { items: unknown[] }>['items'][number];
+
+/** Catálogo general (sin filtros de búsqueda guardada), excluyendo swipes del usuario. */
+async function catalogFallbackForMatchFeed(userId: string, limit: number): Promise<FeedItem[]> {
+  const result = await executeFeed({
+    userId,
+    limit,
+    includeTotal: false,
+    filters: {},
+    excludeSwipes: true,
+  });
+  if (result.error || !result.items?.length) return [];
+  return result.items as FeedItem[];
+}
 
 function tierFor(flags: { like: boolean; favorite: boolean }): 0 | 1 | 2 {
   if (flags.like) return 0;
@@ -74,7 +88,9 @@ export async function getAggregatedMatchFeed(
     }
   }
 
-  if (byId.size === 0) return [];
+  if (byId.size === 0) {
+    return catalogFallbackForMatchFeed(userId, maxListings);
+  }
 
   const ids = [...byId.keys()];
 

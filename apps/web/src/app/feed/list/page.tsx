@@ -200,6 +200,8 @@ function FeedListPageContent() {
   }, [items.length]);
 
   useEffect(() => {
+    /** Evita GET /feed sin feed=all mientras no sabemos si hay búsqueda activa (evita listado vacío momentáneo). */
+    if (hasActiveSearch === null && !feedAllFromUrl) return;
     setFetchError(null);
     fetchFeed(null, useFeedAll, true, propertyTypeFilter, operationFilter)
       .then(async (data) => {
@@ -251,7 +253,14 @@ function FeedListPageContent() {
         setFetchError('No se pudo cargar el feed.');
         setLoading(false);
       });
-  }, [fetchFeed, useFeedAll, propertyTypeFilter, operationFilter]);
+  }, [
+    fetchFeed,
+    useFeedAll,
+    propertyTypeFilter,
+    operationFilter,
+    hasActiveSearch,
+    feedAllFromUrl,
+  ]);
 
   async function loadMore() {
     if (!nextCursor || loadingMore) return;

@@ -74,6 +74,7 @@ function FeedPageContent() {
   );
 
   useEffect(() => {
+    if (hasActiveSearch === null && !feedAllFromUrl) return;
     fetchFeed(null, useFeedAll)
       .then((data) => {
         if (data) {
@@ -86,7 +87,7 @@ function FeedPageContent() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [fetchFeed, useFeedAll]);
+  }, [fetchFeed, useFeedAll, hasActiveSearch, feedAllFromUrl]);
 
   const currentCard = queue[0];
 
