@@ -179,8 +179,8 @@ function FeedListPageContent() {
     [router]
   );
 
-  /** Sin búsqueda activa: mostrar todo (feed=all) para que "Ver en lista" funcione. */
-  const useFeedAll = feedAllFromUrl || hasActiveSearch === false;
+  /** Sin búsqueda activa confirmada: catálogo amplio (feed=all). `null` = aún cargando → igual amplios para no bloquear el listado. */
+  const useFeedAll = feedAllFromUrl || hasActiveSearch !== true;
 
   useLayoutEffect(() => {
     if (items.length <= 30) {
@@ -200,8 +200,6 @@ function FeedListPageContent() {
   }, [items.length]);
 
   useEffect(() => {
-    /** Evita GET /feed sin feed=all mientras no sabemos si hay búsqueda activa (evita listado vacío momentáneo). */
-    if (hasActiveSearch === null && !feedAllFromUrl) return;
     setFetchError(null);
     fetchFeed(null, useFeedAll, true, propertyTypeFilter, operationFilter)
       .then(async (data) => {
@@ -253,14 +251,7 @@ function FeedListPageContent() {
         setFetchError('No se pudo cargar el feed.');
         setLoading(false);
       });
-  }, [
-    fetchFeed,
-    useFeedAll,
-    propertyTypeFilter,
-    operationFilter,
-    hasActiveSearch,
-    feedAllFromUrl,
-  ]);
+  }, [fetchFeed, useFeedAll, propertyTypeFilter, operationFilter]);
 
   async function loadMore() {
     if (!nextCursor || loadingMore) return;

@@ -148,10 +148,8 @@ export default function SearchMapPage() {
   }, [feedAllFromUrl]);
 
   useEffect(() => {
-    if (hasActiveSearch === null && !feedAllFromUrl) return;
-
     const includeAll =
-      feedAllFromUrl || hasActiveSearch === false || usedFeedAll;
+      feedAllFromUrl || hasActiveSearch !== true || usedFeedAll;
 
     setLoading(true);
     fetch(`${API_BASE}/feed/map?${mapQuery(undefined, includeAll)}`, { credentials: 'include' })
@@ -191,7 +189,7 @@ export default function SearchMapPage() {
   const handleBoundsChange = useCallback(
     (b: Bounds) => {
       const includeAll =
-        feedAllFromUrl || hasActiveSearch === false || usedFeedAll;
+        feedAllFromUrl || hasActiveSearch !== true || usedFeedAll;
       fetch(`${API_BASE}/feed/map?${mapQuery(b, includeAll)}`, { credentials: 'include' })
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {

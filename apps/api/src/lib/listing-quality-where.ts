@@ -1,8 +1,15 @@
 /**
  * Filtros de calidad del catálogo user-facing (feed, mapa, búsquedas, alertas).
  * - Antigüedad máxima: FEED_MAX_LISTING_AGE_YEARS (default 4).
- * - Requiere al menos una señal visual: fotos (photosCount), filas en media, o hero no vacío.
+ * - Señal visual: photosCount, filas en media, hero, o **rawJson** (payload del conector;
+ *   el card usa extractFromRawJson en feed-listing-card).
+ *
+ * Flujo típico de listado: Browser → Next `/api/*` rewrite → API `GET /feed` o `/feed/map`
+ * → Prisma `listing.findMany` con `status: ACTIVE` + filtros de búsqueda + estas cláusulas.
+ * Si aquí queda 0 filas, no es fallo de “conexión a DB”: el where excluye el inventario.
  */
+
+import { Prisma } from '@prisma/client';
 
 function parseYears(): number {
   const n = Number(process.env.FEED_MAX_LISTING_AGE_YEARS ?? 4);
@@ -27,6 +34,7 @@ export function listingQualityAndClauses(): Record<string, unknown>[] {
         {
           AND: [{ heroImageUrl: { not: null } }, { NOT: { heroImageUrl: '' } }],
         },
+        { rawJson: { not: Prisma.DbNull } },
       ],
     },
   ];

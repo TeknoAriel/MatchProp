@@ -54,7 +54,7 @@ function FeedPageContent() {
     return () => window.removeEventListener(ACTIVE_SEARCH_CHANGED_EVENT, onChange);
   }, [syncActiveSearchFlag]);
 
-  const useFeedAll = feedAllFromUrl || hasActiveSearch === false;
+  const useFeedAll = feedAllFromUrl || hasActiveSearch !== true;
 
   const fetchFeed = useCallback(
     async (cursor?: string | null, feedAll?: boolean) => {
@@ -74,7 +74,6 @@ function FeedPageContent() {
   );
 
   useEffect(() => {
-    if (hasActiveSearch === null && !feedAllFromUrl) return;
     fetchFeed(null, useFeedAll)
       .then((data) => {
         if (data) {
@@ -87,7 +86,7 @@ function FeedPageContent() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [fetchFeed, useFeedAll, hasActiveSearch, feedAllFromUrl]);
+  }, [fetchFeed, useFeedAll]);
 
   const currentCard = queue[0];
 
