@@ -949,6 +949,8 @@ export async function feedRoutes(fastify: FastifyInstance) {
           properties: {
             searchId: { type: 'string' },
             limit: { type: 'integer', default: 200 },
+            feed: { type: 'string', description: 'all = ignorar búsqueda activa/preferencias (solo overrides)' },
+            feedAll: { type: 'string' },
             operationType: { type: 'string', enum: ['SALE', 'RENT'] },
             locationText: { type: 'string' },
             minLat: { type: 'number', description: 'Filtro bounds: lat mínima' },
@@ -1067,8 +1069,9 @@ export async function feedRoutes(fastify: FastifyInstance) {
         });
       }
 
+      const feedAll = q.feed === 'all' || q.feedAll === '1';
       const overrides = parseFeedQuery(q);
-      const filters = mergeFilters(pref, overrides);
+      const filters = feedAll ? mergeFilters(null, overrides) : mergeFilters(pref, overrides);
       const fw = filtersToWhere(filters);
       const baseWhere: Record<string, unknown> = {
         status: 'ACTIVE',

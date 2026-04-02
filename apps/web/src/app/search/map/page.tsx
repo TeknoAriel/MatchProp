@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import type { ListingCard } from '@matchprop/shared';
 import 'leaflet/dist/leaflet.css';
 import ActiveSearchBar from '../../../components/ActiveSearchBar';
+import { ACTIVE_SEARCH_CHANGED_EVENT } from '../../../lib/activeSearchEvents';
 
 const API_BASE = '/api';
 
@@ -16,12 +17,21 @@ type Bounds = { minLat: number; maxLat: number; minLng: number; maxLng: number }
 
 const DEFAULT_CENTER = { lat: -32.9468, lng: -60.6393 }; // Rosario
 
+function coerceLatLng(v: unknown): number | null {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string' && v.trim()) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
 function normalizeCard(raw: unknown): MapListingCard | null {
   if (!raw || typeof raw !== 'object') return null;
   const c = raw as Record<string, unknown>;
   const id = typeof c.id === 'string' ? c.id : null;
-  const lat = typeof c.lat === 'number' ? c.lat : null;
-  const lng = typeof c.lng === 'number' ? c.lng : null;
+  const lat = coerceLatLng(c.lat);
+  const lng = coerceLatLng(c.lng);
   if (!id || lat == null || lng == null) return null;
 
   const media: MapMedia[] | undefined = Array.isArray(c.media)
@@ -75,6 +85,9 @@ const MapView = dynamic(() => import('../../../components/SearchMapView'), {
 
 export default function SearchMapPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const feedAllFromUrl = searchParams?.get('feed') === 'all';
+
   const [items, setItems] = useState<MapListingCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -82,9 +95,66 @@ export default function SearchMapPage() {
   const [selectedImgError, setSelectedImgError] = useState(false);
   const [center, setCenter] = useState(DEFAULT_CENTER);
   const [showList, setShowList] = useState(true);
+  const [hasActiveSearch, setHasActiveSearch] = useState<boolean | null>(null);
+  const [usedFeedAll, setUsedFeedAll] = useState(false);
+  const prevActiveRef = useRef<boolean | null | undefined>(undefined);
+  const prevFeedAllUrlRef = useRef(feedAllFromUrl);
+
+  const syncActiveSearchFlag = useCallback(() => {
+    fetch(`${API_BASE}/me/active-search`, { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : { search: null }))
+      .then((data: { search: unknown }) => setHasActiveSearch(data.search != null))
+      .catch(() => setHasActiveSearch(false));
+  }, []);
 
   useEffect(() => {
-    fetch(`${API_BASE}/feed/map?limit=200`, { credentials: 'include' })
+    syncActiveSearchFlag();
+  }, [syncActiveSearchFlag]);
+
+  useEffect(() => {
+    const onChange = () => syncActiveSearchFlag();
+    window.addEventListener(ACTIVE_SEARCH_CHANGED_EVENT, onChange);
+    return () => window.removeEventListener(ACTIVE_SEARCH_CHANGED_EVENT, onChange);
+  }, [syncActiveSearchFlag]);
+
+  const mapQuery = useCallback(
+    (b: Bounds | undefined, includeFeedAll: boolean) => {
+      const p = new URLSearchParams();
+      p.set('limit', '200');
+      if (includeFeedAll) p.set('feed', 'all');
+      if (b) {
+        p.set('minLat', String(b.minLat));
+        p.set('maxLat', String(b.maxLat));
+        p.set('minLng', String(b.minLng));
+        p.set('maxLng', String(b.maxLng));
+      }
+      return p.toString();
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (prevActiveRef.current !== undefined && prevActiveRef.current !== hasActiveSearch) {
+      setUsedFeedAll(false);
+    }
+    if (hasActiveSearch !== null) prevActiveRef.current = hasActiveSearch;
+  }, [hasActiveSearch]);
+
+  useEffect(() => {
+    if (prevFeedAllUrlRef.current !== feedAllFromUrl) {
+      prevFeedAllUrlRef.current = feedAllFromUrl;
+      setUsedFeedAll(false);
+    }
+  }, [feedAllFromUrl]);
+
+  useEffect(() => {
+    if (hasActiveSearch === null && !feedAllFromUrl) return;
+
+    const includeAll =
+      feedAllFromUrl || hasActiveSearch === false || usedFeedAll;
+
+    setLoading(true);
+    fetch(`${API_BASE}/feed/map?${mapQuery(undefined, includeAll)}`, { credentials: 'include' })
       .then((res) => {
         if (res.status === 401) {
           router.replace('/login');
@@ -92,31 +162,45 @@ export default function SearchMapPage() {
         }
         return res.ok ? res.json() : null;
       })
-      .then((data) => {
-        if (data?.items) {
-          const normalized = normalizeItems(data.items);
-          setItems(normalized);
-          const first = normalized[0];
-          if (first) {
-            setCenter({ lat: first.lat, lng: first.lng });
+      .then(async (data) => {
+        let normalized = data?.items ? normalizeItems(data.items) : [];
+        if (
+          normalized.length === 0 &&
+          !includeAll &&
+          hasActiveSearch === true &&
+          !feedAllFromUrl
+        ) {
+          const fb = await fetch(`${API_BASE}/feed/map?${mapQuery(undefined, true)}`, {
+            credentials: 'include',
+          }).then((r) => (r.ok ? r.json() : null));
+          if (fb?.items?.length) {
+            normalized = normalizeItems(fb.items);
+            setUsedFeedAll(true);
           }
+        }
+        setItems(normalized);
+        const first = normalized[0];
+        if (first) {
+          setCenter({ lat: first.lat, lng: first.lng });
         }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [router]);
+  }, [router, mapQuery, hasActiveSearch, feedAllFromUrl, usedFeedAll]);
 
-  const handleBoundsChange = useCallback((b: Bounds) => {
-    fetch(
-      `${API_BASE}/feed/map?limit=200&minLat=${b.minLat}&maxLat=${b.maxLat}&minLng=${b.minLng}&maxLng=${b.maxLng}`,
-      { credentials: 'include' }
-    )
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.items) setItems(normalizeItems(data.items));
-      })
-      .catch(() => {});
-  }, []);
+  const handleBoundsChange = useCallback(
+    (b: Bounds) => {
+      const includeAll =
+        feedAllFromUrl || hasActiveSearch === false || usedFeedAll;
+      fetch(`${API_BASE}/feed/map?${mapQuery(b, includeAll)}`, { credentials: 'include' })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.items) setItems(normalizeItems(data.items));
+        })
+        .catch(() => {});
+    },
+    [mapQuery, feedAllFromUrl, hasActiveSearch, usedFeedAll]
+  );
 
   const bounds: [[number, number], [number, number]] = useMemo(() => {
     if (items.length > 0) {
@@ -189,7 +273,9 @@ export default function SearchMapPage() {
       {/* Map + List container */}
       <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
         {/* Map */}
-        <div className={`relative ${showList ? 'h-[50%] md:h-full md:flex-1' : 'h-full flex-1'}`}>
+        <div
+          className={`relative min-h-[280px] ${showList ? 'h-[50%] md:h-full md:flex-1' : 'h-full flex-1'}`}
+        >
           <MapView
             items={items.map((i) => ({
               id: i.id,
