@@ -108,5 +108,10 @@ if [ "$PROD_VERSION" = "$MAIN_SHA" ]; then
 else
   echo "⚠ Producción: $PROD_VERSION | Main: $MAIN_SHA"
   echo "  Si acabás de mergear, Vercel tarda 2-5 min. Ejecutá de nuevo."
+  echo ""
+  echo "  Si lleva mucho tiempo desalineado: el /health.version es VERCEL_GIT_COMMIT_SHA del deploy."
+  echo "  → Vercel → proyecto match-prop-api-1jte (root apps/api) → Deployments: ¿último en Production está Ready?"
+  echo "  → Revisar build rojo, Git desconectado, o rama de producción distinta de main."
+  echo "  → docs/INFRAESTRUCTURA_VERCEL.md y docs/DEPLOY_TROUBLESHOOTING.md"
   exit 1
 fi
