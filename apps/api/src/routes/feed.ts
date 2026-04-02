@@ -880,6 +880,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
         (filters.locationText != null && filters.locationText.trim() !== '') ||
         (filters.addressText != null && filters.addressText.trim() !== '');
 
+      /** Búsqueda por zona explícita sin resultados: no rellenar con catálogo aleatorio. */
       if (items.length === 0 && !hasCursor && !feedAll && hasRestrictiveFilters && geoPinned) {
         return {
           items: [],
@@ -891,7 +892,12 @@ export async function feedRoutes(fastify: FastifyInstance) {
         };
       }
 
-      if (items.length === 0 && !hasCursor && !feedAll && hasRestrictiveFilters) {
+      /**
+       * Primera página vacía (filtros de búsqueda activa, calidad, swipes, etc.):
+       * devolver catálogo general con mismas reglas de calidad y swipes.
+       * Antes solo ocurría si hasRestrictiveFilters; eso dejaba 0 ítems con búsqueda “vacía” o solo preferencias.
+       */
+      if (items.length === 0 && !hasCursor && !feedAll) {
         const fallbackWhere: Record<string, unknown> = {
           status: 'ACTIVE' as const,
           swipeDecisions: { none: { userId: user.userId } },
@@ -1082,56 +1088,101 @@ export async function feedRoutes(fastify: FastifyInstance) {
       };
       mergeListingQualityWhere(baseWhere);
 
-      const itemsRaw = await prisma.listing.findMany({
+      const mapSelect = {
+        id: true,
+        lat: true,
+        lng: true,
+        title: true,
+        price: true,
+        locationText: true,
+        heroImageUrl: true,
+        rawJson: true,
+        areaTotal: true,
+        bedrooms: true,
+        bathrooms: true,
+        currency: true,
+        operationType: true,
+        source: true,
+        publisherRef: true,
+        media: {
+          orderBy: { sortOrder: 'asc' as const },
+          take: 6,
+          select: { url: true, sortOrder: true, type: true },
+        },
+      } as const;
+
+      function mapRowsToItems(
+        rows: {
+          id: string;
+          lat: number | null;
+          lng: number | null;
+          title: string | null;
+          price: number | null;
+          locationText: string | null;
+          heroImageUrl: string | null;
+          rawJson: unknown;
+          areaTotal: number | null;
+          bedrooms: number | null;
+          bathrooms: number | null;
+          currency: string | null;
+          operationType: string | null;
+          source: string;
+          publisherRef: string | null;
+          media: { url: string; sortOrder: number; type: string | null }[];
+        }[]
+      ) {
+        return rows
+          .filter((l) => l.id && l.lat != null && l.lng != null)
+          .map((l) => {
+            const card = feedItemWithRawJsonFallback(l);
+            return {
+              id: l.id,
+              lat: l.lat!,
+              lng: l.lng!,
+              title: card.title,
+              price: card.price,
+              locationText: card.locationText,
+              heroImageUrl: card.heroImageUrl,
+              media: card.media,
+              areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
+              bedrooms: l.bedrooms ?? null,
+              bathrooms: l.bathrooms ?? null,
+              currency: l.currency ?? null,
+              operationType: l.operationType ?? null,
+              source: l.source ?? 'API_PARTNER_1',
+              publisherRef: l.publisherRef ?? null,
+            };
+          });
+      }
+
+      let itemsRaw = await prisma.listing.findMany({
         where: baseWhere,
         take: limit,
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-        select: {
-          id: true,
-          lat: true,
-          lng: true,
-          title: true,
-          price: true,
-          locationText: true,
-          heroImageUrl: true,
-          rawJson: true,
-          areaTotal: true,
-          bedrooms: true,
-          bathrooms: true,
-          currency: true,
-          operationType: true,
-          source: true,
-          publisherRef: true,
-          media: {
-            orderBy: { sortOrder: 'asc' },
-            take: 6,
-            select: { url: true, sortOrder: true, type: true },
-          },
-        },
+        select: mapSelect,
       });
 
-      const items = itemsRaw
-        .filter((l) => l.id && l.lat != null && l.lng != null)
-        .map((l) => {
-          const card = feedItemWithRawJsonFallback(l);
-          return {
-            id: l.id,
-            lat: l.lat!,
-            lng: l.lng!,
-            title: card.title,
-            price: card.price,
-            locationText: card.locationText,
-            heroImageUrl: card.heroImageUrl,
-            media: card.media,
-            areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
-            bedrooms: l.bedrooms ?? null,
-            bathrooms: l.bathrooms ?? null,
-            currency: l.currency ?? null,
-            operationType: l.operationType ?? null,
-            source: l.source ?? 'API_PARTNER_1',
-            publisherRef: l.publisherRef ?? null,
-          };
+      let items = mapRowsToItems(itemsRaw);
+
+      if (items.length === 0 && !feedAll) {
+        const filtersOpen = mergeFilters(null, overrides);
+        const fwOpen = filtersToWhere(filtersOpen);
+        const baseOpen: Record<string, unknown> = {
+          status: 'ACTIVE',
+          swipeDecisions: { none: { userId: user.userId } },
+          ...fwOpen,
+          lat: fwOpen.lat ?? { not: null },
+          lng: fwOpen.lng ?? { not: null },
+        };
+        mergeListingQualityWhere(baseOpen);
+        itemsRaw = await prisma.listing.findMany({
+          where: baseOpen,
+          take: limit,
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          select: mapSelect,
         });
+        items = mapRowsToItems(itemsRaw);
+      }
 
       return reply.send({ items });
     }

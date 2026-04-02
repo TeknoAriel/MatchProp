@@ -59,7 +59,9 @@ export async function getAggregatedMatchFeed(
     select: { id: true, filtersJson: true },
   });
 
-  if (searches.length === 0) return [];
+  if (searches.length === 0) {
+    return catalogFallbackForMatchFeed(userId, maxListings);
+  }
 
   const byId = new Map<string, FeedItem>();
 

@@ -77,15 +77,23 @@ export default function MyMatchPage() {
         router.replace('/login');
         return;
       }
-      if (!res.ok) {
-        setDiscoverItems([]);
-        return;
+      let raw: unknown[] = [];
+      if (res.ok) {
+        const data: { items?: unknown[] } = await res.json();
+        raw = data.items ?? [];
       }
-      const data: { items?: unknown[] } = await res.json();
-      const raw = data.items ?? [];
-      const cards = raw
+      let cards = raw
         .map((row) => normalizeCard(row))
         .filter((c): c is ListingCard => c !== null);
+      if (cards.length === 0) {
+        const fr = await fetch(`${API_BASE}/feed?feed=all&limit=60`, { credentials: 'include' });
+        if (fr.ok) {
+          const fd: { items?: unknown[] } = await fr.json();
+          cards = (fd.items ?? [])
+            .map((row) => normalizeCard(row))
+            .filter((c): c is ListingCard => c !== null);
+        }
+      }
       if (cards.length === 0) {
         setDiscoverItems([]);
         return;
