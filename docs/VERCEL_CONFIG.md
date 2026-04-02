@@ -13,10 +13,9 @@ Gates de CI, smoke y release: **[ESTABILIDAD_Y_RELEASE.md](./ESTABILIDAD_Y_RELEA
 
 ## Estado de reconexión (checkpoint)
 
-- **Repo:** `git@github.com:kiteprop/ia-matchprop.git` — `main` al día con `origin/main`.
-- **Último commit:** `c84b96d` — chore: unificar imágenes con ListingImage, limpiar código.
-- **Vercel:** Los 3 proyectos (web, admin, api) deben estar vinculados a este mismo repo; Root Directory por app: `apps/web`, `apps/admin`, `apps/api`.
-- **Imágenes:** Todos los listados usan `ListingImage` con fallback; eliminado `demo-image.ts` y scripts de migración ya ejecutados.
+- **Repo:** `git@github.com:kiteprop/ia-matchprop.git` — `main` = producción Git.
+- **Vercel:** Los 3 proyectos deben tener **Git** conectado a ese repo, **Production Branch** `main`, **Root** `apps/web` | `apps/admin` | `apps/api`. Guía paso a paso: **[CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)**.
+- **Hooks opcionales:** workflow `vercel-deploy-hooks.yml` + secretos `VERCEL_DEPLOY_HOOK_*` (misma guía).
 
 ## Estructura del Monorepo
 

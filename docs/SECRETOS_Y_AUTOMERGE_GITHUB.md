@@ -52,13 +52,27 @@ Si **no** cargás `CRON_SECRET` en GitHub, el workflow [cron-ingest.yml](../.git
 
 ---
 
-## 4. `DEPLOY_WEBHOOK_URL` (opcional)
+## 4. `VERCEL_DEPLOY_HOOK_*` (opcional — redeploy desde Actions)
+
+URLs de **Deploy Hooks** (Vercel → proyecto → Settings → Git → Deploy Hooks, rama Production). El workflow [vercel-deploy-hooks.yml](../.github/workflows/vercel-deploy-hooks.yml) hace `POST` en cada push a `main` si el secreto existe.
+
+| Secreto en GitHub          | Proyecto típico |
+| -------------------------- | --------------- |
+| `VERCEL_DEPLOY_HOOK_API`   | API             |
+| `VERCEL_DEPLOY_HOOK_WEB`   | Web             |
+| `VERCEL_DEPLOY_HOOK_ADMIN` | Admin           |
+
+Guía: **[CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)**.
+
+---
+
+## 5. `DEPLOY_WEBHOOK_URL` (opcional)
 
 Solo si usás un webhook externo al terminar deploy. Si no, no hace falta crearlo.
 
 ---
 
-## 5. Por qué no podés activar “Allow auto-merge”
+## 6. Por qué no podés activar “Allow auto-merge”
 
 Ese interruptor está acá (misma página de ajustes generales del repo):
 
@@ -80,7 +94,7 @@ Sección **Pull Requests** → **Allow auto-merge**.
 
 ---
 
-## 6. Permisos de Actions (necesario para bots)
+## 7. Permisos de Actions (necesario para bots)
 
 [https://github.com/kiteprop/ia-matchprop/settings/actions](https://github.com/kiteprop/ia-matchprop/settings/actions)
 
@@ -90,8 +104,9 @@ Sección **Pull Requests** → **Allow auto-merge**.
 
 ## Resumen rápido
 
-| Secreto              | Origen del valor                                           | Obligatorio                               |
-| -------------------- | ---------------------------------------------------------- | ----------------------------------------- |
-| `AUTOMERGE_TOKEN`    | Lo generás en [tokens](https://github.com/settings/tokens) | No (recomendado si usás merge automático) |
-| `CRON_SECRET`        | Mismo valor que `CRON_SECRET` en Vercel (API)              | No (sin él el cron no dispara ingest)     |
-| `DEPLOY_WEBHOOK_URL` | URL que te dé tu herramienta de avisos                     | No                                        |
+| Secreto                                      | Origen del valor                                           | Obligatorio                               |
+| -------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------- |
+| `AUTOMERGE_TOKEN`                            | Lo generás en [tokens](https://github.com/settings/tokens) | No (recomendado si usás merge automático) |
+| `CRON_SECRET`                                | Mismo valor que `CRON_SECRET` en Vercel (API)              | No (sin él el cron no dispara ingest)     |
+| `VERCEL_DEPLOY_HOOK_API` / `_WEB` / `_ADMIN` | URLs de Deploy Hooks en Vercel                             | No                                        |
+| `DEPLOY_WEBHOOK_URL`                         | URL que te dé tu herramienta de avisos                     | No                                        |

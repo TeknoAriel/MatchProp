@@ -3,7 +3,7 @@
 El código fuente vive en: **https://github.com/kiteprop/ia-matchprop**  
 Remote Git recomendado: `git@github.com:kiteprop/ia-matchprop.git`
 
-El historial anterior puede seguir disponible en el remote opcional `legacy-teknoariel` (solo referencia; no es obligatorio).
+El historial anterior puede vivir en otro remoto (p. ej. fork viejo); no hace falta para desplegar. **Vercel + CI** deben usar solo `kiteprop/ia-matchprop` — ver **[CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)**.
 
 ---
 
@@ -14,7 +14,6 @@ En tu máquina, el proyecto debería tener:
 ```bash
 git remote -v
 # origin    git@github.com:kiteprop/ia-matchprop.git
-# legacy-teknoariel  git@github.com:TeknoAriel/MatchProp.git   # opcional
 ```
 
 Si clonás desde cero:

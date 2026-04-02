@@ -10,6 +10,8 @@ bash scripts/verify-deploy-status.sh
 
 Muestra si la rama está en main, si prod responde, y si el commit en prod coincide con main.
 
+Si prod lleva días con un SHA viejo: reconectar Vercel al repo **`kiteprop/ia-matchprop`** y rama **`main`** — ver **[CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)**. Opcional: Deploy Hooks + workflow `vercel-deploy-hooks.yml`.
+
 ## Ruleset en `main`: checks requeridos
 
 El workflow **CI** expone un solo job obligatorio para reglas de rama: **`CI / Verify`** (typecheck, lint, tests, integración y `pre-deploy:verify` en un solo run).
