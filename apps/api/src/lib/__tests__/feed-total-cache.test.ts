@@ -17,54 +17,56 @@ describe('normalizeFiltersForCache', () => {
 
 describe('createFeedTotalCache', () => {
   describe('hit/miss', () => {
-    it('get sin set devuelve null', () => {
+    it('get sin set devuelve null', async () => {
       const { getCachedTotal } = createFeedTotalCache({ maxEntries: 10 });
-      expect(getCachedTotal('u1', {})).toBeNull();
+      await expect(getCachedTotal('u1', {})).resolves.toBeNull();
     });
 
-    it('set luego get devuelve el valor', () => {
+    it('set luego get devuelve el valor', async () => {
       const { getCachedTotal, setCachedTotal } = createFeedTotalCache({ maxEntries: 10 });
-      setCachedTotal('u1', { operation: 'SALE' }, 42);
-      expect(getCachedTotal('u1', { operation: 'SALE' })).toBe(42);
+      await setCachedTotal('u1', { operation: 'SALE' }, 42);
+      await expect(getCachedTotal('u1', { operation: 'SALE' })).resolves.toBe(42);
     });
   });
 
   describe('normalización en cache key', () => {
-    it('propertyTypes en distinto orden comparten cache', () => {
+    it('propertyTypes en distinto orden comparten cache', async () => {
       const { getCachedTotal, setCachedTotal } = createFeedTotalCache({ maxEntries: 10 });
-      setCachedTotal('u1', { propertyTypes: ['HOUSE', 'APARTMENT'] }, 10);
-      expect(getCachedTotal('u1', { propertyTypes: ['APARTMENT', 'HOUSE'] })).toBe(10);
+      await setCachedTotal('u1', { propertyTypes: ['HOUSE', 'APARTMENT'] }, 10);
+      await expect(
+        getCachedTotal('u1', { propertyTypes: ['APARTMENT', 'HOUSE'] })
+      ).resolves.toBe(10);
     });
   });
 
   describe('LRU eviction', () => {
-    it('con maxEntries=3 evicta el menos reciente, no el recién accedido', () => {
+    it('con maxEntries=3 evicta el menos reciente, no el recién accedido', async () => {
       const { getCachedTotal, setCachedTotal } = createFeedTotalCache({ maxEntries: 3 });
-      setCachedTotal('u1', { a: 1 }, 1);
-      setCachedTotal('u1', { a: 2 }, 2);
-      setCachedTotal('u1', { a: 3 }, 3);
-      getCachedTotal('u1', { a: 1 }); // A se vuelve más reciente
-      setCachedTotal('u1', { a: 4 }, 4); // debe evictar B (a:2), no A
-      expect(getCachedTotal('u1', { a: 1 })).toBe(1);
-      expect(getCachedTotal('u1', { a: 2 })).toBeNull();
-      expect(getCachedTotal('u1', { a: 3 })).toBe(3);
-      expect(getCachedTotal('u1', { a: 4 })).toBe(4);
+      await setCachedTotal('u1', { a: 1 }, 1);
+      await setCachedTotal('u1', { a: 2 }, 2);
+      await setCachedTotal('u1', { a: 3 }, 3);
+      await getCachedTotal('u1', { a: 1 }); // A se vuelve más reciente
+      await setCachedTotal('u1', { a: 4 }, 4); // debe evictar B (a:2), no A
+      await expect(getCachedTotal('u1', { a: 1 })).resolves.toBe(1);
+      await expect(getCachedTotal('u1', { a: 2 })).resolves.toBeNull();
+      await expect(getCachedTotal('u1', { a: 3 })).resolves.toBe(3);
+      await expect(getCachedTotal('u1', { a: 4 })).resolves.toBe(4);
     });
   });
 
   describe('cap', () => {
-    it('no supera maxEntries', () => {
+    it('no supera maxEntries', async () => {
       const { getCachedTotal, setCachedTotal } = createFeedTotalCache({ maxEntries: 3 });
-      setCachedTotal('u1', { a: 1 }, 1);
-      setCachedTotal('u1', { a: 2 }, 2);
-      setCachedTotal('u1', { a: 3 }, 3);
-      setCachedTotal('u1', { a: 4 }, 4);
-      setCachedTotal('u1', { a: 5 }, 5);
-      expect(getCachedTotal('u1', { a: 1 })).toBeNull();
-      expect(getCachedTotal('u1', { a: 2 })).toBeNull();
-      expect(getCachedTotal('u1', { a: 3 })).toBe(3);
-      expect(getCachedTotal('u1', { a: 4 })).toBe(4);
-      expect(getCachedTotal('u1', { a: 5 })).toBe(5);
+      await setCachedTotal('u1', { a: 1 }, 1);
+      await setCachedTotal('u1', { a: 2 }, 2);
+      await setCachedTotal('u1', { a: 3 }, 3);
+      await setCachedTotal('u1', { a: 4 }, 4);
+      await setCachedTotal('u1', { a: 5 }, 5);
+      await expect(getCachedTotal('u1', { a: 1 })).resolves.toBeNull();
+      await expect(getCachedTotal('u1', { a: 2 })).resolves.toBeNull();
+      await expect(getCachedTotal('u1', { a: 3 })).resolves.toBe(3);
+      await expect(getCachedTotal('u1', { a: 4 })).resolves.toBe(4);
+      await expect(getCachedTotal('u1', { a: 5 })).resolves.toBe(5);
     });
   });
 });

@@ -54,7 +54,8 @@ apps/api/src/
 │   └── ...
 ├── lib/              # Lógica compartida
 │   ├── feed-engine.ts      # Motor del feed (feed + searches)
-│   ├── feed-total-cache.ts # Caché in-memory total
+│   ├── feed-total-cache.ts # LRU in-memory (totales feed)
+│   ├── feed-total-cache-provider.ts # Redis opcional (REDIS_URL) o memoria
 │   ├── prisma.ts
 │   └── ...
 ├── plugins/          # authenticate, requireRole

@@ -3,7 +3,7 @@
  */
 import { prisma } from './prisma.js';
 import { encodeListingCursor, decodeListingCursor } from './cursor.js';
-import { getCachedTotal, setCachedTotal } from './feed-total-cache.js';
+import { getCachedTotal, setCachedTotal } from './feed-total-cache-provider.js';
 import { amenityFiltersToAndList } from './amenity-filter.js';
 import { locationTextToPrismaClause } from './location-filter.js';
 import { mergeListingQualityWhere } from './listing-quality-where.js';
@@ -293,13 +293,13 @@ export async function executeFeed(params: {
   const hasCursor = !!cursorData;
   let total: number | null = null;
   if (hasCursor) {
-    total = getCachedTotal(userId, filters as Record<string, unknown>) ?? null;
+    total = (await getCachedTotal(userId, filters as Record<string, unknown>)) ?? null;
   } else if (includeTotal) {
     const count = await prisma.listing.count({ where: baseWhere });
     total = count;
-    setCachedTotal(userId, filters as Record<string, unknown>, count);
+    await setCachedTotal(userId, filters as Record<string, unknown>, count);
   } else {
-    total = getCachedTotal(userId, filters as Record<string, unknown>) ?? null;
+    total = (await getCachedTotal(userId, filters as Record<string, unknown>)) ?? null;
   }
 
   const orderBy = orderByForSort(filters.sortBy, { legacyLastSeenCursor });

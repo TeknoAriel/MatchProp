@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { encodeListingCursor, decodeListingCursor } from '../lib/cursor.js';
-import { getCachedTotal, setCachedTotal } from '../lib/feed-total-cache.js';
+import { getCachedTotal, setCachedTotal } from '../lib/feed-total-cache-provider.js';
 import { amenityFiltersToAndList } from '../lib/amenity-filter.js';
 import { locationTextToPrismaClause } from '../lib/location-filter.js';
 import { mergeListingQualityWhere } from '../lib/listing-quality-where.js';
@@ -790,13 +790,13 @@ export async function feedRoutes(fastify: FastifyInstance) {
 
       let total: number | null = null;
       if (hasCursor) {
-        total = getCachedTotal(user.userId, filters as Record<string, unknown>) ?? null;
+        total = (await getCachedTotal(user.userId, filters as Record<string, unknown>)) ?? null;
       } else if (includeTotal) {
         const count = await prisma.listing.count({ where: baseWhere });
         total = count;
-        setCachedTotal(user.userId, filters as Record<string, unknown>, count);
+        await setCachedTotal(user.userId, filters as Record<string, unknown>, count);
       } else {
-        total = getCachedTotal(user.userId, filters as Record<string, unknown>) ?? null;
+        total = (await getCachedTotal(user.userId, filters as Record<string, unknown>)) ?? null;
       }
 
       let itemsRaw = await prisma.listing.findMany({
@@ -847,7 +847,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
             cursorRelaxStepForNext = step;
             if (includeTotal) {
               total = await prisma.listing.count({ where: bw });
-              setCachedTotal(user.userId, rf as Record<string, unknown>, total);
+              await setCachedTotal(user.userId, rf as Record<string, unknown>, total);
             }
             break;
           }
