@@ -117,21 +117,18 @@ export default function SearchMapPage() {
     return () => window.removeEventListener(ACTIVE_SEARCH_CHANGED_EVENT, onChange);
   }, [syncActiveSearchFlag]);
 
-  const mapQuery = useCallback(
-    (b: Bounds | undefined, includeFeedAll: boolean) => {
-      const p = new URLSearchParams();
-      p.set('limit', '200');
-      if (includeFeedAll) p.set('feed', 'all');
-      if (b) {
-        p.set('minLat', String(b.minLat));
-        p.set('maxLat', String(b.maxLat));
-        p.set('minLng', String(b.minLng));
-        p.set('maxLng', String(b.maxLng));
-      }
-      return p.toString();
-    },
-    []
-  );
+  const mapQuery = useCallback((b: Bounds | undefined, includeFeedAll: boolean) => {
+    const p = new URLSearchParams();
+    p.set('limit', '200');
+    if (includeFeedAll) p.set('feed', 'all');
+    if (b) {
+      p.set('minLat', String(b.minLat));
+      p.set('maxLat', String(b.maxLat));
+      p.set('minLng', String(b.minLng));
+      p.set('maxLng', String(b.maxLng));
+    }
+    return p.toString();
+  }, []);
 
   useEffect(() => {
     if (prevActiveRef.current !== undefined && prevActiveRef.current !== hasActiveSearch) {
@@ -148,8 +145,7 @@ export default function SearchMapPage() {
   }, [feedAllFromUrl]);
 
   useEffect(() => {
-    const includeAll =
-      feedAllFromUrl || hasActiveSearch !== true || usedFeedAll;
+    const includeAll = feedAllFromUrl || hasActiveSearch !== true || usedFeedAll;
 
     setLoading(true);
     fetch(`${API_BASE}/feed/map?${mapQuery(undefined, includeAll)}`, { credentials: 'include' })
@@ -162,12 +158,7 @@ export default function SearchMapPage() {
       })
       .then(async (data) => {
         let normalized = data?.items ? normalizeItems(data.items) : [];
-        if (
-          normalized.length === 0 &&
-          !includeAll &&
-          hasActiveSearch === true &&
-          !feedAllFromUrl
-        ) {
+        if (normalized.length === 0 && !includeAll && hasActiveSearch === true && !feedAllFromUrl) {
           const fb = await fetch(`${API_BASE}/feed/map?${mapQuery(undefined, true)}`, {
             credentials: 'include',
           }).then((r) => (r.ok ? r.json() : null));
@@ -188,8 +179,7 @@ export default function SearchMapPage() {
 
   const handleBoundsChange = useCallback(
     (b: Bounds) => {
-      const includeAll =
-        feedAllFromUrl || hasActiveSearch !== true || usedFeedAll;
+      const includeAll = feedAllFromUrl || hasActiveSearch !== true || usedFeedAll;
       fetch(`${API_BASE}/feed/map?${mapQuery(b, includeAll)}`, { credentials: 'include' })
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {

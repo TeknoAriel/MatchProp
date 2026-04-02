@@ -955,7 +955,10 @@ export async function feedRoutes(fastify: FastifyInstance) {
           properties: {
             searchId: { type: 'string' },
             limit: { type: 'integer', default: 200 },
-            feed: { type: 'string', description: 'all = ignorar búsqueda activa/preferencias (solo overrides)' },
+            feed: {
+              type: 'string',
+              description: 'all = ignorar búsqueda activa/preferencias (solo overrides)',
+            },
             feedAll: { type: 'string' },
             operationType: { type: 'string', enum: ['SALE', 'RENT'] },
             locationText: { type: 'string' },

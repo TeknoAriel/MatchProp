@@ -53,10 +53,7 @@ export async function getActiveIngestSources(): Promise<ActiveSource[]> {
   if (demoMode) return out;
   const properstarOrYumblinEnv =
     process.env.KITEPROP_DIFUSION_PROPERSTAR_URL || process.env.KITEPROP_DIFUSION_YUMBLIN_URL;
-  if (
-    properstarOrYumblinEnv &&
-    !out.some((a) => a.source === 'KITEPROP_DIFUSION_YUMBLIN')
-  )
+  if (properstarOrYumblinEnv && !out.some((a) => a.source === 'KITEPROP_DIFUSION_YUMBLIN'))
     out.push({ source: 'KITEPROP_DIFUSION_YUMBLIN', key: 'properstar' });
   if (
     process.env.KITEPROP_DIFUSION_ICASAS_URL &&

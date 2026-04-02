@@ -141,9 +141,7 @@ export function createKitepropDifusionYumblinConnector(): SourceConnector {
       remoteListingArrayCache = { url, items: arr };
 
       const catalogReset = Boolean(
-        inm &&
-          newEtagRaw &&
-          normalizeEtagForCompare(inm) !== normalizeEtagForCompare(newEtagRaw)
+        inm && newEtagRaw && normalizeEtagForCompare(inm) !== normalizeEtagForCompare(newEtagRaw)
       );
       const start = catalogReset ? 0 : cursor ? parseInt(String(cursor), 10) || 0 : 0;
       const slice = arr.slice(start, start + limit);

@@ -8,22 +8,22 @@ Alineado a **Plan Q3 2026** ([PLAN_DE_TRABAJO_2026_Q3.md](./PLAN_DE_TRABAJO_2026
 
 Respuesta **siempre 200** (probes no caen por un fallo puntual). El cuerpo indica estado:
 
-| Campo | Significado |
-| ----- | ----------- |
-| `status` | `ok` \| `degraded` (DB no responde) |
-| `db` | `ok` \| `error` |
-| `version` | SHA de deploy o `local` |
-| `migration` | Última migración Prisma aplicada |
-| `ops` | Solo si DB OK; métricas operativas (misma fuente que `getOperationalMetrics` en código) |
+| Campo       | Significado                                                                             |
+| ----------- | --------------------------------------------------------------------------------------- |
+| `status`    | `ok` \| `degraded` (DB no responde)                                                     |
+| `db`        | `ok` \| `error`                                                                         |
+| `version`   | SHA de deploy o `local`                                                                 |
+| `migration` | Última migración Prisma aplicada                                                        |
+| `ops`       | Solo si DB OK; métricas operativas (misma fuente que `getOperationalMetrics` en código) |
 
 ### Objeto `ops`
 
-| Campo | Significado |
-| ----- | ----------- |
+| Campo                 | Significado                                                       |
+| --------------------- | ----------------------------------------------------------------- |
 | `outboxIngestPending` | Eventos `INGEST_RUN_REQUESTED` sin `processedAt` (cola de ingest) |
-| `cronIngestLastAt` | ISO del último `CRON_INGEST_COMPLETED` en outbox |
-| `crmPushPending` | Filas `CrmPushOutbox` en `PENDING` |
-| `crmPushFailed` | Filas `CrmPushOutbox` en `FAILED` |
+| `cronIngestLastAt`    | ISO del último `CRON_INGEST_COMPLETED` en outbox                  |
+| `crmPushPending`      | Filas `CrmPushOutbox` en `PENDING`                                |
+| `crmPushFailed`       | Filas `CrmPushOutbox` en `FAILED`                                 |
 
 Si alguna consulta falla, el campo correspondiente puede ser `null`.
 

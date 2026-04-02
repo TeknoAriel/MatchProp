@@ -134,7 +134,7 @@ export async function processIngestEvent(
 
   const nextAccumulator = [...new Set([...accumulator, ...batchIds])];
 
-  const nextEtag = result.etag != null && result.etag !== '' ? result.etag : meta.etag ?? null;
+  const nextEtag = result.etag != null && result.etag !== '' ? result.etag : (meta.etag ?? null);
 
   const syncComplete = result.nextCursor == null && connector.fullCatalogTombstone === true;
 
@@ -144,8 +144,7 @@ export async function processIngestEvent(
 
   const nextMetadata: WatermarkMetadata = {
     etag: nextEtag,
-    accumulatedExternalIds:
-      syncComplete && connector.fullCatalogTombstone ? [] : nextAccumulator,
+    accumulatedExternalIds: syncComplete && connector.fullCatalogTombstone ? [] : nextAccumulator,
   };
 
   await prisma.syncWatermark.update({

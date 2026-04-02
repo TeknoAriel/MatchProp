@@ -197,7 +197,10 @@ export default function StatsPage() {
             </div>
             <div className="flex justify-between gap-2 border-b border-slate-200/80 pb-1">
               <dt className="text-slate-600">Último cron ingest</dt>
-              <dd className="font-mono text-xs text-right truncate" title={ops.cronIngestLastAt ?? ''}>
+              <dd
+                className="font-mono text-xs text-right truncate"
+                title={ops.cronIngestLastAt ?? ''}
+              >
                 {ops.cronIngestLastAt ?? '—'}
               </dd>
             </div>
@@ -211,7 +214,9 @@ export default function StatsPage() {
             </div>
           </dl>
         ) : (
-          <p className="mt-2 text-xs text-amber-700">No se pudo cargar /admin/stats/ops (¿sesión admin?).</p>
+          <p className="mt-2 text-xs text-amber-700">
+            No se pudo cargar /admin/stats/ops (¿sesión admin?).
+          </p>
         )}
       </section>
 

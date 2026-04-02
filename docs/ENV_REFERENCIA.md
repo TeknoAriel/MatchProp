@@ -97,16 +97,16 @@ Tokens y URLs usados en el proyecto, sin valores reales.
 
 ## Kiteprop / Ingest
 
-| Variable                         | Formato                                                                |
-| -------------------------------- | ---------------------------------------------------------------------- |
-| `KITEPROP_EXTERNALSITE_URL`      | `https://static.kiteprop.com/kp/difusions/.../externalsite-2-....json` |
-| `KITEPROP_EXTERNALSITE_MODE`     | `fixture` \| `live`                                                    |
-| `KITEPROP_DIFUSION_PROPERSTAR_URL` | URL JSON catálogo Properstar (prioridad sobre yumblin)               |
+| Variable                           | Formato                                                                |
+| ---------------------------------- | ---------------------------------------------------------------------- |
+| `KITEPROP_EXTERNALSITE_URL`        | `https://static.kiteprop.com/kp/difusions/.../externalsite-2-....json` |
+| `KITEPROP_EXTERNALSITE_MODE`       | `fixture` \| `live`                                                    |
+| `KITEPROP_DIFUSION_PROPERSTAR_URL` | URL JSON catálogo Properstar (prioridad sobre yumblin)                 |
 | `KITEPROP_DIFUSION_YUMBLIN_URL`    | Alias legado; misma URL que properstar si no usás la variable anterior |
 | `KITEPROP_DIFUSION_YUMBLIN_MODE`   | `fixture` \| live (sin valor: fetch real)                              |
-| `KITEPROP_DIFUSION_*_MODE`       | `fixture` \| `live` (Zonaprop, Toctoc, Icasas)                         |
-| `KITEPROP_API_BASE_URL`          | URL API Kiteprop                                                       |
-| `KITEPROP_API_KEY`               | API key                                                                |
+| `KITEPROP_DIFUSION_*_MODE`         | `fixture` \| `live` (Zonaprop, Toctoc, Icasas)                         |
+| `KITEPROP_API_BASE_URL`            | URL API Kiteprop                                                       |
+| `KITEPROP_API_KEY`                 | API key                                                                |
 
 ---
 

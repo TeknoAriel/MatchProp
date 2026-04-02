@@ -17,14 +17,24 @@ jobs:
   trigger:
     runs-on: ubuntu-latest
     steps:
+      # Sin -f: curl no corta el job en 4xx/5xx; el hook puede estar vencido o mal copiado.
       - name: Redeploy API (hook)
-        if: ${{ secrets.VERCEL_DEPLOY_HOOK_API }}
-        run: curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_API }}"
+        if: ${{ secrets.VERCEL_DEPLOY_HOOK_API != '' }}
+        run: |
+          code=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_API }}" || echo "000")
+          echo "HTTP $code"
+          case "$code" in 200|201|204) ;; *) echo "::warning::Hook API no OK ($code). Revisá VERCEL_DEPLOY_HOOK_API en GitHub o regeneralo en Vercel." ;; esac
 
       - name: Redeploy Web (hook)
-        if: ${{ secrets.VERCEL_DEPLOY_HOOK_WEB }}
-        run: curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_WEB }}"
+        if: ${{ secrets.VERCEL_DEPLOY_HOOK_WEB != '' }}
+        run: |
+          code=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_WEB }}" || echo "000")
+          echo "HTTP $code"
+          case "$code" in 200|201|204) ;; *) echo "::warning::Hook Web no OK ($code). Revisá VERCEL_DEPLOY_HOOK_WEB." ;; esac
 
       - name: Redeploy Admin (hook)
-        if: ${{ secrets.VERCEL_DEPLOY_HOOK_ADMIN }}
-        run: curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_ADMIN }}"
+        if: ${{ secrets.VERCEL_DEPLOY_HOOK_ADMIN != '' }}
+        run: |
+          code=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_ADMIN }}" || echo "000")
+          echo "HTTP $code"
+          case "$code" in 200|201|204) ;; *) echo "::warning::Hook Admin no OK ($code). Revisá VERCEL_DEPLOY_HOOK_ADMIN." ;; esac

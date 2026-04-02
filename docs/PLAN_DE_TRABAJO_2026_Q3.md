@@ -51,11 +51,11 @@ Plan posterior a Sprints 1–6. Alineado a [masterplan.md](./masterplan.md), [FO
 **Duración:** 2 semanas  
 **Objetivo:** Usuario vuelve cuando hay novedades (alertas, matches, respuestas).
 
-| #   | Tarea                             | DoD                                                                            | Estado    |
-| --- | --------------------------------- | ------------------------------------------------------------------------------ | --------- |
-| 8.1 | Badge de notificaciones no leídas | Indicador en navbar / Más; GET /me/notifications/unread-count + polling            | Hecho (AppShell) |
-| 8.2 | Email alertas (SendGrid)          | Envío al crear `AlertDelivery` vía `sendAlertDeliveryEmail`; tests en API        | Hecho — [ALERTAS_EMAIL.md](./ALERTAS_EMAIL.md) |
-| 8.3 | Landing alertas                   | CTA en /alerts si no hay suscripciones: “Activá alertas para no perderte nada” | Pendiente |
+| #   | Tarea                             | DoD                                                                            | Estado                                         |
+| --- | --------------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------- |
+| 8.1 | Badge de notificaciones no leídas | Indicador en navbar / Más; GET /me/notifications/unread-count + polling        | Hecho (AppShell)                               |
+| 8.2 | Email alertas (SendGrid)          | Envío al crear `AlertDelivery` vía `sendAlertDeliveryEmail`; tests en API      | Hecho — [ALERTAS_EMAIL.md](./ALERTAS_EMAIL.md) |
+| 8.3 | Landing alertas                   | CTA en /alerts si no hay suscripciones: “Activá alertas para no perderte nada” | Pendiente                                      |
 
 **Gates:** Usuario con alerta activa recibe aviso de nueva propiedad (in-app o email).
 
@@ -66,11 +66,11 @@ Plan posterior a Sprints 1–6. Alineado a [masterplan.md](./masterplan.md), [FO
 **Duración:** 2 semanas  
 **Objetivo:** Visibilidad de errores, latencias y estado de integraciones.
 
-| #   | Tarea                            | DoD                                                             | Estado    |
-| --- | -------------------------------- | --------------------------------------------------------------- | --------- |
+| #   | Tarea                            | DoD                                                                                | Estado                                                           |
+| --- | -------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | 9.1 | Health extendido                 | GET /health incluye `ops`: outbox ingest PENDING, último cron ingest, CRM push P/F | Parcial (ver [OPERABILIDAD_HEALTH.md](./OPERABILIDAD_HEALTH.md)) |
-| 9.2 | Admin dashboard operativa        | Sección en /stats: CrmPushOutbox (PENDING/FAILED), cron status  | Pendiente |
-| 9.3 | Alertas Slack/Discord (opcional) | Webhook en smoke-prod fail; documentar en ESTABILIDAD_Y_RELEASE | Pendiente |
+| 9.2 | Admin dashboard operativa        | Sección en /stats: CrmPushOutbox (PENDING/FAILED), cron status                     | Pendiente                                                        |
+| 9.3 | Alertas Slack/Discord (opcional) | Webhook en smoke-prod fail; documentar en ESTABILIDAD_Y_RELEASE                    | Pendiente                                                        |
 
 **Gates:** Admin puede diagnosticar fallas sin acceder a logs raw.
 
@@ -81,11 +81,11 @@ Plan posterior a Sprints 1–6. Alineado a [masterplan.md](./masterplan.md), [FO
 **Duración:** 2 semanas  
 **Objetivo:** Base lista para mayor volumen; resolver warnings.
 
-| #    | Tarea               | DoD                                                                                 | Estado    |
-| ---- | ------------------- | ----------------------------------------------------------------------------------- | --------- |
-| 10.1 | Punycode userland   | Sustituir `punycode` por `tr46` o similar; tests verdes                             | Pendiente |
+| #    | Tarea               | DoD                                                                                              | Estado                                                          |
+| ---- | ------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| 10.1 | Punycode userland   | Sustituir `punycode` por `tr46` o similar; tests verdes                                          | Pendiente                                                       |
 | 10.2 | Índices DB críticos | Índice `(status, createdAt, id)` en `Listing` para feed date_desc; ya existían status+lastSeenAt | Parcial — [OPERABILIDAD_HEALTH.md](./OPERABILIDAD_HEALTH.md) §4 |
-| 10.3 | Lighthouse score    | Landing y /buscar/[zona]: Performance > 80, SEO > 90                                | Pendiente |
+| 10.3 | Lighthouse score    | Landing y /buscar/[zona]: Performance > 80, SEO > 90                                             | Pendiente                                                       |
 
 **Gates:** Sin warnings punycode; feed con 500+ items fluido.
 

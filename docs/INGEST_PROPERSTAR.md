@@ -33,11 +33,11 @@ Si solo tenés la clave legacy `yumblin` con URL, el conector la sigue leyendo.
 
 ### 2. Variables de entorno
 
-| Variable | Uso |
-| -------- | --- |
-| `KITEPROP_DIFUSION_PROPERSTAR_URL` | Prioridad sobre DB y sobre el default embebido en código. |
-| `KITEPROP_DIFUSION_YUMBLIN_URL` | Alias legado; mismo conector. |
-| `KITEPROP_DIFUSION_YUMBLIN_MODE=fixture` | Tests / CI: no hace fetch; usa fixture local. |
+| Variable                                 | Uso                                                       |
+| ---------------------------------------- | --------------------------------------------------------- |
+| `KITEPROP_DIFUSION_PROPERSTAR_URL`       | Prioridad sobre DB y sobre el default embebido en código. |
+| `KITEPROP_DIFUSION_YUMBLIN_URL`          | Alias legado; mismo conector.                             |
+| `KITEPROP_DIFUSION_YUMBLIN_MODE=fixture` | Tests / CI: no hace fetch; usa fixture local.             |
 
 Prioridad de URL en runtime: **PROPERSTAR_URL → YUMBLIN_URL → `sourcesJson.properstar[0]` → `sourcesJson.yumblin[0]` → default en código**.
 

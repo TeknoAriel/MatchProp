@@ -82,9 +82,7 @@ export default function MyMatchPage() {
         const data: { items?: unknown[] } = await res.json();
         raw = data.items ?? [];
       }
-      let cards = raw
-        .map((row) => normalizeCard(row))
-        .filter((c): c is ListingCard => c !== null);
+      let cards = raw.map((row) => normalizeCard(row)).filter((c): c is ListingCard => c !== null);
       if (cards.length === 0) {
         const fr = await fetch(`${API_BASE}/feed?feed=all&limit=60`, { credentials: 'include' });
         if (fr.ok) {

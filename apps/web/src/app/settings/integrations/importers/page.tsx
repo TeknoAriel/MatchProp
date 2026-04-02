@@ -178,8 +178,9 @@ export default function ImportersSettingsPage() {
         <div className="mt-6 p-4 rounded-xl bg-[var(--mp-bg)] border border-[var(--mp-border)]">
           <p className="text-xs text-[var(--mp-muted)]">
             <strong>externalsite:</strong> Token Kiteprop (KITEPROP_EXTERNALSITE).{' '}
-            <strong>properstar:</strong> catálogo JSON (Properstar). Env: KITEPROP_DIFUSION_PROPERSTAR_URL
-            o KITEPROP_DIFUSION_YUMBLIN_URL (alias). Ver docs/INGEST_PROPERSTAR.md.
+            <strong>properstar:</strong> catálogo JSON (Properstar). Env:
+            KITEPROP_DIFUSION_PROPERSTAR_URL o KITEPROP_DIFUSION_YUMBLIN_URL (alias). Ver
+            docs/INGEST_PROPERSTAR.md.
           </p>
         </div>
       </div>
