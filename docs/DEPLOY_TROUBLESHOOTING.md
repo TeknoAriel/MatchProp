@@ -12,6 +12,10 @@ Muestra si la rama está en main, si prod responde, y si el commit en prod coinc
 
 Si prod lleva días con un SHA viejo: reconectar Vercel al repo **`kiteprop/ia-matchprop`** y rama **`main`** — ver **[CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)**. Opcional: Deploy Hooks + workflow `vercel-deploy-hooks.yml`.
 
+### Ignored Build Step (exit codes)
+
+En Vercel, **exit 0 = no construir** y **exit ≠ 0 = construir**. Si los scripts `scripts/vercel-should-build-*.sh` usan la lógica al revés, los deploys de web/API/admin se **saltan** cuando tocás esas carpetas y producción queda años luz de `main`. Ver **[VERCEL_CONFIG.md](./VERCEL_CONFIG.md)**.
+
 ## Ruleset en `main`: checks requeridos
 
 El workflow **CI** expone un solo job obligatorio para reglas de rama: **`CI / Verify`** (typecheck, lint, tests, integración y `pre-deploy:verify` en un solo run).

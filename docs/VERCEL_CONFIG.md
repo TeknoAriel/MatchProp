@@ -62,6 +62,8 @@ Comando (solo build cuando cambien web o shared):
 bash scripts/vercel-should-build-web.sh
 ```
 
+**Importante (Vercel):** en este hook, **código de salida 0 = omitir el build** y **código distinto de 0 = ejecutar el build**. Los scripts del repo siguen esa convención; no invertir (si no, producción queda congelada en un SHA viejo).
+
 ### apps/web/vercel.json
 
 ```json
@@ -139,6 +141,8 @@ bash scripts/vercel-should-build-admin.sh
 ```bash
 bash scripts/vercel-should-build-api.sh
 ```
+
+Misma semántica que en web: **0 = skip**, **≠0 = build** (ver nota arriba).
 
 ### apps/api/vercel.json
 
