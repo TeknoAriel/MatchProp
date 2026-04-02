@@ -41,6 +41,14 @@ Si solo tenés la clave legacy `yumblin` con URL, el conector la sigue leyendo.
 
 Prioridad de URL en runtime: **PROPERSTAR_URL → YUMBLIN_URL → `sourcesJson.properstar[0]` → `sourcesJson.yumblin[0]` → default en código**.
 
+## ETag, `last_update` y bajas
+
+- **If-None-Match:** Si el servidor responde **304** y el cursor del sync está al **inicio** del archivo (`cursor` vacío), se asume que el JSON **no cambió**: no se reescriben listings ni se avanza el cursor. Con el mismo proceso en memoria y `cursor` en medio del archivo, un 304 permite **seguir paginando** sobre la caché local sin bajar el cuerpo otra vez.
+- **`updatedAtSource` (`last_update`):** En cada batch, si el listing ya existe y la fecha/hora de origen coincide (misma precisión de segundos), **no** se llama a `upsert` (se evita trabajo de escritura y reindexación).
+- **Bajas:** Al **terminar** un sync completo (`nextCursor` nulo), los listings de `KITEPROP_DIFUSION_YUMBLIN` que sigan `ACTIVE` y cuyo `externalId` **no** esté en el JSON acumulado pasan a **INACTIVE** (no se listan en el feed). Si el JSON viniera vacío, se desactivan todos los de esa fuente. En modo `fixture` del conector no se aplica esta pasada para no romper tests locales.
+
+Los metadatos (`etag`, lista acumulada de IDs) viven en **`SyncWatermark.metadata`** (JSON en Postgres).
+
 ## Cargar el 100 % del catálogo
 
 El archivo puede pesar **decenas de MB**. El conector mantiene **caché en memoria por URL** dentro del mismo proceso Node: al avanzar con `cursor` en varios batches **no** vuelve a parsear el JSON completo en cada batch.

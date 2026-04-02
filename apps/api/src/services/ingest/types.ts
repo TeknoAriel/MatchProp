@@ -40,15 +40,33 @@ export interface NormalizedListing {
   details?: ListingDetailsFromIngest | null;
 }
 
+export interface FetchBatchParams {
+  cursor?: string | null;
+  limit: number;
+  /** If-None-Match para GET condicional (catálogo JSON estático) */
+  ifNoneMatch?: string | null;
+}
+
 export interface FetchBatchResult {
   items: RawListing[];
   nextCursor: string | null;
+  /** ETag de la respuesta 200 (o el conocido si 304 con cache) */
+  etag?: string | null;
+  /** Catálogo remoto sin cambios (304 al inicio del archivo); no tocar DB ni cursor */
+  feedUnchanged?: boolean;
+  /** El archivo remoto cambió de ETag respecto al sync anterior; el conector reinició offset a 0 */
+  catalogReset?: boolean;
 }
 
 export interface SourceConnector {
   source: ListingSource;
-  fetchBatch(params: { cursor?: string | null; limit: number }): Promise<FetchBatchResult>;
+  fetchBatch(params: FetchBatchParams): Promise<FetchBatchResult>;
   normalize(raw: RawListing): NormalizedListing & {
     mediaUrls?: { url: string; sortOrder: number; type?: string | null }[];
   };
+  /**
+   * Si true, al terminar el sync (nextCursor null) se marcan INACTIVE los listings
+   * de esta fuente cuyo externalId no esté en el JSON acumulado en el sync.
+   */
+  fullCatalogTombstone?: boolean;
 }

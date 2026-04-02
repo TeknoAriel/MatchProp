@@ -27,7 +27,7 @@ El **buscador** usa el catálogo de propiedades en la base de datos. Ese catálo
   - Si cambia el **precio** (o la moneda), se crea un **ListingEvent** de tipo `PRICE_CHANGED` (payload: oldPrice, newPrice, oldCurrency, newCurrency).
   - Si cambia el **status** (ACTIVE ↔ INACTIVE), se crea un **ListingEvent** de tipo `STATUS_CHANGED` (payload: oldStatus, newStatus).
 - Así, cada vez que el cron recorre una conexión y la fuente devuelve listados ya conocidos con datos actualizados, se actualizan precios y estado en la DB y quedan registrados en ListingEvent para alertas (PRICE_DROP, BACK_ON_MARKET).
-- **Listados que desaparecen de la fuente:** Si una fuente deja de devolver un listing (vendido, dado de baja), en el modelo actual ese listing no se marca automáticamente como INACTIVE. Opciones futuras: full sync por fuente marcando como INACTIVE los no vistos en la última pasada, o que la propia fuente envíe `status: inactive` (Properstar/Yumblin ya soporta `raw.status === 'inactive'`).
+- **Listados que desaparecen de la fuente (Properstar / `KITEPROP_DIFUSION_YUMBLIN`):** Al **cerrar** un sync completo del JSON (cursor agotado), los listings `ACTIVE` de esa fuente cuyo `externalId` **no** apareció en el archivo se marcan **INACTIVE** (dejan de mostrarse en el feed). Además se usa **ETag** (`If-None-Match`) para omitir trabajo si el archivo no cambió, y **`last_update`** en DB para no re-hacer `upsert` si la fila no cambió. Detalle: [INGEST_PROPERSTAR.md](./INGEST_PROPERSTAR.md).
 
 ---
 

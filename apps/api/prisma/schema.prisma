@@ -726,9 +726,11 @@ model LeadDeliveryAttempt {
   @@index([leadId, createdAt])
 }
 
+// metadata: JSON con etag, accumulatedExternalIds (sync completo → bajas), etc.
 model SyncWatermark {
   source    String   @id
   cursor    String?
+  metadata  Json?
   updatedAt DateTime @updatedAt
 }
 

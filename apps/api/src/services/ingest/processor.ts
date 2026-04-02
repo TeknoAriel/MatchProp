@@ -1,10 +1,36 @@
+import type { ListingSource } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import type { SourceConnector } from './types.js';
 import { upsertListing } from './upsert.js';
+import { markListingsInactiveNotInExternalIdSet } from './tombstone.js';
 
 const EVENT_TYPE = 'INGEST_RUN_REQUESTED';
 /** Tope por job (CLI puede pedir más; ingest:cron sigue usando 200 en su llamada). */
 const INGEST_BATCH_MAX = 8000;
+
+type WatermarkMetadata = {
+  etag?: string | null;
+  accumulatedExternalIds?: string[];
+};
+
+function parseWatermarkMetadata(raw: unknown): WatermarkMetadata {
+  if (!raw || typeof raw !== 'object') return {};
+  const o = raw as Record<string, unknown>;
+  const etag = o.etag == null ? null : String(o.etag);
+  const acc = o.accumulatedExternalIds;
+  const accumulatedExternalIds = Array.isArray(acc)
+    ? acc.filter((x): x is string => typeof x === 'string' && x.length > 0)
+    : undefined;
+  return { etag: etag || null, accumulatedExternalIds };
+}
+
+function sourceTimesUnchanged(
+  prev: Date | null | undefined,
+  next: Date | null | undefined
+): boolean {
+  if (prev == null || next == null) return false;
+  return Math.floor(prev.getTime() / 1000) === Math.floor(next.getTime() / 1000);
+}
 
 export async function processIngestEvent(
   eventId: string,
@@ -18,7 +44,7 @@ export async function processIngestEvent(
   }
 
   const payload = ev.payload as { source?: string; limit?: number; cursor?: string };
-  const source = payload?.source ?? 'KITEPROP_EXTERNALSITE';
+  const source = (payload?.source ?? 'KITEPROP_EXTERNALSITE') as ListingSource;
   const limit = Math.min(INGEST_BATCH_MAX, Math.max(1, payload?.limit ?? 200));
   const connector = getConnector(source);
   if (!connector) {
@@ -34,21 +60,86 @@ export async function processIngestEvent(
   });
   if (!watermark) {
     watermark = await prisma.syncWatermark.create({
-      data: { source, cursor: null },
+      data: { source, cursor: null, metadata: {} },
     });
   }
 
+  const meta = parseWatermarkMetadata(watermark.metadata);
   const cursor = payload?.cursor ?? watermark.cursor;
-  const { items, nextCursor } = await connector.fetchBatch({ cursor, limit });
+  const ifNoneMatch = meta.etag?.trim() || null;
 
-  for (const raw of items) {
+  const result = await connector.fetchBatch({
+    cursor,
+    limit,
+    ifNoneMatch: ifNoneMatch || undefined,
+  });
+
+  if (result.feedUnchanged) {
+    await prisma.outboxEvent.update({
+      where: { id: eventId },
+      data: { processedAt: new Date() },
+    });
+    return { processed: true };
+  }
+
+  const atSyncStart = cursor == null || cursor === '';
+  let accumulator: string[] =
+    atSyncStart || result.catalogReset ? [] : [...(meta.accumulatedExternalIds ?? [])];
+
+  const batchIds: string[] = [];
+  const tombstoneSource = connector.fullCatalogTombstone === true;
+  const externalIdsInBatch = result.items
+    .map((raw) => String((raw as Record<string, unknown>).id ?? ''))
+    .filter((id) => id.length > 0);
+
+  const existingRows =
+    tombstoneSource && externalIdsInBatch.length > 0
+      ? await prisma.listing.findMany({
+          where: { source, externalId: { in: externalIdsInBatch } },
+          select: { externalId: true, updatedAtSource: true },
+        })
+      : [];
+  const existingByExt = new Map(
+    existingRows.map((r) => [r.externalId, r.updatedAtSource] as const)
+  );
+
+  for (const raw of result.items) {
     const norm = connector.normalize(raw);
+    if (!norm.externalId) continue;
+    batchIds.push(norm.externalId);
+
+    if (tombstoneSource) {
+      const prevUpdated = existingByExt.get(norm.externalId);
+      if (sourceTimesUnchanged(prevUpdated, norm.updatedAtSource ?? null)) {
+        continue;
+      }
+    }
+
     await upsertListing(norm, raw as Record<string, unknown>);
   }
 
+  const nextAccumulator = [...new Set([...accumulator, ...batchIds])];
+
+  const nextEtag = result.etag != null && result.etag !== '' ? result.etag : meta.etag ?? null;
+
+  const syncComplete = result.nextCursor == null && connector.fullCatalogTombstone === true;
+
+  if (syncComplete) {
+    await markListingsInactiveNotInExternalIdSet(source, nextAccumulator);
+  }
+
+  const nextMetadata: WatermarkMetadata = {
+    etag: nextEtag,
+    accumulatedExternalIds:
+      syncComplete && connector.fullCatalogTombstone ? [] : nextAccumulator,
+  };
+
   await prisma.syncWatermark.update({
     where: { source },
-    data: { cursor: nextCursor },
+    data: {
+      cursor: result.nextCursor,
+      metadata: nextMetadata as object,
+    },
   });
 
   await prisma.outboxEvent.update({

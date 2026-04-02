@@ -10,8 +10,10 @@
  * El `ListingSource` en Prisma sigue siendo `KITEPROP_DIFUSION_YUMBLIN` para no
  * migrar datos existentes.
  *
- * Caché en memoria por URL: en un mismo proceso Node no se vuelve a parsear el
- * JSON completo entre batches (importante si el archivo pesa decenas de MB).
+ * - GET condicional (`If-None-Match`): 304 al inicio del archivo → sin cambios globales.
+ * - Caché en memoria por URL entre batches del mismo proceso.
+ * - `fullCatalogTombstone`: el processor marca INACTIVE los IDs que ya no están en el JSON
+ *   al cerrar el sync (ver processor + tombstone.ts).
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -33,6 +35,19 @@ const PROPERTY_TYPE_MAP: Record<string, string> = {
   retail_spaces: 'OFFICE',
   residential_lands: 'LAND',
 };
+
+function normalizeEtagForCompare(etag: string | null | undefined): string | null {
+  if (!etag || typeof etag !== 'string') return null;
+  const t = etag.trim();
+  if (!t) return null;
+  return t.replace(/^W\//i, '').replace(/^"+|"+$/g, '');
+}
+
+function normalizeEtagHeader(header: string | null): string | null {
+  if (!header || typeof header !== 'string') return null;
+  const t = header.trim();
+  return t.length ? t : null;
+}
 
 function trunc(s: string | null | undefined): string | null {
   if (!s || typeof s !== 'string') return null;
@@ -76,7 +91,9 @@ export function createKitepropDifusionYumblinConnector(): SourceConnector {
 
   return {
     source: 'KITEPROP_DIFUSION_YUMBLIN' as ListingSource,
-    fetchBatch: async ({ cursor, limit }) => {
+    /** En fixture (tests/CI) no desactivar otros listings al cerrar el sync. */
+    fullCatalogTombstone: !useFixture,
+    fetchBatch: async ({ cursor, limit, ifNoneMatch }) => {
       if (useFixture) {
         const raw = readFileSync(FIXTURE_PATH, 'utf-8');
         const items = JSON.parse(raw) as Record<string, unknown>[];
@@ -84,25 +101,59 @@ export function createKitepropDifusionYumblinConnector(): SourceConnector {
         const slice = items.slice(start, start + limit);
         const nextCursor =
           start + slice.length < items.length ? String(start + slice.length) : null;
-        return { items: slice, nextCursor };
+        return { items: slice, nextCursor, etag: null };
       }
 
       const url = await getDifusionCatalogUrl();
-      let arr: Record<string, unknown>[];
-      if (remoteListingArrayCache?.url === url) {
-        arr = remoteListingArrayCache.items;
-      } else {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Properstar/difusión JSON fetch failed: ${res.status}`);
-        const parsed = (await res.json()) as unknown;
-        arr = Array.isArray(parsed) ? parsed : [];
-        remoteListingArrayCache = { url, items: arr };
+      const inm = ifNoneMatch?.trim();
+      const headers: Record<string, string> = {};
+      if (inm) headers['If-None-Match'] = inm;
+
+      let res = await fetch(url, { headers });
+
+      if (res.status === 304) {
+        if (remoteListingArrayCache?.url !== url) {
+          res = await fetch(url);
+        } else {
+          const arr = remoteListingArrayCache.items;
+          const atFileStart = cursor == null || cursor === '';
+          if (atFileStart) {
+            return {
+              items: [],
+              nextCursor: null,
+              feedUnchanged: true,
+              etag: inm ?? null,
+            };
+          }
+          const start = parseInt(String(cursor), 10) || 0;
+          const slice = arr.slice(start, start + limit);
+          const nextCursor =
+            start + slice.length < arr.length ? String(start + slice.length) : null;
+          return { items: slice, nextCursor, etag: inm ?? null };
+        }
       }
 
-      const start = cursor ? parseInt(cursor, 10) || 0 : 0;
+      if (!res.ok) throw new Error(`Properstar/difusión JSON fetch failed: ${res.status}`);
+
+      const newEtagRaw = normalizeEtagHeader(res.headers.get('etag'));
+      const parsed = (await res.json()) as unknown;
+      const arr = Array.isArray(parsed) ? parsed : [];
+      remoteListingArrayCache = { url, items: arr };
+
+      const catalogReset = Boolean(
+        inm &&
+          newEtagRaw &&
+          normalizeEtagForCompare(inm) !== normalizeEtagForCompare(newEtagRaw)
+      );
+      const start = catalogReset ? 0 : cursor ? parseInt(String(cursor), 10) || 0 : 0;
       const slice = arr.slice(start, start + limit);
       const nextCursor = start + slice.length < arr.length ? String(start + slice.length) : null;
-      return { items: slice, nextCursor };
+      return {
+        items: slice,
+        nextCursor,
+        etag: newEtagRaw ?? inm ?? null,
+        catalogReset,
+      };
     },
     normalize: (raw) => {
       const id = String(raw.id ?? '');
