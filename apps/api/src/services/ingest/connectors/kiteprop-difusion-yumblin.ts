@@ -1,7 +1,17 @@
 /**
- * Conector Kiteprop Difusión Yumblin (JSON).
- * URL desde IngestSourceConfig (sourcesJson.yumblin[0].url) o env KITEPROP_DIFUSION_YUMBLIN_URL.
- * Formato JSON tipo Kiteprop externalsite (id, images, property_type, for_rent, etc.).
+ * Conector Kiteprop difusión catálogo JSON (Properstar).
+ * El archivo `properstar.json` comparte esquema con el histórico `yumblin.json`
+ * (id, images, property_type, for_sale / for_rent, precios, agency, etc.).
+ *
+ * URL: `sourcesJson.properstar` o `sourcesJson.yumblin`, env
+ * `KITEPROP_DIFUSION_PROPERSTAR_URL` o `KITEPROP_DIFUSION_YUMBLIN_URL` (alias),
+ * o `DEFAULT_URL`.
+ *
+ * El `ListingSource` en Prisma sigue siendo `KITEPROP_DIFUSION_YUMBLIN` para no
+ * migrar datos existentes.
+ *
+ * Caché en memoria por URL: en un mismo proceso Node no se vuelve a parsear el
+ * JSON completo entre batches (importante si el archivo pesa decenas de MB).
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -11,8 +21,11 @@ import { prisma } from '../../../lib/prisma.js';
 
 const FIXTURE_PATH = join(process.cwd(), 'src/services/ingest/fixtures/kiteprop-sample.min.json');
 const DEFAULT_URL =
-  'https://static.kiteprop.com/kp/difusions/23705a4a85ab8f1d301c73aae5359a81a8b5c1ca/yumblin.json';
+  'https://static.kiteprop.com/kp/difusions/f89cbd8ca785fc34317df63d29ab8ea9d68a7b1c/properstar.json';
 const LOCATION_MAX = 200;
+
+/** Array parseado del último fetch remoto exitoso (misma URL = reutilizar). */
+let remoteListingArrayCache: { url: string; items: Record<string, unknown>[] } | null = null;
 
 const PROPERTY_TYPE_MAP: Record<string, string> = {
   houses: 'HOUSE',
@@ -43,15 +56,18 @@ function buildLocationText(raw: Record<string, unknown>): string | null {
   return trunc(s) || trunc(String(raw.address ?? ''));
 }
 
-async function getYumblinUrl(): Promise<string> {
-  const envUrl = process.env.KITEPROP_DIFUSION_YUMBLIN_URL;
+async function getDifusionCatalogUrl(): Promise<string> {
+  const envUrl =
+    process.env.KITEPROP_DIFUSION_PROPERSTAR_URL || process.env.KITEPROP_DIFUSION_YUMBLIN_URL;
   if (envUrl) return envUrl;
   const row = await prisma.ingestSourceConfig.findUnique({
     where: { id: 'default' },
   });
   const json = (row?.sourcesJson as Record<string, { url?: string }[]>) ?? {};
-  const arr = json.yumblin;
-  if (Array.isArray(arr) && arr[0]?.url) return String(arr[0].url);
+  const properstar = json.properstar;
+  const yumblin = json.yumblin;
+  if (Array.isArray(properstar) && properstar[0]?.url) return String(properstar[0].url);
+  if (Array.isArray(yumblin) && yumblin[0]?.url) return String(yumblin[0].url);
   return DEFAULT_URL;
 }
 
@@ -71,11 +87,18 @@ export function createKitepropDifusionYumblinConnector(): SourceConnector {
         return { items: slice, nextCursor };
       }
 
-      const url = await getYumblinUrl();
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Yumblin fetch failed: ${res.status}`);
-      const items = (await res.json()) as Record<string, unknown>[];
-      const arr = Array.isArray(items) ? items : [];
+      const url = await getDifusionCatalogUrl();
+      let arr: Record<string, unknown>[];
+      if (remoteListingArrayCache?.url === url) {
+        arr = remoteListingArrayCache.items;
+      } else {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Properstar/difusión JSON fetch failed: ${res.status}`);
+        const parsed = (await res.json()) as unknown;
+        arr = Array.isArray(parsed) ? parsed : [];
+        remoteListingArrayCache = { url, items: arr };
+      }
+
       const start = cursor ? parseInt(cursor, 10) || 0 : 0;
       const slice = arr.slice(start, start + limit);
       const nextCursor = start + slice.length < arr.length ? String(start + slice.length) : null;

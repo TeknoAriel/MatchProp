@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { FixedSizeList as List } from 'react-window';
@@ -108,6 +108,8 @@ function FeedListPageContent() {
   const searchParams = useSearchParams();
   const feedAllFromUrl = searchParams?.get('feed') === 'all';
   const isDemoMode = false;
+  const virtualListContainerRef = useRef<HTMLDivElement>(null);
+  const [virtualListWidth, setVirtualListWidth] = useState(0);
 
   const syncActiveSearchFlag = useCallback(() => {
     fetch(`${API_BASE}/me/active-search`, { credentials: 'include' })
@@ -179,6 +181,23 @@ function FeedListPageContent() {
 
   /** Sin búsqueda activa: mostrar todo (feed=all) para que "Ver en lista" funcione. */
   const useFeedAll = feedAllFromUrl || hasActiveSearch === false;
+
+  useLayoutEffect(() => {
+    if (items.length <= 30) {
+      setVirtualListWidth(0);
+      return;
+    }
+    const el = virtualListContainerRef.current;
+    if (!el) return;
+    const apply = () => {
+      const w = el.getBoundingClientRect().width;
+      if (w > 0) setVirtualListWidth(Math.floor(w));
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [items.length]);
 
   useEffect(() => {
     setFetchError(null);
@@ -715,14 +734,19 @@ function FeedListPageContent() {
             <div className="mb-4 text-sm text-slate-500">
               {items.length} propiedades — scroll fluido (virtualización)
             </div>
-            <div className="rounded-xl overflow-hidden" style={{ height: 600 }}>
-              <List
-                height={600}
-                itemCount={items.length}
-                itemSize={340}
-                width="100%"
-                overscanCount={3}
-              >
+            <div
+              ref={virtualListContainerRef}
+              className="rounded-xl overflow-hidden w-full min-w-0"
+              style={{ height: 600 }}
+            >
+              {virtualListWidth > 0 ? (
+                <List
+                  height={600}
+                  itemCount={items.length}
+                  itemSize={340}
+                  width={virtualListWidth}
+                  overscanCount={3}
+                >
                 {({ index, style }) => {
                   const card = items[index]!;
                   const hasValidId =
@@ -885,7 +909,12 @@ function FeedListPageContent() {
                     </div>
                   );
                 }}
-              </List>
+                </List>
+              ) : (
+                <div className="p-4">
+                  <SkeletonList count={4} />
+                </div>
+              )}
             </div>
 
             {addToListCard && (

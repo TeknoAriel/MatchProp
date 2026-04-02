@@ -26,7 +26,7 @@ const SOURCE_PHRASES: { pattern: RegExp; source: string }[] = [
   { pattern: /\bzonaprop\b/i, source: 'KITEPROP_DIFUSION_ZONAPROP' },
   { pattern: /\btoctoc\b|\btoc\s*toc\b/i, source: 'KITEPROP_DIFUSION_TOCTOC' },
   { pattern: /\bicasas\b/i, source: 'KITEPROP_DIFUSION_ICASAS' },
-  { pattern: /\byumblin\b/i, source: 'KITEPROP_DIFUSION_YUMBLIN' },
+  { pattern: /\b(properstar|yumblin)\b/i, source: 'KITEPROP_DIFUSION_YUMBLIN' },
   { pattern: /\bkitoprop\b|\bkiteprop\b/i, source: 'KITEPROP_API' },
   { pattern: /\bpartner\s*1\b|\bapi\s*partner\b/i, source: 'API_PARTNER_1' },
 ];

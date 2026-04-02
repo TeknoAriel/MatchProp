@@ -17,7 +17,7 @@ Regla: **no duplicar** la misma tarea en detalle en ambos; en `backlog` va la é
 
 ## Estado de referencia
 
-- **Epics E1–E8:** Implementados (feed, leads, chat, visitas, búsquedas/alertas, asistente conversacional, Stripe opcional, Kiteprop + Yumblin/iCasas).
+- **Epics E1–E8:** Implementados (feed, leads, chat, visitas, búsquedas/alertas, asistente conversacional, Stripe opcional, Kiteprop + Properstar/iCasas).
 - **Deploy:** Vercel (Web + API) + Neon (PostgreSQL). Ver [SETUP_DEPLOY_SIMPLE.md](./SETUP_DEPLOY_SIMPLE.md) y [PROD.md](./PROD.md).
 - **Cron Jobs:** Sincronización automática cada 6 horas con detección de cambios de precio/estado.
 - **Datos:** 331 propiedades de Kiteprop (solo datos reales, sin demo).

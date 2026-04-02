@@ -874,11 +874,11 @@ model AssistantConfig {
   updatedAt           DateTime @updatedAt
 }
 
-// --- Fuentes de ingest configurables (Kiteprop difusiones: yumblin, zonaprop, externalsite) ---
+// --- Fuentes de ingest configurables (Kiteprop difusiones: properstar, zonaprop, externalsite) ---
 
 model IngestSourceConfig {
   id          String   @id @default("default")
-  sourcesJson Json     @default("{}") // { "yumblin": [{ url, format }], ... }
+  sourcesJson Json     @default("{}") // { "properstar": [{ url, format }], "yumblin": [...] (alias), ... }
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

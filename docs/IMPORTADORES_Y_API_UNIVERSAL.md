@@ -14,16 +14,17 @@ Configuración según documentación Kiteprop. Formato JSON:
       "format": "json"
     }
   ],
-  "yumblin": [
-    { "url": "https://static.kiteprop.com/kp/difusions/.../yumblin.json", "format": "json" }
+  "properstar": [
+    { "url": "https://static.kiteprop.com/kp/difusions/.../properstar.json", "format": "json" }
   ],
   "zonaprop": [{ "url": "https://.../zonaprop.xml", "format": "xml" }]
 }
 ```
 
 - **externalsite:** Token Kiteprop (KITEPROP_EXTERNALSITE). URL por defecto incluida.
-- **yumblin:** Producción.
-- **URL alternativa:** `KITEPROP_EXTERNALSITE_URL`, `KITEPROP_DIFUSION_YUMBLIN_URL` en .env.
+- **properstar:** Catálogo JSON completo (Properstar; mismo conector que el histórico yumblin). Detalle: [INGEST_PROPERSTAR.md](./INGEST_PROPERSTAR.md).
+- **yumblin:** Clave legacy en `sourcesJson`; misma fuente que properstar si solo usás esa entrada.
+- **URL alternativa:** `KITEPROP_EXTERNALSITE_URL`, `KITEPROP_DIFUSION_PROPERSTAR_URL` o `KITEPROP_DIFUSION_YUMBLIN_URL` en .env.
 
 ---
 

@@ -7,6 +7,7 @@ import { prisma } from '../../lib/prisma.js';
 import type { ListingSource } from '@prisma/client';
 
 const CONFIG_KEY_TO_SOURCE: Record<string, ListingSource> = {
+  properstar: 'KITEPROP_DIFUSION_YUMBLIN',
   yumblin: 'KITEPROP_DIFUSION_YUMBLIN',
   icasas: 'KITEPROP_DIFUSION_ICASAS',
   zonaprop: 'KITEPROP_DIFUSION_ZONAPROP',
@@ -30,23 +31,33 @@ export async function getActiveIngestSources(): Promise<ActiveSource[]> {
     where: { id: 'default' },
   });
   const json = (row?.sourcesJson as Record<string, { url?: string }[]>) ?? {};
-  const out: ActiveSource[] = [];
+  const candidates: ActiveSource[] = [];
 
   for (const [key, arr] of Object.entries(json)) {
     const source = CONFIG_KEY_TO_SOURCE[key];
     if (!source) continue;
     if (!demoMode && DEMO_ONLY_SOURCES.includes(source)) continue;
     if (!Array.isArray(arr) || !arr.some((e) => e?.url && String(e.url).trim())) continue;
-    out.push({ source, key });
+    candidates.push({ source, key });
   }
+
+  const keyRank = (k: string) => (k === 'properstar' ? 0 : k === 'yumblin' ? 1 : 2);
+  const bySource = new Map<ListingSource, ActiveSource>();
+  for (const c of candidates) {
+    const prev = bySource.get(c.source);
+    if (!prev || keyRank(c.key) < keyRank(prev.key)) bySource.set(c.source, c);
+  }
+  const out = [...bySource.values()];
 
   // Fuentes que pueden venir solo por env (sin entrada en sourcesJson)
   if (demoMode) return out;
+  const properstarOrYumblinEnv =
+    process.env.KITEPROP_DIFUSION_PROPERSTAR_URL || process.env.KITEPROP_DIFUSION_YUMBLIN_URL;
   if (
-    process.env.KITEPROP_DIFUSION_YUMBLIN_URL &&
+    properstarOrYumblinEnv &&
     !out.some((a) => a.source === 'KITEPROP_DIFUSION_YUMBLIN')
   )
-    out.push({ source: 'KITEPROP_DIFUSION_YUMBLIN', key: 'yumblin' });
+    out.push({ source: 'KITEPROP_DIFUSION_YUMBLIN', key: 'properstar' });
   if (
     process.env.KITEPROP_DIFUSION_ICASAS_URL &&
     !out.some((a) => a.source === 'KITEPROP_DIFUSION_ICASAS')

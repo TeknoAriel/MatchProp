@@ -203,9 +203,9 @@ async function main() {
         format: 'json',
       },
     ],
-    yumblin: [
+    properstar: [
       {
-        url: 'https://static.kiteprop.com/kp/difusions/23705a4a85ab8f1d301c73aae5359a81a8b5c1ca/yumblin.json',
+        url: 'https://static.kiteprop.com/kp/difusions/f89cbd8ca785fc34317df63d29ab8ea9d68a7b1c/properstar.json',
         format: 'json',
       },
     ],
@@ -227,7 +227,7 @@ async function main() {
     create: { id: 'default', sourcesJson: defaultIngestSources },
     update: { sourcesJson: defaultIngestSources },
   });
-  console.log('IngestSourceConfig (externalsite, yumblin, icasas, zonaprop) seeded');
+  console.log('IngestSourceConfig (externalsite, properstar, icasas, zonaprop) seeded');
 
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
   console.log('---');

@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 const API_BASE = '/api';
 
-/** Formato esperado: { "yumblin": [{ url, format }], "icasas": [...], "zonaprop": [...], ... } */
+/** Formato esperado: { "properstar": [{ url, format }], "icasas": [...], "zonaprop": [...], ... } */
 type SourcesJson = Record<string, { url: string; format: string }[]>;
 
 const DEFAULT_SOURCES: SourcesJson = {
@@ -16,9 +16,9 @@ const DEFAULT_SOURCES: SourcesJson = {
       format: 'json',
     },
   ],
-  yumblin: [
+  properstar: [
     {
-      url: 'https://static.kiteprop.com/kp/difusions/23705a4a85ab8f1d301c73aae5359a81a8b5c1ca/yumblin.json',
+      url: 'https://static.kiteprop.com/kp/difusions/f89cbd8ca785fc34317df63d29ab8ea9d68a7b1c/properstar.json',
       format: 'json',
     },
   ],
@@ -132,8 +132,8 @@ export default function ImportersSettingsPage() {
         </div>
 
         <p className="text-sm text-[var(--mp-muted)] mb-4">
-          Configuración de fuentes Kiteprop (zonaprop, yumblin, etc.). En producción se usa{' '}
-          <strong>yumblin</strong>. Cada fuente tiene URL y formato (json/xml).
+          Configuración de fuentes Kiteprop (zonaprop, properstar, etc.). El catálogo completo va en{' '}
+          <strong>properstar</strong> (JSON). Cada fuente tiene URL y formato (json/xml).
         </p>
 
         <form onSubmit={handleSave} className="space-y-4">
@@ -145,7 +145,7 @@ export default function ImportersSettingsPage() {
               value={rawJson}
               onChange={(e) => setRawJson(e.target.value)}
               className="w-full px-3 py-2 border rounded-lg font-mono text-sm h-64 bg-[var(--mp-card)] border-[var(--mp-border)]"
-              placeholder='{"yumblin":[{"url":"...","format":"json"}]}'
+              placeholder='{"properstar":[{"url":"...","format":"json"}]}'
               spellCheck={false}
             />
             <div className="mt-2 flex gap-2">
@@ -178,8 +178,8 @@ export default function ImportersSettingsPage() {
         <div className="mt-6 p-4 rounded-xl bg-[var(--mp-bg)] border border-[var(--mp-border)]">
           <p className="text-xs text-[var(--mp-muted)]">
             <strong>externalsite:</strong> Token Kiteprop (KITEPROP_EXTERNALSITE).{' '}
-            <strong>yumblin:</strong> producción. También: KITEPROP_EXTERNALSITE_URL,
-            KITEPROP_DIFUSION_YUMBLIN_URL en .env.
+            <strong>properstar:</strong> catálogo JSON (Properstar). Env: KITEPROP_DIFUSION_PROPERSTAR_URL
+            o KITEPROP_DIFUSION_YUMBLIN_URL (alias). Ver docs/INGEST_PROPERSTAR.md.
           </p>
         </div>
       </div>

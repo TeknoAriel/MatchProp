@@ -59,6 +59,7 @@
 | [SETUP_DEPLOY_SIMPLE.md](./SETUP_DEPLOY_SIMPLE.md)             | Deploy simple — Neon + Vercel, variables, URLs                                        |
 | [DEPLOY_CHECKLIST.md](./DEPLOY_CHECKLIST.md)                   | Checklist pre-deploy, deploy, post-deploy                                             |
 | [demo.md](./demo.md)                                           | Prueba real solo con navegador — escenario demo 1-click                               |
+| [INGEST_PROPERSTAR.md](./INGEST_PROPERSTAR.md)                 | Catálogo JSON Properstar: URL, env, carga completa (`ingest:run --until-empty`)      |
 
 ---
 
