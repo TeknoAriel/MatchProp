@@ -84,7 +84,7 @@ export async function processIngestEvent(
   }
 
   const atSyncStart = cursor == null || cursor === '';
-  let accumulator: string[] =
+  const accumulator: string[] =
     atSyncStart || result.catalogReset ? [] : [...(meta.accumulatedExternalIds ?? [])];
 
   const batchIds: string[] = [];
