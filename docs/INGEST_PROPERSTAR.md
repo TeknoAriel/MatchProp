@@ -44,7 +44,7 @@ Prioridad de URL en runtime: **PROPERSTAR_URL → YUMBLIN_URL → `sourcesJson.p
 ## ETag, `last_update` y bajas
 
 - **If-None-Match:** Si el servidor responde **304** y el cursor del sync está al **inicio** del archivo (`cursor` vacío), se asume que el JSON **no cambió**: no se reescriben listings ni se avanza el cursor. Con el mismo proceso en memoria y `cursor` en medio del archivo, un 304 permite **seguir paginando** sobre la caché local sin bajar el cuerpo otra vez.
-- **`updatedAtSource` (`last_update`):** En cada batch, si el listing ya existe y la fecha/hora de origen coincide (misma precisión de segundos), **no** se llama a `upsert` (se evita trabajo de escritura y reindexación).
+- **`updatedAtSource` (`last_update`):** En cada batch, si el listing ya existe y la fecha/hora de origen coincide (misma precisión de segundos), **no** se llama a `upsert` completo; se hace un **touch** masivo de `lastSeenAt` y `lastSyncedAt` para que el feed y métricas de frescura sigan coherentes.
 - **Bajas:** Al **terminar** un sync completo (`nextCursor` nulo), los listings de `KITEPROP_DIFUSION_YUMBLIN` que sigan `ACTIVE` y cuyo `externalId` **no** esté en el JSON acumulado pasan a **INACTIVE** (no se listan en el feed). Si el JSON viniera vacío, se desactivan todos los de esa fuente. En modo `fixture` del conector no se aplica esta pasada para no romper tests locales.
 
 Los metadatos (`etag`, lista acumulada de IDs) viven en **`SyncWatermark.metadata`** (JSON en Postgres).

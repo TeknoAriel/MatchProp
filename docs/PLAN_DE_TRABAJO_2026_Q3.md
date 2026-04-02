@@ -68,7 +68,7 @@ Plan posterior a Sprints 1–6. Alineado a [masterplan.md](./masterplan.md), [FO
 
 | #   | Tarea                            | DoD                                                             | Estado    |
 | --- | -------------------------------- | --------------------------------------------------------------- | --------- |
-| 9.1 | Health extendido                 | GET /health incluye: DB, cron lastRun, outbox PENDING count     | Pendiente |
+| 9.1 | Health extendido                 | GET /health incluye `ops`: outbox ingest PENDING, último cron ingest, CRM push P/F | Parcial (ver [OPERABILIDAD_HEALTH.md](./OPERABILIDAD_HEALTH.md)) |
 | 9.2 | Admin dashboard operativa        | Sección en /stats: CrmPushOutbox (PENDING/FAILED), cron status  | Pendiente |
 | 9.3 | Alertas Slack/Discord (opcional) | Webhook en smoke-prod fail; documentar en ESTABILIDAD_Y_RELEASE | Pendiente |
 

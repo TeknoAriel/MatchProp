@@ -7,6 +7,7 @@ import { markListingsInactiveNotInExternalIdSet } from './tombstone.js';
 const EVENT_TYPE = 'INGEST_RUN_REQUESTED';
 /** Tope por job (CLI puede pedir más; ingest:cron sigue usando 200 en su llamada). */
 const INGEST_BATCH_MAX = 8000;
+const TOUCH_UNCHANGED_CHUNK = 400;
 
 type WatermarkMetadata = {
   etag?: string | null;
@@ -87,6 +88,7 @@ export async function processIngestEvent(
     atSyncStart || result.catalogReset ? [] : [...(meta.accumulatedExternalIds ?? [])];
 
   const batchIds: string[] = [];
+  const unchangedForTouch: string[] = [];
   const tombstoneSource = connector.fullCatalogTombstone === true;
   const externalIdsInBatch = result.items
     .map((raw) => String((raw as Record<string, unknown>).id ?? ''))
@@ -111,11 +113,23 @@ export async function processIngestEvent(
     if (tombstoneSource) {
       const prevUpdated = existingByExt.get(norm.externalId);
       if (sourceTimesUnchanged(prevUpdated, norm.updatedAtSource ?? null)) {
+        unchangedForTouch.push(norm.externalId);
         continue;
       }
     }
 
     await upsertListing(norm, raw as Record<string, unknown>);
+  }
+
+  if (tombstoneSource && unchangedForTouch.length > 0) {
+    const now = new Date();
+    for (let i = 0; i < unchangedForTouch.length; i += TOUCH_UNCHANGED_CHUNK) {
+      const chunk = unchangedForTouch.slice(i, i + TOUCH_UNCHANGED_CHUNK);
+      await prisma.listing.updateMany({
+        where: { source, externalId: { in: chunk } },
+        data: { lastSeenAt: now, lastSyncedAt: now },
+      });
+    }
   }
 
   const nextAccumulator = [...new Set([...accumulator, ...batchIds])];
