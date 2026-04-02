@@ -8,6 +8,9 @@ import Link from 'next/link';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+/** Documentación en el repo (main). */
+const REPO_DOCS_BASE = 'https://github.com/kiteprop/ia-matchprop/blob/main/docs';
+
 type Overview = {
   rangeStart: string;
   rangeEnd: string;
@@ -54,6 +57,14 @@ type MatchRow = {
   createdAt: string;
 };
 
+type OpsPayload = {
+  outboxIngestPending: number | null;
+  cronIngestLastAt: string | null;
+  crmPushPending: number | null;
+  crmPushFailed: number | null;
+  listingsActive: number;
+};
+
 export default function StatsPage() {
   const [days, setDays] = useState<number>(30);
   const [leadStatus, setLeadStatus] = useState<string>(''); // '' => todos
@@ -63,6 +74,7 @@ export default function StatsPage() {
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [visits, setVisits] = useState<VisitRow[]>([]);
   const [matches, setMatches] = useState<MatchRow[]>([]);
+  const [ops, setOps] = useState<OpsPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,14 +107,19 @@ export default function StatsPage() {
         cache: 'no-store',
         credentials: 'include',
       }).then((r) => (r.ok ? r.json() : null)),
+      fetch(`${API_BASE}/admin/stats/ops`, {
+        cache: 'no-store',
+        credentials: 'include',
+      }).then((r) => (r.ok ? r.json() : null)),
     ])
-      .then(([ov, leadsRes, visitsRes, matchesRes]) => {
+      .then(([ov, leadsRes, visitsRes, matchesRes, opsRes]) => {
         if (!mounted) return;
         if (!ov) throw new Error('No se pudo cargar el resumen.');
         setOverview(ov as Overview);
         setLeads((leadsRes?.leads as LeadRow[]) ?? []);
         setVisits((visitsRes?.visits as VisitRow[]) ?? []);
         setMatches((matchesRes?.matches as MatchRow[]) ?? []);
+        setOps(opsRes && typeof opsRes === 'object' ? (opsRes as OpsPayload) : null);
       })
       .catch((e) => {
         if (!mounted) return;
@@ -136,6 +153,67 @@ export default function StatsPage() {
       </Link>
       <h1 className="mt-4 text-xl font-bold">Estadísticas globales</h1>
       <div className="mt-2 text-sm text-gray-600">Rango: {rangeText || '—'}</div>
+
+      <section className="mt-6 border rounded-lg p-4 bg-slate-50 border-slate-200">
+        <h2 className="text-sm font-semibold text-slate-800">Operación (ingest, cron, CRM)</h2>
+        <p className="text-xs text-slate-600 mt-1">
+          Mismos indicadores que <code className="bg-white px-1 rounded">GET /health → ops</code>.{' '}
+          <a
+            href={`${REPO_DOCS_BASE}/OPERABILIDAD_HEALTH.md`}
+            className="text-blue-600 hover:underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            OPERABILIDAD_HEALTH.md
+          </a>
+          {' · '}
+          <a
+            href={`${REPO_DOCS_BASE}/DEPLOY_TROUBLESHOOTING.md`}
+            className="text-blue-600 hover:underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Deploy / CI
+          </a>
+          {' · '}
+          <a
+            href={`${REPO_DOCS_BASE}/ESTABILIDAD_Y_RELEASE.md`}
+            className="text-blue-600 hover:underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Estabilidad y release
+          </a>
+        </p>
+        {ops ? (
+          <dl className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm">
+            <div className="flex justify-between gap-2 border-b border-slate-200/80 pb-1">
+              <dt className="text-slate-600">Listings ACTIVE</dt>
+              <dd className="font-mono font-medium">{ops.listingsActive}</dd>
+            </div>
+            <div className="flex justify-between gap-2 border-b border-slate-200/80 pb-1">
+              <dt className="text-slate-600">Cola ingest (outbox)</dt>
+              <dd className="font-mono font-medium">{ops.outboxIngestPending ?? '—'}</dd>
+            </div>
+            <div className="flex justify-between gap-2 border-b border-slate-200/80 pb-1">
+              <dt className="text-slate-600">Último cron ingest</dt>
+              <dd className="font-mono text-xs text-right truncate" title={ops.cronIngestLastAt ?? ''}>
+                {ops.cronIngestLastAt ?? '—'}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-2 border-b border-slate-200/80 pb-1">
+              <dt className="text-slate-600">CRM push PENDING</dt>
+              <dd className="font-mono font-medium">{ops.crmPushPending ?? '—'}</dd>
+            </div>
+            <div className="flex justify-between gap-2 border-b border-slate-200/80 pb-1">
+              <dt className="text-slate-600">CRM push FAILED</dt>
+              <dd className="font-mono font-medium">{ops.crmPushFailed ?? '—'}</dd>
+            </div>
+          </dl>
+        ) : (
+          <p className="mt-2 text-xs text-amber-700">No se pudo cargar /admin/stats/ops (¿sesión admin?).</p>
+        )}
+      </section>
 
       <div className="mt-4 flex gap-3 flex-wrap items-end">
         <div>

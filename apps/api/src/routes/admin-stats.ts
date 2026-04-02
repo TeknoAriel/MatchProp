@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
+import { getOperationalMetrics } from '../lib/operational-metrics.js';
 import { LeadStatus, UserRole } from '@prisma/client';
 
 function parseDays(q: Record<string, unknown> | undefined, fallback: number): number {
@@ -405,6 +406,34 @@ export async function adminStatsRoutes(fastify: FastifyInstance) {
           createdAt: r.createdAt.toISOString(),
         })),
       };
+    }
+  );
+
+  fastify.get(
+    '/admin/stats/ops',
+    {
+      schema: {
+        tags: ['Admin'],
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              outboxIngestPending: { type: 'integer', nullable: true },
+              cronIngestLastAt: { type: 'string', nullable: true },
+              crmPushPending: { type: 'integer', nullable: true },
+              crmPushFailed: { type: 'integer', nullable: true },
+              listingsActive: { type: 'integer' },
+            },
+          },
+        },
+      },
+      preHandler: [fastify.requireRole([UserRole.ADMIN])],
+    },
+    async () => {
+      const ops = await getOperationalMetrics();
+      const listingsActive = await prisma.listing.count({ where: { status: 'ACTIVE' } });
+      return { ...ops, listingsActive };
     }
   );
 }

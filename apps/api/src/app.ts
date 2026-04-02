@@ -42,6 +42,7 @@ import { adminUsersRoutes } from './routes/admin-users.js';
 import { adminBillingRoutes } from './routes/admin-billing.js';
 import { adminStatsRoutes } from './routes/admin-stats.js';
 import { prisma } from './lib/prisma.js';
+import { getOperationalMetrics } from './lib/operational-metrics.js';
 import { registerProductionErrorHandler } from './lib/error-handler.js';
 
 export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInstance> {
@@ -143,10 +144,6 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   fastify.get('/health', async (request, reply) => {
     let dbOk = false;
     let lastMigration: string | null = null;
-    let outboxIngestPending: number | null = null;
-    let cronIngestLastAt: string | null = null;
-    let crmPushPending: number | null = null;
-    let crmPushFailed: number | null = null;
     try {
       await prisma.$queryRaw`SELECT 1`;
       dbOk = true;
@@ -162,34 +159,8 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
       } catch {
         // ignorar
       }
-      try {
-        outboxIngestPending = await prisma.outboxEvent.count({
-          where: { type: 'INGEST_RUN_REQUESTED', processedAt: null },
-        });
-      } catch {
-        /* ignorar */
-      }
-      try {
-        const lastCron = await prisma.outboxEvent.findFirst({
-          where: { type: 'CRON_INGEST_COMPLETED' },
-          orderBy: { createdAt: 'desc' },
-          select: { createdAt: true },
-        });
-        cronIngestLastAt = lastCron?.createdAt?.toISOString() ?? null;
-      } catch {
-        /* ignorar */
-      }
-      try {
-        const [pending, failed] = await Promise.all([
-          prisma.crmPushOutbox.count({ where: { status: 'PENDING' } }),
-          prisma.crmPushOutbox.count({ where: { status: 'FAILED' } }),
-        ]);
-        crmPushPending = pending;
-        crmPushFailed = failed;
-      } catch {
-        /* ignorar */
-      }
     }
+    const ops = dbOk ? await getOperationalMetrics() : undefined;
     // Siempre 200; body indica ok vs degraded para que probes no bajen la instancia por DB temporal
     return reply.status(200).send({
       status: dbOk ? 'ok' : 'degraded',
@@ -197,14 +168,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
       db: dbOk ? 'ok' : 'error',
       version: apiVersion,
       migration: lastMigration,
-      ops: dbOk
-        ? {
-            outboxIngestPending,
-            cronIngestLastAt,
-            crmPushPending,
-            crmPushFailed,
-          }
-        : undefined,
+      ops,
     });
   });
 

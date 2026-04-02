@@ -28,7 +28,7 @@ Documento de referencia: **[masterplan.md](./masterplan.md)** (Frozen v3.0).
 | **E5** Búsquedas activas + Alertas      | ✅           | SavedSearch, AlertSubscription, AlertDelivery, runner                                                                             |
 | **E6** Asistente de búsqueda            | ✅           | Parser texto→SearchFilters; **+ Asistente conversacional** por API key/token (OpenAI/Anthropic); UI: Buscar, Ver listado, Guardar |
 | **E7** Monetización B2B/B2C             | ✅ (parcial) | Stripe opcional (Premium B2C); wallet B2B (débito leads)                                                                          |
-| **E8** Adapter + Analytics              | ✅ (parcial) | Kiteprop config/spec/cifrado; importadores Properstar, iCasas; analytics mínimos                                                     |
+| **E8** Adapter + Analytics              | ✅ (parcial) | Kiteprop + importadores Properstar/iCasas; `trackEvent`; health `ops`; admin `/stats/ops`; email alertas SendGrid; índice feed `(status,createdAt,id)` — [OPERABILIDAD_HEALTH.md](./OPERABILIDAD_HEALTH.md) |
 
 ---
 

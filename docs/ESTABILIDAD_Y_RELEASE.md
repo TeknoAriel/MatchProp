@@ -28,6 +28,7 @@ Ningún cambio llega a Vercel si alguno de estos falla. El merge a `main` debe h
 
 - En la app web, en **/status** se muestra **Versión** = commit SHA del deploy (Vercel inyecta `VERCEL_GIT_COMMIT_SHA` en el build).
 - Sirve para confirmar que estás viendo el deploy correcto en https://match-prop-web.vercel.app .
+- **Admin** (`/stats`): sección **Operación** con métricas de ingest, cron y CRM push (`GET /admin/stats/ops`), enlaces a [OPERABILIDAD_HEALTH.md](./OPERABILIDAD_HEALTH.md) y runbooks.
 
 ## Branch protection (recomendado)
 

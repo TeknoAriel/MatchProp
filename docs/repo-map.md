@@ -133,8 +133,11 @@
 
 ### Admin / Orgs
 
+- `GET /admin/stats/overview`, `leads`, `visits`, `matches`, `ops` — estadísticas y métricas operativas (ingest, cron, CRM push); rol ADMIN.
 - POST/GET/PATCH/DELETE orgs, properties, preferences
 - **Auth requerido**: sí
+
+**Código:** `apps/api/src/lib/operational-metrics.ts` (compartido con `GET /health`).
 
 ---
 

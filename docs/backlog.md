@@ -111,6 +111,10 @@
 - Sprint 8a: Solo chat + filtro anti-PII (reducido)
 - Sprint 8b: Kiteprop por etapas + smoke (sin chat/agenda)
 
+### Operabilidad y alertas (Plan Q3 — H4 / H5)
+
+**Hecho:** `GET /health` con `ops`, **Admin** `/stats` + `GET /admin/stats/ops`, email **SendGrid** al crear `AlertDelivery`, índice **`Listing (status, createdAt, id)`** para feed. Referencias: [OPERABILIDAD_HEALTH.md](./OPERABILIDAD_HEALTH.md), [ALERTAS_EMAIL.md](./ALERTAS_EMAIL.md), [PLAN_DE_TRABAJO_2026_Q3.md](./PLAN_DE_TRABAJO_2026_Q3.md).
+
 ---
 
 ## Deuda Técnica

@@ -53,8 +53,8 @@ Plan posterior a Sprints 1–6. Alineado a [masterplan.md](./masterplan.md), [FO
 
 | #   | Tarea                             | DoD                                                                            | Estado    |
 | --- | --------------------------------- | ------------------------------------------------------------------------------ | --------- |
-| 8.1 | Badge de notificaciones no leídas | Indicador en navbar; GET /me/notifications con unread count                    | Pendiente |
-| 8.2 | Email alertas (SendGrid)          | Si SendGrid configurado: envío al crear AlertDelivery                          | Pendiente |
+| 8.1 | Badge de notificaciones no leídas | Indicador en navbar / Más; GET /me/notifications/unread-count + polling            | Hecho (AppShell) |
+| 8.2 | Email alertas (SendGrid)          | Envío al crear `AlertDelivery` vía `sendAlertDeliveryEmail`; tests en API        | Hecho — [ALERTAS_EMAIL.md](./ALERTAS_EMAIL.md) |
 | 8.3 | Landing alertas                   | CTA en /alerts si no hay suscripciones: “Activá alertas para no perderte nada” | Pendiente |
 
 **Gates:** Usuario con alerta activa recibe aviso de nueva propiedad (in-app o email).
@@ -84,7 +84,7 @@ Plan posterior a Sprints 1–6. Alineado a [masterplan.md](./masterplan.md), [FO
 | #    | Tarea               | DoD                                                                                 | Estado    |
 | ---- | ------------------- | ----------------------------------------------------------------------------------- | --------- |
 | 10.1 | Punycode userland   | Sustituir `punycode` por `tr46` o similar; tests verdes                             | Pendiente |
-| 10.2 | Índices DB críticos | Revisar explain de queries lentos; índices para feed/listings por status+lastSeenAt | Pendiente |
+| 10.2 | Índices DB críticos | Índice `(status, createdAt, id)` en `Listing` para feed date_desc; ya existían status+lastSeenAt | Parcial — [OPERABILIDAD_HEALTH.md](./OPERABILIDAD_HEALTH.md) §4 |
 | 10.3 | Lighthouse score    | Landing y /buscar/[zona]: Performance > 80, SEO > 90                                | Pendiente |
 
 **Gates:** Sin warnings punycode; feed con 500+ items fluido.

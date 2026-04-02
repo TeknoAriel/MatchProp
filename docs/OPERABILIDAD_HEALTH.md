@@ -1,6 +1,10 @@
-# Operabilidad: health extendido + ingest (Sprint 10 / H5)
+# Operabilidad: health, admin, alertas email e índices de feed
 
-## `GET /health`
+Alineado a **Plan Q3 2026** ([PLAN_DE_TRABAJO_2026_Q3.md](./PLAN_DE_TRABAJO_2026_Q3.md)): Sprints 8 (email alertas), 9 (health + admin ops), 10 (índice feed).
+
+---
+
+## 1. `GET /health`
 
 Respuesta **siempre 200** (probes no caen por un fallo puntual). El cuerpo indica estado:
 
@@ -10,7 +14,7 @@ Respuesta **siempre 200** (probes no caen por un fallo puntual). El cuerpo indic
 | `db` | `ok` \| `error` |
 | `version` | SHA de deploy o `local` |
 | `migration` | Última migración Prisma aplicada |
-| `ops` | Solo si DB OK; métricas operativas (ver abajo) |
+| `ops` | Solo si DB OK; métricas operativas (misma fuente que `getOperationalMetrics` en código) |
 
 ### Objeto `ops`
 
@@ -23,13 +27,45 @@ Respuesta **siempre 200** (probes no caen por un fallo puntual). El cuerpo indic
 
 Si alguna consulta falla, el campo correspondiente puede ser `null`.
 
-**Relacionado:** `GET /cron/status` (público) sigue exponiendo `lastRun`, totales por fuente. En la web, `/status` muestra un resumen de `health` incluyendo `ops` cuando la API responde.
+**Implementación compartida:** [`apps/api/src/lib/operational-metrics.ts`](../apps/api/src/lib/operational-metrics.ts) — usada por `app.ts` y por **`GET /admin/stats/ops`**.
 
-## Ingest Properstar: filas sin cambio de contenido
+**Relacionado:** `GET /cron/status` (público) expone `lastRun`, totales por fuente. En la app web, **`/status`** muestra `health` + `ops`.
 
-Cuando `last_update` del JSON coincide con `updatedAtSource` en DB, no se ejecuta `upsert` completo; en su lugar se actualizan **`lastSeenAt`** y **`lastSyncedAt`** en bloque para mantener frescura en ordenamientos del feed. Ver [INGEST_PROPERSTAR.md](./INGEST_PROPERSTAR.md).
+---
 
-## Próximos pasos (backlog)
+## 2. Admin: `GET /admin/stats/ops`
 
-- Admin `/stats`: gráficos o tablas con los mismos números que `ops`.
-- Webhook en fallo de smoke-prod (opcional).
+- **Auth:** cookie de sesión + rol **ADMIN** (igual que el resto de `/admin/stats/*`).
+- **Respuesta:** todos los campos de `ops` más **`listingsActive`** (conteo `Listing` con `status = ACTIVE`).
+- **UI:** en **Admin → Estadísticas** (`/stats`) hay una sección **Operación** con estos números y enlaces a documentación del repo (GitHub `main`).
+
+**Runbooks:** [DEPLOY_TROUBLESHOOTING.md](./DEPLOY_TROUBLESHOOTING.md), [ESTABILIDAD_Y_RELEASE.md](./ESTABILIDAD_Y_RELEASE.md).
+
+---
+
+## 3. Email al crear `AlertDelivery`
+
+Ver **[ALERTAS_EMAIL.md](./ALERTAS_EMAIL.md)** (SendGrid, tipos, tests).
+
+---
+
+## 4. Performance feed — índice `Listing`
+
+El feed autenticado ordena por defecto por **`createdAt` desc** + `id` desc (y variantes con `lastSeenAt`). Ya existían índices `(status, lastSeenAt)` y `(status, lastSeenAt, id)`.
+
+Migración **`20260402140000_listing_feed_created_at_index`:** índice **`(status, createdAt, id)`** en `Listing` para acelerar el camino principal con `WHERE status = 'ACTIVE'` y orden por fecha de creación.
+
+Otros sorts (`price_*`, `area_desc`) pueden beneficiarse de índices adicionales si el volumen lo exige (revisar `EXPLAIN` en producción).
+
+---
+
+## 5. Ingest Properstar — touch sin `upsert`
+
+Cuando `last_update` del JSON coincide con `updatedAtSource`, no se hace `upsert` completo; se actualizan **`lastSeenAt`** y **`lastSyncedAt`** en bloque. Ver [INGEST_PROPERSTAR.md](./INGEST_PROPERSTAR.md).
+
+---
+
+## Pendiente (opcional)
+
+- Webhook en fallo de smoke-prod → [ESTABILIDAD_Y_RELEASE.md](./ESTABILIDAD_Y_RELEASE.md) § futuro.
+- Más gráficos en admin si hace falta.

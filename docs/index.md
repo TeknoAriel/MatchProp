@@ -60,7 +60,8 @@
 | [DEPLOY_CHECKLIST.md](./DEPLOY_CHECKLIST.md)                   | Checklist pre-deploy, deploy, post-deploy                                             |
 | [demo.md](./demo.md)                                           | Prueba real solo con navegador — escenario demo 1-click                               |
 | [INGEST_PROPERSTAR.md](./INGEST_PROPERSTAR.md)                 | Catálogo JSON Properstar: URL, env, carga completa (`ingest:run --until-empty`)      |
-| [OPERABILIDAD_HEALTH.md](./OPERABILIDAD_HEALTH.md)           | `GET /health` extendido (ops), ingest touch `lastSeenAt` / cola outbox               |
+| [OPERABILIDAD_HEALTH.md](./OPERABILIDAD_HEALTH.md)           | Health `ops`, admin `/stats`, índices feed, enlaces runbooks                         |
+| [ALERTAS_EMAIL.md](./ALERTAS_EMAIL.md)                       | Email SendGrid al crear `AlertDelivery` (Sprint 8.2)                               |
 
 ---
 
