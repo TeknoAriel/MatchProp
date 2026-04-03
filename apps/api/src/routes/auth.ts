@@ -36,6 +36,7 @@ import {
   generateCodeVerifier,
 } from '../services/oauth-flow.js';
 import { trackEvent } from '../lib/analytics.js';
+import { resolveMagicAppBaseUrl } from '../lib/magic-app-url.js';
 
 function getClientMeta(request: { ip?: string; headers?: { 'user-agent'?: string } }) {
   return {
@@ -298,7 +299,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const appUrl = (config.appUrl || 'http://localhost:3000').replace(/\/$/, '');
+      const appUrl = resolveMagicAppBaseUrl(request);
       const isDev =
         process.env.NODE_ENV !== 'production' || envFlag('DEMO_MODE') || process.env.VERCEL === '1';
 

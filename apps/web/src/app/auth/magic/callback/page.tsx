@@ -25,14 +25,19 @@ function MagicCallbackContent() {
       credentials: 'include',
       body: JSON.stringify({ token }),
     })
-      .then((res) => {
+      .then(async (res) => {
         if (res.ok) {
           setStatus('ok');
           router.replace('/feed');
-        } else {
-          setStatus('error');
-          setError('Link inválido o expirado');
+          return;
         }
+        const data = (await res.json().catch(() => null)) as { message?: string } | null;
+        setStatus('error');
+        setError(
+          typeof data?.message === 'string' && data.message.length > 0
+            ? data.message
+            : 'Link inválido o expirado'
+        );
       })
       .catch(() => {
         setStatus('error');
