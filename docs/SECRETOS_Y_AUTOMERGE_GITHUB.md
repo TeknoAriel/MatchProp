@@ -66,13 +66,29 @@ Guía: **[CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)**.
 
 ---
 
-## 5. `DEPLOY_WEBHOOK_URL` (opcional)
+## 5. Vercel CLI en producción (mismo patrón que Propieya)
+
+Si la integración Git falla por _Git author / team_ (Hobby), configurá deploy por **token** como en `ia-propieya` (`promote-deploy-infra.yml`).
+
+| Secreto en GitHub         | Origen                                                                                                                        |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `VERCEL_TOKEN`            | Vercel → [Account Settings → Tokens](https://vercel.com/account/tokens) → Create (scope que permita deploy al team/proyecto). |
+| `VERCEL_ORG_ID`           | Vercel → Team → Settings → **Team ID**, o en `.vercel/project.json` tras `vercel link` local.                                 |
+| `VERCEL_PROJECT_ID_API`   | Proyecto **match-prop-api-1jte** → Settings → General → **Project ID**.                                                       |
+| `VERCEL_PROJECT_ID_WEB`   | Proyecto **match-prop-web** → Settings → General → **Project ID**.                                                            |
+| `VERCEL_PROJECT_ID_ADMIN` | Proyecto **match-prop-admin** → Settings → General → **Project ID**.                                                          |
+
+Podés definir solo los IDs que quieras desplegar por CLI; los vacíos se omiten. El workflow **[vercel-prod-cli.yml](../.github/workflows/vercel-prod-cli.yml)** valida que cada ID apunte al **nombre** de proyecto esperado (`scripts/matchprop-production-canonical.env.sh`).
+
+---
+
+## 6. `DEPLOY_WEBHOOK_URL` (opcional)
 
 Solo si usás un webhook externo al terminar deploy. Si no, no hace falta crearlo.
 
 ---
 
-## 6. Por qué no podés activar “Allow auto-merge”
+## 7. Por qué no podés activar “Allow auto-merge”
 
 Ese interruptor está acá (misma página de ajustes generales del repo):
 
@@ -94,7 +110,7 @@ Sección **Pull Requests** → **Allow auto-merge**.
 
 ---
 
-## 7. Permisos de Actions (necesario para bots)
+## 8. Permisos de Actions (necesario para bots)
 
 [https://github.com/kiteprop/ia-matchprop/settings/actions](https://github.com/kiteprop/ia-matchprop/settings/actions)
 
@@ -104,9 +120,10 @@ Sección **Pull Requests** → **Allow auto-merge**.
 
 ## Resumen rápido
 
-| Secreto                                      | Origen del valor                                           | Obligatorio                               |
-| -------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------- |
-| `AUTOMERGE_TOKEN`                            | Lo generás en [tokens](https://github.com/settings/tokens) | No (recomendado si usás merge automático) |
-| `CRON_SECRET`                                | Mismo valor que `CRON_SECRET` en Vercel (API)              | No (sin él el cron no dispara ingest)     |
-| `VERCEL_DEPLOY_HOOK_API` / `_WEB` / `_ADMIN` | URLs de Deploy Hooks en Vercel                             | No                                        |
-| `DEPLOY_WEBHOOK_URL`                         | URL que te dé tu herramienta de avisos                     | No                                        |
+| Secreto                                                  | Origen del valor                                           | Obligatorio                               |
+| -------------------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------- |
+| `AUTOMERGE_TOKEN`                                        | Lo generás en [tokens](https://github.com/settings/tokens) | No (recomendado si usás merge automático) |
+| `CRON_SECRET`                                            | Mismo valor que `CRON_SECRET` en Vercel (API)              | No (sin él el cron no dispara ingest)     |
+| `VERCEL_DEPLOY_HOOK_API` / `_WEB` / `_ADMIN`             | URLs de Deploy Hooks en Vercel                             | No                                        |
+| `VERCEL_TOKEN` + `VERCEL_ORG_ID` + `VERCEL_PROJECT_ID_*` | Vercel CLI deploy (workflow `vercel-prod-cli.yml`)         | No                                        |
+| `DEPLOY_WEBHOOK_URL`                                     | URL que te dé tu herramienta de avisos                     | No                                        |

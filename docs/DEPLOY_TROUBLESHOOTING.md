@@ -38,6 +38,18 @@ En planes **Hobby**, Vercel puede **rechazar** deployments (estado `ERROR`, `alw
 
 **Comprobación:** `bash scripts/check-git-author-vercel.sh`
 
+### 8. Propieya vs MatchProp: por qué uno “no falla” y el otro se queda atrás
+
+En **Propieya** (`ia-propieya`), el deploy a producción del portal usa **GitHub Actions + Vercel CLI** (`vercel deploy --prod`) con **`VERCEL_TOKEN`** y **`VERCEL_PROJECT_ID`**, en la rama `deploy/infra` (workflow `promote-deploy-infra.yml`). Ese camino **no depende** del autor del commit en la integración Git→Vercel, así que no aparece el bloqueo Hobby de _Git author / team access_.
+
+En **MatchProp** (`ia-matchprop`), el flujo histórico es **integración Git** (push a `main` → Vercel construye) más **Deploy Hooks** opcionales. Si la integración rechaza el deploy, `main` avanza pero **`/health.version` en prod** queda en un SHA viejo.
+
+**Paridad con Propieya en este repo:** workflow **[vercel-prod-cli.yml](../.github/workflows/vercel-prod-cli.yml)** — se ejecuta **manualmente** (`workflow_dispatch`) o **después de un CI verde en `main`** (`workflow_run`), y despliega con token los proyectos para los que existan secretos `VERCEL_PROJECT_ID_*`. Secretos y nombres canónicos: **[SECRETOS_Y_AUTOMERGE_GITHUB.md](./SECRETOS_Y_AUTOMERGE_GITHUB.md)** §5 y **`scripts/matchprop-production-canonical.env.sh`**.
+
+**Reglas / checks:** Propieya exige en CI jobs separados (`Lint`, `Typecheck`, `Build`). MatchProp condensa un check requerido **`CI / Verify`**; no hace falta igualar los nombres de jobs, sí tener **un** status check estable en la rama protegida.
+
+**Si usás CLI y Git a la vez:** podés tener **dos builds** por push; para ahorrar minutos en Hobby, desactivá el deploy automático por Git en Vercel o usá solo hooks/CLI.
+
 ## Ruleset en `main`: checks requeridos
 
 El workflow **CI** expone un solo job obligatorio para reglas de rama: **`CI / Verify`** (typecheck, lint, tests, integración y `pre-deploy:verify` en un solo run).
