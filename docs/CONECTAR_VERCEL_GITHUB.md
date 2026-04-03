@@ -52,7 +52,7 @@ Si la integración Git → Vercel falla o querés forzar un redeploy tras CI:
 | `VERCEL_DEPLOY_HOOK_WEB`   | URL del hook del proyecto Web     |
 | `VERCEL_DEPLOY_HOOK_ADMIN` | URL del hook del Admin (opcional) |
 
-3. En el repo ya existe el workflow **Vercel deploy hooks** (`.github/workflows/vercel-deploy-hooks.yml`): en cada push a `main` hará `POST` a los hooks que estén definidos.
+3. En el repo ya existe el workflow **Vercel deploy hooks** (`.github/workflows/vercel-deploy-hooks.yml`): tras **CI verde en `main`** (o ejecución manual) hará `POST` a los hooks definidos.
 
 Si los secretos no existen, el workflow no hace nada y sigue en verde.
 

@@ -54,7 +54,7 @@ Si **no** cargás `CRON_SECRET` en GitHub, el workflow [cron-ingest.yml](../.git
 
 ## 4. `VERCEL_DEPLOY_HOOK_*` (opcional — redeploy desde Actions)
 
-URLs de **Deploy Hooks** (Vercel → proyecto → Settings → Git → Deploy Hooks, rama Production). El workflow [vercel-deploy-hooks.yml](../.github/workflows/vercel-deploy-hooks.yml) hace `POST` en cada push a `main` si el secreto existe.
+URLs de **Deploy Hooks** (Vercel → proyecto → Settings → Git → Deploy Hooks, rama Production). El workflow [vercel-deploy-hooks.yml](../.github/workflows/vercel-deploy-hooks.yml) hace `POST` **después de un CI verde en `main`** (o manual `workflow_dispatch`) si el secreto existe — no antes de **Verify**.
 
 | Secreto en GitHub          | Proyecto típico |
 | -------------------------- | --------------- |

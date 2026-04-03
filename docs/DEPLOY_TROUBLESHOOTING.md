@@ -32,7 +32,7 @@ En planes **Hobby**, Vercel puede **rechazar** deployments (estado `ERROR`, `alw
 
    Próximo commit y push usarán ese autor.
 
-2. **Deploy Hooks** — Vercel → Settings → Git → Deploy Hooks (Production). Secretos en GitHub: `VERCEL_DEPLOY_HOOK_API`, `VERCEL_DEPLOY_HOOK_WEB`. El workflow **Vercel deploy hooks** ya hace `POST` en cada push a `main`.
+2. **Deploy Hooks** — Vercel → Settings → Git → Deploy Hooks (Production). Secretos en GitHub: `VERCEL_DEPLOY_HOOK_API`, `VERCEL_DEPLOY_HOOK_WEB`. El workflow **Vercel deploy hooks** hace `POST` **tras CI verde en `main`** (o manual).
 
 3. **Team / colaboradores** — Invitar al autor del commit al team de Vercel. Ver [troubleshoot collaboration](https://vercel.com/docs/deployments/troubleshoot-project-collaboration#team-configuration).
 
