@@ -1,6 +1,8 @@
 # Ingest cron y actualización de propiedades
 
-El **buscador** usa el catálogo de propiedades en la base de datos. Ese catálogo se alimenta con **conexiones de ingest** (Properstar JSON, iCasas, Zonaprop, Externalsite, etc.) y se actualiza con un **cron horario** que recorre las conexiones activas.
+El **buscador** usa el catálogo de propiedades en la base de datos. Ese catálogo se alimenta con **conexiones de ingest** (Properstar JSON, iCasas, Zonaprop, Externalsite, etc.) y se actualiza con **cron / jobs programados** que recorren las conexiones activas.
+
+**Frecuencias acordadas (Propistar / Properstar) y push desde Kiteprop:** ver **[INGEST_PROPISTAR_POLITICA_OPERATIVA.md](./INGEST_PROPISTAR_POLITICA_OPERATIVA.md)**.
 
 ---
 
@@ -12,11 +14,11 @@ El **buscador** usa el catálogo de propiedades en la base de datos. Ese catálo
 
 ---
 
-## Cron horario
+## Cron / scheduler
 
 - **Script:** `pnpm --filter api ingest:cron`
 - **Qué hace:** Para cada conexión activa, ejecuta ingest con **cursor** (SyncWatermark): trae el siguiente bloque de propiedades y actualiza el cursor para continuar en la próxima ejecución.
-- **Programación:** Ejecutar cada hora (cron `0 * * * *`) o desde Vercel Cron / otro scheduler. En cada pasada se procesa un batch por fuente (límite 200 por defecto); en ejecuciones sucesivas se continúa desde el último cursor.
+- **Programación:** Depende del entorno (p. ej. **cada 30 min en producción** para Propistar; **cada 48 h o bajo demanda en prueba** — ver política operativa enlazada arriba). Vercel Cron, GitHub Actions u otro scheduler.
 - **Comparador / último id:** Cada fuente tiene un **SyncWatermark** (cursor por fuente). El conector devuelve `nextCursor` (ej. offset numérico para Properstar/iCasas); ese valor se guarda y se envía en la siguiente ejecución para no repetir datos y avanzar.
 
 ---
@@ -33,13 +35,13 @@ El **buscador** usa el catálogo de propiedades en la base de datos. Ese catálo
 
 ## Resumen
 
-| Tema                             | Cómo se resuelve                                                                        |
-| -------------------------------- | --------------------------------------------------------------------------------------- |
-| Catálogo desde conexiones reales | IngestSourceConfig con URLs; en prod no usar fixture ni API_PARTNER_1.                  |
-| Cron cada hora                   | `pnpm --filter api ingest:cron`; programar con cron o Vercel Cron.                      |
-| Continuar desde último id        | SyncWatermark por fuente; cada conector usa cursor (ej. offset) y devuelve nextCursor.  |
-| Cambio de precios                | Upsert + ListingEvent PRICE_CHANGED.                                                    |
-| Propiedad pasa a inactiva        | Upsert con status INACTIVE + ListingEvent STATUS_CHANGED; fuentes pueden enviar status. |
+| Tema                             | Cómo se resuelve                                                                                                                      |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Catálogo desde conexiones reales | IngestSourceConfig con URLs; en prod no usar fixture ni API_PARTNER_1.                                                                |
+| Cron / intervalos                | `pnpm --filter api ingest:cron`; intervalos según [INGEST_PROPISTAR_POLITICA_OPERATIVA.md](./INGEST_PROPISTAR_POLITICA_OPERATIVA.md). |
+| Continuar desde último id        | SyncWatermark por fuente; cada conector usa cursor (ej. offset) y devuelve nextCursor.                                                |
+| Cambio de precios                | Upsert + ListingEvent PRICE_CHANGED.                                                                                                  |
+| Propiedad pasa a inactiva        | Upsert con status INACTIVE + ListingEvent STATUS_CHANGED; fuentes pueden enviar status.                                               |
 
 ---
 

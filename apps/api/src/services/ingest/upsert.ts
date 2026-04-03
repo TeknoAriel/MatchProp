@@ -7,14 +7,21 @@ import { onListingCreated } from '../crm-push/on-listing-created.js';
 
 const LOCATION_TEXT_MAX = 200;
 
-/** Extrae details (amenities, aptoCredito, etc.) del raw JSON Kiteprop cuando el connector no los provee. */
+/**
+ * Extrae details del raw y fusiona encima `norm.details` (p. ej. adTypeCode desde el conector)
+ * sin perder amenities del JSON.
+ */
 function extractDetailsFromRaw(
   raw: Record<string, unknown> | null | undefined,
   norm: NormalizedListing
 ): ListingDetailsFromIngest | null {
-  if (norm.details != null && typeof norm.details === 'object')
-    return norm.details as ListingDetailsFromIngest;
-  if (!raw || typeof raw !== 'object') return null;
+  if (!raw || typeof raw !== 'object') {
+    if (norm.details != null && typeof norm.details === 'object') {
+      const d = norm.details as ListingDetailsFromIngest;
+      return Object.keys(d).length > 0 ? d : null;
+    }
+    return null;
+  }
 
   const details: ListingDetailsFromIngest = {};
   const toBool = (v: unknown) => v === true || v === 'true' || v === 'si' || v === 'Si' || v === 1;
@@ -61,7 +68,12 @@ function extractDetailsFromRaw(
     details.amenities = [...(details.amenities ?? []), ...foundAmenities];
   }
 
-  return Object.keys(details).length > 0 ? details : null;
+  const merged: ListingDetailsFromIngest =
+    norm.details != null && typeof norm.details === 'object'
+      ? { ...details, ...(norm.details as ListingDetailsFromIngest) }
+      : details;
+
+  return Object.keys(merged).length > 0 ? merged : null;
 }
 
 function truncateLocation(s: string | null | undefined): string | null {

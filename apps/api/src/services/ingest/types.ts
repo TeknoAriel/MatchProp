@@ -13,6 +13,10 @@ export interface ListingDetailsFromIngest {
   jardin?: boolean;
   parrilla?: boolean;
   gimnasio?: boolean;
+  /** Código de tipo de aviso en Kiteprop (plan comercial); mapeo a tiers en producto. */
+  adTypeCode?: string;
+  /** Etiqueta cruda si la fuente la envía (opcional). */
+  adTypeLabelRaw?: string;
   [key: string]: unknown;
 }
 

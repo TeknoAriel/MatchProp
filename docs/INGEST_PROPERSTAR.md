@@ -1,5 +1,7 @@
 # Ingest Properstar (catálogo JSON Kiteprop)
 
+**Política operativa** (cron prod/prueba, push Kiteprop, tipo de aviso, bajas, cachés): **[INGEST_PROPISTAR_POLITICA_OPERATIVA.md](./INGEST_PROPISTAR_POLITICA_OPERATIVA.md)**.
+
 ## Qué es
 
 **`properstar.json`** es el archivo de difusión en `static.kiteprop.com` con el **catálogo completo** de propiedades en formato JSON. Comparte el mismo esquema que el histórico **`yumblin.json`** (campos como `id`, `images`, `property_type`, `for_sale` / `for_rent`, precios, `agency`, ubicación, etc.).

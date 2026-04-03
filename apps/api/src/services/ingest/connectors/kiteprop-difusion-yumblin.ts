@@ -71,6 +71,33 @@ function buildLocationText(raw: Record<string, unknown>): string | null {
   return trunc(s) || trunc(String(raw.address ?? ''));
 }
 
+/** Código de tipo de aviso (Kiteprop); ver docs/INGEST_PROPISTAR_POLITICA_OPERATIVA.md §4. */
+function pickAdTypeCode(raw: Record<string, unknown>): string | null {
+  const keys = [
+    'ad_type',
+    'adType',
+    'tipo_aviso',
+    'listing_ad_type',
+    'publication_type',
+    'plan_code',
+    'aviso_tipo',
+  ];
+  for (const k of keys) {
+    const v = raw[k];
+    if (v == null) continue;
+    const s = String(v).trim();
+    if (s.length > 0) return s;
+  }
+  return null;
+}
+
+function pickAdTypeLabelRaw(raw: Record<string, unknown>): string | null {
+  const v = raw.ad_type_label ?? raw.adTypeLabel ?? raw.tipo_aviso_label;
+  if (v == null) return null;
+  const s = String(v).trim();
+  return s.length > 0 ? s : null;
+}
+
 async function getDifusionCatalogUrl(): Promise<string> {
   const envUrl =
     process.env.KITEPROP_DIFUSION_PROPERSTAR_URL || process.env.KITEPROP_DIFUSION_YUMBLIN_URL;
@@ -165,6 +192,16 @@ export function createKitepropDifusionYumblinConnector(): SourceConnector {
       const agency = raw.agency as { id?: number; name?: string } | undefined;
       const publisherRef = agency?.id != null ? String(agency.id) : null;
 
+      const adTypeCode = pickAdTypeCode(raw);
+      const adTypeLabelRaw = pickAdTypeLabelRaw(raw);
+      const details =
+        adTypeCode || adTypeLabelRaw
+          ? {
+              ...(adTypeCode ? { adTypeCode } : {}),
+              ...(adTypeLabelRaw ? { adTypeLabelRaw } : {}),
+            }
+          : null;
+
       return {
         source: 'KITEPROP_DIFUSION_YUMBLIN' as ListingSource,
         externalId: id,
@@ -188,6 +225,7 @@ export function createKitepropDifusionYumblinConnector(): SourceConnector {
         mediaUrls: images
           .filter((img) => img?.url)
           .map((img, i) => ({ url: String(img.url), sortOrder: i })),
+        details,
       };
     },
   };
