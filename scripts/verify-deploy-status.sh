@@ -113,6 +113,9 @@ else
   echo "  → Vercel → proyecto match-prop-api-1jte (root apps/api) → Deployments: ¿último en Production está Ready?"
   echo "  → Revisar build rojo, Git desconectado, o rama de producción distinta de main."
   echo "  → Si los deploys fallan al instante: autor Git / team (Hobby) — bash scripts/check-git-author-vercel.sh"
-  echo "  → docs/INFRAESTRUCTURA_VERCEL.md y docs/DEPLOY_TROUBLESHOOTING.md"
+  echo "  → Bypass sin depender del autor del commit: secretos en GitHub (docs/SECRETOS_Y_AUTOMERGE_GITHUB.md)"
+  echo "     · VERCEL_DEPLOY_HOOK_* → workflow «Vercel deploy hooks» (tras CI verde en main)"
+  echo "     · VERCEL_TOKEN + VERCEL_ORG_ID + VERCEL_PROJECT_ID_* → workflow «Vercel prod (CLI)»"
+  echo "  → docs/INFRAESTRUCTURA_VERCEL.md y docs/DEPLOY_TROUBLESHOOTING.md §7–8"
   exit 1
 fi
