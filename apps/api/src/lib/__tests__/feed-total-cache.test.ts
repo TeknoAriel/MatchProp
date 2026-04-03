@@ -33,9 +33,9 @@ describe('createFeedTotalCache', () => {
     it('propertyTypes en distinto orden comparten cache', async () => {
       const { getCachedTotal, setCachedTotal } = createFeedTotalCache({ maxEntries: 10 });
       await setCachedTotal('u1', { propertyTypes: ['HOUSE', 'APARTMENT'] }, 10);
-      await expect(
-        getCachedTotal('u1', { propertyTypes: ['APARTMENT', 'HOUSE'] })
-      ).resolves.toBe(10);
+      await expect(getCachedTotal('u1', { propertyTypes: ['APARTMENT', 'HOUSE'] })).resolves.toBe(
+        10
+      );
     });
   });
 

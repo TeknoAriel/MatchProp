@@ -16,6 +16,28 @@ Si prod lleva días con un SHA viejo: reconectar Vercel al repo **`kiteprop/ia-m
 
 En Vercel, **exit 0 = no construir** y **exit ≠ 0 = construir**. Si los scripts `scripts/vercel-should-build-*.sh` usan la lógica al revés, los deploys de web/API/admin se **saltan** cuando tocás esas carpetas y producción queda años luz de `main`. Ver **[VERCEL_CONFIG.md](./VERCEL_CONFIG.md)**.
 
+### 7. Vercel rechaza el deploy: «Git author must have access to the team» (Hobby)
+
+En planes **Hobby**, Vercel puede **rechazar** deployments (estado `ERROR`, `alwaysRefuseToBuild`, `TEAM_ACCESS_REQUIRED`) si el **autor del commit** (email en Git) **no coincide** con un miembro del team o no está verificado como colaborador del proyecto.
+
+**Síntoma:** `main` avanza pero `/health.version` en prod **no cambia**; en el dashboard el deployment falla con mensaje sobre _Git author_ / _team access_. La CLI puede mostrar `Unexpected error`; con `vercel deploy --debug` la respuesta incluye `readyStateReason`.
+
+**Qué hacer (elegir una):**
+
+1. **Email de Git alineado con Vercel y GitHub** — mismo email en GitHub y en Vercel (Settings → Git):
+
+   ```bash
+   git config --global user.email "tu-email-verificado@ejemplo.com"
+   ```
+
+   Próximo commit y push usarán ese autor.
+
+2. **Deploy Hooks** — Vercel → Settings → Git → Deploy Hooks (Production). Secretos en GitHub: `VERCEL_DEPLOY_HOOK_API`, `VERCEL_DEPLOY_HOOK_WEB`. El workflow **Vercel deploy hooks** ya hace `POST` en cada push a `main`.
+
+3. **Team / colaboradores** — Invitar al autor del commit al team de Vercel. Ver [troubleshoot collaboration](https://vercel.com/docs/deployments/troubleshoot-project-collaboration#team-configuration).
+
+**Comprobación:** `bash scripts/check-git-author-vercel.sh`
+
 ## Ruleset en `main`: checks requeridos
 
 El workflow **CI** expone un solo job obligatorio para reglas de rama: **`CI / Verify`** (typecheck, lint, tests, integración y `pre-deploy:verify` en un solo run).

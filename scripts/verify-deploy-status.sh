@@ -112,6 +112,7 @@ else
   echo "  Si lleva mucho tiempo desalineado: el /health.version es VERCEL_GIT_COMMIT_SHA del deploy."
   echo "  → Vercel → proyecto match-prop-api-1jte (root apps/api) → Deployments: ¿último en Production está Ready?"
   echo "  → Revisar build rojo, Git desconectado, o rama de producción distinta de main."
+  echo "  → Si los deploys fallan al instante: autor Git / team (Hobby) — bash scripts/check-git-author-vercel.sh"
   echo "  → docs/INFRAESTRUCTURA_VERCEL.md y docs/DEPLOY_TROUBLESHOOTING.md"
   exit 1
 fi

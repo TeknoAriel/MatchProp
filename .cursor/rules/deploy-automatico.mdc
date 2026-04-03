@@ -39,6 +39,8 @@ Cuando el usuario pida **deploy**, **deployar**, **subir a producción**, **term
    - Si no: esperar 2-3 min (Vercel) y reintentar, o investigar por qué no se mergeó.
    - **Solo cuando verify-deploy-status.sh pase:** informar que el deploy está en producción.
 
+6. **Bloqueo Vercel (Git author / team Hobby):** si `main` sube pero prod no cambia y en Vercel los deploys están en `ERROR` con *Git author must have access*, el `user.email` de Git no está alineado con el team o hay que usar **Deploy Hooks** (`VERCEL_DEPLOY_HOOK_*` en GitHub). Ver `docs/DEPLOY_TROUBLESHOOTING.md` §7 y `bash scripts/check-git-author-vercel.sh`. Resolver (hooks o email) antes de declarar deploy imposible.
+
 ## Automatización en GitHub
 
 Tras el push, el workflow `.github/workflows/deploy-auto-pr.yml`:

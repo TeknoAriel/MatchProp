@@ -131,12 +131,12 @@ Con **decenas o cientos de miles** de listings, PostgreSQL + Prisma sigue siendo
 
 **Variables de entorno (fases futuras):**
 
-| Variable                     | Uso                                      |
-| ---------------------------- | ---------------------------------------- |
-| `SEARCH_BACKEND`             | `postgres` (default) \| `elasticsearch`  |
-| `ELASTICSEARCH_URL`          | URL base del cluster                     |
-| `ELASTICSEARCH_API_KEY`      | Auth (o usuario/clave según despliegue)  |
-| `ELASTICSEARCH_INDEX_LISTINGS` | Override del nombre de índice            |
+| Variable                       | Uso                                     |
+| ------------------------------ | --------------------------------------- |
+| `SEARCH_BACKEND`               | `postgres` (default) \| `elasticsearch` |
+| `ELASTICSEARCH_URL`            | URL base del cluster                    |
+| `ELASTICSEARCH_API_KEY`        | Auth (o usuario/clave según despliegue) |
+| `ELASTICSEARCH_INDEX_LISTINGS` | Override del nombre de índice           |
 
 ### 6.2 Alternativas más simples
 
@@ -162,10 +162,10 @@ Orden típico de lectura:
 
 ## 8. Roadmap sugerido
 
-| Fase | Objetivo                                                |
-| ---- | ------------------------------------------------------- |
-| A    | `REDIS_URL` en staging/prod para totales de feed        |
-| B    | Índice ES + pipeline desde ingest (eventos o bulk)      |
-| C    | `executeFeed` dual: ES para ids + Prisma para cards    |
-| D    | Facetas / agregados y mapa pesado desde ES              |
-| E    | Observabilidad: latencia ES vs PG, ratio de cache hit   |
+| Fase | Objetivo                                              |
+| ---- | ----------------------------------------------------- |
+| A    | `REDIS_URL` en staging/prod para totales de feed      |
+| B    | Índice ES + pipeline desde ingest (eventos o bulk)    |
+| C    | `executeFeed` dual: ES para ids + Prisma para cards   |
+| D    | Facetas / agregados y mapa pesado desde ES            |
+| E    | Observabilidad: latencia ES vs PG, ratio de cache hit |
