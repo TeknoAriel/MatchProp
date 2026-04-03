@@ -46,24 +46,24 @@
 
 ## Operación y referencias técnicas
 
-| Documento                                                      | Descripción                                                                           |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| [repo-map.md](./repo-map.md)                                   | Mapa del repo — scripts, puertos, modelos, endpoints, tests                           |
-| [ZONAPROP_XML_FICHA_CAMPOS.md](./ZONAPROP_XML_FICHA_CAMPOS.md) | XML Zonaprop/KiteProp (OpenNavent): tags, `caracteristicas` y mapeo a ficha/amenities |
-| [AUDIT_README.md](./AUDIT_README.md)                           | Cómo correr `pnpm audit:verify` (gates locales)                                       |
-| [archive/AUDIT_MATCHPROP.md](./archive/AUDIT_MATCHPROP.md)     | Auditoría técnica histórica (archivo)                                                 |
-| [DEV.md](./DEV.md)                                             | Desarrollo local — requisitos, comandos, troubleshooting                              |
-| [PROD.md](./PROD.md)                                           | Producción — variables de entorno, observabilidad, seguridad                          |
-| [REPO_OFICIAL_KITEPROP.md](./REPO_OFICIAL_KITEPROP.md)         | Repo GitHub `kiteprop/ia-matchprop`, Vercel y secretos tras el cambio de remoto       |
-| [MCP_KITEPROP_CRM.md](./MCP_KITEPROP_CRM.md)                   | MCP del CRM Kiteprop (`kiteprop/crm-mcp`), Cursor / Claude, API key `kp_`             |
-| [CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)       | Conectar Git ↔ Vercel (`main`, roots), verify-deploy y hooks opcionales               |
-| [SETUP_DEPLOY_SIMPLE.md](./SETUP_DEPLOY_SIMPLE.md)             | Deploy simple — Neon + Vercel, variables, URLs                                        |
-| [DEPLOY_CHECKLIST.md](./DEPLOY_CHECKLIST.md)                   | Checklist pre-deploy, deploy, post-deploy                                             |
-| [demo.md](./demo.md)                                           | Prueba real solo con navegador — escenario demo 1-click                               |
-| [INGEST_PROPERSTAR.md](./INGEST_PROPERSTAR.md)                 | Catálogo JSON Properstar: URL, env, carga completa (`ingest:run --until-empty`)       |
+| Documento                                                                          | Descripción                                                                           |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| [repo-map.md](./repo-map.md)                                                       | Mapa del repo — scripts, puertos, modelos, endpoints, tests                           |
+| [ZONAPROP_XML_FICHA_CAMPOS.md](./ZONAPROP_XML_FICHA_CAMPOS.md)                     | XML Zonaprop/KiteProp (OpenNavent): tags, `caracteristicas` y mapeo a ficha/amenities |
+| [AUDIT_README.md](./AUDIT_README.md)                                               | Cómo correr `pnpm audit:verify` (gates locales)                                       |
+| [archive/AUDIT_MATCHPROP.md](./archive/AUDIT_MATCHPROP.md)                         | Auditoría técnica histórica (archivo)                                                 |
+| [DEV.md](./DEV.md)                                                                 | Desarrollo local — requisitos, comandos, troubleshooting                              |
+| [PROD.md](./PROD.md)                                                               | Producción — variables de entorno, observabilidad, seguridad                          |
+| [REPO_OFICIAL_KITEPROP.md](./REPO_OFICIAL_KITEPROP.md)                             | Repo GitHub `kiteprop/ia-matchprop`, Vercel y secretos tras el cambio de remoto       |
+| [MCP_KITEPROP_CRM.md](./MCP_KITEPROP_CRM.md)                                       | MCP del CRM Kiteprop (`kiteprop/crm-mcp`), Cursor / Claude, API key `kp_`             |
+| [CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)                           | Conectar Git ↔ Vercel (`main`, roots), verify-deploy y hooks opcionales               |
+| [SETUP_DEPLOY_SIMPLE.md](./SETUP_DEPLOY_SIMPLE.md)                                 | Deploy simple — Neon + Vercel, variables, URLs                                        |
+| [DEPLOY_CHECKLIST.md](./DEPLOY_CHECKLIST.md)                                       | Checklist pre-deploy, deploy, post-deploy                                             |
+| [demo.md](./demo.md)                                                               | Prueba real solo con navegador — escenario demo 1-click                               |
+| [INGEST_PROPERSTAR.md](./INGEST_PROPERSTAR.md)                                     | Catálogo JSON Properstar: URL, env, carga completa (`ingest:run --until-empty`)       |
 | [INGEST_PROPISTAR_POLITICA_OPERATIVA.md](./INGEST_PROPISTAR_POLITICA_OPERATIVA.md) | Propistar/Properstar: cron prod/prueba, push Kiteprop, tipo de aviso, bajas, cachés   |
-| [OPERABILIDAD_HEALTH.md](./OPERABILIDAD_HEALTH.md)             | Health `ops`, admin `/stats`, índices feed, enlaces runbooks                          |
-| [ALERTAS_EMAIL.md](./ALERTAS_EMAIL.md)                         | Email SendGrid al crear `AlertDelivery` (Sprint 8.2)                                  |
+| [OPERABILIDAD_HEALTH.md](./OPERABILIDAD_HEALTH.md)                                 | Health `ops`, admin `/stats`, índices feed, enlaces runbooks                          |
+| [ALERTAS_EMAIL.md](./ALERTAS_EMAIL.md)                                             | Email SendGrid al crear `AlertDelivery` (Sprint 8.2)                                  |
 
 ---
 
