@@ -77,17 +77,38 @@ sys.exit(1)
   fi
 fi
 
-# 3. Health check
+# 3. Health check (API directa + proxy Web→API)
 echo ""
 echo "=== Producción ==="
 HEALTH=$(curl -sS --connect-timeout 10 "$API_URL/health" 2>/dev/null || echo '{}')
 PROD_VERSION=$(echo "$HEALTH" | grep -o '"version":"[^"]*"' | cut -d'"' -f4)
 STATUS=$(echo "$HEALTH" | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
+DB_STATUS=$(echo "$HEALTH" | grep -o '"db":"[^"]*"' | cut -d'"' -f4)
+CATALOG_COUNT=""
+if command -v python3 >/dev/null 2>&1; then
+  CATALOG_COUNT=$(echo "$HEALTH" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('catalogActiveCount',''))" 2>/dev/null || echo "")
+fi
 
 if [ "$STATUS" = "ok" ]; then
-  echo "✓ API health: ok (version $PROD_VERSION)"
+  echo "✓ API health: status=ok (version ${PROD_VERSION:-?})"
 else
-  echo "❌ API health: $STATUS"
+  echo "❌ API health: status=$STATUS"
+fi
+if [ "$DB_STATUS" = "ok" ]; then
+  echo "✓ Base de datos: db=ok (PostgreSQL responde)"
+else
+  echo "❌ Base de datos: db=${DB_STATUS:-desconocido} — revisar DATABASE_URL / Neon"
+fi
+if [ -n "$CATALOG_COUNT" ] && [ "$CATALOG_COUNT" != "" ]; then
+  echo "  Listings ACTIVE en catálogo: $CATALOG_COUNT (si es 0, el feed vacío es esperable sin ingest/demo)"
+fi
+
+WEB_HEALTH=$(curl -sS --connect-timeout 10 "$WEB_URL/api/health" 2>/dev/null || echo '{}')
+WEB_API_STATUS=$(echo "$WEB_HEALTH" | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
+if [ "$WEB_API_STATUS" = "ok" ]; then
+  echo "✓ Web → API (/api/health proxy): ok"
+else
+  echo "❌ Web → API: respuesta inesperada (¿API_SERVER_URL / rewrite en Vercel Web?)"
 fi
 
 web_code=$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 10 "$WEB_URL" 2>/dev/null || echo "000")
