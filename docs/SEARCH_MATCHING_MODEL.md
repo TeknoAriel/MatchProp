@@ -20,32 +20,32 @@
 
 ## 2. Tres niveles de intención (conceptual)
 
-| Nivel | Contenido | Rol en el motor |
-| --- | --- | --- |
-| A. Intención principal | Compra/alquiler, tipo, macro zona, precio/tamaño aproximados | Core / required |
-| B. Condiciones importantes | Dorm, baños, superficie, cochera, apto crédito, antigüedad, expensas | Mayormente **flexible** (WHERE con relajación) |
-| C. Preferencias de match | Amenities, estilo de vida, subjetivos, datos incompletos | **Preferred** (score / ranking), no exclusión por defecto |
+| Nivel                      | Contenido                                                            | Rol en el motor                                           |
+| -------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------- |
+| A. Intención principal     | Compra/alquiler, tipo, macro zona, precio/tamaño aproximados         | Core / required                                           |
+| B. Condiciones importantes | Dorm, baños, superficie, cochera, apto crédito, antigüedad, expensas | Mayormente **flexible** (WHERE con relajación)            |
+| C. Preferencias de match   | Amenities, estilo de vida, subjetivos, datos incompletos             | **Preferred** (score / ranking), no exclusión por defecto |
 
 ---
 
 ## 3. Clasificación por impacto (A–D)
 
-| Grupo | Ejemplos | Comportamiento por defecto |
-| --- | --- | --- |
-| **A. Core / required** | Operación, tipo, macro ubicación, estado ACTIVE publicable | Siempre en WHERE; no se relajan |
-| **B. Fuertes / flexible** | Precio, dorm, ambientes, baños, superficie, cochera, apto crédito (contextual) | WHERE fuerte; relajables por etapas |
-| **C. Secundarios** | Orientación, piso, cubierta mín/máx, amoblado, mascotas, expensas | WHERE opcional; relajar antes que core |
-| **D. Preferidos / ranking** | Amenities, microdetalles, términos aspiracionales | **No excluyen** si `amenitiesMode=soft` (default) |
+| Grupo                       | Ejemplos                                                                       | Comportamiento por defecto                        |
+| --------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------- |
+| **A. Core / required**      | Operación, tipo, macro ubicación, estado ACTIVE publicable                     | Siempre en WHERE; no se relajan                   |
+| **B. Fuertes / flexible**   | Precio, dorm, ambientes, baños, superficie, cochera, apto crédito (contextual) | WHERE fuerte; relajables por etapas               |
+| **C. Secundarios**          | Orientación, piso, cubierta mín/máx, amoblado, mascotas, expensas              | WHERE opcional; relajar antes que core            |
+| **D. Preferidos / ranking** | Amenities, microdetalles, términos aspiracionales                              | **No excluyen** si `amenitiesMode=soft` (default) |
 
 ---
 
 ## 4. Modos de efecto: `required` / `flexible` / `preferred`
 
-| Modo | Significado |
-| --- | --- |
-| **required** | Debe cumplirse (WHERE) |
-| **flexible** | Se intenta cumplir; se puede relajar si hay pocos resultados |
-| **preferred** | No excluye; mejora score, orden o copy |
+| Modo          | Significado                                                  |
+| ------------- | ------------------------------------------------------------ |
+| **required**  | Debe cumplirse (WHERE)                                       |
+| **flexible**  | Se intenta cumplir; se puede relajar si hay pocos resultados |
+| **preferred** | No excluye; mejora score, orden o copy                       |
 
 **Asignación inicial MatchProp:**
 
@@ -69,13 +69,13 @@
 
 Si la primera consulta devuelve 0 ítems, se aplica **relajación acumulativa por pasos** (sin tocar operación, tipo ni ubicación textual).
 
-| Paso | Qué se relaja |
-| --- | --- |
-| 1 | Amenities (si estaban en strict), fotos mínimas, antigüedad del aviso, palabras clave, texto en título/descripción |
-| 2 | Apto crédito, superficie cubierta mínima |
-| 3 | Dormitorios, baños, superficie total |
-| 4 | Precio y moneda |
-| 5 | Bounds del mapa (viewport / polígono en query) |
+| Paso | Qué se relaja                                                                                                      |
+| ---- | ------------------------------------------------------------------------------------------------------------------ |
+| 1    | Amenities (si estaban en strict), fotos mínimas, antigüedad del aviso, palabras clave, texto en título/descripción |
+| 2    | Apto crédito, superficie cubierta mínima                                                                           |
+| 3    | Dormitorios, baños, superficie total                                                                               |
+| 4    | Precio y moneda                                                                                                    |
+| 5    | Bounds del mapa (viewport / polígono en query)                                                                     |
 
 **No relajar primero:** operación, tipo principal, macro ubicación (texto).
 
@@ -85,10 +85,10 @@ Si la primera consulta devuelve 0 ítems, se aplica **relajación acumulativa po
 
 ## 7. Tipos de match (motor)
 
-| Tipo | Definición operativa actual |
-| --- | --- |
-| **exact** | Filtros del usuario sin paso de relajación |
-| **relaxed** | Se aplicó al menos un paso de relajación y hubo resultados |
+| Tipo        | Definición operativa actual                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------------- |
+| **exact**   | Filtros del usuario sin paso de relajación                                                              |
+| **relaxed** | Se aplicó al menos un paso de relajación y hubo resultados                                              |
 | **catalog** | Sin coincidencias con filtros; se devuelve exploración del catálogo (mismas reglas de calidad y swipes) |
 
 **Orden deseado en listados compuestos:** exactos primero → relajados → similares (catálogo / ranking) — la paginación actual usa un solo conjunto; la mezcla multi-bucket es evolución futura.
@@ -107,13 +107,13 @@ Si la primera consulta devuelve 0 ítems, se aplica **relajación acumulativa po
 
 ### Capa 1 — Búsqueda simple / descubrimiento
 
-1. Intención / operación  
-2. Tipo principal  
-3. Ciudad / zona  
-4. Precio orientativo  
-5. Dormitorios o tamaño base  
-6. Enlace a mapa  
-7. Palabras clave / intención libre  
+1. Intención / operación
+2. Tipo principal
+3. Ciudad / zona
+4. Precio orientativo
+5. Dormitorios o tamaño base
+6. Enlace a mapa
+7. Palabras clave / intención libre
 8. Sugerencias rápidas (amenities como preferencia, no muro)
 
 ### Capa 2 — Ajustes importantes
@@ -152,27 +152,27 @@ Mostrar si es posible: obligatorios / flexibles / preferidos (en copy o tooltips
 
 ## 12. Analítica sugerida
 
-- Tasa de búsquedas vacías  
-- Tasa resueltas con relajación (`matchTier=relaxed`)  
-- Filtros que más reducen inventario  
-- Amenities más usados vs más presentes en inventario  
-- % de feed con dato incompleto por atributo  
-- Uso de mapa / polígono  
-- Impacto del swipe en ranking (futuro)  
-- Brecha declarado vs comportamiento real  
+- Tasa de búsquedas vacías
+- Tasa resueltas con relajación (`matchTier=relaxed`)
+- Filtros que más reducen inventario
+- Amenities más usados vs más presentes en inventario
+- % de feed con dato incompleto por atributo
+- Uso de mapa / polígono
+- Impacto del swipe en ranking (futuro)
+- Brecha declarado vs comportamiento real
 
 ---
 
 ## 13. Criterios de aceptación (producto)
 
-1. Baja la tasa de vacíos “injustificados”.  
-2. Primeras capas simples.  
-3. Potencia sin abrumar.  
-4. Amenities no destruyen resultados por defecto.  
-5. Coincidencias exactas primero cuando existan.  
-6. Relajados y catálogo sin traicionar intención principal (operación/tipo/zona).  
-7. Mapa y polígono sin rigidizar de más.  
-8. Sensación distinta a un portal tradicional.  
+1. Baja la tasa de vacíos “injustificados”.
+2. Primeras capas simples.
+3. Potencia sin abrumar.
+4. Amenities no destruyen resultados por defecto.
+5. Coincidencias exactas primero cuando existan.
+6. Relajados y catálogo sin traicionar intención principal (operación/tipo/zona).
+7. Mapa y polígono sin rigidizar de más.
+8. Sensación distinta a un portal tradicional.
 9. Compatibilidad con feeds de partners sin depender su UI.
 
 ---
@@ -181,9 +181,9 @@ Mostrar si es posible: obligatorios / flexibles / preferidos (en copy o tooltips
 
 ### 14.1 “Comprar casa con jardín y pileta en Funes hasta 120 mil”
 
-- Compra, casa, Funes = **required**  
-- Hasta 120 mil = **flexible** (WHERE con posible relajación)  
-- Jardín y pileta = **preferred** por defecto (soft); si el usuario marca “indispensable” → **strict** en amenities  
+- Compra, casa, Funes = **required**
+- Hasta 120 mil = **flexible** (WHERE con posible relajación)
+- Jardín y pileta = **preferred** por defecto (soft); si el usuario marca “indispensable” → **strict** en amenities
 
 ### 14.2 “Algo tranquilo, moderno y luminoso”
 
@@ -197,6 +197,6 @@ Usuario con muchos filtros + bounds de mapa → 0 resultados → paso 1 quita am
 
 ## 15. Referencia técnica (API)
 
-- Query `amenitiesMode`: `soft` (default) | `strict`. Alternativa: `amenitiesStrict=1` → `strict`.  
-- Respuesta `GET /feed`: `matchTier` (`exact` | `relaxed` | `catalog`), `relaxAppliedStep` (1–5 o null).  
+- Query `amenitiesMode`: `soft` (default) | `strict`. Alternativa: `amenitiesStrict=1` → `strict`.
+- Respuesta `GET /feed`: `matchTier` (`exact` | `relaxed` | `catalog`), `relaxAppliedStep` (1–5 o null).
 - Implementación: `apps/api/src/routes/feed.ts` (`filtersToWhere`, `relaxFeedFiltersAccum`).

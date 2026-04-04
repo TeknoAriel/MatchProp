@@ -588,7 +588,10 @@ export async function feedRoutes(fastify: FastifyInstance) {
               enum: ['strict', 'soft'],
               description: 'strict = amenities en SQL; soft (default) = preferencia, no WHERE',
             },
-            amenitiesStrict: { type: 'string', description: '1/true = mismo efecto que amenitiesMode=strict' },
+            amenitiesStrict: {
+              type: 'string',
+              description: '1/true = mismo efecto que amenitiesMode=strict',
+            },
             photosCountMin: { type: 'integer' },
             listingAgeDays: { type: 'integer' },
             listingAge: { type: 'integer' },
@@ -941,8 +944,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
               })
           : null;
 
-      const relaxAppliedStep =
-        cursorRelaxStepForNext ?? relaxStepFromCursor ?? null;
+      const relaxAppliedStep = cursorRelaxStepForNext ?? relaxStepFromCursor ?? null;
 
       const geoPinned =
         (filters.locationText != null && filters.locationText.trim() !== '') ||

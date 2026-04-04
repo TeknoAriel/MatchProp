@@ -464,11 +464,7 @@ export default function ManualSearchPage() {
             'Te mostramos el catálogo general; podés afinar la búsqueda cuando quieras.'
           );
         } else {
-          setFeedMatchHint(
-            arr.length > 0
-              ? 'Opciones alineadas con lo que pediste.'
-              : null
-          );
+          setFeedMatchHint(arr.length > 0 ? 'Opciones alineadas con lo que pediste.' : null);
         }
       } else {
         setItems([]);
@@ -579,11 +575,7 @@ export default function ManualSearchPage() {
   }
 
   const activeChips = [
-    operation === 'ALL'
-      ? null
-      : operation === 'SALE'
-        ? 'Compra'
-        : 'Alquiler',
+    operation === 'ALL' ? null : operation === 'SALE' ? 'Compra' : 'Alquiler',
     ...propertyTypes,
     locationText.trim() || null,
     priceMin ? `Min ${priceMin}` : null,
@@ -597,9 +589,7 @@ export default function ManualSearchPage() {
     <main className="min-h-screen p-4 sm:p-6">
       <div className="max-w-2xl mx-auto space-y-6">
         <header>
-          <h1 className="text-2xl font-bold text-[var(--mp-foreground)] mb-2">
-            Búsqueda guiada
-          </h1>
+          <h1 className="text-2xl font-bold text-[var(--mp-foreground)] mb-2">Búsqueda guiada</h1>
           <p className="text-sm text-[var(--mp-muted)]">
             <Link href="/assistant" className="hover:text-[var(--mp-foreground)]">
               Por texto
@@ -791,7 +781,9 @@ export default function ManualSearchPage() {
           >
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mín total (m²)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mín total (m²)
+                </label>
                 <input
                   type="number"
                   min={0}
@@ -802,7 +794,9 @@ export default function ManualSearchPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Máx total (m²)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Máx total (m²)
+                </label>
                 <input
                   type="number"
                   min={0}
@@ -930,7 +924,9 @@ export default function ManualSearchPage() {
                 onChange={(e) => setAmenitiesMode(e.target.checked ? 'strict' : 'soft')}
                 className="rounded"
               />
-              <span className="text-sm text-gray-800">Exigir todas las amenidades (modo portal)</span>
+              <span className="text-sm text-gray-800">
+                Exigir todas las amenidades (modo portal)
+              </span>
             </label>
             <div className="flex flex-wrap gap-2">
               {AMENITIES.map((a) => (
