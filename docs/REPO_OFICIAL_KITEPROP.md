@@ -1,81 +1,80 @@
-# Repositorio oficial — `kiteprop/ia-matchprop`
+# Repositorio Git: Tekno (trabajo) y Kiteprop (auditoría)
 
-El código fuente vive en: **https://github.com/kiteprop/ia-matchprop**  
-Remote Git recomendado: `git@github.com:kiteprop/ia-matchprop.git`
+## Flujo actual (sin depender del owner de Kiteprop)
 
-El historial anterior puede vivir en otro remoto (p. ej. fork viejo); no hace falta para desplegar. **Vercel + CI** deben usar solo `kiteprop/ia-matchprop` — ver **[CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)**.
+| Rol                   | Remote     | URL típica                                 |
+| --------------------- | ---------- | ------------------------------------------ |
+| **Trabajo y CI**      | `origin`   | `git@github.com:TeknoAriel/MatchProp.git`  |
+| **Copia / auditoría** | `kiteprop` | `git@github.com:kiteprop/ia-matchprop.git` |
+
+- **Push diario:** `git push origin main` (y ramas de feature contra `origin`).
+- **Vercel + GitHub Actions** deben apuntar al repo **`TeknoAriel/MatchProp`** (el que administrás).
+- **Subir copia a Kiteprop** solo cuando haga falta auditoría: `git push kiteprop main` (u otra rama).
+
+Configuración local en un solo paso:
+
+```bash
+bash scripts/git-remotes-tekno.sh
+git remote -v
+```
+
+Repo público: [github.com/TeknoAriel/MatchProp](https://github.com/TeknoAriel/MatchProp) (mismo que Vercel suele tener conectado).
+
+**Vercel:** en cada proyecto (Web, API, Admin) → **Settings → Git** → conectar **`TeknoAriel/MatchProp`**, rama **`main`**, mismos root (`apps/web`, `apps/api`, `apps/admin`). Detalle: **[CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)**.
+
+Los secretos de Actions (`AUTOMERGE_TOKEN`, `CRON_SECRET`, `VERCEL_DEPLOY_HOOK_*`, etc.) van en el repo **donde corre CI** (hoy: **Tekno**). El org `kiteprop` puede quedar solo como espejo hasta que te habiliten acceso.
 
 ---
 
 ## 1. Git (local)
 
-En tu máquina, el proyecto debería tener:
-
 ```bash
 git remote -v
-# origin    git@github.com:kiteprop/ia-matchprop.git
+# origin    git@github.com:TeknoAriel/MatchProp.git
+# kiteprop  git@github.com:kiteprop/ia-matchprop.git
 ```
 
-Si clonás desde cero:
+Clonar desde Tekno:
 
 ```bash
-git clone git@github.com:kiteprop/ia-matchprop.git
-cd ia-matchprop
+git clone git@github.com:TeknoAriel/MatchProp.git
+cd MatchProp
+bash scripts/git-remotes-tekno.sh   # añade kiteprop si hace falta
 ```
 
 ---
 
-## 2. GitHub (organización `kiteprop`)
+## 2. GitHub — repo Tekno (`TeknoAriel/MatchProp`)
 
-1. Abrí **https://github.com/kiteprop/ia-matchprop/settings**
-2. **General → Default branch:** debe ser **`main`**.
-3. **Actions → General:** “Workflow permissions” en **Read and write** si usás deploy automático y PRs.
-4. **Secrets and variables → Actions:** volvé a crear secretos que dependían del repo viejo. Guía paso a paso: **[SECRETOS_Y_AUTOMERGE_GITHUB.md](./SECRETOS_Y_AUTOMERGE_GITHUB.md)** (incluye `AUTOMERGE_TOKEN`, `CRON_SECRET`, auto-merge).
-5. **Branches → Branch protection rules** para `main`: alineá con [CONFIG_PARA_DEPLOY_AUTOMATICO.md](./CONFIG_PARA_DEPLOY_AUTOMATICO.md).
+1. **https://github.com/TeknoAriel/MatchProp/settings** (ajustá si el usuario/repo difiere).
+2. **Default branch:** `main`.
+3. **Actions → Workflow permissions:** Read and write si usás deploy automático y PRs.
+4. **Secrets:** [SECRETOS_Y_AUTOMERGE_GITHUB.md](./SECRETOS_Y_AUTOMERGE_GITHUB.md) — usar las mismas claves; las URLs del doc que apunten a `kiteprop` sustituilas mentalmente por el repo Tekno donde cargues los secretos.
 
 ---
 
-## 3. Vercel (manual — imprescindible si seguís desplegando desde Git)
+## 3. GitHub — org `kiteprop` (solo copia)
 
-Los proyectos en Vercel suelen seguir apuntando al **repositorio anterior**. Hay que reconectar cada app al repo nuevo.
+Cuando el owner habilite acceso o para auditoría puntual:
 
-### 3.1 Web (`match-prop-web` o equivalente)
+- `git push kiteprop main`
+- Secretos y branch protection en **kiteprop/ia-matchprop** solo si volvés a usar ese repo como canónico.
 
-1. **https://vercel.com** → tu equipo / proyecto de la Web.
-2. **Settings → Git** → **Connected Git Repository** → **Disconnect** (si sigue el repo viejo).
-3. **Connect Git Repository** → elegí **`kiteprop/ia-matchprop`** (autorizá la org si GitHub lo pide).
-4. **Root Directory:** `apps/web`
-5. **Production Branch:** `main`
-6. Revisá **Environment Variables** (no deberían borrarse al reconectar, pero verificá):
-   - `API_SERVER_URL` → URL pública de tu API (ej. `https://match-prop-admin-dsvv.vercel.app`)
-   - `NEXT_PUBLIC_API_URL` → misma API si la usás en cliente
-   - Cualquier otra del [SETUP_DEPLOY_SIMPLE.md](./SETUP_DEPLOY_SIMPLE.md)
+---
 
-### 3.2 API (`match-prop-api-1jte` o equivalente)
+## 4. Vercel
 
-1. Mismo flujo: **Settings → Git** → conectar **`kiteprop/ia-matchprop`**.
-2. **Root Directory:** `apps/api`
-3. **Production Branch:** `main`
-4. Variables: `DATABASE_URL`, `APP_URL`, `CORS_ORIGINS`, `COOKIE_SECURE`, etc. según [PROD.md](./PROD.md).
-
-### 3.3 Admin (si aplica)
-
-- **Root Directory:** `apps/admin`
-- Misma org/repo `kiteprop/ia-matchprop`.
-
-### 3.4 Scope Vercel (`teknoariels-projects`)
-
-En la documentación vieja aparece el scope **`teknoariels-projects`**. Si el equipo de Kiteprop usa **otro team en Vercel**, reemplazá en tus comandos `vercel link`:
+Mismo equipo/proyectos (`teknoariels-projects`, `match-prop-web`, etc.), pero **Git conectado a `TeknoAriel/MatchProp`**, no al repo del org Kiteprop.
 
 ```bash
-cd apps/web && vercel link --yes --scope TU_EQUIPO_VERCEL --project match-prop-web
+cd apps/web && vercel link --yes --scope teknoariels-projects --project match-prop-web
 ```
 
-Sustituí `TU_EQUIPO_VERCEL` por el slug que ves en la URL de Vercel (`vercel.com/<slug>/...`).
+Más pasos: secciones 3.x de la versión anterior de este doc y **[CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)**.
 
 ---
 
-## 4. URLs públicas (referencia)
+## 5. URLs públicas (referencia)
 
 | Qué            | Ejemplo (ajustá a tu deploy real)          |
 | -------------- | ------------------------------------------ |
@@ -83,14 +82,13 @@ Sustituí `TU_EQUIPO_VERCEL` por el slug que ves en la URL de Vercel (`vercel.co
 | API            | `https://match-prop-admin-dsvv.vercel.app` |
 | Health         | `…/health` en la API                       |
 
-Tras reconectar Vercel, dispará un deploy desde `main` y comprobá `bash scripts/verify-deploy-status.sh main`.
+Tras reconectar Vercel al repo Tekno, comprobá `bash scripts/verify-deploy-status.sh main`.
 
 ---
 
-## 5. Checklist rápido
+## 6. Checklist rápido
 
-- [ ] `git push origin main` funciona con SSH o HTTPS.
-- [ ] GitHub: default branch `main`, secretos de Actions.
-- [ ] Vercel: Web + API (y Admin) enlazados a `kiteprop/ia-matchprop`.
-- [ ] Variables de entorno en Vercel revisadas.
-- [ ] CI verde en **https://github.com/kiteprop/ia-matchprop/actions**
+- [ ] `git push origin main` → repo Tekno.
+- [ ] GitHub (Tekno): secretos de Actions para CI y deploy.
+- [ ] Vercel: Web + API (+ Admin) enlazados a **`TeknoAriel/MatchProp`**.
+- [ ] CI verde en **https://github.com/TeknoAriel/MatchProp/actions** (ajustá URL si el repo difiere).

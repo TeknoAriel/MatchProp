@@ -1,6 +1,8 @@
 # Secretos de GitHub (automerge, cron) y “Allow auto-merge”
 
-Repo: **https://github.com/kiteprop/ia-matchprop**
+**Repo donde corre CI hoy (trabajo):** [TeknoAriel/MatchProp](https://github.com/TeknoAriel/MatchProp/settings/secrets/actions). Cargá ahí los mismos nombres de secreto.
+
+Copia de auditoría en org: **https://github.com/kiteprop/ia-matchprop** (solo si subís `git push kiteprop`).
 
 Estos secretos **no los “descargás” de ningún lado**: los **creás vos** (un token o una clave) y los pegás en GitHub.
 

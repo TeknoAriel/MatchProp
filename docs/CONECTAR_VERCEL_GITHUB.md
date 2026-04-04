@@ -1,8 +1,10 @@
-# Conectar GitHub (`kiteprop/ia-matchprop`) con Vercel y dejar producción alineada
+# Conectar GitHub con Vercel y dejar producción alineada
 
-**Repo canónico:** `git@github.com:kiteprop/ia-matchprop.git` — rama de producción **`main`**.
+**Repo de trabajo (administrable):** `git@github.com:TeknoAriel/MatchProp.git` — rama de producción **`main`**.
 
-Sin esto, Vercel puede seguir desplegando un commit viejo (p. ej. `/health.version` y `/version` en web distintos de `git rev-parse origin/main`).
+El org **`kiteprop/ia-matchprop`** puede usarse solo como copia para auditoría (`git push kiteprop main`); **Vercel debe conectarse al repo Tekno** para que los deploys no dependan del owner del org. Ver **[REPO_OFICIAL_KITEPROP.md](./REPO_OFICIAL_KITEPROP.md)** y `bash scripts/git-remotes-tekno.sh`.
+
+Sin integración Git correcta, Vercel puede seguir desplegando un commit viejo (p. ej. `/health.version` distinto de `git rev-parse origin/main`).
 
 ---
 
@@ -11,8 +13,8 @@ Sin esto, Vercel puede seguir desplegando un commit viejo (p. ej. `/health.versi
 Para **match-prop-web**, **match-prop-api-1jte** (API), **match-prop-admin** (si aplica):
 
 1. [Vercel Dashboard](https://vercel.com) → proyecto → **Settings** → **Git**.
-2. Si el repo conectado **no** es `kiteprop/ia-matchprop`: **Disconnect** y luego **Connect Git Repository**.
-3. Elegí **`kiteprop/ia-matchprop`** (autorizá la organización en GitHub si pide permisos).
+2. Si el repo conectado **no** es **`TeknoAriel/MatchProp`**: **Disconnect** y luego **Connect Git Repository**.
+3. Elegí **`TeknoAriel/MatchProp`** (mismo repo que ya enlazaste a Vercel).
 4. **Production Branch:** `main`.
 5. **Root Directory** (crítico en monorepo):
 
@@ -44,7 +46,7 @@ Cuando prod está al día, verás: **Producción está en el commit de main**.
 Si la integración Git → Vercel falla o querés forzar un redeploy tras CI:
 
 1. Vercel → proyecto → **Settings** → **Git** → **Deploy Hooks** → crear hook para **Production** (uno por proyecto).
-2. En GitHub → **kiteprop/ia-matchprop** → **Settings** → **Secrets and variables** → **Actions** → crear secretos:
+2. En GitHub → **TeknoAriel/MatchProp** (repo donde corre CI) → **Settings** → **Secrets and variables** → **Actions** → crear secretos:
 
 | Secreto (ejemplo)          | Contenido                         |
 | -------------------------- | --------------------------------- |
@@ -52,9 +54,9 @@ Si la integración Git → Vercel falla o querés forzar un redeploy tras CI:
 | `VERCEL_DEPLOY_HOOK_WEB`   | URL del hook del proyecto Web     |
 | `VERCEL_DEPLOY_HOOK_ADMIN` | URL del hook del Admin (opcional) |
 
-3. En el repo ya existe el workflow **Vercel deploy hooks** (`.github/workflows/vercel-deploy-hooks.yml`): tras **CI verde en `main`** (o ejecución manual) hará `POST` a los hooks definidos.
+3. En el repo, el **`POST`** automático en cada push a **`main`** está en **`ci.yml`** (job **`deploy-hooks`**, tras **Verify**). El archivo **`vercel-deploy-hooks.yml`** sirve solo para **disparar los hooks a mano** (`workflow_dispatch`).
 
-Si los secretos no existen, el workflow no hace nada y sigue en verde.
+Si faltan secretos, ese job omite cada hook sin fallar el CI.
 
 ---
 

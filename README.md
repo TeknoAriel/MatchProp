@@ -2,7 +2,7 @@
 
 Buscá propiedades deslizando. Match tipo Tinder, listas, alertas y consultas directas con inmobiliarias.
 
-**Código:** [github.com/kiteprop/ia-matchprop](https://github.com/kiteprop/ia-matchprop) · Migración y Vercel: [docs/REPO_OFICIAL_KITEPROP.md](docs/REPO_OFICIAL_KITEPROP.md)
+**Código (trabajo):** [github.com/TeknoAriel/MatchProp](https://github.com/TeknoAriel/MatchProp) · Copia org Kiteprop solo para auditoría · Vercel/Git: [docs/REPO_OFICIAL_KITEPROP.md](docs/REPO_OFICIAL_KITEPROP.md)
 
 ## Inicio rápido
 

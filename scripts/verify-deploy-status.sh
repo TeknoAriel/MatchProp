@@ -11,6 +11,16 @@ WEB_URL="${WEB_URL:-https://match-prop-web.vercel.app}"
 
 echo "=== Verificación de deploy: rama $BRANCH ==="
 
+# Enlaces PR según origin (p. ej. TeknoAriel/MatchProp); fallback histórico
+ORIGIN_URL=$(git remote get-url origin 2>/dev/null || true)
+GH_REPO_OWNER="TeknoAriel"
+GH_REPO_NAME="MatchProp"
+if [[ "$ORIGIN_URL" =~ github\.com[:/]([^/]+)/([^/.]+) ]]; then
+  GH_REPO_OWNER="${BASH_REMATCH[1]}"
+  GH_REPO_NAME="${BASH_REMATCH[2]%.git}"
+fi
+PR_BASE_URL="https://github.com/${GH_REPO_OWNER}/${GH_REPO_NAME}"
+
 # 1. Fetch latest
 git fetch origin main 2>/dev/null || true
 git fetch origin "$BRANCH" 2>/dev/null || true
@@ -62,7 +72,7 @@ sys.exit(1)
       echo "⚠ La rama $BRANCH NO está mergeada en main"
       echo "  Main:   $MAIN_SHA"
       echo "  Branch: $BRANCH_SHA"
-      echo "  Ver PR: https://github.com/kiteprop/ia-matchprop/pulls"
+      echo "  Ver PR: ${PR_BASE_URL}/pulls"
     fi
   fi
 fi

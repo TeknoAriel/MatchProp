@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 
 if ! git remote get-url origin &>/dev/null; then
   echo "ERROR: No hay remote 'origin'. Configurá:"
-  echo "  git remote add origin https://github.com/kiteprop/ia-matchprop.git"
+  echo "  bash scripts/git-remotes-tekno.sh"
   exit 1
 fi
 

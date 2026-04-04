@@ -10,7 +10,7 @@ bash scripts/verify-deploy-status.sh
 
 Muestra si la rama está en main, si prod responde, y si el commit en prod coincide con main.
 
-Si prod lleva días con un SHA viejo: reconectar Vercel al repo **`kiteprop/ia-matchprop`** y rama **`main`** — ver **[CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)**. Opcional: Deploy Hooks + workflow `vercel-deploy-hooks.yml`.
+Si prod lleva días con un SHA viejo: reconectar Vercel al repo **`TeknoAriel/MatchProp`** y rama **`main`** — ver **[CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)**. Opcional: secretos **Deploy Hooks** (`VERCEL_DEPLOY_HOOK_*`) y job **`deploy-hooks`** en **`ci.yml`**; redeploy manual con **`vercel-deploy-hooks.yml`**.
 
 ### Ignored Build Step (exit codes)
 
@@ -32,7 +32,7 @@ En planes **Hobby**, Vercel puede **rechazar** deployments (estado `ERROR`, `alw
 
    Próximo commit y push usarán ese autor.
 
-2. **Deploy Hooks** — Vercel → Settings → Git → Deploy Hooks (Production). Secretos en GitHub: `VERCEL_DEPLOY_HOOK_API`, `VERCEL_DEPLOY_HOOK_WEB`. El workflow **Vercel deploy hooks** hace `POST` **tras CI verde en `main`** (o manual).
+2. **Deploy Hooks** — Vercel → Settings → Git → Deploy Hooks (Production). Secretos en GitHub: `VERCEL_DEPLOY_HOOK_API`, `VERCEL_DEPLOY_HOOK_WEB`, `VERCEL_DEPLOY_HOOK_ADMIN`. El **`POST`** en cada push a `main` lo hace el job **`deploy-hooks`** en **`ci.yml`** (tras **Verify**). El workflow **`vercel-deploy-hooks.yml`** es solo **manual** (`workflow_dispatch`) para volver a disparar hooks.
 
 3. **Team / colaboradores** — Invitar al autor del commit al team de Vercel. Ver [troubleshoot collaboration](https://vercel.com/docs/deployments/troubleshoot-project-collaboration#team-configuration).
 
@@ -111,6 +111,12 @@ Tras el merge, Vercel tarda 2-5 minutos. Ejecutar `verify-deploy-status.sh` de n
 - Hard refresh en el navegador (Ctrl+Shift+R).
 - Verificar que Vercel no haya fallado el build: dashboard de Vercel → Deployments.
 - La API expone `version` en `/health` (commit SHA). Comparar con `git rev-parse origin/main`.
+
+### 6b. Deployments en estado **Blocked** (rama `main` vs `HEAD`/CLI)
+
+Si en Vercel los deploys **desde Git** (`main`) aparecen **Blocked** mientras los disparados con **CLI** (`vercel deploy`) o refs tipo **HEAD** llegan a **Ready**, suele ser **Deployment Protection** (aprobación antes de promover a producción), **límites del plan**, o políticas del **team**. Eso no se arregla solo con commits: revisar en cada proyecto **Settings → Deployment Protection** (y, si aplica, desactivar protección o usar un token con permiso de bypass según la documentación de Vercel).
+
+**Camino que no depende del owner del team:** secretos `VERCEL_DEPLOY_HOOK_*` en GitHub para que el job **`deploy-hooks`** en **`ci.yml`** haga `POST` tras **Verify** en cada push a `main`, o el workflow **`vercel-prod-cli.yml`** (`workflow_dispatch`) con **`VERCEL_TOKEN`** y **`VERCEL_PROJECT_ID_*`**.
 
 ## Flujo correcto
 

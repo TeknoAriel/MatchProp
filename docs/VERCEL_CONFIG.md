@@ -13,7 +13,7 @@ Gates de CI, smoke y release: **[ESTABILIDAD_Y_RELEASE.md](./ESTABILIDAD_Y_RELEA
 
 ## Estado de reconexión (checkpoint)
 
-- **Repo:** `git@github.com:kiteprop/ia-matchprop.git` — `main` = producción Git.
+- **Repo (trabajo):** `git@github.com:TeknoAriel/MatchProp.git` — `main` = producción Git.
 - **Vercel:** Los 3 proyectos deben tener **Git** conectado a ese repo, **Production Branch** `main`, **Root** `apps/web` | `apps/admin` | `apps/api`. Guía paso a paso: **[CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)**.
 - **Hooks opcionales:** workflow `vercel-deploy-hooks.yml` + secretos `VERCEL_DEPLOY_HOOK_*` (misma guía).
 

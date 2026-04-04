@@ -9,7 +9,7 @@ import Link from 'next/link';
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 /** Documentación en el repo (main). */
-const REPO_DOCS_BASE = 'https://github.com/kiteprop/ia-matchprop/blob/main/docs';
+const REPO_DOCS_BASE = 'https://github.com/TeknoAriel/MatchProp/blob/main/docs';
 
 type Overview = {
   rangeStart: string;

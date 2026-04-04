@@ -54,7 +54,7 @@
 | [archive/AUDIT_MATCHPROP.md](./archive/AUDIT_MATCHPROP.md)                         | Auditoría técnica histórica (archivo)                                                 |
 | [DEV.md](./DEV.md)                                                                 | Desarrollo local — requisitos, comandos, troubleshooting                              |
 | [PROD.md](./PROD.md)                                                               | Producción — variables de entorno, observabilidad, seguridad                          |
-| [REPO_OFICIAL_KITEPROP.md](./REPO_OFICIAL_KITEPROP.md)                             | Repo GitHub `kiteprop/ia-matchprop`, Vercel y secretos tras el cambio de remoto       |
+| [REPO_OFICIAL_KITEPROP.md](./REPO_OFICIAL_KITEPROP.md)                             | Remotes Tekno (`origin`) + Kiteprop (`kiteprop`), Vercel y secretos                   |
 | [MCP_KITEPROP_CRM.md](./MCP_KITEPROP_CRM.md)                                       | MCP del CRM Kiteprop (`kiteprop/crm-mcp`), Cursor / Claude, API key `kp_`             |
 | [CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)                           | Conectar Git ↔ Vercel (`main`, roots), verify-deploy y hooks opcionales               |
 | [SETUP_DEPLOY_SIMPLE.md](./SETUP_DEPLOY_SIMPLE.md)                                 | Deploy simple — Neon + Vercel, variables, URLs                                        |

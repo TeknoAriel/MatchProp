@@ -6,27 +6,31 @@ concurrency:
 
 on:
   schedule:
-    # Frecuencia alta para poder "desenganchar" rápido a producción.
-    # El propio job decide si dispara o hace skip según `CRON_INGEST_INTERVAL_HOURS`.
-    - cron: '0 * * * *' # cada hora
+    # ~cada 15 días (GitHub Actions no soporta "cada N días"; 1 y 16 del mes UTC ≈ quincenal).
+    # El schedule NO dispara ingesta: solo mantiene el workflow vivo y barato en Hobby.
+    - cron: '0 0 1,16 * *'
   workflow_dispatch:
 
 jobs:
   ingest:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
-      - name: Trigger ingest cron
-        continue-on-error: true
+      - name: Ingesta cron (a pedido vía workflow_dispatch)
         env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
           API_URL: https://match-prop-admin-dsvv.vercel.app/cron/ingest
           STATUS_URL: https://match-prop-admin-dsvv.vercel.app/cron/status
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-          # Período de prueba: 10 días => 240 horas.
-          # Cuando termine la prueba, seteá esta variable (repo variable) a `1` para volver a 1/h.
-          CRON_INGEST_INTERVAL_HOURS: ${{ vars.CRON_INGEST_INTERVAL_HOURS || 240 }}
+          # Solo usado cuando el disparo es workflow_dispatch (lógica lastRun / intervalo).
+          CRON_INGEST_INTERVAL_HOURS: ${{ vars.CRON_INGEST_INTERVAL_HOURS }}
         run: |
-          # No fallar el job por timeouts / 5xx de la API (cron best-effort).
+          # Schedule: no consumir cuota Hobby ni tocar la API; ingesta solo manual.
+          if [ "${GITHUB_EVENT_NAME}" = "schedule" ]; then
+            echo "::notice::Cron programado: ingesta automática desactivada. La ingesta es a pedido (workflow_dispatch en este workflow)."
+            exit 0
+          fi
+
+          # workflow_dispatch: mismo flujo que antes (best-effort, no cortar el job por 5xx).
           set +e
 
           post_json() {
@@ -64,7 +68,6 @@ print(v if v is not None else "")
 PY
 )"
 
-          # Default 240h si la variable viene vacía o no es numérica en el runner
           INTERVAL_HOURS="${CRON_INGEST_INTERVAL_HOURS:-240}"
           case "$INTERVAL_HOURS" in
             ''|*[!0-9]*) INTERVAL_HOURS=240 ;;
@@ -95,7 +98,6 @@ else:
         diff = (now - last_dt).total_seconds()
         print("skip" if diff < interval_seconds else "run")
     except Exception:
-        # Formato inesperado: no bloquear el workflow; intentar ingest
         print("run")
 PY
 )"
