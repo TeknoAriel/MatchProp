@@ -25,6 +25,7 @@
     "smoke:ux": "bash scripts/smoke-ux.sh",
     "smoke:prod": "bash scripts/smoke-prod.sh",
     "verify:deploy": "bash scripts/verify-deploy-status.sh",
+    "align:check": "bash scripts/align-repos-deploy.sh",
     "deploy:pre": "bash scripts/deploy-pre.sh",
     "pre-deploy:verify": "bash scripts/pre-deploy-verify.sh",
     "demo:up": "bash scripts/demo-up-and-smoke.sh",
