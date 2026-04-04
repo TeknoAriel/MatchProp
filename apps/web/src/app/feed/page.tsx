@@ -15,6 +15,12 @@ import { ACTIVE_SEARCH_CHANGED_EVENT } from '../../lib/activeSearchEvents';
 const API_BASE = '/api';
 const SWIPE_DEBOUNCE_MS = 400;
 
+type FeedFetchResult =
+  | { ok: true; data: Record<string, unknown> }
+  | { ok: false; reason: 'unauthorized' }
+  | { ok: false; reason: 'http'; status: number }
+  | { ok: false; reason: 'network' };
+
 function FeedPageContent() {
   const [queue, setQueue] = useState<ListingCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +38,7 @@ function FeedPageContent() {
   const [fallbackUsed, setFallbackUsed] = useState(false);
   const [emptyCatalog, setEmptyCatalog] = useState(false);
   const [usedFeedAll, setUsedFeedAll] = useState(false);
+  const [feedLoadError, setFeedLoadError] = useState<string | null>(null);
   const [starSaving, setStarSaving] = useState(false);
   const inFlightRef = useRef<Set<string>>(new Set());
   const router = useRouter();
@@ -58,35 +65,53 @@ function FeedPageContent() {
   const useFeedAll = feedAllFromUrl || hasActiveSearch !== true;
 
   const fetchFeed = useCallback(
-    async (cursor?: string | null, feedAll?: boolean) => {
+    async (cursor?: string | null, feedAll?: boolean): Promise<FeedFetchResult> => {
       const params = new URLSearchParams();
       params.set('limit', '20');
       if (cursor) params.set('cursor', cursor);
       if (feedAll) params.set('feed', 'all');
-      const res = await fetch(`${API_BASE}/feed?${params}`, { credentials: 'include' });
-      if (res.status === 401) {
-        router.replace('/login');
-        return null;
+      try {
+        const res = await fetch(`${API_BASE}/feed?${params}`, { credentials: 'include' });
+        if (res.status === 401) {
+          router.replace('/login');
+          return { ok: false, reason: 'unauthorized' };
+        }
+        if (!res.ok) {
+          return { ok: false, reason: 'http', status: res.status };
+        }
+        const data = (await res.json()) as Record<string, unknown>;
+        return { ok: true, data };
+      } catch {
+        return { ok: false, reason: 'network' };
       }
-      if (!res.ok) return null;
-      return res.json();
     },
     [router]
   );
 
   useEffect(() => {
-    fetchFeed(null, useFeedAll)
-      .then((data) => {
-        if (data) {
-          setQueue(data.items ?? []);
-          setNextCursor(data.nextCursor ?? null);
-          setFallbackUsed(Boolean(data.fallbackUsed));
-          setEmptyCatalog(Boolean((data as { emptyCatalog?: boolean }).emptyCatalog));
-          if (useFeedAll && (data.items?.length ?? 0) > 0) setUsedFeedAll(true);
+    fetchFeed(null, useFeedAll).then((r) => {
+      if (!r.ok) {
+        if (r.reason === 'unauthorized') {
+          setLoading(false);
+          return;
         }
+        setFeedLoadError(
+          r.reason === 'network'
+            ? 'No hay conexión con el servidor. Revisá tu red o reintentá en un minuto (el arranque en frío puede tardar).'
+            : `No pudimos cargar el feed (código ${r.status}). Si persiste, cerrá sesión y volvé a entrar.`
+        );
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+        return;
+      }
+      setFeedLoadError(null);
+      const data = r.data;
+      setQueue((data.items as ListingCard[] | undefined) ?? []);
+      setNextCursor((data.nextCursor as string | null | undefined) ?? null);
+      setFallbackUsed(Boolean(data.fallbackUsed));
+      setEmptyCatalog(Boolean(data.emptyCatalog));
+      if (useFeedAll && ((data.items as unknown[] | undefined)?.length ?? 0) > 0) setUsedFeedAll(true);
+      setLoading(false);
+    });
   }, [fetchFeed, useFeedAll]);
 
   const currentCard = queue[0];
@@ -94,10 +119,10 @@ function FeedPageContent() {
   async function loadMore() {
     if (!nextCursor || loadingMore) return;
     setLoadingMore(true);
-    const data = await fetchFeed(nextCursor, usedFeedAll);
-    if (data?.items?.length) {
-      setQueue((prev) => [...prev, ...data.items]);
-      setNextCursor(data.nextCursor ?? null);
+    const r = await fetchFeed(nextCursor, usedFeedAll);
+    if (r.ok && Array.isArray(r.data.items) && r.data.items.length) {
+      setQueue((prev) => [...prev, ...(r.data.items as ListingCard[])]);
+      setNextCursor((r.data.nextCursor as string | null | undefined) ?? null);
     }
     setLoadingMore(false);
   }
@@ -209,31 +234,46 @@ function FeedPageContent() {
 
   function handleRestartFeed() {
     setLoading(true);
+    setFeedLoadError(null);
     setQueue([]);
     setNextCursor(null);
     setLastSwiped(null);
-    fetchFeed(null, useFeedAll)
-      .then((data) => {
-        if (data) {
-          setQueue(data.items ?? []);
-          setNextCursor(data.nextCursor ?? null);
-          setEmptyCatalog(Boolean((data as { emptyCatalog?: boolean }).emptyCatalog));
-          if (useFeedAll && (data.items?.length ?? 0) > 0) setUsedFeedAll(true);
+    fetchFeed(null, useFeedAll).then((r) => {
+      if (!r.ok) {
+        if (r.reason !== 'unauthorized') {
+          setFeedLoadError(
+            r.reason === 'network'
+              ? 'Sin conexión. Reintentá en un momento.'
+              : `Error al cargar (${r.status}).`
+          );
         }
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+        return;
+      }
+      const data = r.data;
+      setQueue((data.items as ListingCard[] | undefined) ?? []);
+      setNextCursor((data.nextCursor as string | null | undefined) ?? null);
+      setEmptyCatalog(Boolean(data.emptyCatalog));
+      if (useFeedAll && ((data.items as unknown[] | undefined)?.length ?? 0) > 0) setUsedFeedAll(true);
+      setLoading(false);
+    });
   }
 
   async function handleVerSimilares() {
     setLoading(true);
+    setFeedLoadError(null);
     setQueue([]);
     setNextCursor(null);
-    const data = await fetchFeed(null, true);
-    if (data) {
-      setQueue(data.items ?? []);
-      setNextCursor(data.nextCursor ?? null);
+    const r = await fetchFeed(null, true);
+    if (r.ok) {
+      const data = r.data;
+      setQueue((data.items as ListingCard[] | undefined) ?? []);
+      setNextCursor((data.nextCursor as string | null | undefined) ?? null);
       setUsedFeedAll(true);
+    } else if (r.reason !== 'unauthorized') {
+      setFeedLoadError(
+        r.reason === 'network' ? 'Sin conexión. Reintentá.' : `Error al cargar (${r.status}).`
+      );
     }
     setLoading(false);
   }
@@ -339,7 +379,29 @@ function FeedPageContent() {
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 py-16">
-            {hasActiveSearch === false && !emptyCatalog ? (
+            {feedLoadError ? (
+              <>
+                <p className="text-[var(--mp-foreground)] font-medium text-lg">
+                  No se pudo cargar el feed
+                </p>
+                <p className="text-sm text-[var(--mp-muted)] max-w-md leading-relaxed">
+                  {feedLoadError}
+                </p>
+                <Link
+                  href="/status"
+                  className="text-sm font-semibold text-[var(--mp-accent)] hover:underline"
+                >
+                  Ver estado de API, base y conexión →
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => handleRestartFeed()}
+                  className="mt-2 px-5 py-2.5 rounded-full text-sm font-medium bg-[var(--mp-accent)] text-white border border-[var(--mp-accent-hover)] hover:opacity-[0.96]"
+                >
+                  Reintentar
+                </button>
+              </>
+            ) : hasActiveSearch === false && !emptyCatalog ? (
               <>
                 <p className="text-[var(--mp-foreground)] font-medium text-lg">
                   Definí qué buscás para un match más preciso

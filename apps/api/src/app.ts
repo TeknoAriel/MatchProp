@@ -144,6 +144,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   fastify.get('/health', async (request, reply) => {
     let dbOk = false;
     let lastMigration: string | null = null;
+    let catalogActiveCount: number | undefined;
     try {
       await prisma.$queryRaw`SELECT 1`;
       dbOk = true;
@@ -159,6 +160,11 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
       } catch {
         // ignorar
       }
+      try {
+        catalogActiveCount = await prisma.listing.count({ where: { status: 'ACTIVE' } });
+      } catch {
+        // ignorar
+      }
     }
     const ops = dbOk ? await getOperationalMetrics() : undefined;
     // Siempre 200; body indica ok vs degraded para que probes no bajen la instancia por DB temporal
@@ -168,6 +174,8 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
       db: dbOk ? 'ok' : 'error',
       version: apiVersion,
       migration: lastMigration,
+      /** Listings ACTIVE en DB (feed vacío en prod suele ser 0 aquí con DEMO_MODE off y sin ingest). */
+      catalogActiveCount,
       ops,
     });
   });

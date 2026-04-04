@@ -29,6 +29,7 @@ export default function StatusPage() {
     status?: string;
     db?: string;
     migration?: string | null;
+    catalogActiveCount?: number;
   } | null>(null);
   const [loading, setLoading] = useState(false);
   const [baseUrl, setBaseUrl] = useState<string>(API_BASE);
@@ -54,9 +55,15 @@ export default function StatusPage() {
           status?: string;
           db?: string;
           migration?: string | null;
+          catalogActiveCount?: number;
           ops?: HealthOps;
         };
-        setHealthBody({ status: h.status, db: h.db, migration: h.migration ?? null });
+        setHealthBody({
+          status: h.status,
+          db: h.db,
+          migration: h.migration ?? null,
+          catalogActiveCount: typeof h.catalogActiveCount === 'number' ? h.catalogActiveCount : undefined,
+        });
         setHealthOps(h.ops && typeof h.ops === 'object' ? h.ops : null);
       }
     } catch {
@@ -141,6 +148,9 @@ export default function StatusPage() {
             <p className="text-xs text-gray-500 font-mono">
               status={healthBody.status} db={healthBody.db}
               {healthBody.migration ? ` · ${healthBody.migration}` : ''}
+              {healthBody.catalogActiveCount != null
+                ? ` · listings ACTIVE: ${healthBody.catalogActiveCount}`
+                : ''}
             </p>
           )}
           {healthOps && (
