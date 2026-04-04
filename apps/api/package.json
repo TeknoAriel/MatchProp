@@ -27,6 +27,7 @@
     "ingest:fixture:refresh": "tsx src/scripts/ingest-fixture-refresh.ts",
     "alerts:run": "tsx src/scripts/alerts-run.ts",
     "demo:data": "tsx src/scripts/demo-data.ts",
+    "demo:data:800": "tsx src/scripts/demo-data.ts --count=800",
     "demo:reset-and-seed": "tsx src/scripts/demo-reset-and-seed.ts",
     "demo:validate": "tsx src/scripts/demo-validate.ts",
     "crm:push:run": "tsx src/scripts/crm-push-run.ts",

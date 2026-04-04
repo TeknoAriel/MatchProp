@@ -78,6 +78,10 @@ async function main() {
     const photoName = `photo-${String(photoNum).padStart(2, '0')}.svg`;
     const coverUrl = `${DEMO_PHOTOS_BASE}/${photoName}`;
 
+    // Rosario y alrededores (mapa /feed/map requiere lat+lng)
+    const lat = -32.95 + seededRandom(seed) * 0.14;
+    const lng = -60.65 + seededRandom(seed + 1) * 0.18;
+
     const listing = await prisma.listing.upsert({
       where: {
         source_externalId: { source: SOURCE, externalId: extId },
@@ -94,6 +98,8 @@ async function main() {
         bedrooms,
         bathrooms,
         areaTotal,
+        lat,
+        lng,
         locationText: locationText.slice(0, 200),
         heroImageUrl: coverUrl,
         photosCount: DEMO_MEDIA_PER_LISTING,
@@ -110,6 +116,8 @@ async function main() {
         bedrooms,
         bathrooms,
         areaTotal,
+        lat,
+        lng,
         locationText: locationText.slice(0, 200),
         heroImageUrl: coverUrl,
         photosCount: DEMO_MEDIA_PER_LISTING,

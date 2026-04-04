@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { FeedNavTabs } from './FeedNavTabs';
 
 const PRODUCT_NAME = process.env.NEXT_PUBLIC_PRODUCT_NAME || 'MatchProp';
 
@@ -9,5 +10,10 @@ export const metadata: Metadata = {
 };
 
 export default function FeedLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <div className="flex flex-col min-h-0">
+      <FeedNavTabs />
+      {children}
+    </div>
+  );
 }

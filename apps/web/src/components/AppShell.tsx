@@ -10,11 +10,12 @@ import { NOTIFICATIONS_CHANGED_EVENT } from '../lib/notificationEvents';
  * Flujo principal (masterplan v3.2): una acción clara por nivel.
  * "Más" abre el centro de control (secciones claras, sin mezclar IA con cuenta).
  */
+/** Principal: búsqueda, match agregado, listado (deck/lista bajo /feed/*), guardados */
 const NAV_PRIMARY = [
   { href: '/dashboard', label: 'Buscar', icon: '🔍' },
-  { href: '/feed', label: 'Match', icon: '🎯' },
   { href: '/me/match', label: 'Mis match', icon: '🔥' },
-  { href: '/feed/list', label: 'Lista', icon: '📋' },
+  { href: '/feed', label: 'Listado', icon: '📋' },
+  { href: '/me/saved', label: 'Guardadas', icon: '⭐' },
 ] as const;
 
 type MasEntry = { href: string; label: string; icon: string; desc: string };
@@ -414,9 +415,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-[var(--mp-card)] border-t border-[var(--mp-border)] safe-area-pb">
           <div className="flex justify-around items-center h-16 px-1">
             <NavLink href="/dashboard" icon="🔍" label="Buscar" pathname={pathname} />
-            <NavLink href="/feed" icon="🎯" label="Match" pathname={pathname} />
-            <NavLink href="/feed/list" icon="📋" label="Lista" pathname={pathname} />
             <NavLink href="/me/match" icon="🔥" label="Mis match" pathname={pathname} />
+            <NavLink href="/feed" icon="📋" label="Listado" pathname={pathname} />
+            <NavLink href="/me/saved" icon="⭐" label="Guardadas" pathname={pathname} />
             <button
               type="button"
               onClick={() => setMasOpen(true)}

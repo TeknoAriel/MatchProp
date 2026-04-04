@@ -409,16 +409,16 @@ export default function MyMatchPage() {
             <p className="text-[var(--mp-foreground)] font-medium">
               {tab === 'discover' ? 'Nada para mostrar todavía' : 'Todavía no hay nada acá'}
             </p>
-            <p className="text-sm text-[var(--mp-muted)] mt-2 max-w-xs mx-auto leading-relaxed">
+            <p className="text-sm text-[var(--mp-muted)] mt-2 max-w-md mx-auto leading-relaxed">
               {tab === 'discover'
-                ? 'Guardá una búsqueda desde el asistente o el dashboard para ver acá propiedades que matchean todas tus zonas.'
+                ? 'Acá se combinan tus búsquedas guardadas y el catálogo general. Si en la base no hay propiedades (listings), no hay nada que mostrar: en el entorno donde corre la API hay que cargar datos de prueba (por ejemplo pnpm --filter api demo:data:800 con la DATABASE_URL de ese deploy).'
                 : 'En Match usá “Me interesa” o “Guardar” y vas a ver todo acá, ordenado por lo último que tocaste.'}
             </p>
             <Link
-              href={tab === 'discover' ? '/searches' : '/dashboard'}
+              href={tab === 'discover' ? '/feed' : '/dashboard'}
               className="inline-flex items-center justify-center mt-6 min-h-[48px] px-6 rounded-full font-semibold bg-[var(--mp-accent)] text-white no-underline hover:opacity-[0.96]"
             >
-              {tab === 'discover' ? 'Ir a búsquedas guardadas' : 'Definir búsqueda'}
+              {tab === 'discover' ? 'Ir al listado (catálogo)' : 'Definir búsqueda'}
             </Link>
           </div>
         ) : (
