@@ -37,7 +37,8 @@ function MagicCallbackContent() {
       })
       .catch((err: unknown) => {
         setStatus('error');
-        const name = err && typeof err === 'object' && 'name' in err ? String((err as Error).name) : '';
+        const name =
+          err && typeof err === 'object' && 'name' in err ? String((err as Error).name) : '';
         setError(
           name === 'AbortError'
             ? 'Tiempo de espera agotado (el servidor tardó demasiado). Reintentá o entrá con email y contraseña.'

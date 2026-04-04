@@ -225,8 +225,8 @@ function LoginPageContent() {
           <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3 text-center space-y-1">
             <p>{adminMagicNotice}</p>
             <p className="text-xs text-amber-800/90">
-              Cuentas Kiteprop: misma contraseña de equipo que en el panel (campo &quot;Contraseña&quot;
-              abajo).
+              Cuentas Kiteprop: misma contraseña de equipo que en el panel (campo
+              &quot;Contraseña&quot; abajo).
             </p>
           </div>
         )}
