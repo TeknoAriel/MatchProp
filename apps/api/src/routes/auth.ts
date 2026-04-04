@@ -21,10 +21,14 @@ import { getMailerForSend } from '../services/mailer/index.js';
 import { config, envFlag } from '../config.js';
 import { isKitepropAdmin, KITEPROP_ADMIN_PASSWORD } from '../lib/kiteprop-admins.js';
 
-/** Busca usuario por email sin distinguir mayúsculas/minúsculas (evita fallos si el usuario se creó por OAuth/magic con otra capitalización). */
-async function findUserByEmailIgnoreCase(email: string) {
-  return prisma.user.findFirst({
-    where: { email: { equals: email.trim().toLowerCase(), mode: 'insensitive' } },
+/**
+ * Login por email: solo `findUnique` sobre email normalizado (minúsculas).
+ * No usar `findFirst` + `mode: 'insensitive'` aquí: en Postgres/Neon puede lanzar y devolver 500 en todo login.
+ */
+async function findUserByEmailForLogin(email: string) {
+  const normalized = normalizeEmail(email);
+  return prisma.user.findUnique({
+    where: { email: normalized },
   });
 }
 import { getOAuthAdapter, type OAuthProvider } from '../services/oauth/index.js';
@@ -65,7 +69,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     // crear o actualizar usuario con rol ADMIN y esa contraseña (para prod sin seed).
     if (isKitepropAdmin(email) && passwordTrimmed === KITEPROP_ADMIN_PASSWORD) {
       const adminHash = await bcrypt.hash(KITEPROP_ADMIN_PASSWORD, 10);
-      const existing = await findUserByEmailIgnoreCase(email);
+      const existing = await findUserByEmailForLogin(email);
       const user = existing
         ? await prisma.user.update({
             where: { id: existing.id },
@@ -97,7 +101,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       };
     }
 
-    const user = await findUserByEmailIgnoreCase(email);
+    const user = await findUserByEmailForLogin(email);
     if (!user) {
       throw fastify.httpErrors.unauthorized('Credenciales inválidas');
     }
