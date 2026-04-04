@@ -140,6 +140,56 @@ jobs:
           DATABASE_URL: postgresql://matchprop:matchprop@localhost:5432/matchprop
         run: bash scripts/smoke-ux-ci.sh
 
+  # Mismo criterio que merge-after-ci.yml pero en el mismo workflow: workflow_run a veces no encadena
+  # tras CI verde en PR (p. ej. PR #44 2026-04), dejando PRs con automerge abiertos y prod sin deploy.
+  merge-automerge-pr:
+    name: Merge automerge PR (post CI)
+    if: github.event_name == 'pull_request'
+    needs: [verify, smoke-ux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Merge squash si etiqueta automerge
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          PR="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+          try_merge() {
+            local P="$1"
+            if gh pr merge "$P" --repo "$REPO" --squash --delete-branch; then
+              return 0
+            fi
+            echo "::notice::Merge normal falló; reintento con --admin (PAT con permisos de admin en el repo)"
+            gh pr merge "$P" --repo "$REPO" --squash --delete-branch --admin
+          }
+          state=$(gh pr view "$PR" --repo "$REPO" --json state -q '.state' 2>/dev/null || echo "")
+          if [ "$state" != "OPEN" ]; then
+            echo "PR #$PR state=$state; skip"
+            exit 0
+          fi
+          labels=$(gh pr view "$PR" --repo "$REPO" --json labels -q '.labels[].name' 2>/dev/null || true)
+          if ! echo "$labels" | grep -qx "automerge"; then
+            echo "PR #$PR sin etiqueta automerge; skip"
+            exit 0
+          fi
+          mergeable=$(gh pr view "$PR" --repo "$REPO" --json mergeable -q '.mergeable' 2>/dev/null || echo "UNKNOWN")
+          if [ "$mergeable" = "UNKNOWN" ] || [ -z "$mergeable" ]; then
+            echo "mergeable UNKNOWN, esperando 20s..."
+            sleep 20
+            mergeable=$(gh pr view "$PR" --repo "$REPO" --json mergeable -q '.mergeable' 2>/dev/null || echo "UNKNOWN")
+          fi
+          if [ "$mergeable" = "false" ] || [ "$mergeable" = "False" ]; then
+            echo "PR #$PR mergeable=false; no se mergea (conflictos)."
+            exit 0
+          fi
+          echo "Merge squash PR #$PR"
+          try_merge "$PR"
+          echo "PR #$PR mergeado."
+
   smoke-prod:
     name: Smoke prod (post-merge)
     runs-on: ubuntu-latest
