@@ -109,7 +109,8 @@ function FeedPageContent() {
       setNextCursor((data.nextCursor as string | null | undefined) ?? null);
       setFallbackUsed(Boolean(data.fallbackUsed));
       setEmptyCatalog(Boolean(data.emptyCatalog));
-      if (useFeedAll && ((data.items as unknown[] | undefined)?.length ?? 0) > 0) setUsedFeedAll(true);
+      if (useFeedAll && ((data.items as unknown[] | undefined)?.length ?? 0) > 0)
+        setUsedFeedAll(true);
       setLoading(false);
     });
   }, [fetchFeed, useFeedAll]);
@@ -254,7 +255,8 @@ function FeedPageContent() {
       setQueue((data.items as ListingCard[] | undefined) ?? []);
       setNextCursor((data.nextCursor as string | null | undefined) ?? null);
       setEmptyCatalog(Boolean(data.emptyCatalog));
-      if (useFeedAll && ((data.items as unknown[] | undefined)?.length ?? 0) > 0) setUsedFeedAll(true);
+      if (useFeedAll && ((data.items as unknown[] | undefined)?.length ?? 0) > 0)
+        setUsedFeedAll(true);
       setLoading(false);
     });
   }

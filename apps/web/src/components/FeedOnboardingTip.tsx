@@ -36,8 +36,12 @@ export default function FeedOnboardingTip() {
       role="status"
     >
       <p className="text-[13px] sm:text-sm text-[var(--mp-foreground)] leading-snug">
-        <span className="font-semibold text-[var(--mp-accent)]">Tip:</span> describí lo que buscás en{' '}
-        <Link href="/dashboard" className="text-[var(--mp-accent)] font-medium underline-offset-2 hover:underline">
+        <span className="font-semibold text-[var(--mp-accent)]">Tip:</span> describí lo que buscás
+        en{' '}
+        <Link
+          href="/dashboard"
+          className="text-[var(--mp-accent)] font-medium underline-offset-2 hover:underline"
+        >
           Inicio
         </Link>{' '}
         o en el{' '}

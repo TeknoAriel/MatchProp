@@ -62,7 +62,8 @@ export default function StatusPage() {
           status: h.status,
           db: h.db,
           migration: h.migration ?? null,
-          catalogActiveCount: typeof h.catalogActiveCount === 'number' ? h.catalogActiveCount : undefined,
+          catalogActiveCount:
+            typeof h.catalogActiveCount === 'number' ? h.catalogActiveCount : undefined,
         });
         setHealthOps(h.ops && typeof h.ops === 'object' ? h.ops : null);
       }
