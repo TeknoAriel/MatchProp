@@ -13,10 +13,9 @@ Gates de CI, smoke y release: **[ESTABILIDAD_Y_RELEASE.md](./ESTABILIDAD_Y_RELEA
 
 ## Estado de reconexión (checkpoint)
 
-- **Repo:** `git@github.com:TeknoAriel/MatchProp.git` — `main` al día con `origin/main`.
-- **Último commit:** `c84b96d` — chore: unificar imágenes con ListingImage, limpiar código.
-- **Vercel:** Los 3 proyectos (web, admin, api) deben estar vinculados a este mismo repo; Root Directory por app: `apps/web`, `apps/admin`, `apps/api`.
-- **Imágenes:** Todos los listados usan `ListingImage` con fallback; eliminado `demo-image.ts` y scripts de migración ya ejecutados.
+- **Repo (trabajo):** `git@github.com:TeknoAriel/MatchProp.git` — `main` = producción Git.
+- **Vercel:** Los 3 proyectos deben tener **Git** conectado a ese repo, **Production Branch** `main`, **Root** `apps/web` | `apps/admin` | `apps/api`. Guía paso a paso: **[CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)**.
+- **Hooks opcionales:** workflow `vercel-deploy-hooks.yml` + secretos `VERCEL_DEPLOY_HOOK_*` (misma guía).
 
 ## Estructura del Monorepo
 
@@ -62,6 +61,8 @@ Comando (solo build cuando cambien web o shared):
 ```bash
 bash scripts/vercel-should-build-web.sh
 ```
+
+**Importante (Vercel):** en este hook, **código de salida 0 = omitir el build** y **código distinto de 0 = ejecutar el build**. Los scripts del repo siguen esa convención; no invertir (si no, producción queda congelada en un SHA viejo).
 
 ### apps/web/vercel.json
 
@@ -140,6 +141,8 @@ bash scripts/vercel-should-build-admin.sh
 ```bash
 bash scripts/vercel-should-build-api.sh
 ```
+
+Misma semántica que en web: **0 = skip**, **≠0 = build** (ver nota arriba).
 
 ### apps/api/vercel.json
 

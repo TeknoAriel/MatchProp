@@ -13,7 +13,7 @@
 
 ## Repositorio GitHub
 
-- **URL**: `https://github.com/TeknoAriel/MatchProp`
+- **URL**: `https://github.com/kiteprop/ia-matchprop`
 - **Branch principal**: `main`
 - **Monorepo**: pnpm workspaces
 

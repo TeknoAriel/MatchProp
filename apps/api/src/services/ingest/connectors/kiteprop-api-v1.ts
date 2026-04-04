@@ -1,4 +1,4 @@
-import type { SourceConnector } from '../types.js';
+import type { FetchBatchParams, SourceConnector } from '../types.js';
 import type { ListingSource } from '@prisma/client';
 
 /**
@@ -24,7 +24,7 @@ export function createKitepropApiV1Connector(): SourceConnector | null {
 
   return {
     source: 'KITEPROP_API' as ListingSource,
-    fetchBatch: async () => {
+    fetchBatch: async (_params: FetchBatchParams) => {
       // Pendiente: doc Kiteprop API v1 no disponible. Usar KITEPROP_EXTERNALSITE.
       throw new Error(
         'Kiteprop API v1 not configured: doc unavailable. Use KITEPROP_EXTERNALSITE.'

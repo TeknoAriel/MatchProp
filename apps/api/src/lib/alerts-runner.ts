@@ -2,9 +2,58 @@
  * Lógica del job de alertas. Exportada para tests.
  * Una sola pasada, sin intervals/workers. Entrypoint productivo y tests llaman runAlerts(opts).
  */
+import { NotificationType } from '@prisma/client';
 import { prisma } from './prisma.js';
 import { executeFeed, listingMatchesFilters } from './feed-engine.js';
 import type { SearchFilters } from '@matchprop/shared';
+import { sendAlertDeliveryEmail } from './alert-delivery-email.js';
+import { sendAlertWebPush } from './web-push-send.js';
+
+const ALERT_TO_NOTIFICATION: Record<
+  'NEW_LISTING' | 'PRICE_DROP' | 'BACK_ON_MARKET',
+  NotificationType
+> = {
+  NEW_LISTING: NotificationType.ALERT_NEW_LISTING,
+  PRICE_DROP: NotificationType.ALERT_PRICE_DROP,
+  BACK_ON_MARKET: NotificationType.ALERT_BACK_ON_MARKET,
+};
+
+/** In-app (badge), email y push tras un AlertDelivery nuevo. */
+async function notifyAlertChannels(opts: {
+  userId: string;
+  listingId: string;
+  subscriptionId: string;
+  alertType: 'NEW_LISTING' | 'PRICE_DROP' | 'BACK_ON_MARKET';
+  log: (msg: string) => void;
+}): Promise<void> {
+  try {
+    await prisma.notification.create({
+      data: {
+        userId: opts.userId,
+        type: ALERT_TO_NOTIFICATION[opts.alertType],
+        payload: {
+          listingId: opts.listingId,
+          subscriptionId: opts.subscriptionId,
+          alertType: opts.alertType,
+        },
+      },
+    });
+  } catch (e) {
+    opts.log(`[Alert] in-app notification failed: ${String(e)}`);
+  }
+
+  void sendAlertDeliveryEmail({
+    userId: opts.userId,
+    listingId: opts.listingId,
+    alertType: opts.alertType,
+  }).catch((err) => opts.log(`[Alert] email ${opts.alertType} failed: ${String(err)}`));
+
+  void sendAlertWebPush({
+    userId: opts.userId,
+    listingId: opts.listingId,
+    alertType: opts.alertType,
+  }).catch((err) => opts.log(`[Alert] push ${opts.alertType} failed: ${String(err)}`));
+}
 
 export type RunAlertsOptions = {
   /** Límite de items por subscription para NEW_LISTING (default 100). En tests usar valor bajo. */
@@ -17,20 +66,21 @@ export type RunAlertsOptions = {
 
 const DEFAULT_FEED_LIMIT = 100;
 
-function safeCreateDelivery(
+async function createDeliveryIfNew(
   subscriptionId: string,
   listingId: string,
   type: 'NEW_LISTING' | 'PRICE_DROP' | 'BACK_ON_MARKET'
-): Promise<void> {
-  return prisma.alertDelivery
-    .create({
+): Promise<boolean> {
+  try {
+    await prisma.alertDelivery.create({
       data: { subscriptionId, listingId, type },
-    })
-    .then(() => {})
-    .catch((err) => {
-      if (err?.code === 'P2002') return; // Unique constraint
-      throw err;
     });
+    return true;
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code;
+    if (code === 'P2002') return false;
+    throw err;
+  }
 }
 
 /**
@@ -81,11 +131,20 @@ export async function runAlerts(opts: RunAlertsOptions = {}): Promise<void> {
 
       for (const item of result.items) {
         const listingId = (item as { id: string }).id;
-        await safeCreateDelivery(sub.id, listingId, 'NEW_LISTING');
+        const created = await createDeliveryIfNew(sub.id, listingId, 'NEW_LISTING');
         const title = (item as { title?: string }).title ?? 'Sin título';
         log(
           `[Alert] userId=${sub.userId} sub=${sub.id} NEW_LISTING listing=${listingId} "${title}"`
         );
+        if (created) {
+          await notifyAlertChannels({
+            userId: sub.userId,
+            listingId,
+            subscriptionId: sub.id,
+            alertType: 'NEW_LISTING',
+            log,
+          });
+        }
       }
     } else if (sub.type === 'PRICE_DROP') {
       const events = await prisma.listingEvent.findMany({
@@ -117,11 +176,20 @@ export async function runAlerts(opts: RunAlertsOptions = {}): Promise<void> {
         const matches = await listingMatchesFilters(ev.listingId, filters);
         if (!matches) continue;
 
-        await safeCreateDelivery(sub.id, ev.listingId, 'PRICE_DROP');
+        const created = await createDeliveryIfNew(sub.id, ev.listingId, 'PRICE_DROP');
         const title = ev.listing.title ?? 'Sin título';
         log(
           `[Alert] userId=${sub.userId} sub=${sub.id} PRICE_DROP listing=${ev.listingId} "${title}"`
         );
+        if (created) {
+          await notifyAlertChannels({
+            userId: sub.userId,
+            listingId: ev.listingId,
+            subscriptionId: sub.id,
+            alertType: 'PRICE_DROP',
+            log,
+          });
+        }
       }
     } else if (sub.type === 'BACK_ON_MARKET') {
       const events = await prisma.listingEvent.findMany({
@@ -139,11 +207,20 @@ export async function runAlerts(opts: RunAlertsOptions = {}): Promise<void> {
         const matches = await listingMatchesFilters(ev.listingId, filters);
         if (!matches) continue;
 
-        await safeCreateDelivery(sub.id, ev.listingId, 'BACK_ON_MARKET');
+        const created = await createDeliveryIfNew(sub.id, ev.listingId, 'BACK_ON_MARKET');
         const title = ev.listing.title ?? 'Sin título';
         log(
           `[Alert] userId=${sub.userId} sub=${sub.id} BACK_ON_MARKET listing=${ev.listingId} "${title}"`
         );
+        if (created) {
+          await notifyAlertChannels({
+            userId: sub.userId,
+            listingId: ev.listingId,
+            subscriptionId: sub.id,
+            alertType: 'BACK_ON_MARKET',
+            log,
+          });
+        }
       }
     }
 

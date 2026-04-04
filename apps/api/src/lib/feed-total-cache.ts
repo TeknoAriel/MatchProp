@@ -47,7 +47,10 @@ export function createFeedTotalCache(opts?: { maxEntries?: number }) {
     }
   }
 
-  function getCachedTotal(userId: string, filters: Record<string, unknown>): number | null {
+  async function getCachedTotal(
+    userId: string,
+    filters: Record<string, unknown>
+  ): Promise<number | null> {
     const key = `${userId}:${hashFilters(filters)}`;
     const entry = cache.get(key);
     if (!entry || Date.now() > entry.expiresAt) {
@@ -61,7 +64,11 @@ export function createFeedTotalCache(opts?: { maxEntries?: number }) {
     return entry.total;
   }
 
-  function setCachedTotal(userId: string, filters: Record<string, unknown>, total: number): void {
+  async function setCachedTotal(
+    userId: string,
+    filters: Record<string, unknown>,
+    total: number
+  ): Promise<void> {
     evictIfNeeded();
     const key = `${userId}:${hashFilters(filters)}`;
     const now = Date.now();
@@ -73,7 +80,3 @@ export function createFeedTotalCache(opts?: { maxEntries?: number }) {
 
   return { getCachedTotal, setCachedTotal };
 }
-
-const defaultCache = createFeedTotalCache();
-export const getCachedTotal = defaultCache.getCachedTotal;
-export const setCachedTotal = defaultCache.setCachedTotal;

@@ -106,6 +106,12 @@ export async function searchesRoutes(fastify: FastifyInstance) {
         userId: user.userId,
         payload: { searchId: created.id },
       }).catch(() => {});
+      if (count === 0) {
+        trackEvent('first_search_saved', {
+          userId: user.userId,
+          payload: { searchId: created.id },
+        }).catch(() => {});
+      }
 
       return reply.status(201).send(toSavedSearchDTO(created));
     }

@@ -85,6 +85,7 @@ describe('Alerts runner PRICE_DROP and BACK_ON_MARKET dedupe', () => {
   });
 
   afterAll(async () => {
+    await prisma.notification.deleteMany({ where: { userId } });
     await prisma.alertDelivery.deleteMany({
       where: {
         subscription: {

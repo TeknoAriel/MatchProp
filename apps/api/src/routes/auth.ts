@@ -35,6 +35,8 @@ import {
   generateState,
   generateCodeVerifier,
 } from '../services/oauth-flow.js';
+import { trackEvent } from '../lib/analytics.js';
+import { resolveMagicAppBaseUrl } from '../lib/magic-app-url.js';
 
 function getClientMeta(request: { ip?: string; headers?: { 'user-agent'?: string } }) {
   return {
@@ -70,7 +72,12 @@ export async function authRoutes(fastify: FastifyInstance) {
             data: { passwordHash: adminHash, role: UserRole.ADMIN },
           })
         : await prisma.user.create({
-            data: { email, passwordHash: adminHash, role: UserRole.ADMIN },
+            data: {
+              email,
+              passwordHash: adminHash,
+              role: UserRole.ADMIN,
+              signupMethod: 'ADMIN_GRANT',
+            },
           });
       const meta = getClientMeta(request);
       const { refreshToken } = await createSession({
@@ -198,8 +205,11 @@ export async function authRoutes(fastify: FastifyInstance) {
           email: body.email,
           passwordHash,
           role: UserRole.AGENT,
+          signupMethod: 'PASSWORD',
         },
       });
+
+      trackEvent('signup_completed', { userId: user.id }).catch(() => {});
 
       const meta = getClientMeta(request);
       const { refreshToken } = await createSession({
@@ -289,7 +299,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const appUrl = (config.appUrl || 'http://localhost:3000').replace(/\/$/, '');
+      const appUrl = resolveMagicAppBaseUrl(request);
       const isDev =
         process.env.NODE_ENV !== 'production' || envFlag('DEMO_MODE') || process.env.VERCEL === '1';
 
@@ -391,6 +401,10 @@ export async function authRoutes(fastify: FastifyInstance) {
         ...meta,
       });
 
+      if (user.isNewUser) {
+        trackEvent('signup_completed', { userId: user.userId }).catch(() => {});
+      }
+
       const { refreshToken } = await createSession({
         userId: user.userId,
         ...meta,
@@ -466,6 +480,10 @@ export async function authRoutes(fastify: FastifyInstance) {
         ...meta,
       });
 
+      if (user.isNewUser) {
+        trackEvent('signup_completed', { userId: user.userId }).catch(() => {});
+      }
+
       const { refreshToken } = await createSession({
         userId: user.userId,
         ...meta,
@@ -515,7 +533,9 @@ export async function authRoutes(fastify: FastifyInstance) {
           const demoRefresh = 'demo-refresh-token';
           setAuthCookies(reply, accessToken, demoRefresh);
         } else {
-          const user = await upsertUserAndIdentityForMagicLink(DEMO_EMAIL);
+          const user = await upsertUserAndIdentityForMagicLink(DEMO_EMAIL, {
+            signupMethodOnCreate: 'DEMO',
+          });
           await logAuthAudit({
             event: 'magic_verified',
             userId: user.userId,
@@ -651,6 +671,9 @@ export async function authRoutes(fastify: FastifyInstance) {
         provider,
         ...meta,
       });
+      if (user.isNewUser) {
+        trackEvent('signup_completed', { userId: user.userId }).catch(() => {});
+      }
       const { refreshToken } = await createSession({ userId: user.userId, ...meta });
       const accessToken = signAccessToken(fastify, {
         userId: user.userId,

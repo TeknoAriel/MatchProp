@@ -5,9 +5,13 @@ import { getAccessExpirySeconds } from './session.js';
 const ACCESS_COOKIE = 'access_token';
 const REFRESH_COOKIE = 'refresh_token';
 
+// En desarrollo/test nunca forzar Secure aunque COOKIE_SECURE venga de .env copiado de Vercel:
+// si no, el navegador no guarda cookies en http://localhost y demo/magic parecen "rotos".
+const secureCookie = config.cookieSecure && process.env.NODE_ENV === 'production';
+
 const COOKIE_OPTS = {
   httpOnly: true,
-  secure: config.cookieSecure,
+  secure: secureCookie,
   sameSite: 'lax' as const,
   path: '/',
 };

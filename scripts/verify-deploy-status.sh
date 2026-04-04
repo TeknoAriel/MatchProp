@@ -11,6 +11,16 @@ WEB_URL="${WEB_URL:-https://match-prop-web.vercel.app}"
 
 echo "=== Verificación de deploy: rama $BRANCH ==="
 
+# Enlaces PR según origin (p. ej. TeknoAriel/MatchProp); fallback histórico
+ORIGIN_URL=$(git remote get-url origin 2>/dev/null || true)
+GH_REPO_OWNER="TeknoAriel"
+GH_REPO_NAME="MatchProp"
+if [[ "$ORIGIN_URL" =~ github\.com[:/]([^/]+)/([^/.]+) ]]; then
+  GH_REPO_OWNER="${BASH_REMATCH[1]}"
+  GH_REPO_NAME="${BASH_REMATCH[2]%.git}"
+fi
+PR_BASE_URL="https://github.com/${GH_REPO_OWNER}/${GH_REPO_NAME}"
+
 # 1. Fetch latest
 git fetch origin main 2>/dev/null || true
 git fetch origin "$BRANCH" 2>/dev/null || true
@@ -62,7 +72,7 @@ sys.exit(1)
       echo "⚠ La rama $BRANCH NO está mergeada en main"
       echo "  Main:   $MAIN_SHA"
       echo "  Branch: $BRANCH_SHA"
-      echo "  Ver PR: https://github.com/TeknoAriel/MatchProp/pulls"
+      echo "  Ver PR: ${PR_BASE_URL}/pulls"
     fi
   fi
 fi
@@ -108,5 +118,14 @@ if [ "$PROD_VERSION" = "$MAIN_SHA" ]; then
 else
   echo "⚠ Producción: $PROD_VERSION | Main: $MAIN_SHA"
   echo "  Si acabás de mergear, Vercel tarda 2-5 min. Ejecutá de nuevo."
+  echo ""
+  echo "  Si lleva mucho tiempo desalineado: el /health.version es VERCEL_GIT_COMMIT_SHA del deploy."
+  echo "  → Vercel → proyecto match-prop-api-1jte (root apps/api) → Deployments: ¿último en Production está Ready?"
+  echo "  → Revisar build rojo, Git desconectado, o rama de producción distinta de main."
+  echo "  → Si los deploys fallan al instante: autor Git / team (Hobby) — bash scripts/check-git-author-vercel.sh"
+  echo "  → Bypass sin depender del autor del commit: secretos en GitHub (docs/SECRETOS_Y_AUTOMERGE_GITHUB.md)"
+  echo "     · VERCEL_DEPLOY_HOOK_* → job «Vercel deploy hooks» dentro del workflow CI (tras Verify)"
+  echo "     · VERCEL_TOKEN + VERCEL_ORG_ID + VERCEL_PROJECT_ID_* → workflow «Vercel prod (CLI)»"
+  echo "  → docs/INFRAESTRUCTURA_VERCEL.md y docs/DEPLOY_TROUBLESHOOTING.md §7–8"
   exit 1
 fi

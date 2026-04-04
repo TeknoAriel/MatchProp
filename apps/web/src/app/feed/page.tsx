@@ -54,7 +54,7 @@ function FeedPageContent() {
     return () => window.removeEventListener(ACTIVE_SEARCH_CHANGED_EVENT, onChange);
   }, [syncActiveSearchFlag]);
 
-  const useFeedAll = feedAllFromUrl || hasActiveSearch === false;
+  const useFeedAll = feedAllFromUrl || hasActiveSearch !== true;
 
   const fetchFeed = useCallback(
     async (cursor?: string | null, feedAll?: boolean) => {
@@ -337,16 +337,36 @@ function FeedPageContent() {
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 py-16">
-            <p className="text-[var(--mp-foreground)] font-medium text-lg">
-              {emptyCatalog ? 'No hay propiedades en el catálogo' : 'No hay más resultados'}
-            </p>
-            <p className="text-sm text-[var(--mp-muted)] max-w-sm leading-relaxed">
-              {emptyCatalog
-                ? 'Activá importadores en Configuración para cargar propiedades.'
-                : !usedFeedAll
-                  ? 'Podés ampliar el contexto o revisar el catálogo completo.'
-                  : 'No quedan propiedades en este contexto. Ajustá la búsqueda en Inicio.'}
-            </p>
+            {hasActiveSearch === false && !emptyCatalog ? (
+              <>
+                <p className="text-[var(--mp-foreground)] font-medium text-lg">
+                  Activá una búsqueda para priorizar el match
+                </p>
+                <p className="text-sm text-[var(--mp-muted)] max-w-sm leading-relaxed">
+                  Sin búsqueda activa el feed muestra el catálogo general. Describí zona, tipo y
+                  presupuesto en el asistente y guardá la búsqueda para centrar resultados en vos.
+                </p>
+                <Link
+                  href="/assistant"
+                  className="mt-2 px-5 py-2.5 rounded-full text-sm font-medium bg-[var(--mp-accent)] text-white"
+                >
+                  Ir al asistente
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="text-[var(--mp-foreground)] font-medium text-lg">
+                  {emptyCatalog ? 'No hay propiedades en el catálogo' : 'No hay más resultados'}
+                </p>
+                <p className="text-sm text-[var(--mp-muted)] max-w-sm leading-relaxed">
+                  {emptyCatalog
+                    ? 'Activá importadores en Configuración para cargar propiedades.'
+                    : !usedFeedAll
+                      ? 'Podés ampliar el contexto o revisar el catálogo completo.'
+                      : 'No quedan propiedades en este contexto. Ajustá la búsqueda en Inicio.'}
+                </p>
+              </>
+            )}
             {emptyCatalog && (
               <Link
                 href="/settings/integrations/importers"
@@ -356,7 +376,7 @@ function FeedPageContent() {
               </Link>
             )}
             <div className="flex flex-wrap gap-2 mt-6 justify-center">
-              {!usedFeedAll && (
+              {!(hasActiveSearch === false && !emptyCatalog) && !usedFeedAll && (
                 <button
                   onClick={handleVerSimilares}
                   disabled={loading}

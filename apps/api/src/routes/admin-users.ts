@@ -1,7 +1,15 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
-import { UserRole, type PaymentProvider, type SubscriptionStatus } from '@prisma/client';
-import { PLANS } from './subscriptions.js';
+import {
+  UserRole,
+  type PaymentProvider,
+  type SubscriptionStatus,
+  type SignupMethod,
+} from '@prisma/client';
+import type { Prisma } from '@prisma/client';
+import { PLANS } from '../lib/plans.js';
+
+const ACTIVE_SUB_STATUSES: SubscriptionStatus[] = ['ACTIVE', 'TRIALING', 'PAST_DUE'];
 
 const ORG_DISCOUNT = 0.2; // 20% dto para AGENT/REALTOR bajo INMOBILIARIA
 
@@ -91,6 +99,7 @@ export async function adminUsersRoutes(fastify: FastifyInstance) {
           data: {
             email,
             role: 'BUYER',
+            signupMethod: 'ADMIN_GRANT',
           },
         });
       }
@@ -101,7 +110,7 @@ export async function adminUsersRoutes(fastify: FastifyInstance) {
       await prisma.subscription.updateMany({
         where: {
           userId: dbUser.id,
-          status: { in: ['ACTIVE', 'TRIALING', 'PAST_DUE'] as SubscriptionStatus[] },
+          status: { in: ACTIVE_SUB_STATUSES },
         },
         data: { status: 'CANCELLED', cancelledAt: now },
       });
@@ -180,6 +189,9 @@ export async function adminUsersRoutes(fastify: FastifyInstance) {
             limit: { type: 'integer', default: 20 },
             offset: { type: 'integer', default: 0 },
             includeSummary: { type: 'boolean', default: false },
+            role: { type: 'string' },
+            signupMethod: { type: 'string' },
+            subscriptionStatus: { type: 'string' },
           },
         },
         response: {
@@ -196,6 +208,10 @@ export async function adminUsersRoutes(fastify: FastifyInstance) {
                     email: { type: 'string' },
                     role: { type: 'string' },
                     premiumUntil: { type: ['string', 'null'] },
+                    signupMethod: { type: ['string', 'null'] },
+                    createdAt: { type: 'string' },
+                    updatedAt: { type: 'string' },
+                    hasActiveSubscription: { type: 'boolean' },
                   },
                 },
               },
@@ -206,19 +222,60 @@ export async function adminUsersRoutes(fastify: FastifyInstance) {
       preHandler: [fastify.requireRole([UserRole.ADMIN])],
     },
     async (request) => {
-      const q = (request.query as { query?: string })?.query?.trim() ?? '';
-      const limit = clampInt((request.query as Record<string, unknown>).limit ?? 20, 1, 100);
-      const offset = clampInt((request.query as Record<string, unknown>).offset ?? 0, 0, 10000);
-      const includeSummaryRaw = (request.query as Record<string, unknown>).includeSummary;
+      const raw = request.query as Record<string, unknown>;
+      const q = typeof raw.query === 'string' ? raw.query.trim() : '';
+      const limit = clampInt(raw.limit ?? 20, 1, 100);
+      const offset = clampInt(raw.offset ?? 0, 0, 10000);
+      const includeSummaryRaw = raw.includeSummary;
       const includeSummary =
         includeSummaryRaw === true ||
         includeSummaryRaw === 'true' ||
         includeSummaryRaw === '1' ||
         includeSummaryRaw === 1;
 
+      const roleFilter = typeof raw.role === 'string' ? raw.role.trim() : '';
+      const signupMethodFilter =
+        typeof raw.signupMethod === 'string' ? raw.signupMethod.trim() : '';
+      const subscriptionStatus =
+        typeof raw.subscriptionStatus === 'string' ? raw.subscriptionStatus.trim() : '';
+
+      const parts: Prisma.UserWhereInput[] = [];
+      if (q) parts.push({ email: { contains: q, mode: 'insensitive' } });
+      if (roleFilter) parts.push({ role: roleFilter as UserRole });
+      if (signupMethodFilter) {
+        parts.push({ signupMethod: signupMethodFilter as SignupMethod });
+      }
+      if (subscriptionStatus === 'active') {
+        parts.push({
+          subscriptions: { some: { status: { in: ACTIVE_SUB_STATUSES } } },
+        });
+      } else if (subscriptionStatus === 'none') {
+        parts.push({
+          NOT: {
+            subscriptions: { some: { status: { in: ACTIVE_SUB_STATUSES } } },
+          },
+        });
+      }
+
+      const where: Prisma.UserWhereInput | undefined =
+        parts.length > 0 ? { AND: parts } : undefined;
+
       const users = await prisma.user.findMany({
-        where: q ? { email: { contains: q, mode: 'insensitive' } } : undefined,
-        select: { id: true, email: true, role: true, premiumUntil: true },
+        where,
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          premiumUntil: true,
+          signupMethod: true,
+          createdAt: true,
+          updatedAt: true,
+          subscriptions: {
+            where: { status: { in: ACTIVE_SUB_STATUSES } },
+            take: 1,
+            select: { id: true },
+          },
+        },
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: offset,
@@ -255,6 +312,10 @@ export async function adminUsersRoutes(fastify: FastifyInstance) {
           email: u.email,
           role: u.role,
           premiumUntil: u.premiumUntil?.toISOString() ?? null,
+          signupMethod: u.signupMethod ?? null,
+          createdAt: u.createdAt.toISOString(),
+          updatedAt: u.updatedAt.toISOString(),
+          hasActiveSubscription: u.subscriptions.length > 0,
         })),
       };
     }
@@ -283,6 +344,9 @@ export async function adminUsersRoutes(fastify: FastifyInstance) {
                   email: { type: 'string' },
                   role: { type: 'string' },
                   premiumUntil: { type: ['string', 'null'] },
+                  signupMethod: { type: ['string', 'null'] },
+                  createdAt: { type: 'string' },
+                  updatedAt: { type: 'string' },
                   daysRemaining: { type: 'number' },
                   organizationId: { type: ['string', 'null'] },
                   profile: { type: ['object', 'null'] },
@@ -338,6 +402,9 @@ export async function adminUsersRoutes(fastify: FastifyInstance) {
           email: user.email,
           role: user.role,
           premiumUntil,
+          signupMethod: user.signupMethod ?? null,
+          createdAt: user.createdAt.toISOString(),
+          updatedAt: user.updatedAt.toISOString(),
           daysRemaining,
           organizationId: user.organizationId ?? null,
           profile: user.profile ?? null,

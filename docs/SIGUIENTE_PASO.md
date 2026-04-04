@@ -1,6 +1,6 @@
 # Siguiente paso — Deploy en vivo
 
-El código está en **https://github.com/TeknoAriel/MatchProp**. Para tener la app en producción usá la documentación canónica:
+El código está en **https://github.com/kiteprop/ia-matchprop**. Para tener la app en producción usá la documentación canónica:
 
 ---
 

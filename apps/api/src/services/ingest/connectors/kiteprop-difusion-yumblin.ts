@@ -1,7 +1,19 @@
 /**
- * Conector Kiteprop Difusión Yumblin (JSON).
- * URL desde IngestSourceConfig (sourcesJson.yumblin[0].url) o env KITEPROP_DIFUSION_YUMBLIN_URL.
- * Formato JSON tipo Kiteprop externalsite (id, images, property_type, for_rent, etc.).
+ * Conector Kiteprop difusión catálogo JSON (Properstar).
+ * El archivo `properstar.json` comparte esquema con el histórico `yumblin.json`
+ * (id, images, property_type, for_sale / for_rent, precios, agency, etc.).
+ *
+ * URL: `sourcesJson.properstar` o `sourcesJson.yumblin`, env
+ * `KITEPROP_DIFUSION_PROPERSTAR_URL` o `KITEPROP_DIFUSION_YUMBLIN_URL` (alias),
+ * o `DEFAULT_URL`.
+ *
+ * El `ListingSource` en Prisma sigue siendo `KITEPROP_DIFUSION_YUMBLIN` para no
+ * migrar datos existentes.
+ *
+ * - GET condicional (`If-None-Match`): 304 al inicio del archivo → sin cambios globales.
+ * - Caché en memoria por URL entre batches del mismo proceso.
+ * - `fullCatalogTombstone`: el processor marca INACTIVE los IDs que ya no están en el JSON
+ *   al cerrar el sync (ver processor + tombstone.ts).
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -11,8 +23,11 @@ import { prisma } from '../../../lib/prisma.js';
 
 const FIXTURE_PATH = join(process.cwd(), 'src/services/ingest/fixtures/kiteprop-sample.min.json');
 const DEFAULT_URL =
-  'https://static.kiteprop.com/kp/difusions/23705a4a85ab8f1d301c73aae5359a81a8b5c1ca/yumblin.json';
+  'https://static.kiteprop.com/kp/difusions/f89cbd8ca785fc34317df63d29ab8ea9d68a7b1c/properstar.json';
 const LOCATION_MAX = 200;
+
+/** Array parseado del último fetch remoto exitoso (misma URL = reutilizar). */
+let remoteListingArrayCache: { url: string; items: Record<string, unknown>[] } | null = null;
 
 const PROPERTY_TYPE_MAP: Record<string, string> = {
   houses: 'HOUSE',
@@ -20,6 +35,19 @@ const PROPERTY_TYPE_MAP: Record<string, string> = {
   retail_spaces: 'OFFICE',
   residential_lands: 'LAND',
 };
+
+function normalizeEtagForCompare(etag: string | null | undefined): string | null {
+  if (!etag || typeof etag !== 'string') return null;
+  const t = etag.trim();
+  if (!t) return null;
+  return t.replace(/^W\//i, '').replace(/^"+|"+$/g, '');
+}
+
+function normalizeEtagHeader(header: string | null): string | null {
+  if (!header || typeof header !== 'string') return null;
+  const t = header.trim();
+  return t.length ? t : null;
+}
 
 function trunc(s: string | null | undefined): string | null {
   if (!s || typeof s !== 'string') return null;
@@ -43,15 +71,45 @@ function buildLocationText(raw: Record<string, unknown>): string | null {
   return trunc(s) || trunc(String(raw.address ?? ''));
 }
 
-async function getYumblinUrl(): Promise<string> {
-  const envUrl = process.env.KITEPROP_DIFUSION_YUMBLIN_URL;
+/** Código de tipo de aviso (Kiteprop); ver docs/INGEST_PROPISTAR_POLITICA_OPERATIVA.md §4. */
+function pickAdTypeCode(raw: Record<string, unknown>): string | null {
+  const keys = [
+    'ad_type',
+    'adType',
+    'tipo_aviso',
+    'listing_ad_type',
+    'publication_type',
+    'plan_code',
+    'aviso_tipo',
+  ];
+  for (const k of keys) {
+    const v = raw[k];
+    if (v == null) continue;
+    const s = String(v).trim();
+    if (s.length > 0) return s;
+  }
+  return null;
+}
+
+function pickAdTypeLabelRaw(raw: Record<string, unknown>): string | null {
+  const v = raw.ad_type_label ?? raw.adTypeLabel ?? raw.tipo_aviso_label;
+  if (v == null) return null;
+  const s = String(v).trim();
+  return s.length > 0 ? s : null;
+}
+
+async function getDifusionCatalogUrl(): Promise<string> {
+  const envUrl =
+    process.env.KITEPROP_DIFUSION_PROPERSTAR_URL || process.env.KITEPROP_DIFUSION_YUMBLIN_URL;
   if (envUrl) return envUrl;
   const row = await prisma.ingestSourceConfig.findUnique({
     where: { id: 'default' },
   });
   const json = (row?.sourcesJson as Record<string, { url?: string }[]>) ?? {};
-  const arr = json.yumblin;
-  if (Array.isArray(arr) && arr[0]?.url) return String(arr[0].url);
+  const properstar = json.properstar;
+  const yumblin = json.yumblin;
+  if (Array.isArray(properstar) && properstar[0]?.url) return String(properstar[0].url);
+  if (Array.isArray(yumblin) && yumblin[0]?.url) return String(yumblin[0].url);
   return DEFAULT_URL;
 }
 
@@ -60,7 +118,9 @@ export function createKitepropDifusionYumblinConnector(): SourceConnector {
 
   return {
     source: 'KITEPROP_DIFUSION_YUMBLIN' as ListingSource,
-    fetchBatch: async ({ cursor, limit }) => {
+    /** En fixture (tests/CI) no desactivar otros listings al cerrar el sync. */
+    fullCatalogTombstone: !useFixture,
+    fetchBatch: async ({ cursor, limit, ifNoneMatch }) => {
       if (useFixture) {
         const raw = readFileSync(FIXTURE_PATH, 'utf-8');
         const items = JSON.parse(raw) as Record<string, unknown>[];
@@ -68,18 +128,57 @@ export function createKitepropDifusionYumblinConnector(): SourceConnector {
         const slice = items.slice(start, start + limit);
         const nextCursor =
           start + slice.length < items.length ? String(start + slice.length) : null;
-        return { items: slice, nextCursor };
+        return { items: slice, nextCursor, etag: null };
       }
 
-      const url = await getYumblinUrl();
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Yumblin fetch failed: ${res.status}`);
-      const items = (await res.json()) as Record<string, unknown>[];
-      const arr = Array.isArray(items) ? items : [];
-      const start = cursor ? parseInt(cursor, 10) || 0 : 0;
+      const url = await getDifusionCatalogUrl();
+      const inm = ifNoneMatch?.trim();
+      const headers: Record<string, string> = {};
+      if (inm) headers['If-None-Match'] = inm;
+
+      let res = await fetch(url, { headers });
+
+      if (res.status === 304) {
+        if (remoteListingArrayCache?.url !== url) {
+          res = await fetch(url);
+        } else {
+          const arr = remoteListingArrayCache.items;
+          const atFileStart = cursor == null || cursor === '';
+          if (atFileStart) {
+            return {
+              items: [],
+              nextCursor: null,
+              feedUnchanged: true,
+              etag: inm ?? null,
+            };
+          }
+          const start = parseInt(String(cursor), 10) || 0;
+          const slice = arr.slice(start, start + limit);
+          const nextCursor =
+            start + slice.length < arr.length ? String(start + slice.length) : null;
+          return { items: slice, nextCursor, etag: inm ?? null };
+        }
+      }
+
+      if (!res.ok) throw new Error(`Properstar/difusión JSON fetch failed: ${res.status}`);
+
+      const newEtagRaw = normalizeEtagHeader(res.headers.get('etag'));
+      const parsed = (await res.json()) as unknown;
+      const arr = Array.isArray(parsed) ? parsed : [];
+      remoteListingArrayCache = { url, items: arr };
+
+      const catalogReset = Boolean(
+        inm && newEtagRaw && normalizeEtagForCompare(inm) !== normalizeEtagForCompare(newEtagRaw)
+      );
+      const start = catalogReset ? 0 : cursor ? parseInt(String(cursor), 10) || 0 : 0;
       const slice = arr.slice(start, start + limit);
       const nextCursor = start + slice.length < arr.length ? String(start + slice.length) : null;
-      return { items: slice, nextCursor };
+      return {
+        items: slice,
+        nextCursor,
+        etag: newEtagRaw ?? inm ?? null,
+        catalogReset,
+      };
     },
     normalize: (raw) => {
       const id = String(raw.id ?? '');
@@ -92,6 +191,16 @@ export function createKitepropDifusionYumblinConnector(): SourceConnector {
       const areaCovered = parseNum(raw.covered_meters);
       const agency = raw.agency as { id?: number; name?: string } | undefined;
       const publisherRef = agency?.id != null ? String(agency.id) : null;
+
+      const adTypeCode = pickAdTypeCode(raw);
+      const adTypeLabelRaw = pickAdTypeLabelRaw(raw);
+      const details =
+        adTypeCode || adTypeLabelRaw
+          ? {
+              ...(adTypeCode ? { adTypeCode } : {}),
+              ...(adTypeLabelRaw ? { adTypeLabelRaw } : {}),
+            }
+          : null;
 
       return {
         source: 'KITEPROP_DIFUSION_YUMBLIN' as ListingSource,
@@ -116,6 +225,7 @@ export function createKitepropDifusionYumblinConnector(): SourceConnector {
         mediaUrls: images
           .filter((img) => img?.url)
           .map((img, i) => ({ url: String(img.url), sortOrder: i })),
+        details,
       };
     },
   };

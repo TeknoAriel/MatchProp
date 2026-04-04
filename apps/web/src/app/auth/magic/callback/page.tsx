@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { fetchMagicVerifyOnce } from '../magic-verify-once';
 
 const API_BASE = '/api';
 
@@ -19,20 +20,20 @@ function MagicCallbackContent() {
       return;
     }
 
-    fetch(`${API_BASE}/auth/magic/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ token }),
-    })
-      .then((res) => {
+    fetchMagicVerifyOnce(token, API_BASE)
+      .then(async (res) => {
         if (res.ok) {
           setStatus('ok');
           router.replace('/feed');
-        } else {
-          setStatus('error');
-          setError('Link inválido o expirado');
+          return;
         }
+        const data = (await res.json().catch(() => null)) as { message?: string } | null;
+        setStatus('error');
+        setError(
+          typeof data?.message === 'string' && data.message.length > 0
+            ? data.message
+            : 'Link inválido o expirado'
+        );
       })
       .catch(() => {
         setStatus('error');

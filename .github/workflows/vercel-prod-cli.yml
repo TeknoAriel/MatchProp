@@ -1,0 +1,161 @@
+# Deploy a producción vía Vercel CLI + token (mismo patrón que Propieya: promote-deploy-infra).
+# Evita el rechazo «Git author / team access» del plan Hobby cuando la integración Git→Vercel falla.
+#
+# Secretos: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID_API, VERCEL_PROJECT_ID_WEB, VERCEL_PROJECT_ID_ADMIN
+# Obtener projectId: Vercel → proyecto → Settings → General → Project ID
+#
+# Disparo: solo manual (evita doble deploy con hooks en ci.yml). Recuperación si hooks fallan.
+#
+# Si también tenés integración Git conectada, podés tener dos builds por push; desactivá auto-deploy
+# en uno de los dos o usá solo este flujo cuando Git falle. Ver docs/DEPLOY_TROUBLESHOOTING.md §8.
+name: Vercel prod (CLI)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: vercel-prod-cli-${{ github.sha }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  PNPM_VERSION: "9.0.0"
+
+jobs:
+  deploy-production-cli:
+    name: Vercel deploy --prod (API + Web + Admin)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validar secretos mínimos
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID_API: ${{ secrets.VERCEL_PROJECT_ID_API }}
+          VERCEL_PROJECT_ID_WEB: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
+          VERCEL_PROJECT_ID_ADMIN: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_TOKEN:-}" ] || [ -z "${VERCEL_ORG_ID:-}" ]; then
+            echo "::notice::Sin VERCEL_TOKEN o VERCEL_ORG_ID: este workflow no despliega. Configurá secretos (docs/SECRETOS_Y_AUTOMERGE_GITHUB.md §5) o usá Deploy Hooks / integración Git."
+            exit 0
+          fi
+          if [ -z "${VERCEL_PROJECT_ID_API:-}" ] && [ -z "${VERCEL_PROJECT_ID_WEB:-}" ] && [ -z "${VERCEL_PROJECT_ID_ADMIN:-}" ]; then
+            echo "::notice::Definí al menos un de VERCEL_PROJECT_ID_API, VERCEL_PROJECT_ID_WEB, VERCEL_PROJECT_ID_ADMIN."
+            exit 0
+          fi
+          echo "configured=1" >> "$GITHUB_ENV"
+
+      - uses: pnpm/action-setup@v4
+        if: env.configured == '1'
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        if: env.configured == '1'
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install (monorepo; Vercel build remoto usa el mismo árbol)
+        if: env.configured == '1'
+        run: pnpm install --frozen-lockfile
+
+      - name: Assert project IDs apuntan a nombres canónicos
+        if: env.configured == '1'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID_API: ${{ secrets.VERCEL_PROJECT_ID_API }}
+          VERCEL_PROJECT_ID_WEB: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
+          VERCEL_PROJECT_ID_ADMIN: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
+        run: |
+          set -euo pipefail
+          source scripts/matchprop-production-canonical.env.sh
+          check_id() {
+            local id="$1" want_name="$2" label="$3"
+            if [ -z "$id" ]; then
+              echo "::notice::VERCEL_PROJECT_ID_${label} vacío — se omite deploy de ${label}."
+              return 0
+            fi
+            resp="$(curl -fsS -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+              "https://api.vercel.com/v9/projects/${id}")"
+            name="$(echo "$resp" | jq -r '.name // empty')"
+            if [ "$name" != "$want_name" ]; then
+              echo "::error::VERCEL_PROJECT_ID_${label} apunta a '${name}'; se esperaba '${want_name}'. Revisá secretos y docs/INFRAESTRUCTURA_VERCEL.md"
+              exit 1
+            fi
+            echo "OK ${label}: ${name}"
+          }
+          check_id "${VERCEL_PROJECT_ID_API:-}" "${MATCHPROP_VERCEL_API_PROJECT_NAME}" "API"
+          check_id "${VERCEL_PROJECT_ID_WEB:-}" "${MATCHPROP_VERCEL_WEB_PROJECT_NAME}" "WEB"
+          check_id "${VERCEL_PROJECT_ID_ADMIN:-}" "${MATCHPROP_VERCEL_ADMIN_PROJECT_NAME}" "ADMIN"
+
+      - name: Vercel pull + deploy — API
+        if: env.configured == '1'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_API }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_PROJECT_ID:-}" ]; then exit 0; fi
+          mkdir -p .vercel
+          printf '%s\n' "{\"orgId\":\"${VERCEL_ORG_ID}\",\"projectId\":\"${VERCEL_PROJECT_ID}\"}" > .vercel/project.json
+          npx --yes vercel@41 pull --yes --environment=production --token "${VERCEL_TOKEN}"
+          npx --yes vercel@41 deploy --prod --yes --token "${VERCEL_TOKEN}" \
+            --meta "githubSha=${GITHUB_SHA}" --meta "githubRepo=${GITHUB_REPOSITORY}"
+
+      - name: Vercel pull + deploy — Web
+        if: env.configured == '1'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_PROJECT_ID:-}" ]; then exit 0; fi
+          mkdir -p .vercel
+          printf '%s\n' "{\"orgId\":\"${VERCEL_ORG_ID}\",\"projectId\":\"${VERCEL_PROJECT_ID}\"}" > .vercel/project.json
+          npx --yes vercel@41 pull --yes --environment=production --token "${VERCEL_TOKEN}"
+          npx --yes vercel@41 deploy --prod --yes --token "${VERCEL_TOKEN}" \
+            --meta "githubSha=${GITHUB_SHA}" --meta "githubRepo=${GITHUB_REPOSITORY}"
+
+      - name: Vercel pull + deploy — Admin
+        if: env.configured == '1'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_PROJECT_ID:-}" ]; then exit 0; fi
+          mkdir -p .vercel
+          printf '%s\n' "{\"orgId\":\"${VERCEL_ORG_ID}\",\"projectId\":\"${VERCEL_PROJECT_ID}\"}" > .vercel/project.json
+          npx --yes vercel@41 pull --yes --environment=production --token "${VERCEL_TOKEN}"
+          npx --yes vercel@41 deploy --prod --yes --token "${VERCEL_TOKEN}" \
+            --meta "githubSha=${GITHUB_SHA}" --meta "githubRepo=${GITHUB_REPOSITORY}"
+
+      - name: Esperar propagación
+        if: env.configured == '1'
+        run: sleep 90
+
+      - name: Smoke API /health
+        if: env.configured == '1'
+        run: |
+          set -euo pipefail
+          API_URL="https://match-prop-admin-dsvv.vercel.app"
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            code=$(curl -sS -o /dev/null -w "%{http_code}" "${API_URL}/health" 2>/dev/null || echo "000")
+            echo "Intento $i/10 /health: HTTP $code"
+            if [[ "$code" =~ ^2 ]]; then
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::error::${API_URL}/health no respondió 2xx"
+          exit 1

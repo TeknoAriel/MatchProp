@@ -17,6 +17,7 @@ import { orgRoutes } from './routes/orgs.js';
 import { propertyRoutes } from './routes/properties.js';
 import { preferenceRoutes } from './routes/preferences.js';
 import { activeSearchRoutes } from './routes/active-search.js';
+import { meMatchRoutes } from './routes/me-match.js';
 import { feedRoutes } from './routes/feed.js';
 import { swipeRoutes } from './routes/swipes.js';
 import { savedRoutes } from './routes/saved.js';
@@ -38,8 +39,10 @@ import { cronRoutes } from './routes/cron.js';
 import { subscriptionRoutes } from './routes/subscriptions.js';
 import { paymentRoutes } from './routes/payments.js';
 import { adminUsersRoutes } from './routes/admin-users.js';
+import { adminBillingRoutes } from './routes/admin-billing.js';
 import { adminStatsRoutes } from './routes/admin-stats.js';
 import { prisma } from './lib/prisma.js';
+import { getOperationalMetrics } from './lib/operational-metrics.js';
 import { registerProductionErrorHandler } from './lib/error-handler.js';
 
 export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInstance> {
@@ -157,6 +160,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
         // ignorar
       }
     }
+    const ops = dbOk ? await getOperationalMetrics() : undefined;
     // Siempre 200; body indica ok vs degraded para que probes no bajen la instancia por DB temporal
     return reply.status(200).send({
       status: dbOk ? 'ok' : 'degraded',
@@ -164,6 +168,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
       db: dbOk ? 'ok' : 'error',
       version: apiVersion,
       migration: lastMigration,
+      ops,
     });
   });
 
@@ -244,6 +249,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   await fastify.register(propertyRoutes);
   await fastify.register(preferenceRoutes);
   await fastify.register(activeSearchRoutes);
+  await fastify.register(meMatchRoutes);
   await fastify.register(feedRoutes);
   await fastify.register(swipeRoutes);
   await fastify.register(savedRoutes);
@@ -265,6 +271,7 @@ export async function buildApp(opts?: { logger?: boolean }): Promise<FastifyInst
   await fastify.register(subscriptionRoutes);
   await fastify.register(paymentRoutes);
   await fastify.register(adminUsersRoutes);
+  await fastify.register(adminBillingRoutes);
   await fastify.register(adminStatsRoutes);
 
   const { demoRoutes } = await import('./routes/demo.js');

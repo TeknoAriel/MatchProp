@@ -53,12 +53,10 @@ El filtro `locationText` usa `ILIKE '%texto%'`. Para 200k+ filas:
 
 ### Caché feed total
 
-- **Archivo:** `apps/api/src/lib/feed-total-cache.ts`
-- **TTL:** 30s
-- **LRU:** 100.000 entradas (default)
-- **Env:** `FEED_CACHE_MAX_ENTRIES=100000`
+- **Memoria:** `apps/api/src/lib/feed-total-cache.ts` — TTL 30s, LRU 100k entradas (`FEED_CACHE_MAX_ENTRIES`).
+- **Redis (opcional):** `REDIS_URL` → `feed-total-cache-provider.ts` + `feed-total-cache-redis.ts` (misma TTL, claves compartidas entre réplicas).
 
-En múltiples instancias, cada proceso tiene su caché (no compartida). Para caché distribuida: Redis (futuro).
+Sin `REDIS_URL`, cada proceso tiene su propio LRU (no compartido entre instancias).
 
 ### Under-pressure
 
@@ -106,3 +104,68 @@ Ver `README.md` sección "Load tests" para más detalle.
 - [ ] PostgreSQL con recursos adecuados (CPU, RAM, conexiones max)
 - [ ] Múltiples instancias de API detrás de load balancer
 - [ ] Monitoreo: p95 latencia, error rate, DB pool usage
+
+---
+
+## 6. Motor de búsqueda (20k–200k+ propiedades)
+
+Con **decenas o cientos de miles** de listings, PostgreSQL + Prisma sigue siendo válido para **feed por cursor** si los índices cubren `where` + `orderBy`. Donde empieza a doler:
+
+- Texto libre (`title`, `description`, varias keywords) con `ILIKE` / `contains`
+- Facetas agregadas (histogramas de precio, conteos por zona) en tiempo real
+- Geo complejo (polígonos, “cerca de”) más allá de un bounding box simple
+
+### 6.1 Elasticsearch u OpenSearch (recomendado)
+
+- **Rol:** motor de búsqueda y filtrado sobre un **índice denormalizado** de listings.
+- **Postgres:** sigue siendo la fuente de verdad; transacciones, leads, swipes, media ligada.
+- **Sincronización:**
+  - **En ingest:** tras upsert de `Listing`, encolar evento `listing_index_upsert` (cola + worker) o bulk nocturno.
+  - **Reindex completo:** script batch leyendo `Listing` por cursor y `bulk` a ES.
+- **Consulta en API (patrón híbrido):**
+  1. ES devuelve **solo** `id` (y campos necesarios para sort) con `search_after` / `pit` para paginación estable.
+  2. Prisma hace `findMany({ where: { id: { in: [...] } } })` y se **reordena** en memoria según el orden de ES (o `ORDER BY array_position` en SQL raw).
+  3. Cards pesadas (media) se pueden enriquecer en un segundo paso o almacenar un subconjunto en el documento ES (trade-off tamaño vs. frescura).
+
+**Referencia en código:** `apps/api/src/lib/search/listings-index-spec.ts` (nombre de índice, mapping orientativo, env `SEARCH_BACKEND`).
+
+**Variables de entorno (fases futuras):**
+
+| Variable                       | Uso                                     |
+| ------------------------------ | --------------------------------------- |
+| `SEARCH_BACKEND`               | `postgres` (default) \| `elasticsearch` |
+| `ELASTICSEARCH_URL`            | URL base del cluster                    |
+| `ELASTICSEARCH_API_KEY`        | Auth (o usuario/clave según despliegue) |
+| `ELASTICSEARCH_INDEX_LISTINGS` | Override del nombre de índice           |
+
+### 6.2 Alternativas más simples
+
+- **Meilisearch / Typesense:** menos ops, muy buenos para texto y facetas; menos ecosistema que ES.
+- **Solo Postgres:** ampliar con **pg_trgm** en `locationText` / títulos y **materialized views** para agregados refrescados por cron (hasta ~100k–200k según hardware y patrones de query).
+
+---
+
+## 7. Caché en capas (servidor)
+
+Orden típico de lectura:
+
+1. **CDN / edge (Vercel):** HTML y estáticos; headers ya orientados a `must-revalidate` en rutas dinámicas de la web.
+2. **Caché de totales del feed (implementado):**
+   - Sin `REDIS_URL`: LRU en proceso (`feed-total-cache.ts`), TTL 30s.
+   - Con **`REDIS_URL`:** Redis vía `ioredis` (`feed-total-cache-redis.ts`), misma semántica, **compartida entre instancias** (clave `mp:feed:total:…`).
+3. **Caché de páginas de resultados (futuro):** Redis con clave `userId + hash(filtros) + cursor` y TTL corto; invalidar por webhook de ingest o por versión de catálogo (`catalog_generation` en key).
+4. **Lectura de documentos ES:** nodos ES tienen su propia caché de segmentos; ajustar `refresh_interval` para equilibrio visibilidad / carga.
+
+**Operación:** en serverless (funciones muy cortas), Redis TCP puede sumar latencia de conexión; opciones: **Upstash** (TLS), **connection pooling** en capa intermedia, o API en contenedor long-running.
+
+---
+
+## 8. Roadmap sugerido
+
+| Fase | Objetivo                                              |
+| ---- | ----------------------------------------------------- |
+| A    | `REDIS_URL` en staging/prod para totales de feed      |
+| B    | Índice ES + pipeline desde ingest (eventos o bulk)    |
+| C    | `executeFeed` dual: ES para ids + Prisma para cards   |
+| D    | Facetas / agregados y mapa pesado desde ES            |
+| E    | Observabilidad: latencia ES vs PG, ratio de cache hit |

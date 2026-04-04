@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { FixedSizeList as List } from 'react-window';
@@ -108,6 +108,8 @@ function FeedListPageContent() {
   const searchParams = useSearchParams();
   const feedAllFromUrl = searchParams?.get('feed') === 'all';
   const isDemoMode = false;
+  const virtualListContainerRef = useRef<HTMLDivElement>(null);
+  const [virtualListWidth, setVirtualListWidth] = useState(0);
 
   const syncActiveSearchFlag = useCallback(() => {
     fetch(`${API_BASE}/me/active-search`, { credentials: 'include' })
@@ -177,8 +179,25 @@ function FeedListPageContent() {
     [router]
   );
 
-  /** Sin búsqueda activa: mostrar todo (feed=all) para que "Ver en lista" funcione. */
-  const useFeedAll = feedAllFromUrl || hasActiveSearch === false;
+  /** Sin búsqueda activa confirmada: catálogo amplio (feed=all). `null` = aún cargando → igual amplios para no bloquear el listado. */
+  const useFeedAll = feedAllFromUrl || hasActiveSearch !== true;
+
+  useLayoutEffect(() => {
+    if (items.length <= 30) {
+      setVirtualListWidth(0);
+      return;
+    }
+    const el = virtualListContainerRef.current;
+    if (!el) return;
+    const apply = () => {
+      const w = el.getBoundingClientRect().width;
+      if (w > 0) setVirtualListWidth(Math.floor(w));
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [items.length]);
 
   useEffect(() => {
     setFetchError(null);
@@ -715,144 +734,165 @@ function FeedListPageContent() {
             <div className="mb-4 text-sm text-slate-500">
               {items.length} propiedades — scroll fluido (virtualización)
             </div>
-            <div className="rounded-xl overflow-hidden" style={{ height: 600 }}>
-              <List
-                height={600}
-                itemCount={items.length}
-                itemSize={340}
-                width="100%"
-                overscanCount={3}
-              >
-                {({ index, style }) => {
-                  const card = items[index]!;
-                  const hasValidId =
-                    card.id != null &&
-                    card.id !== '' &&
-                    card.id !== 'undefined' &&
-                    card.id !== 'null';
-                  const inLists = listingsStatus[card.id]?.inLists ?? [];
-                  const CardContent = (
-                    <>
-                      <div className="aspect-[16/10] bg-gray-200 relative overflow-hidden group">
-                        {inLists.length > 0 && (
-                          <div className="absolute top-2 right-2 flex flex-wrap gap-1 justify-end max-w-[70%] z-10">
-                            {inLists.map((l) => (
-                              <span
-                                key={l.id}
-                                className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg bg-emerald-600/90 text-white text-xs font-medium shadow"
-                              >
-                                📁 {l.name}
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleRemoveFromList(l.id, card.id);
-                                  }}
-                                  className="ml-0.5 hover:bg-white/20 rounded p-0.5 leading-none"
-                                  aria-label={`Quitar de ${l.name}`}
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        <ListingCardImageCarousel
-                          heroImageUrl={card.heroImageUrl}
-                          media={(card as ListingCardWithMedia).media}
-                          alt={card.title ?? ''}
-                          controlsAlwaysVisible
-                        />
-                      </div>
-                      <div className="p-3">
-                        <h2 className="font-semibold truncate">{card.title ?? 'Sin título'}</h2>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          <span className="text-sm font-medium text-gray-800">
-                            {card.price != null
-                              ? `${card.currency ?? 'USD'} ${card.price.toLocaleString()}`
-                              : 'Consultar'}
-                          </span>
-                          {card.bedrooms != null && (
-                            <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">
-                              {card.bedrooms} amb
-                            </span>
-                          )}
-                          {card.bathrooms != null && (
-                            <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">
-                              {card.bathrooms} baños
-                            </span>
-                          )}
-                          {card.locationText && (
-                            <span className="text-xs text-gray-500 truncate max-w-[180px]">
-                              {card.locationText}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  );
-                  return (
-                    <div key={card.id} style={style} className="pb-4">
-                      <div className="block card-base overflow-hidden card-hover">
-                        {hasValidId ? (
-                          <Link href={`/listing/${card.id}`} className="block">
-                            {CardContent}
-                          </Link>
-                        ) : (
-                          <div className="block">{CardContent}</div>
-                        )}
-                        {hasValidId && (
-                          <div className="px-3 pb-3 flex gap-2 items-center flex-wrap">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleLike(card.id)}
-                              className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-lg ${
-                                listingsStatus[card.id]?.inLike
-                                  ? 'bg-green-600 text-white'
-                                  : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
-                              }`}
-                              title={listingsStatus[card.id]?.inLike ? 'En like' : 'Agregar a like'}
-                            >
-                              👍
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleToggleFavorite(card.id)}
-                              className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-lg ${
-                                listingsStatus[card.id]?.inFavorite
-                                  ? 'bg-emerald-600 text-white'
-                                  : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                              }`}
-                              title={
-                                listingsStatus[card.id]?.inFavorite
-                                  ? 'En favoritos'
-                                  : 'Agregar a favoritos'
-                              }
-                            >
-                              ★
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleAgregarALista(card)}
-                              className="shrink-0 px-3 py-2 rounded-lg text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200"
-                            >
-                              + Lista
-                            </button>
-                            {listingsStatus[card.id]?.lead ? (
-                              <div className="flex-1 flex items-center gap-1">
+            <div
+              ref={virtualListContainerRef}
+              className="rounded-xl overflow-hidden w-full min-w-0"
+              style={{ height: 600 }}
+            >
+              {virtualListWidth > 0 ? (
+                <List
+                  height={600}
+                  itemCount={items.length}
+                  itemSize={340}
+                  width={virtualListWidth}
+                  overscanCount={3}
+                >
+                  {({ index, style }) => {
+                    const card = items[index]!;
+                    const hasValidId =
+                      card.id != null &&
+                      card.id !== '' &&
+                      card.id !== 'undefined' &&
+                      card.id !== 'null';
+                    const inLists = listingsStatus[card.id]?.inLists ?? [];
+                    const CardContent = (
+                      <>
+                        <div className="aspect-[16/10] bg-gray-200 relative overflow-hidden group">
+                          {inLists.length > 0 && (
+                            <div className="absolute top-2 right-2 flex flex-wrap gap-1 justify-end max-w-[70%] z-10">
+                              {inLists.map((l) => (
                                 <span
-                                  className={`flex-1 py-2 text-center text-sm rounded-lg font-medium ${
-                                    listingsStatus[card.id]?.lead?.status === 'ACTIVE'
-                                      ? 'bg-emerald-600 text-white'
-                                      : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                                  }`}
+                                  key={l.id}
+                                  className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg bg-emerald-600/90 text-white text-xs font-medium shadow"
                                 >
-                                  ✓{' '}
-                                  {listingsStatus[card.id]?.lead?.status === 'ACTIVE'
-                                    ? 'Esperando respuesta'
-                                    : 'Consulta enviada'}
+                                  📁 {l.name}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleRemoveFromList(l.id, card.id);
+                                    }}
+                                    className="ml-0.5 hover:bg-white/20 rounded p-0.5 leading-none"
+                                    aria-label={`Quitar de ${l.name}`}
+                                  >
+                                    ×
+                                  </button>
                                 </span>
+                              ))}
+                            </div>
+                          )}
+                          <ListingCardImageCarousel
+                            heroImageUrl={card.heroImageUrl}
+                            media={(card as ListingCardWithMedia).media}
+                            alt={card.title ?? ''}
+                            controlsAlwaysVisible
+                          />
+                        </div>
+                        <div className="p-3">
+                          <h2 className="font-semibold truncate">{card.title ?? 'Sin título'}</h2>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <span className="text-sm font-medium text-gray-800">
+                              {card.price != null
+                                ? `${card.currency ?? 'USD'} ${card.price.toLocaleString()}`
+                                : 'Consultar'}
+                            </span>
+                            {card.bedrooms != null && (
+                              <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">
+                                {card.bedrooms} amb
+                              </span>
+                            )}
+                            {card.bathrooms != null && (
+                              <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">
+                                {card.bathrooms} baños
+                              </span>
+                            )}
+                            {card.locationText && (
+                              <span className="text-xs text-gray-500 truncate max-w-[180px]">
+                                {card.locationText}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    );
+                    return (
+                      <div key={card.id} style={style} className="pb-4">
+                        <div className="block card-base overflow-hidden card-hover">
+                          {hasValidId ? (
+                            <Link href={`/listing/${card.id}`} className="block">
+                              {CardContent}
+                            </Link>
+                          ) : (
+                            <div className="block">{CardContent}</div>
+                          )}
+                          {hasValidId && (
+                            <div className="px-3 pb-3 flex gap-2 items-center flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleLike(card.id)}
+                                className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-lg ${
+                                  listingsStatus[card.id]?.inLike
+                                    ? 'bg-green-600 text-white'
+                                    : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                                }`}
+                                title={
+                                  listingsStatus[card.id]?.inLike ? 'En like' : 'Agregar a like'
+                                }
+                              >
+                                👍
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleFavorite(card.id)}
+                                className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-lg ${
+                                  listingsStatus[card.id]?.inFavorite
+                                    ? 'bg-emerald-600 text-white'
+                                    : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                                }`}
+                                title={
+                                  listingsStatus[card.id]?.inFavorite
+                                    ? 'En favoritos'
+                                    : 'Agregar a favoritos'
+                                }
+                              >
+                                ★
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleAgregarALista(card)}
+                                className="shrink-0 px-3 py-2 rounded-lg text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200"
+                              >
+                                + Lista
+                              </button>
+                              {listingsStatus[card.id]?.lead ? (
+                                <div className="flex-1 flex items-center gap-1">
+                                  <span
+                                    className={`flex-1 py-2 text-center text-sm rounded-lg font-medium ${
+                                      listingsStatus[card.id]?.lead?.status === 'ACTIVE'
+                                        ? 'bg-emerald-600 text-white'
+                                        : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                    }`}
+                                  >
+                                    ✓{' '}
+                                    {listingsStatus[card.id]?.lead?.status === 'ACTIVE'
+                                      ? 'Esperando respuesta'
+                                      : 'Consulta enviada'}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setInquiryListingId(card.id);
+                                    }}
+                                    className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 text-sm"
+                                    title="Enviar otra consulta"
+                                  >
+                                    ✉️
+                                  </button>
+                                </div>
+                              ) : (
                                 <button
                                   type="button"
                                   onClick={(e) => {
@@ -860,32 +900,23 @@ function FeedListPageContent() {
                                     e.stopPropagation();
                                     setInquiryListingId(card.id);
                                   }}
-                                  className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 text-sm"
-                                  title="Enviar otra consulta"
+                                  className="flex-1 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
                                 >
-                                  ✉️
+                                  Quiero que me contacten
                                 </button>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setInquiryListingId(card.id);
-                                }}
-                                className="flex-1 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
-                              >
-                                Quiero que me contacten
-                              </button>
-                            )}
-                          </div>
-                        )}
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                }}
-              </List>
+                    );
+                  }}
+                </List>
+              ) : (
+                <div className="p-4">
+                  <SkeletonList count={4} />
+                </div>
+              )}
             </div>
 
             {addToListCard && (

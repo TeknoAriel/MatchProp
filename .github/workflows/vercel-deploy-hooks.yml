@@ -1,0 +1,43 @@
+# Dispara redeploy en Vercel vía Deploy Hooks (opcional).
+# Configuración: Vercel → Settings → Git → Deploy Hooks (Production).
+# Secretos en GitHub: VERCEL_DEPLOY_HOOK_API, VERCEL_DEPLOY_HOOK_WEB, VERCEL_DEPLOY_HOOK_ADMIN
+# Si un secreto no existe, ese hook se omite (no se falla el job).
+#
+# Redeploy manual. El POST a hooks en cada push a main está en ci.yml → job deploy-hooks.
+name: Vercel deploy hooks
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: vercel-deploy-hooks-manual-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_DEPLOY_HOOK_API: ${{ secrets.VERCEL_DEPLOY_HOOK_API }}
+      VERCEL_DEPLOY_HOOK_WEB: ${{ secrets.VERCEL_DEPLOY_HOOK_WEB }}
+      VERCEL_DEPLOY_HOOK_ADMIN: ${{ secrets.VERCEL_DEPLOY_HOOK_ADMIN }}
+    steps:
+      # Un solo paso siempre corre: evita job rojo cuando todos los `if: secrets` estaban en false
+      # (GitHub puede marcar fallo si no queda ningún step ejecutable).
+      - name: POST deploy hooks (si hay secretos)
+        run: |
+          set -uo pipefail
+          post_hook() {
+            local label="$1" url="$2"
+            if [ -z "${url:-}" ]; then
+              echo "::notice::Hook ${label} sin secreto — omitido"
+              return 0
+            fi
+            code=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "$url" || echo "000")
+            echo "POST hook ${label} → HTTP ${code}"
+            case "$code" in 200|201|204) ;; *) echo "::warning::Hook ${label} no OK (${code})" ;; esac
+          }
+          echo "Deploy hooks manual (${GITHUB_SHA:-unknown})"
+          post_hook "API" "${VERCEL_DEPLOY_HOOK_API:-}"
+          post_hook "WEB" "${VERCEL_DEPLOY_HOOK_WEB:-}"
+          post_hook "ADMIN" "${VERCEL_DEPLOY_HOOK_ADMIN:-}"
+          echo "Listo."

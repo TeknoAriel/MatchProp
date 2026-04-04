@@ -33,7 +33,7 @@ const SECTIONS: SettingsSection[] = [
   {
     id: 'importers',
     title: 'Fuentes de datos (Importadores)',
-    description: 'URLs de difusiones Kiteprop: yumblin, zonaprop, etc. Formato JSON/xml.',
+    description: 'URLs de difusiones Kiteprop: properstar, zonaprop, etc. Formato JSON/xml.',
     href: '/settings/integrations/importers',
     icon: '📥',
     badge: 'Admin',

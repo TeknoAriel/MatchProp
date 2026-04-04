@@ -17,19 +17,20 @@
 
 ## Estrategia y planificación
 
-| Documento                                                      | Descripción                                                                |
-| -------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| [masterplan.md](./masterplan.md)                               | Masterplan v3.0 (frozen) — Epics E1–E8, non-negotiables, DoD               |
-| [FOCO_2026.md](./FOCO_2026.md)                                 | Foco trimestral — prioridades explícitas (complementa al masterplan)       |
-| [ALINEACION_MASTERPLAN.md](./ALINEACION_MASTERPLAN.md)         | Estado actual vs masterplan — Epics, UX, Settings, deploy, validación      |
-| [TAREAS_Y_MEJORAS.md](./TAREAS_Y_MEJORAS.md)                   | Próximas tareas priorizadas y mejoras técnicas                             |
-| [alignment-checklist.md](./alignment-checklist.md)             | Checklist alineación Masterplan ↔ repo (estado DONE/PARTIAL/NOT STARTED)   |
-| [backlog.md](./backlog.md)                                     | Backlog maestro — Epics, tickets MVP/Next/Later, sprints 8–9               |
-| [PLAN_DE_TRABAJO.md](./PLAN_DE_TRABAJO.md)                     | Plan Sprints 1–6 (completado) — hitos, tareas, referencias                 |
-| [PLAN_DE_TRABAJO_2026_Q3.md](./PLAN_DE_TRABAJO_2026_Q3.md)     | Plan Q3 2026 (Sprints 7–12) — onboarding, notificaciones, operación        |
-| [ASISTENTE_IA_ARQUITECTURA.md](./ASISTENTE_IA_ARQUITECTURA.md) | Asistente de búsqueda: pipeline texto/voz → filtros → feed + LLM opcional  |
-| [SPEC_BUSQUEDAS_Y_MATCH.md](./SPEC_BUSQUEDAS_Y_MATCH.md)       | Spec: Búsquedas guardadas, Mis match, Mis alertas (prioridad pre-Sprint 7) |
-| [gap-check.md](./gap-check.md)                                 | Auditoría de brechas — gaps funcionales, técnicos, riesgos                 |
+| Documento                                                      | Descripción                                                                      |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| [masterplan.md](./masterplan.md)                               | Masterplan v3.0 (frozen) — Epics E1–E8, non-negotiables, DoD                     |
+| [FOCO_2026.md](./FOCO_2026.md)                                 | Foco trimestral — prioridades explícitas (complementa al masterplan)             |
+| [ALINEACION_MASTERPLAN.md](./ALINEACION_MASTERPLAN.md)         | Estado actual vs masterplan — Epics, UX, Settings, deploy, validación            |
+| [TAREAS_Y_MEJORAS.md](./TAREAS_Y_MEJORAS.md)                   | Próximas tareas priorizadas y mejoras técnicas                                   |
+| [alignment-checklist.md](./alignment-checklist.md)             | Checklist alineación Masterplan ↔ repo (estado DONE/PARTIAL/NOT STARTED)         |
+| [backlog.md](./backlog.md)                                     | Backlog maestro — Epics, tickets MVP/Next/Later, sprints 8–9                     |
+| [PLAN_DE_TRABAJO.md](./PLAN_DE_TRABAJO.md)                     | Plan Sprints 1–6 (completado) — hitos, tareas, referencias                       |
+| [PLAN_DE_TRABAJO_2026_Q3.md](./PLAN_DE_TRABAJO_2026_Q3.md)     | Plan Q3 2026 (Sprints 7–12) — onboarding, notificaciones, operación              |
+| [ASISTENTE_IA_ARQUITECTURA.md](./ASISTENTE_IA_ARQUITECTURA.md) | Asistente de búsqueda: pipeline texto/voz → filtros → feed + LLM opcional        |
+| [SPEC_BUSQUEDAS_Y_MATCH.md](./SPEC_BUSQUEDAS_Y_MATCH.md)       | Spec: Búsquedas guardadas, Mis match, Mis alertas (prioridad pre-Sprint 7)       |
+| [SPRINT_9.md](./SPRINT_9.md)                                   | Sprint 9: Web Push operativo + Mis match agregado (`/me/match/feed`) y dashboard |
+| [gap-check.md](./gap-check.md)                                 | Auditoría de brechas — gaps funcionales, técnicos, riesgos                       |
 
 ---
 
@@ -45,17 +46,24 @@
 
 ## Operación y referencias técnicas
 
-| Documento                                                      | Descripción                                                                           |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| [repo-map.md](./repo-map.md)                                   | Mapa del repo — scripts, puertos, modelos, endpoints, tests                           |
-| [ZONAPROP_XML_FICHA_CAMPOS.md](./ZONAPROP_XML_FICHA_CAMPOS.md) | XML Zonaprop/KiteProp (OpenNavent): tags, `caracteristicas` y mapeo a ficha/amenities |
-| [AUDIT_README.md](./AUDIT_README.md)                           | Cómo correr `pnpm audit:verify` (gates locales)                                       |
-| [archive/AUDIT_MATCHPROP.md](./archive/AUDIT_MATCHPROP.md)     | Auditoría técnica histórica (archivo)                                                 |
-| [DEV.md](./DEV.md)                                             | Desarrollo local — requisitos, comandos, troubleshooting                              |
-| [PROD.md](./PROD.md)                                           | Producción — variables de entorno, observabilidad, seguridad                          |
-| [SETUP_DEPLOY_SIMPLE.md](./SETUP_DEPLOY_SIMPLE.md)             | Deploy simple — Neon + Vercel, variables, URLs                                        |
-| [DEPLOY_CHECKLIST.md](./DEPLOY_CHECKLIST.md)                   | Checklist pre-deploy, deploy, post-deploy                                             |
-| [demo.md](./demo.md)                                           | Prueba real solo con navegador — escenario demo 1-click                               |
+| Documento                                                                          | Descripción                                                                           |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| [repo-map.md](./repo-map.md)                                                       | Mapa del repo — scripts, puertos, modelos, endpoints, tests                           |
+| [ZONAPROP_XML_FICHA_CAMPOS.md](./ZONAPROP_XML_FICHA_CAMPOS.md)                     | XML Zonaprop/KiteProp (OpenNavent): tags, `caracteristicas` y mapeo a ficha/amenities |
+| [AUDIT_README.md](./AUDIT_README.md)                                               | Cómo correr `pnpm audit:verify` (gates locales)                                       |
+| [archive/AUDIT_MATCHPROP.md](./archive/AUDIT_MATCHPROP.md)                         | Auditoría técnica histórica (archivo)                                                 |
+| [DEV.md](./DEV.md)                                                                 | Desarrollo local — requisitos, comandos, troubleshooting                              |
+| [PROD.md](./PROD.md)                                                               | Producción — variables de entorno, observabilidad, seguridad                          |
+| [REPO_OFICIAL_KITEPROP.md](./REPO_OFICIAL_KITEPROP.md)                             | Remotes Tekno (`origin`) + Kiteprop (`kiteprop`), Vercel y secretos                   |
+| [MCP_KITEPROP_CRM.md](./MCP_KITEPROP_CRM.md)                                       | MCP del CRM Kiteprop (`kiteprop/crm-mcp`), Cursor / Claude, API key `kp_`             |
+| [CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)                           | Conectar Git ↔ Vercel (`main`, roots), verify-deploy y hooks opcionales               |
+| [SETUP_DEPLOY_SIMPLE.md](./SETUP_DEPLOY_SIMPLE.md)                                 | Deploy simple — Neon + Vercel, variables, URLs                                        |
+| [DEPLOY_CHECKLIST.md](./DEPLOY_CHECKLIST.md)                                       | Checklist pre-deploy, deploy, post-deploy                                             |
+| [demo.md](./demo.md)                                                               | Prueba real solo con navegador — escenario demo 1-click                               |
+| [INGEST_PROPERSTAR.md](./INGEST_PROPERSTAR.md)                                     | Catálogo JSON Properstar: URL, env, carga completa (`ingest:run --until-empty`)       |
+| [INGEST_PROPISTAR_POLITICA_OPERATIVA.md](./INGEST_PROPISTAR_POLITICA_OPERATIVA.md) | Propistar/Properstar: cron prod/prueba, push Kiteprop, tipo de aviso, bajas, cachés   |
+| [OPERABILIDAD_HEALTH.md](./OPERABILIDAD_HEALTH.md)                                 | Health `ops`, admin `/stats`, índices feed, enlaces runbooks                          |
+| [ALERTAS_EMAIL.md](./ALERTAS_EMAIL.md)                                             | Email SendGrid al crear `AlertDelivery` (Sprint 8.2)                                  |
 
 ---
 

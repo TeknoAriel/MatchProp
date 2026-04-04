@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { SwipeDecisionType } from '@prisma/client';
+import { trackEvent } from '../lib/analytics.js';
 
 export async function swipeRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', fastify.authenticate);
@@ -41,6 +42,10 @@ export async function swipeRoutes(fastify: FastifyInstance) {
 
       const decision = body.decision === 'LIKE' ? SwipeDecisionType.LIKE : SwipeDecisionType.NOPE;
 
+      const priorLikes = await prisma.swipeDecision.count({
+        where: { userId: user.userId, decision: SwipeDecisionType.LIKE },
+      });
+
       const swipe = await prisma.swipeDecision.upsert({
         where: {
           userId_listingId: {
@@ -55,6 +60,13 @@ export async function swipeRoutes(fastify: FastifyInstance) {
         },
         update: { decision },
       });
+
+      if (decision === SwipeDecisionType.LIKE && priorLikes === 0) {
+        trackEvent('first_like', {
+          userId: user.userId,
+          payload: { listingId: body.listingId },
+        }).catch(() => {});
+      }
 
       return reply.status(201).send({
         id: swipe.id,

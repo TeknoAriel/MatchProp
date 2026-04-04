@@ -10,6 +10,48 @@ bash scripts/verify-deploy-status.sh
 
 Muestra si la rama está en main, si prod responde, y si el commit en prod coincide con main.
 
+Si prod lleva días con un SHA viejo: reconectar Vercel al repo **`TeknoAriel/MatchProp`** y rama **`main`** — ver **[CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)**. Opcional: secretos **Deploy Hooks** (`VERCEL_DEPLOY_HOOK_*`) y job **`deploy-hooks`** en **`ci.yml`**; redeploy manual con **`vercel-deploy-hooks.yml`**.
+
+### Ignored Build Step (exit codes)
+
+En Vercel, **exit 0 = no construir** y **exit ≠ 0 = construir**. Si los scripts `scripts/vercel-should-build-*.sh` usan la lógica al revés, los deploys de web/API/admin se **saltan** cuando tocás esas carpetas y producción queda años luz de `main`. Ver **[VERCEL_CONFIG.md](./VERCEL_CONFIG.md)**.
+
+### 7. Vercel rechaza el deploy: «Git author must have access to the team» (Hobby)
+
+En planes **Hobby**, Vercel puede **rechazar** deployments (estado `ERROR`, `alwaysRefuseToBuild`, `TEAM_ACCESS_REQUIRED`) si el **autor del commit** (email en Git) **no coincide** con un miembro del team o no está verificado como colaborador del proyecto.
+
+**Síntoma:** `main` avanza pero `/health.version` en prod **no cambia**; en el dashboard el deployment falla con mensaje sobre _Git author_ / _team access_. La CLI puede mostrar `Unexpected error`; con `vercel deploy --debug` la respuesta incluye `readyStateReason`.
+
+**Qué hacer (elegir una):**
+
+1. **Email de Git alineado con Vercel y GitHub** — mismo email en GitHub y en Vercel (Settings → Git):
+
+   ```bash
+   git config --global user.email "tu-email-verificado@ejemplo.com"
+   ```
+
+   Próximo commit y push usarán ese autor.
+
+2. **Deploy Hooks** — Vercel → Settings → Git → Deploy Hooks (Production). Secretos en GitHub: `VERCEL_DEPLOY_HOOK_API`, `VERCEL_DEPLOY_HOOK_WEB`, `VERCEL_DEPLOY_HOOK_ADMIN`. El **`POST`** en cada push a `main` lo hace el job **`deploy-hooks`** en **`ci.yml`** (tras **Verify**). El workflow **`vercel-deploy-hooks.yml`** es solo **manual** (`workflow_dispatch`) para volver a disparar hooks.
+
+3. **Team / colaboradores** — Invitar al autor del commit al team de Vercel. Ver [troubleshoot collaboration](https://vercel.com/docs/deployments/troubleshoot-project-collaboration#team-configuration).
+
+**Comprobación:** `bash scripts/check-git-author-vercel.sh`
+
+### 8. Propieya vs MatchProp: por qué uno “no falla” y el otro se queda atrás
+
+En **Propieya** (`ia-propieya`), el deploy a producción del portal usa **GitHub Actions + Vercel CLI** (`vercel deploy --prod`) con **`VERCEL_TOKEN`** y **`VERCEL_PROJECT_ID`**, en la rama `deploy/infra` (workflow `promote-deploy-infra.yml`). Ese camino **no depende** del autor del commit en la integración Git→Vercel, así que no aparece el bloqueo Hobby de _Git author / team access_.
+
+En **MatchProp** (`ia-matchprop`), el flujo histórico es **integración Git** (push a `main` → Vercel construye) más **Deploy Hooks** opcionales. Si la integración rechaza el deploy, `main` avanza pero **`/health.version` en prod** queda en un SHA viejo.
+
+**Paridad con Propieya en este repo:** workflow **[vercel-prod-cli.yml](../.github/workflows/vercel-prod-cli.yml)** — se ejecuta **manualmente** (`workflow_dispatch`) o **después de un CI verde en `main`** (`workflow_run`), y despliega con token los proyectos para los que existan secretos `VERCEL_PROJECT_ID_*`. Secretos y nombres canónicos: **[SECRETOS_Y_AUTOMERGE_GITHUB.md](./SECRETOS_Y_AUTOMERGE_GITHUB.md)** §5 y **`scripts/matchprop-production-canonical.env.sh`**.
+
+**Reglas / checks:** Propieya exige en CI jobs separados (`Lint`, `Typecheck`, `Build`). MatchProp condensa un check requerido **`CI / Verify`**; no hace falta igualar los nombres de jobs, sí tener **un** status check estable en la rama protegida.
+
+**Si usás CLI y Git a la vez:** podés tener **dos builds** por push; para ahorrar minutos en Hobby, desactivá el deploy automático por Git en Vercel o usá solo hooks/CLI.
+
+**Deadlock prod atrasada:** si el job **Smoke prod** del CI falla, el workflow **CI** queda en **fallo**. **Smoke prod** tiene `continue-on-error: true` para no bloquear el resto. Los **Deploy Hooks** se disparan con **POST** desde el propio **CI** (job `deploy-hooks` tras `Verify`), sin depender de `workflow_run`. **Vercel prod (CLI)** quedó solo **manual** (`workflow_dispatch`) como respaldo.
+
 ## Ruleset en `main`: checks requeridos
 
 El workflow **CI** expone un solo job obligatorio para reglas de rama: **`CI / Verify`** (typecheck, lint, tests, integración y `pre-deploy:verify` en un solo run).
@@ -69,6 +111,12 @@ Tras el merge, Vercel tarda 2-5 minutos. Ejecutar `verify-deploy-status.sh` de n
 - Hard refresh en el navegador (Ctrl+Shift+R).
 - Verificar que Vercel no haya fallado el build: dashboard de Vercel → Deployments.
 - La API expone `version` en `/health` (commit SHA). Comparar con `git rev-parse origin/main`.
+
+### 6b. Deployments en estado **Blocked** (rama `main` vs `HEAD`/CLI)
+
+Si en Vercel los deploys **desde Git** (`main`) aparecen **Blocked** mientras los disparados con **CLI** (`vercel deploy`) o refs tipo **HEAD** llegan a **Ready**, suele ser **Deployment Protection** (aprobación antes de promover a producción), **límites del plan**, o políticas del **team**. Eso no se arregla solo con commits: revisar en cada proyecto **Settings → Deployment Protection** (y, si aplica, desactivar protección o usar un token con permiso de bypass según la documentación de Vercel).
+
+**Camino que no depende del owner del team:** secretos `VERCEL_DEPLOY_HOOK_*` en GitHub para que el job **`deploy-hooks`** en **`ci.yml`** haga `POST` tras **Verify** en cada push a `main`, o el workflow **`vercel-prod-cli.yml`** (`workflow_dispatch`) con **`VERCEL_TOKEN`** y **`VERCEL_PROJECT_ID_*`**.
 
 ## Flujo correcto
 

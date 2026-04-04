@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { encodeListingCursor, decodeListingCursor } from '../lib/cursor.js';
-import { getCachedTotal, setCachedTotal } from '../lib/feed-total-cache.js';
+import { getCachedTotal, setCachedTotal } from '../lib/feed-total-cache-provider.js';
 import { amenityFiltersToAndList } from '../lib/amenity-filter.js';
 import { locationTextToPrismaClause } from '../lib/location-filter.js';
 import { mergeListingQualityWhere } from '../lib/listing-quality-where.js';
@@ -790,13 +790,13 @@ export async function feedRoutes(fastify: FastifyInstance) {
 
       let total: number | null = null;
       if (hasCursor) {
-        total = getCachedTotal(user.userId, filters as Record<string, unknown>) ?? null;
+        total = (await getCachedTotal(user.userId, filters as Record<string, unknown>)) ?? null;
       } else if (includeTotal) {
         const count = await prisma.listing.count({ where: baseWhere });
         total = count;
-        setCachedTotal(user.userId, filters as Record<string, unknown>, count);
+        await setCachedTotal(user.userId, filters as Record<string, unknown>, count);
       } else {
-        total = getCachedTotal(user.userId, filters as Record<string, unknown>) ?? null;
+        total = (await getCachedTotal(user.userId, filters as Record<string, unknown>)) ?? null;
       }
 
       let itemsRaw = await prisma.listing.findMany({
@@ -847,7 +847,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
             cursorRelaxStepForNext = step;
             if (includeTotal) {
               total = await prisma.listing.count({ where: bw });
-              setCachedTotal(user.userId, rf as Record<string, unknown>, total);
+              await setCachedTotal(user.userId, rf as Record<string, unknown>, total);
             }
             break;
           }
@@ -880,6 +880,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
         (filters.locationText != null && filters.locationText.trim() !== '') ||
         (filters.addressText != null && filters.addressText.trim() !== '');
 
+      /** Búsqueda por zona explícita sin resultados: no rellenar con catálogo aleatorio. */
       if (items.length === 0 && !hasCursor && !feedAll && hasRestrictiveFilters && geoPinned) {
         return {
           items: [],
@@ -891,7 +892,12 @@ export async function feedRoutes(fastify: FastifyInstance) {
         };
       }
 
-      if (items.length === 0 && !hasCursor && !feedAll && hasRestrictiveFilters) {
+      /**
+       * Primera página vacía (filtros de búsqueda activa, calidad, swipes, etc.):
+       * devolver catálogo general con mismas reglas de calidad y swipes.
+       * Antes solo ocurría si hasRestrictiveFilters; eso dejaba 0 ítems con búsqueda “vacía” o solo preferencias.
+       */
+      if (items.length === 0 && !hasCursor && !feedAll) {
         const fallbackWhere: Record<string, unknown> = {
           status: 'ACTIVE' as const,
           swipeDecisions: { none: { userId: user.userId } },
@@ -949,6 +955,11 @@ export async function feedRoutes(fastify: FastifyInstance) {
           properties: {
             searchId: { type: 'string' },
             limit: { type: 'integer', default: 200 },
+            feed: {
+              type: 'string',
+              description: 'all = ignorar búsqueda activa/preferencias (solo overrides)',
+            },
+            feedAll: { type: 'string' },
             operationType: { type: 'string', enum: ['SALE', 'RENT'] },
             locationText: { type: 'string' },
             minLat: { type: 'number', description: 'Filtro bounds: lat mínima' },
@@ -1067,8 +1078,9 @@ export async function feedRoutes(fastify: FastifyInstance) {
         });
       }
 
+      const feedAll = q.feed === 'all' || q.feedAll === '1';
       const overrides = parseFeedQuery(q);
-      const filters = mergeFilters(pref, overrides);
+      const filters = feedAll ? mergeFilters(null, overrides) : mergeFilters(pref, overrides);
       const fw = filtersToWhere(filters);
       const baseWhere: Record<string, unknown> = {
         status: 'ACTIVE',
@@ -1079,56 +1091,101 @@ export async function feedRoutes(fastify: FastifyInstance) {
       };
       mergeListingQualityWhere(baseWhere);
 
-      const itemsRaw = await prisma.listing.findMany({
+      const mapSelect = {
+        id: true,
+        lat: true,
+        lng: true,
+        title: true,
+        price: true,
+        locationText: true,
+        heroImageUrl: true,
+        rawJson: true,
+        areaTotal: true,
+        bedrooms: true,
+        bathrooms: true,
+        currency: true,
+        operationType: true,
+        source: true,
+        publisherRef: true,
+        media: {
+          orderBy: { sortOrder: 'asc' as const },
+          take: 6,
+          select: { url: true, sortOrder: true, type: true },
+        },
+      } as const;
+
+      function mapRowsToItems(
+        rows: {
+          id: string;
+          lat: number | null;
+          lng: number | null;
+          title: string | null;
+          price: number | null;
+          locationText: string | null;
+          heroImageUrl: string | null;
+          rawJson: unknown;
+          areaTotal: number | null;
+          bedrooms: number | null;
+          bathrooms: number | null;
+          currency: string | null;
+          operationType: string | null;
+          source: string;
+          publisherRef: string | null;
+          media: { url: string; sortOrder: number; type: string | null }[];
+        }[]
+      ) {
+        return rows
+          .filter((l) => l.id && l.lat != null && l.lng != null)
+          .map((l) => {
+            const card = feedItemWithRawJsonFallback(l);
+            return {
+              id: l.id,
+              lat: l.lat!,
+              lng: l.lng!,
+              title: card.title,
+              price: card.price,
+              locationText: card.locationText,
+              heroImageUrl: card.heroImageUrl,
+              media: card.media,
+              areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
+              bedrooms: l.bedrooms ?? null,
+              bathrooms: l.bathrooms ?? null,
+              currency: l.currency ?? null,
+              operationType: l.operationType ?? null,
+              source: l.source ?? 'API_PARTNER_1',
+              publisherRef: l.publisherRef ?? null,
+            };
+          });
+      }
+
+      let itemsRaw = await prisma.listing.findMany({
         where: baseWhere,
         take: limit,
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-        select: {
-          id: true,
-          lat: true,
-          lng: true,
-          title: true,
-          price: true,
-          locationText: true,
-          heroImageUrl: true,
-          rawJson: true,
-          areaTotal: true,
-          bedrooms: true,
-          bathrooms: true,
-          currency: true,
-          operationType: true,
-          source: true,
-          publisherRef: true,
-          media: {
-            orderBy: { sortOrder: 'asc' },
-            take: 6,
-            select: { url: true, sortOrder: true, type: true },
-          },
-        },
+        select: mapSelect,
       });
 
-      const items = itemsRaw
-        .filter((l) => l.id && l.lat != null && l.lng != null)
-        .map((l) => {
-          const card = feedItemWithRawJsonFallback(l);
-          return {
-            id: l.id,
-            lat: l.lat!,
-            lng: l.lng!,
-            title: card.title,
-            price: card.price,
-            locationText: card.locationText,
-            heroImageUrl: card.heroImageUrl,
-            media: card.media,
-            areaTotal: l.areaTotal ? Math.round(l.areaTotal) : null,
-            bedrooms: l.bedrooms ?? null,
-            bathrooms: l.bathrooms ?? null,
-            currency: l.currency ?? null,
-            operationType: l.operationType ?? null,
-            source: l.source ?? 'API_PARTNER_1',
-            publisherRef: l.publisherRef ?? null,
-          };
+      let items = mapRowsToItems(itemsRaw);
+
+      if (items.length === 0 && !feedAll) {
+        const filtersOpen = mergeFilters(null, overrides);
+        const fwOpen = filtersToWhere(filtersOpen);
+        const baseOpen: Record<string, unknown> = {
+          status: 'ACTIVE',
+          swipeDecisions: { none: { userId: user.userId } },
+          ...fwOpen,
+          lat: fwOpen.lat ?? { not: null },
+          lng: fwOpen.lng ?? { not: null },
+        };
+        mergeListingQualityWhere(baseOpen);
+        itemsRaw = await prisma.listing.findMany({
+          where: baseOpen,
+          take: limit,
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          select: mapSelect,
         });
+        items = mapRowsToItems(itemsRaw);
+      }
 
       return reply.send({ items });
     }

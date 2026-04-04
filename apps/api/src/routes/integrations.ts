@@ -286,7 +286,7 @@ export async function integrationsRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // --- Importadores (fuentes Kiteprop difusiones: yumblin, zonaprop, externalsite) ---
+  // --- Importadores (fuentes Kiteprop difusiones: properstar, zonaprop, externalsite) ---
 
   fastify.get(
     '/integrations/importers',

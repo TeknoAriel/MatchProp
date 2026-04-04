@@ -61,10 +61,12 @@ docker run -p 3001:3001 --env-file apps/api/.env matchprop-api
 
 ## Health check
 
-`GET /health` devuelve:
+`GET /health` devuelve **200** siempre; el JSON indica si la DB respondió:
 
-- **200** si DB responde OK: `{ status: "ok", timestamp, db: "ok" }`
-- **503** si DB falla: `{ status: "degraded", timestamp, db: "error" }`
+- `status`: `ok` | `degraded`
+- `db`: `ok` | `error`
+- `version`, `migration`, `timestamp`
+- **`ops`** (si DB OK): `outboxIngestPending`, `cronIngestLastAt`, `crmPushPending`, `crmPushFailed` — ver [OPERABILIDAD_HEALTH.md](./OPERABILIDAD_HEALTH.md)
 
 Usar para healthcheck (Vercel, Kubernetes, etc.).
 

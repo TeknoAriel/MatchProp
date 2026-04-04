@@ -7,6 +7,13 @@ const API_BASE = '/api';
 
 type CheckStatus = 'pending' | 'ok' | 'fail';
 
+type HealthOps = {
+  outboxIngestPending?: number | null;
+  cronIngestLastAt?: string | null;
+  crmPushPending?: number | null;
+  crmPushFailed?: number | null;
+};
+
 export default function StatusPage() {
   const [webOk, setWebOk] = useState<CheckStatus>('ok');
   const [apiOk, setApiOk] = useState<CheckStatus>('pending');
@@ -17,6 +24,12 @@ export default function StatusPage() {
   } | null>(null);
   const [listingsCountError, setListingsCountError] = useState<string | null>(null);
   const [connectPath, setConnectPath] = useState<string | null>(null);
+  const [healthOps, setHealthOps] = useState<HealthOps | null>(null);
+  const [healthBody, setHealthBody] = useState<{
+    status?: string;
+    db?: string;
+    migration?: string | null;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [baseUrl, setBaseUrl] = useState<string>(API_BASE);
   useEffect(() => {
@@ -29,11 +42,23 @@ export default function StatusPage() {
     setAuthOk('pending');
     setListingsCountError(null);
     setConnectPath(null);
+    setHealthOps(null);
+    setHealthBody(null);
     setLoading(true);
 
     try {
       const healthRes = await fetch(`${API_BASE}/health`, { credentials: 'include' });
       setApiOk(healthRes.ok ? 'ok' : 'fail');
+      if (healthRes.ok) {
+        const h = (await healthRes.json().catch(() => ({}))) as {
+          status?: string;
+          db?: string;
+          migration?: string | null;
+          ops?: HealthOps;
+        };
+        setHealthBody({ status: h.status, db: h.db, migration: h.migration ?? null });
+        setHealthOps(h.ops && typeof h.ops === 'object' ? h.ops : null);
+      }
     } catch {
       setApiOk('fail');
     }
@@ -97,19 +122,38 @@ export default function StatusPage() {
             {webOk === 'ok' ? 'OK' : '—'}
           </span>
         </li>
-        <li className="flex items-center justify-between p-3 rounded-xl bg-white shadow-sm border border-gray-100">
-          <span>API OK (GET /api/health)</span>
-          <span
-            className={
-              apiOk === 'ok'
-                ? 'text-green-600'
-                : apiOk === 'fail'
-                  ? 'text-red-600'
-                  : 'text-gray-400'
-            }
-          >
-            {apiOk === 'pending' ? '...' : apiOk === 'ok' ? 'OK' : 'DOWN'}
-          </span>
+        <li className="flex flex-col gap-2 p-3 rounded-xl bg-white shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between">
+            <span>API OK (GET /api/health)</span>
+            <span
+              className={
+                apiOk === 'ok'
+                  ? 'text-green-600'
+                  : apiOk === 'fail'
+                    ? 'text-red-600'
+                    : 'text-gray-400'
+              }
+            >
+              {apiOk === 'pending' ? '...' : apiOk === 'ok' ? 'OK' : 'DOWN'}
+            </span>
+          </div>
+          {healthBody && (
+            <p className="text-xs text-gray-500 font-mono">
+              status={healthBody.status} db={healthBody.db}
+              {healthBody.migration ? ` · ${healthBody.migration}` : ''}
+            </p>
+          )}
+          {healthOps && (
+            <div className="text-xs text-gray-600 space-y-0.5 border-t border-gray-100 pt-2 mt-1">
+              <p className="font-medium text-gray-700">Operación (ops)</p>
+              <p>Cola ingest pendiente: {healthOps.outboxIngestPending ?? '—'}</p>
+              <p>Último cron ingest: {healthOps.cronIngestLastAt ?? '—'}</p>
+              <p>
+                CRM push: PENDING {healthOps.crmPushPending ?? '—'} · FAILED{' '}
+                {healthOps.crmPushFailed ?? '—'}
+              </p>
+            </div>
+          )}
         </li>
         <li className="flex items-center justify-between p-3 rounded-xl bg-white shadow-sm border border-gray-100">
           <span>CONNECT (GET /api/status/connect)</span>

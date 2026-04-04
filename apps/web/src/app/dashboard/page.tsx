@@ -15,6 +15,7 @@ import {
   ACTIVE_SEARCH_CHANGED_EVENT,
 } from '../../lib/activeSearchEvents';
 import ActiveSearchBar from '../../components/ActiveSearchBar';
+import OnboardingWelcomeModal from '../../components/OnboardingWelcomeModal';
 
 const API_BASE = '/api';
 
@@ -202,47 +203,35 @@ export default function DashboardPage() {
 
   return (
     <main className="py-4 md:py-6">
+      <OnboardingWelcomeModal />
       <div className="-mx-4 md:-mx-6 mb-4">
         <ActiveSearchBar sticky={false} />
       </div>
       <div className="mb-4">
         <WelcomeMessage name={userName} as="h2" />
         <p className="text-sm text-[var(--mp-muted)] mt-1 max-w-xl">
-          Describí lo que buscás; la IA arma filtros y te llevamos al match.
+          Activá búsquedas, alertas y seguí en Mis match desde acá.
         </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link
+            href="/me/match"
+            className="inline-flex items-center justify-center min-h-[48px] px-5 rounded-full font-semibold bg-[var(--mp-accent)] text-white no-underline hover:opacity-[0.96] text-sm shadow-sm"
+          >
+            Mis match
+          </Link>
+          <Link
+            href="/alerts"
+            className="inline-flex items-center justify-center min-h-[48px] px-5 rounded-full font-semibold border-2 border-[var(--mp-accent)] text-[var(--mp-accent)] bg-transparent no-underline hover:bg-[color-mix(in_srgb,var(--mp-accent)_12%,transparent)] text-sm"
+          >
+            Mis alertas
+          </Link>
+        </div>
       </div>
       {showTip && (level === 'NEW' || level === 'ACTIVE') && (
         <div className="mb-6">
           <TipBanner onDismiss={() => setShowTip(false)} />
         </div>
       )}
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--mp-accent)] mb-2">
-            Buscador asistido
-          </p>
-          <h1 className="text-2xl md:text-3xl font-bold text-[var(--mp-foreground)] tracking-tight">
-            ¿Qué estás buscando?
-          </h1>
-          <p className="mt-2 text-sm text-[var(--mp-muted)] max-w-xl">
-            Escribí en tus palabras (o por voz); la IA arma filtros y te llevamos al match. Para
-            afinar paso a paso usá{' '}
-            <Link href="/assistant" className="text-[var(--mp-accent)] font-medium hover:underline">
-              el asistente
-            </Link>
-            .
-          </p>
-        </div>
-        <Link
-          href="/me/saved"
-          className="shrink-0 flex items-center justify-center w-11 h-11 rounded-full border border-[var(--mp-border)] bg-[var(--mp-card)] text-lg hover:border-[var(--mp-accent)]/40 hover:bg-[var(--mp-bg)] transition-colors"
-          title="Guardados"
-          aria-label="Ir a guardados"
-        >
-          ⭐
-        </Link>
-      </div>
-
       {level === 'ADVANCED' && (
         <nav
           className="mb-6 flex flex-wrap gap-x-4 gap-y-2 text-[13px] text-[var(--mp-muted)] border-b border-[var(--mp-border)] pb-4"
@@ -284,7 +273,42 @@ export default function DashboardPage() {
         </nav>
       )}
 
-      <div className="mb-10">
+      <section
+        className="mb-10 rounded-[var(--mp-radius-card)] border border-[var(--mp-border)] bg-[var(--mp-card)] p-4 md:p-5 shadow-sm"
+        aria-labelledby="dashboard-ai-search-heading"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3 gap-y-2 mb-4">
+          <div className="flex items-start gap-3 min-w-0 flex-1">
+            <span className="text-2xl shrink-0 leading-none mt-0.5" aria-hidden>
+              ✨
+            </span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--mp-accent)] mb-1">
+                Asistente de IA
+              </p>
+              <h1
+                id="dashboard-ai-search-heading"
+                className="text-xl md:text-2xl font-bold text-[var(--mp-foreground)] tracking-tight"
+              >
+                Buscá en lenguaje natural
+              </h1>
+              <p className="mt-1.5 text-sm text-[var(--mp-muted)] max-w-2xl">
+                Escribí o dictá lo que necesitás: la IA lo traduce a filtros del catálogo y te
+                llevamos al match. En la pantalla completa podés refinar con filtros, mapa y chat
+                corto.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/me/saved"
+            className="shrink-0 flex items-center justify-center w-11 h-11 rounded-full border border-[var(--mp-border)] bg-[var(--mp-bg)] text-lg hover:border-[var(--mp-accent)]/40 hover:bg-[var(--mp-card)] transition-colors"
+            title="Guardados"
+            aria-label="Ir a guardados"
+          >
+            ⭐
+          </Link>
+        </div>
+
         <div className="relative">
           <input
             ref={inputRef}
@@ -292,9 +316,10 @@ export default function DashboardPage() {
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            placeholder="Ej: casa 3 dormitorios en Funes hasta 150mil USD"
+            placeholder="Ej.: casa 3 dormitorios en Funes hasta 150.000 USD — o dictá con el micrófono"
             disabled={searching || isListening}
-            className="w-full px-4 py-4 pr-24 text-base rounded-[var(--mp-radius-card)] border border-[var(--mp-border)] bg-[var(--mp-card)] text-[var(--mp-foreground)] placeholder:text-[var(--mp-muted)] focus:border-[var(--mp-accent)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--mp-accent)_25%,transparent)] transition-colors disabled:opacity-60"
+            className="w-full px-4 py-4 pr-24 text-base rounded-[var(--mp-radius-card)] border border-[var(--mp-border)] bg-[var(--mp-bg)] text-[var(--mp-foreground)] placeholder:text-[var(--mp-muted)] focus:border-[var(--mp-accent)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--mp-accent)_25%,transparent)] transition-colors disabled:opacity-60"
+            aria-label="Búsqueda con asistente de IA"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
             {voiceSupported && (
@@ -305,7 +330,7 @@ export default function DashboardPage() {
                 className={`p-2.5 rounded-[var(--mp-radius-chip)] transition-all ${
                   isListening
                     ? 'bg-red-500 text-white animate-pulse'
-                    : 'bg-[var(--mp-bg)] text-[var(--mp-muted)] hover:bg-[color-mix(in_srgb,var(--mp-accent)_12%,var(--mp-bg))] hover:text-[var(--mp-accent-hover)]'
+                    : 'bg-[var(--mp-card)] text-[var(--mp-muted)] hover:bg-[color-mix(in_srgb,var(--mp-accent)_12%,var(--mp-bg))] hover:text-[var(--mp-accent-hover)]'
                 }`}
                 aria-label={isListening ? 'Detener micrófono' : 'Buscar por voz'}
               >
@@ -317,7 +342,7 @@ export default function DashboardPage() {
               onClick={() => handleSearch()}
               disabled={searching || !searchText.trim() || searchText.length < 3}
               className="p-2.5 rounded-[var(--mp-radius-chip)] bg-[var(--mp-accent)] text-white hover:bg-[var(--mp-accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              aria-label="Buscar"
+              aria-label="Buscar con IA y abrir match"
             >
               {searching ? (
                 <span className="w-5 h-5 block border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -335,23 +360,23 @@ export default function DashboardPage() {
           </p>
         )}
 
-        <Link
-          href="/assistant"
-          className="mt-6 flex items-center gap-3 w-full p-4 rounded-[var(--mp-radius-card)] border border-[var(--mp-border)] bg-[var(--mp-card)] hover:border-[color-mix(in_srgb,var(--mp-accent)_35%,var(--mp-border))] transition-colors text-left"
-        >
-          <span className="text-2xl shrink-0" aria-hidden>
-            ✨
+        <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--mp-muted)]">
+          <Link href="/assistant" className="font-medium text-[var(--mp-accent)] hover:underline">
+            Asistente completo
+          </Link>
+          <span className="text-[var(--mp-border)]" aria-hidden>
+            ·
           </span>
-          <div className="min-w-0">
-            <p className="font-semibold text-[var(--mp-foreground)]">Asistente con IA</p>
-            <p className="text-xs text-[var(--mp-muted)] mt-0.5">
-              Filtros finos, vista previa y más control sobre tu búsqueda.
-            </p>
-          </div>
-          <span className="text-[var(--mp-muted)] text-sm shrink-0 ml-auto" aria-hidden>
-            →
+          <Link href="/search/map" className="text-[var(--mp-foreground)] hover:underline">
+            Mapa
+          </Link>
+          <span className="text-[var(--mp-border)]" aria-hidden>
+            ·
           </span>
-        </Link>
+          <Link href="/search" className="text-[var(--mp-foreground)] hover:underline">
+            Filtros clásicos
+          </Link>
+        </div>
 
         {showContinueBlock && activeSearch && searchSummaryLine && (
           <section
@@ -424,92 +449,92 @@ export default function DashboardPage() {
             </Link>
           </div>
         )}
+      </section>
 
-        {sortedSearches.length > 0 && (
-          <section
-            className="mt-10 pt-8 border-t border-[var(--mp-border)]"
-            aria-labelledby="dashboard-saved-heading"
-          >
-            <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
-              <div>
-                <h2
-                  id="dashboard-saved-heading"
-                  className="text-lg font-semibold text-[var(--mp-foreground)]"
-                >
-                  Mis búsquedas
-                </h2>
-                <p className="text-xs text-[var(--mp-muted)] mt-1">
-                  Activá una búsqueda y abrí match; las alertas se gestionan desde cada búsqueda o
-                  en Alertas.
-                </p>
-              </div>
-              <Link
-                href="/searches"
-                className="text-sm font-semibold text-[var(--mp-accent)] hover:underline shrink-0"
+      {sortedSearches.length > 0 && (
+        <section
+          className="mt-10 pt-8 border-t border-[var(--mp-border)]"
+          aria-labelledby="dashboard-saved-heading"
+        >
+          <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
+            <div>
+              <h2
+                id="dashboard-saved-heading"
+                className="text-lg font-semibold text-[var(--mp-foreground)]"
               >
-                Gestionar todo →
-              </Link>
+                Mis búsquedas
+              </h2>
+              <p className="text-xs text-[var(--mp-muted)] mt-1">
+                Activá una búsqueda y abrí match; las alertas se gestionan desde cada búsqueda o en
+                Alertas.
+              </p>
             </div>
-            <ul className="space-y-2">
-              {sortedSearches.slice(0, 5).map((s) => {
-                const isActive = activeSearch?.id === s.id;
-                return (
-                  <li
-                    key={s.id}
-                    className="flex flex-wrap items-center gap-2 justify-between rounded-[var(--mp-radius-card)] border border-[var(--mp-border)] bg-[var(--mp-card)] px-3 py-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-[var(--mp-foreground)] truncate">
-                        {s.name || s.queryText?.slice(0, 56) || 'Sin nombre'}
-                      </p>
-                      {isActive && (
-                        <span className="inline-block mt-1 text-[10px] font-bold uppercase tracking-wide text-[var(--mp-accent)]">
-                          Activa ahora
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-2 shrink-0">
-                      {!isActive && (
-                        <button
-                          type="button"
-                          onClick={() => void handleSetActive(s.id)}
-                          className="min-h-[40px] px-3 rounded-full text-xs font-semibold border border-[var(--mp-border)] text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]"
-                        >
-                          Activar
-                        </button>
-                      )}
+            <Link
+              href="/searches"
+              className="text-sm font-semibold text-[var(--mp-accent)] hover:underline shrink-0"
+            >
+              Gestionar todo →
+            </Link>
+          </div>
+          <ul className="space-y-2">
+            {sortedSearches.slice(0, 5).map((s) => {
+              const isActive = activeSearch?.id === s.id;
+              return (
+                <li
+                  key={s.id}
+                  className="flex flex-wrap items-center gap-2 justify-between rounded-[var(--mp-radius-card)] border border-[var(--mp-border)] bg-[var(--mp-card)] px-3 py-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-[var(--mp-foreground)] truncate">
+                      {s.name || s.queryText?.slice(0, 56) || 'Sin nombre'}
+                    </p>
+                    {isActive && (
+                      <span className="inline-block mt-1 text-[10px] font-bold uppercase tracking-wide text-[var(--mp-accent)]">
+                        Activa ahora
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2 shrink-0">
+                    {!isActive && (
                       <button
                         type="button"
-                        onClick={() => void handleGoToMatch(s.id)}
-                        className="min-h-[40px] px-4 rounded-full text-xs font-semibold bg-[var(--mp-accent)] text-white border border-[var(--mp-accent-hover)] hover:opacity-[0.96]"
+                        onClick={() => void handleSetActive(s.id)}
+                        className="min-h-[40px] px-3 rounded-full text-xs font-semibold border border-[var(--mp-border)] text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]"
                       >
-                        Ir a Match
+                        Activar
                       </button>
-                      <Link
-                        href={`/searches/${s.id}`}
-                        className="inline-flex items-center min-h-[40px] px-3 rounded-full text-xs font-medium text-[var(--mp-accent)] hover:underline"
-                      >
-                        Detalle
-                      </Link>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-            {sortedSearches.length > 5 && (
-              <p className="text-xs text-[var(--mp-muted)] mt-3">
-                Mostrando 5 de {sortedSearches.length}.{' '}
-                <Link
-                  href="/searches"
-                  className="text-[var(--mp-accent)] font-medium hover:underline"
-                >
-                  Ver todas y alertas
-                </Link>
-              </p>
-            )}
-          </section>
-        )}
-      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => void handleGoToMatch(s.id)}
+                      className="min-h-[40px] px-4 rounded-full text-xs font-semibold bg-[var(--mp-accent)] text-white border border-[var(--mp-accent-hover)] hover:opacity-[0.96]"
+                    >
+                      Ir a Match
+                    </button>
+                    <Link
+                      href={`/searches/${s.id}`}
+                      className="inline-flex items-center min-h-[40px] px-3 rounded-full text-xs font-medium text-[var(--mp-accent)] hover:underline"
+                    >
+                      Detalle
+                    </Link>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          {sortedSearches.length > 5 && (
+            <p className="text-xs text-[var(--mp-muted)] mt-3">
+              Mostrando 5 de {sortedSearches.length}.{' '}
+              <Link
+                href="/searches"
+                className="text-[var(--mp-accent)] font-medium hover:underline"
+              >
+                Ver todas y alertas
+              </Link>
+            </p>
+          )}
+        </section>
+      )}
     </main>
   );
 }

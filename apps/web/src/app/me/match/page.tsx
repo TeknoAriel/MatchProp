@@ -57,23 +57,82 @@ type SavedRow = {
   listing: unknown;
 };
 
+type MatchTab = 'discover' | 'follow';
+
 export default function MyMatchPage() {
   const router = useRouter();
-  const [items, setItems] = useState<ListingCard[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<MatchTab>('discover');
+  const [discoverItems, setDiscoverItems] = useState<ListingCard[]>([]);
+  const [discoverLoading, setDiscoverLoading] = useState(true);
+  const [followItems, setFollowItems] = useState<ListingCard[]>([]);
+  const [followLoading, setFollowLoading] = useState(false);
   const [listingsStatus, setListingsStatus] = useState<Record<string, ListingStatus>>({});
   const [inquiryListingId, setInquiryListingId] = useState<string | null>(null);
 
+  const loadDiscover = useCallback(async () => {
+    setDiscoverLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/me/match/feed?limit=60`, { credentials: 'include' });
+      if (res.status === 401) {
+        router.replace('/login');
+        return;
+      }
+      let raw: unknown[] = [];
+      if (res.ok) {
+        const data: { items?: unknown[] } = await res.json();
+        raw = data.items ?? [];
+      }
+      let cards = raw.map((row) => normalizeCard(row)).filter((c): c is ListingCard => c !== null);
+      if (cards.length === 0) {
+        const fr = await fetch(`${API_BASE}/feed?feed=all&limit=60`, { credentials: 'include' });
+        if (fr.ok) {
+          const fd: { items?: unknown[] } = await fr.json();
+          cards = (fd.items ?? [])
+            .map((row) => normalizeCard(row))
+            .filter((c): c is ListingCard => c !== null);
+        }
+      }
+      if (cards.length === 0) {
+        setDiscoverItems([]);
+        return;
+      }
+      const ids = cards.map((c) => c.id);
+      const baseStatus: Record<string, ListingStatus> = {};
+      for (const id of ids) {
+        baseStatus[id] = { inLike: false, inFavorite: false, inLists: [], lead: null };
+      }
+      try {
+        const r = await fetch(`${API_BASE}/listings/my-status-bulk?ids=${ids.join(',')}`, {
+          credentials: 'include',
+        });
+        const dataBulk: { items?: Record<string, ListingStatus> } = r.ok ? await r.json() : {};
+        const status = dataBulk.items ?? {};
+        const merged: Record<string, ListingStatus> = { ...baseStatus };
+        for (const id of ids) {
+          const s = status[id];
+          if (s) merged[id] = s;
+        }
+        setDiscoverItems(cards);
+        setListingsStatus((prev) => ({ ...prev, ...merged }));
+      } catch {
+        setDiscoverItems(cards);
+      }
+    } finally {
+      setDiscoverLoading(false);
+    }
+  }, [router]);
+
   const loadSaved = useCallback(async () => {
+    setFollowLoading(true);
     const res = await fetch(`${API_BASE}/me/saved`, { credentials: 'include' });
     if (res.status === 401) {
       router.replace('/login');
+      setFollowLoading(false);
       return;
     }
     if (!res.ok) {
-      setItems([]);
-      setListingsStatus({});
-      setLoading(false);
+      setFollowItems([]);
+      setFollowLoading(false);
       return;
     }
     const data: { items?: SavedRow[] } = await res.json();
@@ -130,9 +189,8 @@ export default function MyMatchPage() {
       .filter((c): c is ListingCard => c != null);
 
     if (combined.length === 0) {
-      setItems([]);
-      setListingsStatus({});
-      setLoading(false);
+      setFollowItems([]);
+      setFollowLoading(false);
       return;
     }
 
@@ -169,19 +227,23 @@ export default function MyMatchPage() {
           merged[id] = s;
         }
       }
-      setItems(combined);
-      setListingsStatus(merged);
+      setFollowItems(combined);
+      setListingsStatus((prev) => ({ ...prev, ...merged }));
     } catch {
-      setItems(combined);
-      setListingsStatus(baseStatus);
+      setFollowItems(combined);
+      setListingsStatus((prev) => ({ ...prev, ...baseStatus }));
     } finally {
-      setLoading(false);
+      setFollowLoading(false);
     }
   }, [router]);
 
   useEffect(() => {
-    void loadSaved();
-  }, [loadSaved]);
+    void loadDiscover();
+  }, [loadDiscover]);
+
+  useEffect(() => {
+    if (tab === 'follow') void loadSaved();
+  }, [tab, loadSaved]);
 
   async function handleToggleLike(listingId: string) {
     const inLike = listingsStatus[listingId]?.inLike ?? false;
@@ -240,7 +302,7 @@ export default function MyMatchPage() {
         }
         if (!res.ok) return;
       }
-      setItems((prev) => prev.filter((c) => c.id !== listingId));
+      setFollowItems((prev) => prev.filter((c) => c.id !== listingId));
       setListingsStatus((prev) => {
         const next = { ...prev };
         delete next[listingId];
@@ -275,43 +337,88 @@ export default function MyMatchPage() {
     }
   }
 
-  if (loading) {
+  if (tab === 'discover' && discoverLoading) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-4">
         <div className="w-8 h-8 border-2 border-[var(--mp-accent)] border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-[var(--mp-muted)] mt-3">Cargando tus matches…</p>
+        <p className="text-sm text-[var(--mp-muted)] mt-3">Cargando descubrimientos…</p>
       </main>
     );
   }
 
+  const items = tab === 'discover' ? discoverItems : followItems;
+
   return (
     <main className="min-h-screen py-4 bg-[var(--mp-bg)]">
       <div className="max-w-lg mx-auto">
-        <div className="mb-8">
+        <div className="mb-6">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--mp-muted)] mb-1">
-            Seguimiento
+            Tu radar
           </p>
           <h1 className="text-2xl font-bold text-[var(--mp-foreground)] tracking-tight">
             Mis match
           </h1>
           <p className="text-sm text-[var(--mp-muted)] mt-2 leading-relaxed">
-            Propiedades que marcaste con me interesa o favoritos. Las más recientes arriba.
+            {tab === 'discover'
+              ? 'Propiedades que entran en tus búsquedas guardadas. Primero lo que ya marcaste (me interesa y favoritos).'
+              : 'Lo que marcaste con me interesa o favoritos, por lo último que tocaste.'}
           </p>
         </div>
 
-        {items.length === 0 ? (
+        <div
+          className="flex rounded-full p-1 mb-6 bg-[color-mix(in_srgb,var(--mp-muted)_10%,var(--mp-card))] border border-[var(--mp-border)]"
+          role="tablist"
+          aria-label="Vista de Mis match"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'discover'}
+            className={`flex-1 min-h-[44px] rounded-full text-sm font-semibold transition-colors ${
+              tab === 'discover'
+                ? 'bg-[var(--mp-accent)] text-white shadow-sm'
+                : 'text-[var(--mp-muted)] hover:text-[var(--mp-foreground)]'
+            }`}
+            onClick={() => setTab('discover')}
+          >
+            Descubrir
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'follow'}
+            className={`flex-1 min-h-[44px] rounded-full text-sm font-semibold transition-colors ${
+              tab === 'follow'
+                ? 'bg-[var(--mp-accent)] text-white shadow-sm'
+                : 'text-[var(--mp-muted)] hover:text-[var(--mp-foreground)]'
+            }`}
+            onClick={() => setTab('follow')}
+          >
+            Seguimiento
+          </button>
+        </div>
+
+        {tab === 'follow' && followLoading && followItems.length === 0 ? (
+          <div className="flex flex-col items-center py-16">
+            <div className="w-8 h-8 border-2 border-[var(--mp-accent)] border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-[var(--mp-muted)] mt-3">Cargando seguimiento…</p>
+          </div>
+        ) : items.length === 0 ? (
           <div className="text-center py-14 px-4 rounded-[var(--mp-radius-card)] border border-[var(--mp-border)] bg-[var(--mp-card)]">
-            <span className="text-4xl block mb-4">🔥</span>
-            <p className="text-[var(--mp-foreground)] font-medium">Todavía no hay nada acá</p>
+            <span className="text-4xl block mb-4">{tab === 'discover' ? '🏠' : '🔥'}</span>
+            <p className="text-[var(--mp-foreground)] font-medium">
+              {tab === 'discover' ? 'Nada para mostrar todavía' : 'Todavía no hay nada acá'}
+            </p>
             <p className="text-sm text-[var(--mp-muted)] mt-2 max-w-xs mx-auto leading-relaxed">
-              En Match usá “Me interesa” o “Guardar” y vas a ver todo acá, ordenado por lo último
-              que tocaste.
+              {tab === 'discover'
+                ? 'Guardá una búsqueda desde el asistente o el dashboard para ver acá propiedades que matchean todas tus zonas.'
+                : 'En Match usá “Me interesa” o “Guardar” y vas a ver todo acá, ordenado por lo último que tocaste.'}
             </p>
             <Link
-              href="/dashboard"
+              href={tab === 'discover' ? '/searches' : '/dashboard'}
               className="inline-flex items-center justify-center mt-6 min-h-[48px] px-6 rounded-full font-semibold bg-[var(--mp-accent)] text-white no-underline hover:opacity-[0.96]"
             >
-              Definir búsqueda
+              {tab === 'discover' ? 'Ir a búsquedas guardadas' : 'Definir búsqueda'}
             </Link>
           </div>
         ) : (
@@ -321,15 +428,17 @@ export default function MyMatchPage() {
                 key={card.id}
                 className="mp-surface overflow-hidden relative rounded-[var(--mp-radius-card)]"
               >
-                <button
-                  type="button"
-                  onClick={() => void handleRemoveFromList(card.id)}
-                  className="absolute top-2 right-2 z-10 min-h-[44px] min-w-[44px] rounded-full bg-black/50 text-white text-xl font-light leading-none flex items-center justify-center hover:bg-black/65 shadow-md [-webkit-tap-highlight-color:transparent]"
-                  aria-label="Quitar del listado"
-                  title="Quitar del listado"
-                >
-                  ×
-                </button>
+                {tab === 'follow' && (
+                  <button
+                    type="button"
+                    onClick={() => void handleRemoveFromList(card.id)}
+                    className="absolute top-2 right-2 z-10 min-h-[44px] min-w-[44px] rounded-full bg-black/50 text-white text-xl font-light leading-none flex items-center justify-center hover:bg-black/65 shadow-md [-webkit-tap-highlight-color:transparent]"
+                    aria-label="Quitar del listado"
+                    title="Quitar del listado"
+                  >
+                    ×
+                  </button>
+                )}
                 <Link href={`/listing/${card.id}`} className="block">
                   <div className="aspect-[16/10] bg-[var(--mp-bg)] relative overflow-hidden">
                     <ListingCardImageCarousel

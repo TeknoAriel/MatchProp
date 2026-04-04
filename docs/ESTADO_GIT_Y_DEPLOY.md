@@ -35,7 +35,7 @@
 **main tiene branch protection** — no se puede push directo. Hay que usar PR:
 
 1. Crear PR: `docs-url-canon-20260320` → `main`
-   - https://github.com/TeknoAriel/MatchProp/compare/main...docs-url-canon-20260320
+   - https://github.com/kiteprop/ia-matchprop/compare/main...docs-url-canon-20260320
 
 2. Esperar que pasen los checks (5 requeridos)
 

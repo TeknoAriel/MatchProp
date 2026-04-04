@@ -34,7 +34,8 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET || process.env.AUTH_JWT_SECRET || 'dev-secret',
   refreshSecret: process.env.AUTH_REFRESH_SECRET || process.env.JWT_SECRET || 'dev-refresh-secret',
   corsOrigins: parseCorsOrigins(
-    process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:19006,exp://localhost:19000'
+    process.env.CORS_ORIGINS ||
+      'http://localhost:3000,http://127.0.0.1:3000,http://localhost:19006,exp://localhost:19000'
   ),
   cookieSecure: process.env.COOKIE_SECURE === 'true',
   appUrl: process.env.APP_URL || 'http://localhost:3000',

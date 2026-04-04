@@ -19,14 +19,14 @@ Ruta de crecimiento por etapas, documentada y reproducible.
 
 ### Completado (deploy git)
 
-- [x] Remote configurado: `git@github.com:TeknoAriel/MatchProp.git`
-- [x] Código en GitHub: https://github.com/TeknoAriel/MatchProp
+- [x] Remote configurado: `git@github.com:kiteprop/ia-matchprop.git`
+- [x] Código en GitHub: https://github.com/kiteprop/ia-matchprop
 
 ### Pendiente para deploy efectivo
 
 1. **Crear DB en Neon (gratis):** https://neon.tech → copiar `DATABASE_URL` → correr migraciones (ver `docs/SIGUIENTE_PASO.md`)
-2. **Conectar Vercel (API):** https://vercel.com/new → Importar `TeknoAriel/MatchProp` → Root = `apps/api`
-3. **Conectar Vercel (Web):** https://vercel.com/new → Importar `TeknoAriel/MatchProp` → Root = `apps/web` → env `API_SERVER_URL` = URL de la API en Vercel
+2. **Conectar Vercel (API):** https://vercel.com/new → Importar `kiteprop/ia-matchprop` → Root = `apps/api`
+3. **Conectar Vercel (Web):** https://vercel.com/new → Importar `kiteprop/ia-matchprop` → Root = `apps/web` → env `API_SERVER_URL` = URL de la API en Vercel
 4. **Variables:** ver `docs/DEPLOY.md` y `docs/SIGUIENTE_PASO.md`
 
 ---

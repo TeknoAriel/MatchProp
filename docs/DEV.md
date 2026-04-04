@@ -26,7 +26,12 @@ Si usás `nvm`, ejecutá `nvm use` en la raíz del repo (lee `.nvmrc`).
 
 ## Usuarios admin (Kiteprop)
 
-Los administradores con rol **ADMIN** son: **ariel@kiteprop.com**, **jonas@kiteprop.com**, **soporte@kiteprop.com**. El seed los crea o actualiza con `role: ADMIN` y contraseña **KiteProp123** (para login con email/password si se usa). Para entrar como admin desde la Web: usá **magic link** con uno de esos emails; el JWT incluirá `role: ADMIN` y podrás acceder a Settings > Integraciones y rutas que requieran ADMIN. Si ya existía el usuario con otro rol, ejecutá de nuevo el seed para forzar `role: ADMIN`: `pnpm --filter api run prisma:seed`.
+Los administradores con rol **ADMIN** son: **ariel@kiteprop.com**, **jonas@kiteprop.com**, **soporte@kiteprop.com**. El seed los crea o actualiza con `role: ADMIN` y contraseña **KiteProp123**. **Magic link está deshabilitado para esos emails** (deben entrar con **email + contraseña** en `/login`). Si ya existía el usuario con otro rol, ejecutá de nuevo el seed para forzar `role: ADMIN`: `pnpm --filter api run prisma:seed`.
+
+### Magic link o demo “Link inválido” en local
+
+- Si copiaste `apps/api/.env.local` desde Vercel, **`APP_URL` puede seguir siendo la URL de producción** mientras la **base de datos es local**: el link apuntaba a prod pero el token vivía en tu Postgres → fallaba al verificar. La API ahora **prioriza el header `Origin`** del navegador al armar el link (y CORS incluye `http://127.0.0.1:3000`).
+- Si **`COOKIE_SECURE=true`** venía del mismo `.env`, las cookies no se guardaban en **http://**. En `NODE_ENV !== 'production'` las cookies de auth **no usan Secure**, aunque el flag venga en true.
 
 ## Planes liberados para pruebas
 
