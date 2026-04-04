@@ -105,6 +105,13 @@ export interface FeedResponseV1 {
   items: ListingCard[];
   nextCursor: string | null;
   total: number | null;
+  /** true si se usó relajación de filtros o catálogo alternativo (según matchTier) */
+  fallbackUsed?: boolean;
+  emptyCatalog?: boolean;
+  /** exact = filtros completos; relaxed = se relajó al menos un criterio; catalog = exploración general */
+  matchTier?: 'exact' | 'relaxed' | 'catalog';
+  /** Paso de relajación aplicado (1–5), o null si no hubo relajación */
+  relaxAppliedStep?: number | null;
 }
 
 export interface CreateSwipeRequest {
@@ -147,6 +154,11 @@ export interface SearchFilters {
   source?: string;
   aptoCredito?: boolean;
   amenities?: string[];
+  /**
+   * soft (default): amenities no excluyen por SQL; solo preferencia / ranking futuro.
+   * strict: amenities en WHERE (portal clásico).
+   */
+  amenitiesMode?: 'strict' | 'soft';
   photosCountMin?: number;
   listingAgeDays?: number;
   keywords?: string[];

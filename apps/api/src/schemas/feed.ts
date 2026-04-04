@@ -46,6 +46,10 @@ export const feedResponseV1Schema = z.object({
   total: z.number().nullable(),
   limit: z.number(),
   nextCursor: z.string().nullable(),
+  fallbackUsed: z.boolean().optional(),
+  emptyCatalog: z.boolean().optional(),
+  matchTier: z.enum(['exact', 'relaxed', 'catalog']).optional(),
+  relaxAppliedStep: z.number().nullable().optional(),
 });
 
 export type FeedResponseValidated = z.infer<typeof feedResponseSchema>;
