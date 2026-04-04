@@ -507,6 +507,20 @@ export async function authRoutes(fastify: FastifyInstance) {
     process.env.NODE_ENV !== 'production' || envFlag('DEMO_MODE') || process.env.VERCEL === '1';
   const isStatelessDemo = envFlag('DEMO_MODE') && !process.env.DATABASE_URL;
 
+  /**
+   * Usuario demo compartido (demo@matchprop.com): sin esto, cada visita hereda
+   * activeSearchId + Preference de pruebas anteriores y el feed/búsqueda queda con filtros estrictos.
+   */
+  async function resetSharedDemoUserFeedContext(userId: string) {
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: { activeSearchId: null },
+      }),
+      prisma.preference.deleteMany({ where: { userId } }),
+    ]);
+  }
+
   fastify.post(
     '/auth/demo',
     {
@@ -544,6 +558,7 @@ export async function authRoutes(fastify: FastifyInstance) {
             ...meta,
           });
           const { refreshToken } = await createSession({ userId: user.userId, ...meta });
+          await resetSharedDemoUserFeedContext(user.userId);
           const accessToken = signAccessToken(fastify, {
             userId: user.userId,
             email: user.email,
