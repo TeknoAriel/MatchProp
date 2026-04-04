@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { fetchMagicVerifyOnce } from '../magic-verify-once';
 
 const API_BASE = '/api';
 
@@ -19,12 +20,7 @@ function MagicCallbackContent() {
       return;
     }
 
-    fetch(`${API_BASE}/auth/magic/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ token }),
-    })
+    fetchMagicVerifyOnce(token, API_BASE)
       .then(async (res) => {
         if (res.ok) {
           setStatus('ok');
