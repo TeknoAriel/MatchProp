@@ -115,6 +115,9 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: [verify, smoke-ux]
+    # No bloquear el workflow CI (ni workflow_run → hooks/CLI): si prod va atrasada,
+    # smoke puede fallar por timing y crear un deadlock sin deploy.
+    continue-on-error: true
     permissions:
       contents: read
       pull-requests: write

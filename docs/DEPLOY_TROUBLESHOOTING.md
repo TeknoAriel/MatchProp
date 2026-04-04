@@ -50,6 +50,8 @@ En **MatchProp** (`ia-matchprop`), el flujo histórico es **integración Git** (
 
 **Si usás CLI y Git a la vez:** podés tener **dos builds** por push; para ahorrar minutos en Hobby, desactivá el deploy automático por Git en Vercel o usá solo hooks/CLI.
 
+**Deadlock prod atrasada:** si el job **Smoke prod** del CI falla, el workflow **CI** queda en **fallo** y los workflows **`workflow_run` → Hooks / Vercel CLI** no disparan (exigen `conclusion: success`). **Smoke prod** tiene `continue-on-error: true` para no bloquear. El filtro `branches: [main]` en `workflow_run` se eliminó; el filtro por rama se hace en el `if` del job (`head_branch`).
+
 ## Ruleset en `main`: checks requeridos
 
 El workflow **CI** expone un solo job obligatorio para reglas de rama: **`CI / Verify`** (typecheck, lint, tests, integración y `pre-deploy:verify` en un solo run).
