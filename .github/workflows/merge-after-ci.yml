@@ -55,15 +55,15 @@ jobs:
               continue
             fi
             mergeable=$(gh pr view "$PR" --repo "$REPO" --json mergeable -q '.mergeable' 2>/dev/null || echo "UNKNOWN")
-            if [ "$mergeable" = "UNKNOWN" ]; then
+            if [ "$mergeable" = "UNKNOWN" ] || [ -z "$mergeable" ]; then
               echo "mergeable UNKNOWN, esperando 20s..."
               sleep 20
               mergeable=$(gh pr view "$PR" --repo "$REPO" --json mergeable -q '.mergeable' 2>/dev/null || echo "UNKNOWN")
             fi
-            # UNSTABLE suele aparecer cuando fallan checks no requeridos (ej. smoke UX con continue-on-error).
-            # Para auto-merge usamos MERGEABLE o UNSTABLE, siempre que CI principal esté en verde.
-            if [ "$mergeable" != "MERGEABLE" ] && [ "$mergeable" != "UNSTABLE" ]; then
-              echo "PR #$PR mergeable=$mergeable; no se mergea (conflictos reales o reglas de rama)."
+            # gh devuelve el booleano JSON true/false, no las cadenas MERGEABLE/UNSTABLE (antes solo aceptábamos
+            # MERGEABLE|UNSTABLE y nunca mergeaba). Solo omitir si hay conflicto explícito (false).
+            if [ "$mergeable" = "false" ] || [ "$mergeable" = "False" ]; then
+              echo "PR #$PR mergeable=false; no se mergea (conflictos)."
               continue
             fi
             echo "Merge squash PR #$PR"
