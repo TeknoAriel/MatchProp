@@ -232,6 +232,36 @@ export default function AlertsPage() {
             + Nueva
           </Link>
         </div>
+        {items.length === 0 && (
+          <div
+            className="p-4 rounded-2xl border border-amber-200/80 bg-amber-50/90 text-left shadow-sm"
+            role="region"
+            aria-label="Activar alertas"
+          >
+            <h2 className="text-base font-semibold text-amber-950">
+              Activá alertas para no perderte nada
+            </h2>
+            <p className="text-sm text-amber-900/90 mt-1 leading-relaxed">
+              Cuando tengás una búsqueda guardada, podés suscribirte a nuevas publicaciones, bajas
+              de precio o avisos de vuelta al mercado. Te avisamos en la app y, si configurás email,
+              también por correo.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link
+                href="/searches"
+                className="inline-flex items-center min-h-[40px] px-4 rounded-xl text-sm font-semibold bg-amber-700 text-white hover:bg-amber-800"
+              >
+                Elegir búsqueda y activar
+              </Link>
+              <Link
+                href="/assistant"
+                className="inline-flex items-center min-h-[40px] px-4 rounded-xl text-sm font-medium border border-amber-300 text-amber-950 hover:bg-amber-100/80"
+              >
+                Crear búsqueda con el asistente
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
 
       {deliveries.length > 0 && (

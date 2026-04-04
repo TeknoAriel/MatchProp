@@ -38,9 +38,9 @@ Plan posterior a Sprints 1–6. Alineado a [masterplan.md](./masterplan.md), [FO
 
 | #   | Tarea                     | DoD                                                                      | Estado    |
 | --- | ------------------------- | ------------------------------------------------------------------------ | --------- |
-| 7.1 | Tour inicial (opcional)   | Tooltip o modal en primera visita: “Buscá qué querés → te matcheamos”    | Pendiente |
-| 7.2 | Empty state feed mejorado | Si no hay búsqueda activa: CTA claro a /assistant con mensaje orientador | Pendiente |
-| 7.3 | Métricas funnel           | trackEvent: `signup_completed`, `first_search_saved`, `first_like`       | Pendiente |
+| 7.1 | Tour inicial (opcional)   | Tooltip o modal en primera visita: “Buscá qué querés → te matcheamos”    | Hecho — banner dismissible en `/feed` (`FeedOnboardingTip`) |
+| 7.2 | Empty state feed mejorado | Si no hay búsqueda activa: CTA claro a /assistant con mensaje orientador | Hecho — CTAs a Inicio, asistente y filtros; enlaces si se agota el deck |
+| 7.3 | Métricas funnel           | trackEvent: `signup_completed`, `first_search_saved`, `first_like`       | Hecho — API `trackEvent` en auth, searches, swipes (ver `analytics.ts`) |
 
 **Gates:** Usuario nuevo llega a guardar búsqueda o like en < 2 min desde signup.
 
@@ -55,7 +55,7 @@ Plan posterior a Sprints 1–6. Alineado a [masterplan.md](./masterplan.md), [FO
 | --- | --------------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------- |
 | 8.1 | Badge de notificaciones no leídas | Indicador en navbar / Más; GET /me/notifications/unread-count + polling        | Hecho (AppShell)                               |
 | 8.2 | Email alertas (SendGrid)          | Envío al crear `AlertDelivery` vía `sendAlertDeliveryEmail`; tests en API      | Hecho — [ALERTAS_EMAIL.md](./ALERTAS_EMAIL.md) |
-| 8.3 | Landing alertas                   | CTA en /alerts si no hay suscripciones: “Activá alertas para no perderte nada” | Pendiente                                      |
+| 8.3 | Landing alertas                   | CTA en /alerts si no hay suscripciones: “Activá alertas para no perderte nada” | Hecho — banner ámbar + enlaces a búsquedas y asistente |
 
 **Gates:** Usuario con alerta activa recibe aviso de nueva propiedad (in-app o email).
 

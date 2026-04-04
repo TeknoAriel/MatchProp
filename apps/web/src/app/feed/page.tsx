@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import type { ListingCard } from '@matchprop/shared';
 import ActiveSearchBar from '../../components/ActiveSearchBar';
+import FeedOnboardingTip from '../../components/FeedOnboardingTip';
 import SwipeCard from '../../components/SwipeCard';
 import { useToast, getRandomMessage } from '../../components/FunToast';
 import { useCelebration } from '../../components/Celebration';
@@ -263,6 +264,7 @@ function FeedPageContent() {
         <ActiveSearchBar />
       </div>
       <div className="w-full flex-1 flex flex-col pt-4">
+        <FeedOnboardingTip />
         {toast && (
           <div className="mb-4 p-3 rounded-xl bg-[var(--mp-premium)]/20 text-slate-800 border border-[var(--mp-premium)]/40 text-sm">
             {toast}
@@ -340,31 +342,67 @@ function FeedPageContent() {
             {hasActiveSearch === false && !emptyCatalog ? (
               <>
                 <p className="text-[var(--mp-foreground)] font-medium text-lg">
-                  Activá una búsqueda para priorizar el match
+                  Definí qué buscás para un match más preciso
                 </p>
-                <p className="text-sm text-[var(--mp-muted)] max-w-sm leading-relaxed">
-                  Sin búsqueda activa el feed muestra el catálogo general. Describí zona, tipo y
-                  presupuesto en el asistente y guardá la búsqueda para centrar resultados en vos.
+                <p className="text-sm text-[var(--mp-muted)] max-w-md leading-relaxed">
+                  Ahora estás viendo el catálogo general. En{' '}
+                  <strong className="text-[var(--mp-foreground)]">Inicio</strong> o el{' '}
+                  <strong className="text-[var(--mp-foreground)]">asistente</strong> podés describir
+                  zona, tipo y presupuesto, guardar la búsqueda y activarla: el feed prioriza esos
+                  criterios.
                 </p>
-                <Link
-                  href="/assistant"
-                  className="mt-2 px-5 py-2.5 rounded-full text-sm font-medium bg-[var(--mp-accent)] text-white"
-                >
-                  Ir al asistente
-                </Link>
+                <div className="flex flex-col sm:flex-row flex-wrap gap-2 mt-2 justify-center">
+                  <Link
+                    href="/dashboard"
+                    className="inline-flex items-center justify-center min-h-[44px] px-5 rounded-full text-sm font-semibold bg-[var(--mp-accent)] text-white border border-[var(--mp-accent-hover)] hover:opacity-[0.96]"
+                  >
+                    Ir a Inicio
+                  </Link>
+                  <Link
+                    href="/assistant"
+                    className="inline-flex items-center justify-center min-h-[44px] px-5 rounded-full text-sm font-medium border border-[var(--mp-border)] bg-[var(--mp-card)] text-[var(--mp-foreground)] hover:bg-[var(--mp-bg)]"
+                  >
+                    Abrir asistente
+                  </Link>
+                  <Link
+                    href="/search"
+                    className="inline-flex items-center justify-center min-h-[44px] px-5 rounded-full text-sm font-medium text-[var(--mp-accent)] hover:underline"
+                  >
+                    Búsqueda por filtros
+                  </Link>
+                </div>
               </>
             ) : (
               <>
                 <p className="text-[var(--mp-foreground)] font-medium text-lg">
                   {emptyCatalog ? 'No hay propiedades en el catálogo' : 'No hay más resultados'}
                 </p>
-                <p className="text-sm text-[var(--mp-muted)] max-w-sm leading-relaxed">
+                <p className="text-sm text-[var(--mp-muted)] max-w-md leading-relaxed">
                   {emptyCatalog
                     ? 'Activá importadores en Configuración para cargar propiedades.'
                     : !usedFeedAll
                       ? 'Podés ampliar el contexto o revisar el catálogo completo.'
-                      : 'No quedan propiedades en este contexto. Ajustá la búsqueda en Inicio.'}
+                      : 'No quedan propiedades en este contexto. Afiná filtros en el asistente o probá otra búsqueda guardada.'}
                 </p>
+                {!emptyCatalog && (
+                  <div className="flex flex-col sm:flex-row flex-wrap gap-2 mt-2 justify-center">
+                    <Link
+                      href="/assistant"
+                      className="text-sm font-semibold text-[var(--mp-accent)] hover:underline"
+                    >
+                      Ajustar con el asistente
+                    </Link>
+                    <span className="hidden sm:inline text-[var(--mp-border)]" aria-hidden>
+                      ·
+                    </span>
+                    <Link
+                      href="/searches"
+                      className="text-sm font-semibold text-[var(--mp-accent)] hover:underline"
+                    >
+                      Mis búsquedas
+                    </Link>
+                  </div>
+                )}
               </>
             )}
             {emptyCatalog && (
