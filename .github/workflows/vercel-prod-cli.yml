@@ -4,22 +4,17 @@
 # Secretos: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID_API, VERCEL_PROJECT_ID_WEB, VERCEL_PROJECT_ID_ADMIN
 # Obtener projectId: Vercel → proyecto → Settings → General → Project ID
 #
-# Disparo:
-# - Tras CI verde en main (workflow_run)
-# - Manual: Actions → Vercel prod (CLI) → Run workflow
+# Disparo: solo manual (evita doble deploy con hooks en ci.yml). Recuperación si hooks fallan.
 #
 # Si también tenés integración Git conectada, podés tener dos builds por push; desactivá auto-deploy
 # en uno de los dos o usá solo este flujo cuando Git falle. Ver docs/DEPLOY_TROUBLESHOOTING.md §8.
 name: Vercel prod (CLI)
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
   workflow_dispatch:
 
 concurrency:
-  group: vercel-prod-cli-${{ github.event.workflow_run.head_sha || github.sha }}
+  group: vercel-prod-cli-${{ github.sha }}
   cancel-in-progress: false
 
 permissions:
@@ -33,18 +28,9 @@ jobs:
   deploy-production-cli:
     name: Vercel deploy --prod (API + Web + Admin)
     runs-on: ubuntu-latest
-    # Solo push a main (no CI de pull_request: head_branch sería la rama del PR).
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'workflow_run' &&
-       github.event.workflow_run.conclusion == 'success' &&
-       (github.event.workflow_run.head_branch == 'main' ||
-        github.event.workflow_run.head_branch == 'refs/heads/main'))
     steps:
-      - name: Checkout (commit que disparó CI o SHA actual)
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - name: Validar secretos mínimos
         env:

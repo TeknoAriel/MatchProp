@@ -3,28 +3,19 @@
 # Secretos en GitHub: VERCEL_DEPLOY_HOOK_API, VERCEL_DEPLOY_HOOK_WEB, VERCEL_DEPLOY_HOOK_ADMIN
 # Si un secreto no existe, el paso se omite. Útil cuando la integración Git→Vercel no actualiza prod.
 #
-# Tras CI verde en main (misma idea que vercel-prod-cli): no redeploy antes de que pase Verify.
+# Redeploy manual. El POST a hooks en cada push a main está en ci.yml → job deploy-hooks.
 name: Vercel deploy hooks
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
   workflow_dispatch:
 
 concurrency:
-  group: vercel-deploy-hooks-${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+  group: vercel-deploy-hooks-manual-${{ github.sha }}
   cancel-in-progress: false
 
 jobs:
   trigger:
     runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'workflow_run' &&
-       github.event.workflow_run.conclusion == 'success' &&
-       (github.event.workflow_run.head_branch == 'main' ||
-        github.event.workflow_run.head_branch == 'refs/heads/main'))
     steps:
       # Sin -f: curl no corta el job en 4xx/5xx; el hook puede estar vencido o mal copiado.
       - name: Redeploy API (hook)
