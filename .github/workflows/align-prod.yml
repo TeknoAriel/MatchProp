@@ -1,0 +1,29 @@
+# Comprueba que producción (API /health.version) coincide con origin/main y muestra estado Git.
+# No despliega nada. Falla si prod está desfasada respecto al repo (útil tras merge o si Vercel no actualizó).
+name: Align check (repo ↔ prod)
+
+on:
+  schedule:
+    - cron: '30 8 * * 1' # lunes 08:30 UTC (~5:30 ART)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  align:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch main
+        run: git fetch origin main
+
+      - name: pnpm align:check
+        run: bash scripts/align-repos-deploy.sh
