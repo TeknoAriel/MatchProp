@@ -11,14 +11,19 @@ export interface AuditInput {
 }
 
 export async function logAuthAudit(input: AuditInput): Promise<void> {
-  await prisma.authAuditLog.create({
-    data: {
-      event: input.event,
-      userId: input.userId,
-      email: input.email,
-      provider: input.provider,
-      ip: input.ip,
-      userAgent: input.userAgent,
-    },
-  });
+  try {
+    await prisma.authAuditLog.create({
+      data: {
+        event: input.event,
+        userId: input.userId,
+        email: input.email,
+        provider: input.provider,
+        ip: input.ip,
+        userAgent: input.userAgent,
+      },
+    });
+  } catch (err) {
+    /** Nunca bloquear login/demo/magic si el audit falla (DB, enum, etc.). */
+    console.warn('[auth audit log]', err);
+  }
 }
