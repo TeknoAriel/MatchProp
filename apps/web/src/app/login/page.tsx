@@ -14,6 +14,8 @@ function LoginPageContent() {
   const [oauthError, setOauthError] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const [demoError, setDemoError] = useState(false);
+  const [demoErrorMessage, setDemoErrorMessage] = useState<string | null>(null);
+  const [adminMagicNotice, setAdminMagicNotice] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [pwdLoading, setPwdLoading] = useState(false);
   const [pwdError, setPwdError] = useState(false);
@@ -28,19 +30,32 @@ function LoginPageContent() {
 
   const handleDemoLink = useCallback(async () => {
     setDemoError(false);
+    setDemoErrorMessage(null);
     setDemoLoading(true);
     try {
       const res = await fetch(`${API_BASE}/auth/demo`, {
         method: 'POST',
         credentials: 'include',
       });
-      if (res.ok) {
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        message?: string;
+        code?: string;
+      };
+      if (res.ok && data.ok !== false) {
         window.location.href = '/feed';
         return;
       }
       setDemoError(true);
+      setDemoErrorMessage(
+        data.message ??
+          (res.status === 503
+            ? 'El servidor no pudo crear la sesión demo. Reintentá en unos segundos.'
+            : null)
+      );
     } catch {
       setDemoError(true);
+      setDemoErrorMessage('Error de conexión con el servidor.');
     } finally {
       setDemoLoading(false);
     }
@@ -58,6 +73,7 @@ function LoginPageContent() {
     setStatus('loading');
     setDevLink(null);
     setMagicMessage(null);
+    setAdminMagicNotice(null);
     try {
       const res = await fetch(`${API_BASE}/auth/magic/request`, {
         method: 'POST',
@@ -65,13 +81,26 @@ function LoginPageContent() {
         credentials: 'include',
         body: JSON.stringify({ email: email.trim() }),
       });
-      const data = await res.json().catch(() => null);
+      const data = (await res.json().catch(() => null)) as {
+        message?: string;
+        devLink?: string;
+        code?: string;
+      } | null;
       if (res.ok) {
+        if (data?.code === 'ADMIN_USE_PASSWORD') {
+          setStatus('idle');
+          setAdminMagicNotice(
+            data.message ??
+              'Este email es de administrador: usá email y contraseña en el formulario de abajo.'
+          );
+          return;
+        }
         setStatus('sent');
         setMagicMessage(data?.message ?? null);
         if (data?.devLink) setDevLink(data.devLink);
       } else {
         setStatus('error');
+        setMagicMessage(data?.message ?? null);
       }
     } catch {
       setStatus('error');
@@ -82,6 +111,7 @@ function LoginPageContent() {
     setStatus('idle');
     setDevLink(null);
     setMagicMessage(null);
+    setAdminMagicNotice(null);
   }
 
   async function handlePasswordLogin(e: React.FormEvent) {
@@ -191,9 +221,19 @@ function LoginPageContent() {
             </button>
           </div>
         )}
+        {adminMagicNotice && (
+          <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3 text-center space-y-1">
+            <p>{adminMagicNotice}</p>
+            <p className="text-xs text-amber-800/90">
+              Cuentas Kiteprop: misma contraseña de equipo que en el panel (campo
+              &quot;Contraseña&quot; abajo).
+            </p>
+          </div>
+        )}
+
         {status === 'error' && (
           <div className="text-sm text-red-600 text-center space-y-1">
-            <p>Error. Intentá de nuevo.</p>
+            <p>{magicMessage ?? 'Error. Intentá de nuevo.'}</p>
             <p className="text-[var(--mp-muted)] text-xs">
               Para ingresar rápido, usá <strong>Entrar como demo</strong>.
             </p>
@@ -211,7 +251,8 @@ function LoginPageContent() {
           className="space-y-2 pt-4 border-t border-[var(--mp-border)]"
         >
           <p className="text-xs text-[var(--mp-muted)]">
-            Admin: entrar con email y contraseña para configuraciones
+            Cuentas admin Kiteprop: mismo email arriba + contraseña de equipo abajo. Magic link no
+            aplica para admin.
           </p>
           <input
             type="password"
@@ -245,8 +286,8 @@ function LoginPageContent() {
           </button>
           {demoError && (
             <p className="text-xs text-red-600 text-center">
-              No se pudo conectar con la API. Dejá la terminal abierta con{' '}
-              <code className="bg-black/10 px-1 rounded">pnpm run dev-local</code>.
+              {demoErrorMessage ??
+                'No se pudo conectar con la API. En local: dejá la terminal con pnpm run dev-local.'}
             </p>
           )}
         </div>

@@ -289,6 +289,10 @@ export async function authRoutes(fastify: FastifyInstance) {
             type: 'object',
             properties: {
               message: { type: 'string' },
+              code: {
+                type: 'string',
+                description: 'p. ej. ADMIN_USE_PASSWORD cuando el email es admin',
+              },
               devLink: {
                 type: 'string',
                 description: 'Solo en dev: link para copiar si el mail no llega',
@@ -316,7 +320,8 @@ export async function authRoutes(fastify: FastifyInstance) {
         // Bloqueamos magic link para emails admin para que no puedan autenticarse sin password.
         if (isKitepropAdmin(email)) {
           return reply.status(200).send({
-            message: 'Los administradores inician sesión con email y contraseña.',
+            message: 'Los administradores inician sesión con email y contraseña (bloque inferior).',
+            code: 'ADMIN_USE_PASSWORD',
           });
         }
 
@@ -515,13 +520,24 @@ export async function authRoutes(fastify: FastifyInstance) {
       },
       schema: {
         tags: ['Auth'],
-        response: { 200: { type: 'object', properties: { ok: { type: 'boolean' } } } },
+        response: {
+          200: { type: 'object', properties: { ok: { type: 'boolean' } } },
+          503: {
+            type: 'object',
+            properties: {
+              ok: { type: 'boolean' },
+              message: { type: 'string' },
+              code: { type: 'string' },
+            },
+          },
+        },
       },
     },
     async (request, reply) => {
       if (!isDevAuth) throw fastify.httpErrors.forbidden('Solo en modo demo');
       const meta = getClientMeta(request);
       const DEMO_EMAIL = 'demo@matchprop.com';
+      const hasDb = Boolean(process.env.DATABASE_URL?.trim());
       try {
         if (isStatelessDemo) {
           const fakeUserId = 'demo-user';
@@ -552,6 +568,17 @@ export async function authRoutes(fastify: FastifyInstance) {
           setAuthCookies(reply, accessToken, refreshToken);
         }
       } catch (err) {
+        request.log.error({ err }, 'auth/demo failed');
+        // Con DB no emitir JWT demo-user: no hay fila en User y el feed queda inconsistente.
+        if (hasDb && !isStatelessDemo) {
+          clearAuthCookies(reply);
+          return reply.status(503).send({
+            ok: false,
+            message:
+              'No se pudo preparar la sesión demo (base de datos o sesión). Reintentá en unos segundos.',
+            code: 'DEMO_SESSION_UNAVAILABLE',
+          });
+        }
         request.log.warn({ err }, 'auth/demo falling back to stateless demo');
         const fakeUserId = 'demo-user';
         const accessToken = signAccessToken(fastify, {

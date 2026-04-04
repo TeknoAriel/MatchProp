@@ -35,16 +35,25 @@ function MagicCallbackContent() {
             : 'Link inválido o expirado'
         );
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         setStatus('error');
-        setError('Error de conexión');
+        const name =
+          err && typeof err === 'object' && 'name' in err ? String((err as Error).name) : '';
+        setError(
+          name === 'AbortError'
+            ? 'Tiempo de espera agotado (el servidor tardó demasiado). Reintentá o entrá con email y contraseña.'
+            : 'Error de conexión'
+        );
       });
   }, [searchParams, router]);
 
   if (status === 'loading') {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center p-8">
-        <p className="text-gray-600">Iniciando sesión...</p>
+      <main className="min-h-screen flex flex-col items-center justify-center p-8 max-w-md mx-auto text-center">
+        <p className="text-gray-600">Iniciando sesión…</p>
+        <p className="text-sm text-gray-500 mt-3">
+          Si la API estuvo inactiva, el primer intento puede tardar hasta dos minutos.
+        </p>
       </main>
     );
   }
@@ -68,7 +77,7 @@ export default function MagicCallbackPage() {
     <Suspense
       fallback={
         <main className="min-h-screen flex flex-col items-center justify-center p-8">
-          <p className="text-gray-600">Iniciando sesión...</p>
+          <p className="text-gray-600">Iniciando sesión…</p>
         </main>
       }
     >

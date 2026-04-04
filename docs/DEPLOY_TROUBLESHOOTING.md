@@ -10,6 +10,8 @@ bash scripts/verify-deploy-status.sh
 
 Muestra si la rama está en main, si prod responde, y si el commit en prod coincide con main.
 
+**Chequeo unificado (Git + remotos + prod):** `pnpm align:check` o `bash scripts/align-repos-deploy.sh` — incluye `origin/main`, remoto `kiteprop` si existe, y la misma verificación de producción. Opciones: `--git-only`, `--sync-local` (en `main`), `--no-fetch`. Detalle en **[ALIGN_REPOS_DEPLOY.md](./ALIGN_REPOS_DEPLOY.md)**.
+
 Si prod lleva días con un SHA viejo: reconectar Vercel al repo **`TeknoAriel/MatchProp`** y rama **`main`** — ver **[CONECTAR_VERCEL_GITHUB.md](./CONECTAR_VERCEL_GITHUB.md)**. Opcional: secretos **Deploy Hooks** (`VERCEL_DEPLOY_HOOK_*`) y job **`deploy-hooks`** en **`ci.yml`**; redeploy manual con **`vercel-deploy-hooks.yml`**.
 
 ### Ignored Build Step (exit codes)

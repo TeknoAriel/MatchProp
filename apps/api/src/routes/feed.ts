@@ -635,7 +635,11 @@ export async function feedRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const user = request.user as { userId: string };
+      const user = request.user as { userId?: string };
+      if (!user.userId || typeof user.userId !== 'string') {
+        throw fastify.httpErrors.unauthorized('Unauthorized');
+      }
+      const userId = user.userId;
       const q = request.query as Record<string, unknown>;
 
       const limitRaw = q.limit;
@@ -697,7 +701,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
         querySearchId ??
         (
           await prisma.user.findUnique({
-            where: { id: user.userId },
+            where: { id: userId },
             select: { activeSearchId: true },
           })
         )?.activeSearchId ??
@@ -705,7 +709,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
 
       if (searchIdToUse) {
         const savedSearch = await prisma.savedSearch.findFirst({
-          where: { id: searchIdToUse, userId: user.userId },
+          where: { id: searchIdToUse, userId },
         });
         if (savedSearch?.filtersJson && typeof savedSearch.filtersJson === 'object') {
           const f = savedSearch.filtersJson as Record<string, unknown>;
@@ -743,7 +747,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
 
       if (!pref) {
         pref = await prisma.preference.findUnique({
-          where: { userId: user.userId },
+          where: { userId },
         });
       }
 
@@ -846,7 +850,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
 
       let baseWhere: Record<string, unknown> = {
         status: 'ACTIVE',
-        swipeDecisions: { none: { userId: user.userId } },
+        swipeDecisions: { none: { userId } },
         ...filtersToWhere(activeFilters),
       };
       mergeListingQualityWhere(baseWhere);
@@ -854,13 +858,13 @@ export async function feedRoutes(fastify: FastifyInstance) {
 
       let total: number | null = null;
       if (hasCursor) {
-        total = (await getCachedTotal(user.userId, filters as Record<string, unknown>)) ?? null;
+        total = (await getCachedTotal(userId, filters as Record<string, unknown>)) ?? null;
       } else if (includeTotal) {
         const count = await prisma.listing.count({ where: baseWhere });
         total = count;
-        await setCachedTotal(user.userId, filters as Record<string, unknown>, count);
+        await setCachedTotal(userId, filters as Record<string, unknown>, count);
       } else {
-        total = (await getCachedTotal(user.userId, filters as Record<string, unknown>)) ?? null;
+        total = (await getCachedTotal(userId, filters as Record<string, unknown>)) ?? null;
       }
 
       let itemsRaw = await prisma.listing.findMany({
@@ -895,7 +899,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
           const rf = relaxFeedFiltersAccum(filters, step);
           const bw: Record<string, unknown> = {
             status: 'ACTIVE',
-            swipeDecisions: { none: { userId: user.userId } },
+            swipeDecisions: { none: { userId } },
             ...filtersToWhere(rf),
           };
           mergeListingQualityWhere(bw);
@@ -915,7 +919,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
             cursorRelaxStepForNext = step;
             if (includeTotal) {
               total = await prisma.listing.count({ where: bw });
-              await setCachedTotal(user.userId, rf as Record<string, unknown>, total);
+              await setCachedTotal(userId, rf as Record<string, unknown>, total);
             }
             break;
           }
@@ -972,7 +976,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
       if (items.length === 0 && !hasCursor && !feedAll) {
         const fallbackWhere: Record<string, unknown> = {
           status: 'ACTIVE' as const,
-          swipeDecisions: { none: { userId: user.userId } },
+          swipeDecisions: { none: { userId } },
         };
         mergeListingQualityWhere(fallbackWhere);
         const catalogOrderBy = [{ createdAt: 'desc' as const }, { id: 'desc' as const }];
@@ -1079,7 +1083,11 @@ export async function feedRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const user = request.user as { userId: string };
+      const user = request.user as { userId?: string };
+      if (!user.userId || typeof user.userId !== 'string') {
+        throw fastify.httpErrors.unauthorized('Unauthorized');
+      }
+      const userId = user.userId;
       const q = request.query as Record<string, unknown>;
       const limit = Math.min(Math.floor(Number(q.limit) || 200), 300);
 
@@ -1116,7 +1124,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
         querySearchId ??
         (
           await prisma.user.findUnique({
-            where: { id: user.userId },
+            where: { id: userId },
             select: { activeSearchId: true },
           })
         )?.activeSearchId ??
@@ -1124,7 +1132,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
 
       if (searchIdToUse) {
         const savedSearch = await prisma.savedSearch.findFirst({
-          where: { id: searchIdToUse, userId: user.userId },
+          where: { id: searchIdToUse, userId },
         });
         if (savedSearch?.filtersJson && typeof savedSearch.filtersJson === 'object') {
           const f = savedSearch.filtersJson as Record<string, unknown>;
@@ -1162,7 +1170,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
 
       if (!pref) {
         pref = await prisma.preference.findUnique({
-          where: { userId: user.userId },
+          where: { userId },
         });
       }
 
@@ -1172,7 +1180,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
       const fw = filtersToWhere(filters);
       const baseWhere: Record<string, unknown> = {
         status: 'ACTIVE',
-        swipeDecisions: { none: { userId: user.userId } },
+        swipeDecisions: { none: { userId } },
         ...fw,
         lat: fw.lat ?? { not: null },
         lng: fw.lng ?? { not: null },
@@ -1260,7 +1268,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
         const fwOpen = filtersToWhere(filtersOpen);
         const baseOpen: Record<string, unknown> = {
           status: 'ACTIVE',
-          swipeDecisions: { none: { userId: user.userId } },
+          swipeDecisions: { none: { userId } },
           ...fwOpen,
           lat: fwOpen.lat ?? { not: null },
           lng: fwOpen.lng ?? { not: null },
