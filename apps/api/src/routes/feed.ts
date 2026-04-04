@@ -107,6 +107,8 @@ type FeedFilters = {
   maxLat?: number;
   minLng?: number;
   maxLng?: number;
+  /** soft = amenities no van a WHERE (default MatchProp); strict = AND en SQL */
+  amenitiesMode?: 'strict' | 'soft';
 };
 
 function parsePropertyTypes(val: unknown): string[] | undefined {
@@ -139,6 +141,19 @@ function parseFloatParam(val: unknown): number | undefined {
   if (val === undefined || val === null || val === '') return undefined;
   const n = Number(val);
   return Number.isNaN(n) ? undefined : n;
+}
+
+/** Default MatchProp: soft (amenities no destruyen inventario). */
+function parseAmenitiesMode(q: Record<string, unknown>): 'strict' | 'soft' | undefined {
+  const raw = q.amenitiesMode ?? q.amenities_mode;
+  if (typeof raw === 'string') {
+    const s = raw.trim().toLowerCase();
+    if (s === 'strict') return 'strict';
+    if (s === 'soft') return 'soft';
+  }
+  if (q.amenitiesStrict === '1' || q.amenitiesStrict === 'true' || q.amenitiesStrict === true)
+    return 'strict';
+  return undefined;
 }
 
 function parseAmenities(val: unknown): string[] | undefined {
@@ -242,6 +257,7 @@ function parseFeedQuery(q: Record<string, unknown>): FeedFilters {
     minLng: parseFloatParam(q.minLng),
     maxLng: parseFloatParam(q.maxLng),
     keywords,
+    amenitiesMode: parseAmenitiesMode(q),
   };
 }
 
@@ -345,6 +361,10 @@ function mergeFilters(
               .filter((s) => s.length >= 2)
               .slice(0, 12)
           : undefined,
+        amenitiesMode:
+          p.amenitiesMode === 'strict' || p.amenitiesMode === 'soft'
+            ? (p.amenitiesMode as 'strict' | 'soft')
+            : undefined,
       }
     : {};
   const mergedTypes = overrides.propertyTypes ?? base.propertyTypes;
@@ -377,6 +397,7 @@ function mergeFilters(
     maxLat: overrides.maxLat ?? (typeof p?.maxLat === 'number' ? p.maxLat : undefined),
     minLng: overrides.minLng ?? (typeof p?.minLng === 'number' ? p.minLng : undefined),
     maxLng: overrides.maxLng ?? (typeof p?.maxLng === 'number' ? p.maxLng : undefined),
+    amenitiesMode: overrides.amenitiesMode ?? base.amenitiesMode,
   };
 }
 
@@ -433,7 +454,8 @@ function filtersToWhere(f: FeedFilters): Record<string, unknown> {
       { details: { path: ['aptoCredito'], equals: true } },
     ];
   }
-  if (f.amenities?.length) {
+  const amenitiesStrict = f.amenitiesMode === 'strict';
+  if (amenitiesStrict && f.amenities?.length) {
     const andList = amenityFiltersToAndList(f.amenities);
     if (andList.length)
       where.AND = [...((where.AND as Record<string, unknown>[]) ?? []), ...andList];
@@ -468,24 +490,43 @@ function filtersToWhere(f: FeedFilters): Record<string, unknown> {
 /**
  * Relaja filtros por pasos acumulativos antes de caer al catálogo completo.
  * No se quitan tipo de propiedad ni operación: el usuario los expresó de forma explícita.
- * Tampoco ubicación ni texto de título/descripcion/keywords: no mostrar otras zonas.
+ * Tampoco locationText/addressText (macro ubicación textual).
+ *
+ * Orden: amenities y “preferidos” → secundarios → flexibles (dorm/baños/superficie) → precio → bounds mapa.
  */
 function relaxFeedFiltersAccum(base: FeedFilters, step: number): FeedFilters {
   const f: FeedFilters = { ...base };
   if (step >= 1) {
+    f.amenities = undefined;
+    f.amenitiesMode = undefined;
+    f.photosCountMin = undefined;
+    f.listingAgeDays = undefined;
+    f.keywords = undefined;
+    f.titleContains = undefined;
+    f.descriptionContains = undefined;
+  }
+  if (step >= 2) {
+    f.aptoCredito = undefined;
+    f.areaCoveredMin = undefined;
+  }
+  if (step >= 3) {
     f.bedrooms = undefined;
     f.bedroomsMax = undefined;
     f.bathrooms = undefined;
     f.bathroomsMax = undefined;
     f.areaMin = undefined;
     f.areaMax = undefined;
-    f.areaCoveredMin = undefined;
-    f.amenities = undefined;
   }
-  if (step >= 2) {
+  if (step >= 4) {
     f.priceMin = undefined;
     f.priceMax = undefined;
     f.currency = undefined;
+  }
+  if (step >= 5) {
+    f.minLat = undefined;
+    f.maxLat = undefined;
+    f.minLng = undefined;
+    f.maxLng = undefined;
   }
   return f;
 }
@@ -542,6 +583,15 @@ export async function feedRoutes(fastify: FastifyInstance) {
             source: { type: 'string' },
             aptoCredito: { type: 'string' },
             amenities: { type: 'array', items: { type: 'string' } },
+            amenitiesMode: {
+              type: 'string',
+              enum: ['strict', 'soft'],
+              description: 'strict = amenities en SQL; soft (default) = preferencia, no WHERE',
+            },
+            amenitiesStrict: {
+              type: 'string',
+              description: '1/true = mismo efecto que amenitiesMode=strict',
+            },
             photosCountMin: { type: 'integer' },
             listingAgeDays: { type: 'integer' },
             listingAge: { type: 'integer' },
@@ -568,6 +618,15 @@ export async function feedRoutes(fastify: FastifyInstance) {
                 type: 'boolean',
                 description:
                   'true si no hay propiedades en el catálogo; activar conexiones en Ajustes',
+              },
+              matchTier: {
+                type: 'string',
+                enum: ['exact', 'relaxed', 'catalog'],
+                description: 'exact | relajado | catálogo general',
+              },
+              relaxAppliedStep: {
+                type: ['integer', 'null'],
+                description: 'Paso de relajación 1–5 si matchTier=relaxed',
               },
             },
           },
@@ -631,6 +690,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
         aptoCredito?: boolean | null;
         photosCountMin?: number | null;
         listingAgeDays?: number | null;
+        amenitiesMode?: 'strict' | 'soft' | null;
       } | null = null;
 
       const searchIdToUse =
@@ -673,6 +733,10 @@ export async function feedRoutes(fastify: FastifyInstance) {
             areaCoveredMin: typeof f.areaCoveredMin === 'number' ? f.areaCoveredMin : null,
             photosCountMin: typeof f.photosCountMin === 'number' ? f.photosCountMin : null,
             listingAgeDays: typeof f.listingAgeDays === 'number' ? f.listingAgeDays : null,
+            amenitiesMode:
+              f.amenitiesMode === 'strict' || f.amenitiesMode === 'soft'
+                ? (f.amenitiesMode as 'strict' | 'soft')
+                : null,
           };
         }
       }
@@ -767,7 +831,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
 
       const includeTotal = parseIntParam(q.includeTotal) === 1;
       const hasCursor = !!cursorData;
-      const relaxMaxStep = 2;
+      const relaxMaxStep = 5;
       const relaxStepRaw =
         !feedAll && cursorData && typeof cursorData.relaxStep === 'number'
           ? Math.floor(cursorData.relaxStep)
@@ -820,7 +884,11 @@ export async function feedRoutes(fastify: FastifyInstance) {
         (filters.descriptionContains != null && filters.descriptionContains.trim() !== '') ||
         (filters.titleContains != null && filters.titleContains.trim() !== '') ||
         (filters.keywords?.length ?? 0) > 0 ||
-        (filters.amenities?.length ?? 0) > 0;
+        (filters.amenities?.length ?? 0) > 0 ||
+        filters.minLat != null ||
+        filters.maxLat != null ||
+        filters.minLng != null ||
+        filters.maxLng != null;
 
       if (itemsRaw.length === 0 && !hasCursor && !feedAll && hasRestrictiveFilters) {
         for (let step = 1; step <= relaxMaxStep; step++) {
@@ -876,6 +944,8 @@ export async function feedRoutes(fastify: FastifyInstance) {
               })
           : null;
 
+      const relaxAppliedStep = cursorRelaxStepForNext ?? relaxStepFromCursor ?? null;
+
       const geoPinned =
         (filters.locationText != null && filters.locationText.trim() !== '') ||
         (filters.addressText != null && filters.addressText.trim() !== '');
@@ -889,6 +959,8 @@ export async function feedRoutes(fastify: FastifyInstance) {
           nextCursor: null,
           fallbackUsed: false,
           emptyCatalog: false,
+          matchTier: 'exact' as const,
+          relaxAppliedStep: null,
         };
       }
 
@@ -935,11 +1007,22 @@ export async function feedRoutes(fastify: FastifyInstance) {
           nextCursor: fbNextCursor,
           fallbackUsed: true,
           emptyCatalog: fbItems.length === 0,
+          matchTier: 'catalog' as const,
+          relaxAppliedStep: null,
         };
       }
 
       const emptyCatalog = items.length === 0 && !hasCursor;
-      return { items, total, limit, nextCursor, fallbackUsed, emptyCatalog };
+      return {
+        items,
+        total,
+        limit,
+        nextCursor,
+        fallbackUsed,
+        emptyCatalog,
+        matchTier: relaxAppliedStep != null ? ('relaxed' as const) : ('exact' as const),
+        relaxAppliedStep,
+      };
     }
   );
 
@@ -1026,6 +1109,7 @@ export async function feedRoutes(fastify: FastifyInstance) {
         aptoCredito?: boolean | null;
         photosCountMin?: number | null;
         listingAgeDays?: number | null;
+        amenitiesMode?: 'strict' | 'soft' | null;
       } | null = null;
 
       const searchIdToUse =
@@ -1068,6 +1152,10 @@ export async function feedRoutes(fastify: FastifyInstance) {
             areaCoveredMin: typeof f.areaCoveredMin === 'number' ? f.areaCoveredMin : null,
             photosCountMin: typeof f.photosCountMin === 'number' ? f.photosCountMin : null,
             listingAgeDays: typeof f.listingAgeDays === 'number' ? f.listingAgeDays : null,
+            amenitiesMode:
+              f.amenitiesMode === 'strict' || f.amenitiesMode === 'soft'
+                ? (f.amenitiesMode as 'strict' | 'soft')
+                : null,
           };
         }
       }

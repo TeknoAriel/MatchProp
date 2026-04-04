@@ -35,6 +35,7 @@ export type FeedFiltersInput = {
   source?: string;
   aptoCredito?: boolean;
   amenities?: string[];
+  amenitiesMode?: 'strict' | 'soft';
   photosCountMin?: number;
   listingAgeDays?: number;
   keywords?: string[];
@@ -100,7 +101,8 @@ export function filtersToWhere(f: FeedFiltersInput): Record<string, unknown> {
       { details: { path: ['aptoCredito'], equals: true } },
     ];
   }
-  if (f.amenities?.length) {
+  const amenitiesStrict = f.amenitiesMode === 'strict';
+  if (amenitiesStrict && f.amenities?.length) {
     const andList = amenityFiltersToAndList(f.amenities);
     if (andList.length)
       where.AND = [...((where.AND as Record<string, unknown>[]) ?? []), ...andList];
@@ -181,6 +183,7 @@ function isSearchFiltersShape(f: object): boolean {
     'photosCountMin' in k ||
     'listingAgeDays' in k ||
     'keywords' in k ||
+    'amenitiesMode' in k ||
     'minLat' in k ||
     'maxLat' in k ||
     'minLng' in k ||

@@ -12,7 +12,8 @@ import { notifyActiveSearchChanged } from '../../lib/activeSearchEvents';
 
 const API_BASE = '/api';
 const PROPERTY_TYPES = ['APARTMENT', 'HOUSE', 'LAND', 'OFFICE', 'OTHER'] as const;
-const OPERATIONS = ['SALE', 'RENT'] as const;
+/** ALL = no filtrar por operación (más resultados; coincide con listings sin operationType en ingest). */
+const OPERATIONS = ['ALL', 'SALE', 'RENT'] as const;
 const CURRENCIES = ['USD', 'ARS'] as const;
 const SORT_OPTIONS = [
   { value: 'date_desc', label: 'Más recientes' },
@@ -86,12 +87,12 @@ function normalizeCard(raw: unknown): ListingCard | null {
 
 export default function ManualSearchPage() {
   const router = useRouter();
-  const [operation, setOperation] = useState<'SALE' | 'RENT'>('SALE');
+  const [operation, setOperation] = useState<(typeof OPERATIONS)[number]>('ALL');
   const [propertyTypes, setPropertyTypes] = useState<string[]>([]);
   const [locationText, setLocationText] = useState('');
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
-  const [currency, setCurrency] = useState<'USD' | 'ARS'>('USD');
+  const [currency, setCurrency] = useState<'USD' | 'ARS' | ''>('');
   const [bedroomsMin, setBedroomsMin] = useState('');
   const [bedroomsMax] = useState('');
   const [bathroomsMin, setBathroomsMin] = useState('');
@@ -104,6 +105,9 @@ export default function ManualSearchPage() {
   const [source, setSource] = useState('');
   const [aptoCredito, setAptoCredito] = useState(false);
   const [amenities, setAmenities] = useState<string[]>([]);
+  /** soft = MatchProp default (no destruyen inventario); strict = AND en SQL */
+  const [amenitiesMode, setAmenitiesMode] = useState<'soft' | 'strict'>('soft');
+  const [keywordsText, setKeywordsText] = useState('');
   const [photosCountMin, setPhotosCountMin] = useState('');
   const [listingAgeDays, setListingAgeDays] = useState('');
   const [openSection, setOpenSection] = useState<string>('operacion');
@@ -114,6 +118,7 @@ export default function ManualSearchPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [feedMatchHint, setFeedMatchHint] = useState<string | null>(null);
   const [listingsStatus, setListingsStatus] = useState<
     Record<
       string,
@@ -357,12 +362,12 @@ export default function ManualSearchPage() {
   }
 
   const filters: SearchFilters & Record<string, unknown> = {
-    operationType: operation,
+    operationType: operation === 'ALL' ? undefined : operation,
     propertyType: propertyTypes.length ? propertyTypes : undefined,
     locationText: locationText.trim() || undefined,
     priceMin: priceMin ? parseInt(priceMin, 10) : undefined,
     priceMax: priceMax ? parseInt(priceMax, 10) : undefined,
-    currency,
+    ...(currency ? { currency } : {}),
     bedroomsMin: bedroomsMin ? parseInt(bedroomsMin, 10) : undefined,
     bedroomsMax: bedroomsMax ? parseInt(bedroomsMax, 10) : undefined,
     bathroomsMin: bathroomsMin ? parseInt(bathroomsMin, 10) : undefined,
@@ -376,6 +381,14 @@ export default function ManualSearchPage() {
     source: source.trim() || undefined,
     aptoCredito: aptoCredito || undefined,
     amenities: amenities.length ? amenities : undefined,
+    amenitiesMode: amenitiesMode === 'strict' ? 'strict' : 'soft',
+    keywords: keywordsText.trim()
+      ? keywordsText
+          .split(/[,;]+/)
+          .map((s) => s.trim())
+          .filter((s) => s.length >= 2 && s.length <= 80)
+          .slice(0, 12)
+      : undefined,
     photosCountMin: photosCountMin ? parseInt(photosCountMin, 10) : undefined,
     listingAgeDays: listingAgeDays ? parseInt(listingAgeDays, 10) : undefined,
   };
@@ -405,6 +418,8 @@ export default function ManualSearchPage() {
       if (filters.source) params.set('source', filters.source);
       if (filters.aptoCredito) params.set('aptoCredito', '1');
       if (filters.amenities?.length) params.set('amenities', filters.amenities.join(','));
+      if (filters.amenitiesMode === 'strict') params.set('amenitiesMode', 'strict');
+      if (filters.keywords?.length) params.set('keywords', filters.keywords.join(','));
       if (filters.photosCountMin != null)
         params.set('photosCountMin', String(filters.photosCountMin));
       if (filters.listingAgeDays != null)
@@ -425,6 +440,7 @@ export default function ManualSearchPage() {
 
   async function handleVerResultados() {
     setError(null);
+    setFeedMatchHint(null);
     setLoadingPreview(true);
     setHasSearched(true);
     try {
@@ -435,12 +451,29 @@ export default function ManualSearchPage() {
         setItems(
           arr.map(normalizeCard).filter((c: ListingCard | null): c is ListingCard => c !== null)
         );
+        const tier = (data as { matchTier?: string; relaxAppliedStep?: number | null }).matchTier;
+        const step = (data as { relaxAppliedStep?: number | null }).relaxAppliedStep;
+        if (tier === 'relaxed') {
+          setFeedMatchHint(
+            `Te mostramos coincidencias cercanas: relajamos algunos criterios${
+              step != null ? ` (paso ${step})` : ''
+            }. Tu intención principal se mantiene.`
+          );
+        } else if (tier === 'catalog') {
+          setFeedMatchHint(
+            'Te mostramos el catálogo general; podés afinar la búsqueda cuando quieras.'
+          );
+        } else {
+          setFeedMatchHint(arr.length > 0 ? 'Opciones alineadas con lo que pediste.' : null);
+        }
       } else {
         setItems([]);
+        setFeedMatchHint(null);
         setError('Error al cargar resultados');
       }
     } catch {
       setItems([]);
+      setFeedMatchHint(null);
       setError('Error de conexión');
     } finally {
       setLoadingPreview(false);
@@ -542,11 +575,12 @@ export default function ManualSearchPage() {
   }
 
   const activeChips = [
-    operation === 'SALE' ? 'Compra' : 'Alquiler',
+    operation === 'ALL' ? null : operation === 'SALE' ? 'Compra' : 'Alquiler',
     ...propertyTypes,
     locationText.trim() || null,
     priceMin ? `Min ${priceMin}` : null,
     priceMax ? `Max ${priceMax}` : null,
+    currency ? currency : null,
     bedroomsMin ? `${bedroomsMin}+ dorm` : null,
     areaMin ? `${areaMin}+ m²` : null,
   ].filter(Boolean) as string[];
@@ -555,9 +589,7 @@ export default function ManualSearchPage() {
     <main className="min-h-screen p-4 sm:p-6">
       <div className="max-w-2xl mx-auto space-y-6">
         <header>
-          <h1 className="text-2xl font-bold text-[var(--mp-foreground)] mb-2">
-            Búsqueda por filtros
-          </h1>
+          <h1 className="text-2xl font-bold text-[var(--mp-foreground)] mb-2">Búsqueda guiada</h1>
           <p className="text-sm text-[var(--mp-muted)]">
             <Link href="/assistant" className="hover:text-[var(--mp-foreground)]">
               Por texto
@@ -580,6 +612,9 @@ export default function ManualSearchPage() {
         </header>
 
         <div className="p-4 sm:p-5 rounded-2xl bg-[var(--mp-card)] shadow-sm border border-[var(--mp-border)] space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--mp-muted)] pt-1">
+            Capa 1 · Descubrimiento
+          </p>
           <AccordionSection
             title="Operación y tipo"
             open={openSection === 'operacion'}
@@ -601,7 +636,7 @@ export default function ManualSearchPage() {
                         : 'bg-[var(--mp-bg)] text-[var(--mp-foreground)] hover:bg-slate-200/80'
                     }`}
                   >
-                    {op === 'SALE' ? 'Compra' : 'Alquiler'}
+                    {op === 'ALL' ? 'Todas' : op === 'SALE' ? 'Compra' : 'Alquiler'}
                   </button>
                 ))}
               </div>
@@ -685,9 +720,10 @@ export default function ManualSearchPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
               <select
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value as 'USD' | 'ARS')}
+                onChange={(e) => setCurrency(e.target.value as 'USD' | 'ARS' | '')}
                 className="w-full p-2 border rounded-lg border-gray-300"
               >
+                <option value="">Todas (sin filtrar por moneda)</option>
                 {CURRENCIES.map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -698,7 +734,7 @@ export default function ManualSearchPage() {
           </AccordionSection>
 
           <AccordionSection
-            title="Ambientes"
+            title="Dormitorios"
             open={openSection === 'ambientes'}
             onToggle={() => setOpenSection(openSection === 'ambientes' ? '' : 'ambientes')}
           >
@@ -715,6 +751,75 @@ export default function ManualSearchPage() {
                 className="w-full p-2 border rounded-lg border-gray-300"
               />
             </div>
+          </AccordionSection>
+
+          <AccordionSection
+            title="Palabras clave"
+            open={openSection === 'keywords'}
+            onToggle={() => setOpenSection(openSection === 'keywords' ? '' : 'keywords')}
+          >
+            <p className="text-xs text-[var(--mp-muted)] mb-2">
+              Separá con comas. Refuerzan la búsqueda sin exigir como un portal clásico.
+            </p>
+            <input
+              type="text"
+              value={keywordsText}
+              onChange={(e) => setKeywordsText(e.target.value)}
+              placeholder="Ej: luminoso, cochera, tranquilo"
+              className="w-full p-2 border rounded-lg border-gray-300"
+            />
+          </AccordionSection>
+
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--mp-muted)] pt-3">
+            Capa 2 · Ajustes importantes
+          </p>
+
+          <AccordionSection
+            title="Superficie, baños y calidad"
+            open={openSection === 'superficie'}
+            onToggle={() => setOpenSection(openSection === 'superficie' ? '' : 'superficie')}
+          >
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mín total (m²)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={areaMin}
+                  onChange={(e) => setAreaMin(e.target.value)}
+                  placeholder="0"
+                  className="w-full p-2 border rounded-lg border-gray-300"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Máx total (m²)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={areaMax}
+                  onChange={(e) => setAreaMax(e.target.value)}
+                  placeholder="—"
+                  className="w-full p-2 border rounded-lg border-gray-300"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mín cubiertos (m²)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={areaCoveredMin}
+                  onChange={(e) => setAreaCoveredMin(e.target.value)}
+                  placeholder="0"
+                  className="w-full p-2 border rounded-lg border-gray-300"
+                />
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Baños (mínimo)</label>
               <input
@@ -726,40 +831,6 @@ export default function ManualSearchPage() {
                 className="w-full p-2 border rounded-lg border-gray-300"
               />
             </div>
-          </AccordionSection>
-
-          <AccordionSection
-            title="Amenidades"
-            open={openSection === 'amenidades'}
-            onToggle={() => setOpenSection(openSection === 'amenidades' ? '' : 'amenidades')}
-          >
-            <div className="flex flex-wrap gap-2">
-              {AMENITIES.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() =>
-                    setAmenities((prev) =>
-                      prev.includes(a.id) ? prev.filter((x) => x !== a.id) : [...prev, a.id]
-                    )
-                  }
-                  className={`px-3 py-1 rounded-full text-xs ${
-                    amenities.includes(a.id)
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {a.label}
-                </button>
-              ))}
-            </div>
-          </AccordionSection>
-
-          <AccordionSection
-            title="Más opciones"
-            open={openSection === 'opciones'}
-            onToggle={() => setOpenSection(openSection === 'opciones' ? '' : 'opciones')}
-          >
             <div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -773,7 +844,7 @@ export default function ManualSearchPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Mín fotos por listing
+                Mín fotos por aviso
               </label>
               <input
                 type="number"
@@ -801,51 +872,86 @@ export default function ManualSearchPage() {
           </AccordionSection>
 
           <AccordionSection
-            title="Superficie (m²)"
-            open={openSection === 'superficie'}
-            onToggle={() => setOpenSection(openSection === 'superficie' ? '' : 'superficie')}
+            title="Orden y fuente"
+            open={openSection === 'orden'}
+            onToggle={() => setOpenSection(openSection === 'orden' ? '' : 'orden')}
           >
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mín total</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={areaMin}
-                  onChange={(e) => setAreaMin(e.target.value)}
-                  placeholder="0"
-                  className="w-full p-2 border rounded-lg border-gray-300"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Máx total</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={areaMax}
-                  onChange={(e) => setAreaMax(e.target.value)}
-                  placeholder="—"
-                  className="w-full p-2 border rounded-lg border-gray-300"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mín cubiertos
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={areaCoveredMin}
-                  onChange={(e) => setAreaCoveredMin(e.target.value)}
-                  placeholder="0"
-                  className="w-full p-2 border rounded-lg border-gray-300"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ordenar por</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full p-2 border rounded-lg border-gray-300"
+              >
+                {SORT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Fuente (opcional)
+              </label>
+              <input
+                type="text"
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                placeholder="Ej: API_PARTNER_1"
+                className="w-full p-2 border rounded-lg border-gray-300"
+              />
+            </div>
+          </AccordionSection>
+
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--mp-muted)] pt-3">
+            Capa 3 · Estilo de vida
+          </p>
+
+          <AccordionSection
+            title="Amenidades"
+            open={openSection === 'amenidades'}
+            onToggle={() => setOpenSection(openSection === 'amenidades' ? '' : 'amenidades')}
+          >
+            <p className="text-xs text-[var(--mp-muted)] mb-2">
+              Por defecto las amenidades son preferencia (no vacían el feed). Activá modo estricto
+              solo si necesitás que todas estén en el aviso.
+            </p>
+            <label className="flex items-center gap-2 cursor-pointer mb-3">
+              <input
+                type="checkbox"
+                checked={amenitiesMode === 'strict'}
+                onChange={(e) => setAmenitiesMode(e.target.checked ? 'strict' : 'soft')}
+                className="rounded"
+              />
+              <span className="text-sm text-gray-800">
+                Exigir todas las amenidades (modo portal)
+              </span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {AMENITIES.map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() =>
+                    setAmenities((prev) =>
+                      prev.includes(a.id) ? prev.filter((x) => x !== a.id) : [...prev, a.id]
+                    )
+                  }
+                  className={`px-3 py-1 rounded-full text-xs ${
+                    amenities.includes(a.id)
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {a.label}
+                </button>
+              ))}
             </div>
           </AccordionSection>
 
           <AccordionSection
-            title="Texto y orden"
+            title="Texto en título y descripción"
             open={openSection === 'texto'}
             onToggle={() => setOpenSection(openSection === 'texto' ? '' : 'texto')}
           >
@@ -870,32 +976,6 @@ export default function ManualSearchPage() {
                 value={descriptionContains}
                 onChange={(e) => setDescriptionContains(e.target.value)}
                 placeholder="Ej: pileta"
-                className="w-full p-2 border rounded-lg border-gray-300"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ordenar por</label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full p-2 border rounded-lg border-gray-300"
-              >
-                {SORT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Fuente (opcional)
-              </label>
-              <input
-                type="text"
-                value={source}
-                onChange={(e) => setSource(e.target.value)}
-                placeholder="Ej: API_PARTNER_1"
                 className="w-full p-2 border rounded-lg border-gray-300"
               />
             </div>
@@ -941,6 +1021,11 @@ export default function ManualSearchPage() {
         )}
 
         {toast && <div className="p-3 bg-green-100 text-green-800 rounded-lg text-sm">{toast}</div>}
+        {feedMatchHint && hasSearched && !loadingPreview && (
+          <div className="p-3 bg-sky-50 border border-sky-200 text-sky-900 rounded-lg text-sm">
+            {feedMatchHint}
+          </div>
+        )}
         {error && (
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
             {error}
