@@ -164,9 +164,14 @@ jobs:
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             PR="${{ github.event.pull_request.number }}"
           else
-            PR=$(gh api "repos/${REPO}/commits/${SHA}/pulls" -q '.[0].number' 2>/dev/null || echo "")
+            # workflow_dispatch: gh api commits/.../pulls requiere Accept groot; más fiable: --head con ref del workflow
+            PR=$(gh pr list --repo "$REPO" --head "${{ github.ref_name }}" --state open --json number -q '.[0].number' 2>/dev/null || true)
             if [ -z "$PR" ] || [ "$PR" = "null" ]; then
-              echo "Sin PR asociado al SHA (evento=${{ github.event_name }}); skip merge."
+              PR=$(gh api -H "Accept: application/vnd.github.groot-preview+json" \
+                "repos/${REPO}/commits/${SHA}/pulls" -q '.[0].number' 2>/dev/null || true)
+            fi
+            if [ -z "$PR" ] || [ "$PR" = "null" ]; then
+              echo "Sin PR asociado (ref=${{ github.ref_name }} sha=${SHA}); skip merge."
               exit 0
             fi
           fi
