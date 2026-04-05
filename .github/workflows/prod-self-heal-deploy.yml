@@ -1,0 +1,29 @@
+# Si GitHub main (Tekno) ≠ /health.version en prod, POST a deploy hooks. Auto-reparación sin depender de push a main.
+name: Prod self-heal (hooks si prod desfasada)
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  align-hooks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Comparar main GitHub vs prod y POST hooks si hace falta
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          API_URL: https://match-prop-admin-dsvv.vercel.app
+          VERCEL_DEPLOY_HOOK_API: ${{ secrets.VERCEL_DEPLOY_HOOK_API }}
+          VERCEL_DEPLOY_HOOK_WEB: ${{ secrets.VERCEL_DEPLOY_HOOK_WEB }}
+          VERCEL_DEPLOY_HOOK_ADMIN: ${{ secrets.VERCEL_DEPLOY_HOOK_ADMIN }}
+        run: bash scripts/post-hooks-if-prod-behind-main.sh

@@ -128,10 +128,14 @@ if [ "$GIT_ONLY" = true ]; then
   exit 0
 fi
 
-echo "--- Producción (API) ---"
-if ! bash scripts/verify-deploy-status.sh main; then
+echo "--- Producción Vercel ↔ Tekno origin/main ---"
+PROD_ALIGN_EXTRA=()
+if [ "$DO_FETCH" = true ]; then
+  PROD_ALIGN_EXTRA+=(--skip-fetch)
+fi
+if ! bash scripts/prod-align.sh "${PROD_ALIGN_EXTRA[@]}"; then
   echo ""
-  echo "❌ Deploy / producción no alineados con origin/main. Ver mensajes arriba."
+  echo "❌ Deploy / producción no alineados con origin/main. Ver mensajes arriba o pnpm prod:align --json"
   exit 1
 fi
 

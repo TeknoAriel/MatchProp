@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Configura remotos: origin = Tekno (repo que administrás), kiteprop = org Kiteprop (auditoría / copia).
+# origin = Tekno (trabajo + CI + Vercel). kiteprop = copia para auditoría (push manual cuando lo pidan).
 # Uso: bash scripts/git-remotes-tekno.sh
 # Override: TEKNO_REPO_URL=... KITEPROP_REPO_URL=... bash scripts/git-remotes-tekno.sh
 set -euo pipefail

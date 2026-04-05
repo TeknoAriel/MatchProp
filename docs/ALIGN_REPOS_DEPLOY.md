@@ -1,8 +1,16 @@
 # Alineación repo ↔ deploy
 
+**Canónico:** `origin` = **Tekno** (`TeknoAriel/MatchProp`). **Kiteprop** = copia de auditoría (push manual cuando lo pidan).
+
 Objetivo: **una sola comprobación** para saber si tu Git (local y remotos) y **producción** (Vercel, vía `GET /health` de la API) están alineados con **`origin/main`**.
 
-## Comando principal
+## Comando rápido (solo prod ↔ `main` Tekno)
+
+```bash
+pnpm prod:align
+```
+
+## Comando principal (Git + prod)
 
 ```bash
 pnpm align:check
@@ -19,7 +27,12 @@ bash scripts/align-repos-deploy.sh
 1. `git fetch origin main` (y `kiteprop main` si el remoto existe).
 2. Muestra: rama actual, SHA de `HEAD`, `origin/main`, y si aplica `kiteprop/main` vs `origin/main`.
 3. Si estás en **`main`**: comprueba que `HEAD` = `origin/main` (con contadores ahead/behind si no).
-4. Ejecuta **`scripts/verify-deploy-status.sh main`**: producción (API + proxy web) debe exponer el mismo SHA que `origin/main` en `version`.
+4. Ejecuta **`scripts/prod-align.sh`**: producción (API + proxy web) debe exponer el mismo SHA que `origin/main` en `version`.
+
+### CI: auto-reparación en GitHub Actions
+
+- **`Vercel deploy hooks (PR merged to main)`**: al mergear un PR a `main`, POST a los deploy hooks (si fallaba antes por filtro del workflow, está corregido).
+- **`Prod self-heal (hooks si prod desfasada)`**: cada ~15 min compara el SHA de `main` en GitHub con `/health.version`; si difieren, dispara los hooks (requiere secretos `VERCEL_DEPLOY_HOOK_*`).
 
 ### Opciones
 
@@ -38,6 +51,8 @@ bash scripts/align-repos-deploy.sh
 
 | Script                            | Rol                                                            |
 | --------------------------------- | -------------------------------------------------------------- |
+| `scripts/prod-align.sh`           | Rápido: Tekno `origin/main` ↔ prod API/Web.                    |
+| `scripts/post-hooks-if-prod-behind-main.sh` | Usado por self-heal en CI: GitHub API `main` vs `/health`. |
 | `scripts/verify-deploy-status.sh` | Solo prod vs `main` (y merge de rama si pasás otra rama).      |
 | `scripts/sync-local-from-main.sh` | Dejar tu `main` local igual que `origin/main`.                 |
 | `scripts/git-remotes-tekno.sh`    | Configurar `origin` (Tekno) y opcional `kiteprop` (auditoría). |
