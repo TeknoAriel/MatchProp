@@ -49,13 +49,13 @@ bash scripts/align-repos-deploy.sh
 
 ## Scripts relacionados
 
-| Script                            | Rol                                                            |
-| --------------------------------- | -------------------------------------------------------------- |
-| `scripts/prod-align.sh`           | Rápido: Tekno `origin/main` ↔ prod API/Web.                    |
-| `scripts/post-hooks-if-prod-behind-main.sh` | Usado por self-heal en CI: GitHub API `main` vs `/health`. |
-| `scripts/verify-deploy-status.sh` | Solo prod vs `main` (y merge de rama si pasás otra rama).      |
-| `scripts/sync-local-from-main.sh` | Dejar tu `main` local igual que `origin/main`.                 |
-| `scripts/git-remotes-tekno.sh`    | Configurar `origin` (Tekno) y opcional `kiteprop` (auditoría). |
+| Script                                      | Rol                                                            |
+| ------------------------------------------- | -------------------------------------------------------------- |
+| `scripts/prod-align.sh`                     | Rápido: Tekno `origin/main` ↔ prod API/Web.                    |
+| `scripts/post-hooks-if-prod-behind-main.sh` | Usado por self-heal en CI: GitHub API `main` vs `/health`.     |
+| `scripts/verify-deploy-status.sh`           | Solo prod vs `main` (y merge de rama si pasás otra rama).      |
+| `scripts/sync-local-from-main.sh`           | Dejar tu `main` local igual que `origin/main`.                 |
+| `scripts/git-remotes-tekno.sh`              | Configurar `origin` (Tekno) y opcional `kiteprop` (auditoría). |
 
 ## Flujo recomendado
 
