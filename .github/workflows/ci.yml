@@ -142,10 +142,12 @@ jobs:
 
   # Mismo criterio que merge-after-ci.yml pero en el mismo workflow: workflow_run a veces no encadena
   # tras CI verde en PR (p. ej. PR #44 2026-04), dejando PRs con automerge abiertos y prod sin deploy.
+  # needs: solo verify — si smoke-ux falla con continue-on-error, jobs que dependen de smoke-ux quedan skipped
+  # (comportamiento de GitHub Actions), y el merge nunca corre.
   merge-automerge-pr:
     name: Merge automerge PR (post CI)
     if: github.event_name == 'pull_request'
-    needs: [verify, smoke-ux]
+    needs: [verify]
     runs-on: ubuntu-latest
     permissions:
       contents: write
