@@ -146,7 +146,8 @@ jobs:
   # (comportamiento de GitHub Actions), y el merge nunca corre.
   merge-automerge-pr:
     name: Merge automerge PR (post CI)
-    if: github.event_name == 'pull_request'
+    # A veces el único CI verde es workflow_dispatch (re-run manual o cola); pull_request.number no existe ahí.
+    if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master')
     needs: [verify]
     runs-on: ubuntu-latest
     permissions:
@@ -158,8 +159,17 @@ jobs:
           GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          PR="${{ github.event.pull_request.number }}"
           REPO="${{ github.repository }}"
+          SHA="${{ github.sha }}"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            PR="${{ github.event.pull_request.number }}"
+          else
+            PR=$(gh api "repos/${REPO}/commits/${SHA}/pulls" -q '.[0].number' 2>/dev/null || echo "")
+            if [ -z "$PR" ] || [ "$PR" = "null" ]; then
+              echo "Sin PR asociado al SHA (evento=${{ github.event_name }}); skip merge."
+              exit 0
+            fi
+          fi
           try_merge() {
             local P="$1"
             if gh pr merge "$P" --repo "$REPO" --squash --delete-branch; then
