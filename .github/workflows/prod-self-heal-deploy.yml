@@ -3,7 +3,8 @@ name: Prod self-heal (hooks si prod desfasada)
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    # Cada 30 min (GitHub puede demorar el 1er schedule; */15 a veces no corre en repos free)
+    - cron: '25,55 * * * *'
   workflow_dispatch:
 
 permissions:
