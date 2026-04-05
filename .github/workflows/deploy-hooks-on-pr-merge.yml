@@ -1,0 +1,39 @@
+# Cuando un PR a main se mergea (squash/rebase/merge), a veces no corre el workflow CI con event=push
+# y el job «Vercel deploy hooks» de ci.yml no se ejecuta → prod queda en un SHA viejo.
+# Este flujo se dispara en pull_request closed + merged y repite el POST a los deploy hooks.
+name: Vercel deploy hooks (PR merged to main)
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  hooks:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST hooks (API → Web → Admin)
+        env:
+          VERCEL_DEPLOY_HOOK_API: ${{ secrets.VERCEL_DEPLOY_HOOK_API }}
+          VERCEL_DEPLOY_HOOK_WEB: ${{ secrets.VERCEL_DEPLOY_HOOK_WEB }}
+          VERCEL_DEPLOY_HOOK_ADMIN: ${{ secrets.VERCEL_DEPLOY_HOOK_ADMIN }}
+        run: |
+          set -uo pipefail
+          post_hook() {
+            local label="$1" url="$2"
+            if [ -z "${url:-}" ]; then
+              echo "::notice::Hook ${label} sin secreto — omitido"
+              return 0
+            fi
+            code=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "$url" || echo "000")
+            echo "POST hook ${label} → HTTP ${code}"
+            case "$code" in 200|201|204) ;; *) echo "::warning::Hook ${label} no OK (${code})" ;; esac
+          }
+          echo "Deploy hooks tras merge PR #${{ github.event.pull_request.number }} → main (${GITHUB_SHA})"
+          post_hook "API" "${VERCEL_DEPLOY_HOOK_API:-}"
+          post_hook "WEB" "${VERCEL_DEPLOY_HOOK_WEB:-}"
+          post_hook "ADMIN" "${VERCEL_DEPLOY_HOOK_ADMIN:-}"
