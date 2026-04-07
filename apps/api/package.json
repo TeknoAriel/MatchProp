@@ -23,6 +23,7 @@
     "ingest:run": "tsx src/scripts/ingest-run.ts",
     "ingest:manual": "tsx src/scripts/ingest-manual.ts",
     "listing:prune-stale": "tsx src/scripts/listing-prune-stale.ts",
+    "listing:cap-active": "tsx src/scripts/cap-active-listings.ts",
     "ingest:cron": "tsx src/scripts/ingest-cron.ts",
     "ingest:fixture:refresh": "tsx src/scripts/ingest-fixture-refresh.ts",
     "alerts:run": "tsx src/scripts/alerts-run.ts",
