@@ -74,7 +74,18 @@ Regla práctica: **si el PR no mergea, mirá solo `CI` → Verify**. El resto es
 
 ---
 
-## 6. Principio
+## 6. Producción: qué podés probar “desde la web”
+
+| URL | Qué esperar |
+|-----|-------------|
+| [match-prop-web.vercel.app](https://match-prop-web.vercel.app) | La home y el **login** suelen responder **200** (la app carga). |
+| Login real / demo / feed | Requieren **API + Neon con migraciones al día**. Si `migration` en `/health` de la API va **varias carpetas atrás** respecto al repo, **sesión y demo fallan** hasta ejecutar `prisma migrate deploy` en prod (workflow **Migrate database (production)** o `scripts/prod-migrate-recover-neon.sh` + `prod-migrate.sh`). |
+
+**Pruebas completas con sesión** mientras Neon se alinea: entorno **local** con `pnpm dev:up` (o `pnpm dev:web` + API) y Postgres local migrado — misma app, sin depender del esquema de prod.
+
+---
+
+## 7. Principio
 
 **Un solo criterio de “listo para merge”: `CI / Verify` en verde.**  
 Lo demás (Neon, hooks, cron) son **canales aparte** con sus propios comandos y secretos.
