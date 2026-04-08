@@ -32,7 +32,9 @@ async function main() {
 
   const totalActive = await prisma.listing.count({ where: { status: 'ACTIVE' } });
   if (totalActive <= keep) {
-    console.log(`cap-active-listings: ya hay ${totalActive} ACTIVE (límite ${keep}). Nada que hacer.`);
+    console.log(
+      `cap-active-listings: ya hay ${totalActive} ACTIVE (límite ${keep}). Nada que hacer.`
+    );
     return;
   }
 
@@ -61,7 +63,9 @@ async function main() {
     },
     data: { status: 'INACTIVE' },
   });
-  console.log(`cap-active-listings: ${res.count} listings marcados INACTIVE. Quedan ${keep} ACTIVE (objetivo).`);
+  console.log(
+    `cap-active-listings: ${res.count} listings marcados INACTIVE. Quedan ${keep} ACTIVE (objetivo).`
+  );
 
   const after = await prisma.listing.count({ where: { status: 'ACTIVE' } });
   console.log(`Verificación: ACTIVE ahora = ${after}`);
