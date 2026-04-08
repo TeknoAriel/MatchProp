@@ -25,7 +25,7 @@ packages/
   shared/     → Tipos y utilidades compartidas
 ```
 
-Documentación: [docs/index.md](docs/index.md) | [Beta / cierre de etapa](docs/BETA_PROGRAMA_CIERRE_ETAPA.md) | [FOCO 2026](docs/FOCO_2026.md) | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | [DEPLOY.md](docs/DEPLOY.md)
+Documentación: [docs/index.md](docs/index.md) | **[Flujo de trabajo (una línea estable)](docs/FLUJO_TRABAJO_UNICO.md)** | [Beta / cierre de etapa](docs/BETA_PROGRAMA_CIERRE_ETAPA.md) | [FOCO 2026](docs/FOCO_2026.md) | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | [DEPLOY.md](docs/DEPLOY.md)
 
 ## Requisitos
 
