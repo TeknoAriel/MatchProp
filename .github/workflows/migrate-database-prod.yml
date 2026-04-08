@@ -1,0 +1,40 @@
+# Migraciones solo contra Neon prod (workflow manual).
+# Requiere secret DATABASE_URL_PROD (misma URL que Vercel → API → DATABASE_URL Production).
+# Desbloquea P3009 (migración SendGrid fallida) y aplica el resto con migrate deploy.
+name: Migrate database (production)
+
+on:
+  workflow_dispatch:
+
+env:
+  PNPM_VERSION: '9.0.0'
+
+jobs:
+  migrate:
+    name: prisma resolve + migrate deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Recover failed SendGrid migration + deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::error::Falta el secret DATABASE_URL_PROD en GitHub (Settings → Secrets → Actions)."
+            exit 1
+          fi
+          bash scripts/prod-migrate-recover-neon.sh
