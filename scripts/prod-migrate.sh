@@ -20,6 +20,24 @@ if [ -z "${DATABASE_URL:-}" ]; then
   exit 1
 fi
 
+# Evita confusión común: la URL pública HTTPS de la API (Vercel) NO es la conexión a Postgres.
+case "${DATABASE_URL}" in
+  http://* | https://*)
+    echo "ERROR: DATABASE_URL parece una URL HTTP(S) de la API (p. ej. match-prop-admin-dsvv.vercel.app)."
+    echo "Prisma necesita la cadena de PostgreSQL que empieza con postgresql:// o postgres://."
+    echo ""
+    echo "Dónde está la URL correcta:"
+    echo "  Vercel → proyecto de la API → Settings → Environment Variables → DATABASE_URL (Production)."
+    echo "  Copiá el valor completo (usuario, host de Neon, sslmode, etc.)."
+    exit 1
+    ;;
+  postgresql://* | postgres://*) ;;
+  *)
+    echo "ERROR: DATABASE_URL debe empezar con postgresql:// o postgres://"
+    exit 1
+    ;;
+esac
+
 export DATABASE_URL
 
 ENV_FILE="$ROOT/apps/api/.env"
@@ -44,3 +62,10 @@ pnpm --filter api exec prisma migrate deploy
 
 echo ""
 echo "=== OK — Verificá: curl -s https://match-prop-admin-dsvv.vercel.app/health | grep migration ==="
+
+# Si migrate deploy falla con P3009 (migración fallida, típico SendGrid), usá:
+#   DATABASE_URL='postgresql://...' bash scripts/prod-migrate-recover-neon.sh
+#
+# Si falla con P3018 y "already exists", la DB ya tenía el objeto:
+#   DATABASE_URL='postgresql://...' bash scripts/prod-migrate-resolve-applied.sh NOMBRE_CARPETA_MIGRACION
+# Luego: DATABASE_URL='...' bash scripts/prod-migrate.sh
