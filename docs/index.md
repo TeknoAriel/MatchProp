@@ -6,13 +6,13 @@
 
 ## Empezar acá (canon)
 
-| Documento                                            | Para qué                                                                                         |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Documento                                              | Para qué                                                                                          |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
 | **[FLUJO_TRABAJO_UNICO.md](./FLUJO_TRABAJO_UNICO.md)** | **Una línea estable:** qué check importa en el PR (`CI / Verify`), qué es ruido, orden día a día. |
-| **[MAPA_DOCUMENTACION.md](./MAPA_DOCUMENTACION.md)** | Cómo está organizada la doc (producto vs proyecto vs archivo) y cómo limpiar sin perder el hilo. |
-| **[masterplan.md](./masterplan.md)**                 | Definición de producto y Epics (fuente de verdad).                                               |
-| **[FOCO_2026.md](./FOCO_2026.md)**                   | Prioridades del trimestre (north star, en foco / fuera de foco).                                 |
-| **[PRODUCT_BRIEF.md](./PRODUCT_BRIEF.md)**           | Resumen corto del producto para alinear al equipo.                                               |
+| **[MAPA_DOCUMENTACION.md](./MAPA_DOCUMENTACION.md)**   | Cómo está organizada la doc (producto vs proyecto vs archivo) y cómo limpiar sin perder el hilo.  |
+| **[masterplan.md](./masterplan.md)**                   | Definición de producto y Epics (fuente de verdad).                                                |
+| **[FOCO_2026.md](./FOCO_2026.md)**                     | Prioridades del trimestre (north star, en foco / fuera de foco).                                  |
+| **[PRODUCT_BRIEF.md](./PRODUCT_BRIEF.md)**             | Resumen corto del producto para alinear al equipo.                                                |
 
 ---
 
