@@ -149,6 +149,8 @@ jobs:
     # A veces el único CI verde es workflow_dispatch (re-run manual o cola); pull_request.number no existe ahí.
     if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master')
     needs: [verify]
+    # Si gh pr merge falla (token/permisos), no marcar todo el workflow como fallido: merge-after-ci.yml reintenta.
+    continue-on-error: true
     runs-on: ubuntu-latest
     permissions:
       contents: write
