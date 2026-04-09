@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Recupera Neon cuando quedó una migración fallida (P3009) o tabla ya existente (P3018) en SendGrid.
-# Orden: marca 20260314000000_add_sendgrid_config como aplicada, luego migrate deploy.
+# Recupera Neon con drift típico MatchProp (objetos creados fuera de _prisma_migrations o P3009).
+# Marca como aplicadas las migraciones que suelen chocar, tolera P3008 (ya aplicada), luego migrate deploy.
 #
 # Uso (misma DATABASE_URL que Vercel API → Production):
 #   DATABASE_URL='postgresql://...' bash scripts/prod-migrate-recover-neon.sh
@@ -28,7 +28,13 @@ esac
 
 export DATABASE_URL
 
-STUCK_MIGRATION="20260314000000_add_sendgrid_config"
+# Orden histórico de choques en prod (enum/tabla/columna ya existentes).
+DRIFT_MIGRATIONS=(
+  20260314000000_add_sendgrid_config
+  20260314214521_add_ingest_source_config
+  20260314230028_add_assistant_config
+  20260315002906_add_assistant_auth_fields
+)
 
 ENV_FILE="$ROOT/apps/api/.env"
 if [[ -f "$ENV_FILE" ]]; then
@@ -40,22 +46,30 @@ fi
 
 echo "=== MatchProp recover Neon + migrate deploy ==="
 
-echo "→ prisma migrate resolve --applied $STUCK_MIGRATION"
-set +e
-RESOLVE_OUT=$(pnpm --filter api exec prisma migrate resolve --applied "$STUCK_MIGRATION" 2>&1)
-RESOLVE_RC=$?
-set -e
-echo "$RESOLVE_OUT"
-if [ "$RESOLVE_RC" -ne 0 ]; then
-  if echo "$RESOLVE_OUT" | grep -q 'P3008'; then
-    echo "→ (P3008: esa migración ya estaba registrada como aplicada; seguimos.)"
-  elif echo "$RESOLVE_OUT" | grep -q 'P3017'; then
-    echo "ERROR: nombre de migración inválido. No debe pasar con este script."
-    exit 1
-  else
-    exit "$RESOLVE_RC"
+resolve_applied_tolerate() {
+  local name="$1"
+  echo "→ prisma migrate resolve --applied $name"
+  set +e
+  local out
+  out=$(pnpm --filter api exec prisma migrate resolve --applied "$name" 2>&1)
+  local rc=$?
+  set -e
+  echo "$out"
+  if [ "$rc" -ne 0 ]; then
+    if echo "$out" | grep -q 'P3008'; then
+      echo "→ (P3008: ya aplicada; seguimos.)"
+    elif echo "$out" | grep -q 'P3017'; then
+      echo "ERROR: migración no encontrada en repo."
+      exit 1
+    else
+      exit "$rc"
+    fi
   fi
-fi
+}
+
+for m in "${DRIFT_MIGRATIONS[@]}"; do
+  resolve_applied_tolerate "$m"
+done
 
 echo ""
 echo "→ prisma generate"
